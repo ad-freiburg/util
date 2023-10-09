@@ -498,8 +498,26 @@ int main(int argc, char** argv) {
   {
     TEST(util::split("hello,again", ',').size(), ==, (size_t)2);
     TEST(util::split("hello,,again", ',').size(), ==, (size_t)3);
+    TEST(util::split("hello,,again", ',')[0], ==, "hello");
+    TEST(util::split("hello,,again", ',')[1], ==, "");
+    TEST(util::split("hello,,again", ',')[2], ==, "again");
     TEST(util::split("hello", ',').size(), ==, (size_t)1);
     TEST(util::split("", ',').size(), ==, (size_t)0);
+  }
+
+  // ___________________________________________________________________________
+  {
+    TEST(util::split("hello,again", ',', 0).size(), ==, (size_t)0);
+    TEST(util::split("hello,again", ',', 1).size(), ==, (size_t)1);
+    TEST(util::split("hello,again", ',', 2).size(), ==, (size_t)2);
+    TEST(util::split("hello,,again", ',', 2).size(), ==, (size_t)2);
+    TEST(util::split("hello,,again", ',', 3).size(), ==, (size_t)3);
+    TEST(util::split("hello,,again", ',', -1).size(), ==, (size_t)3);
+    TEST(util::split("hello,,again", ',', 2)[0], ==, "hello");
+    TEST(util::split("hello,,again", ',', 2)[1], ==, ",again");
+    TEST(util::split("hello,,again", ',', 1).size(), ==, (size_t)1);
+    TEST(util::split("hello,,again", ',', 1)[0], ==, "hello,,again");
+    TEST(util::split("hello", ',').size(), ==, (size_t)1);
   }
 
   // ___________________________________________________________________________

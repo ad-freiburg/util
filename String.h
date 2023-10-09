@@ -134,15 +134,27 @@ inline std::string toString(T obj) {
 }
 
 // _____________________________________________________________________________
-inline std::vector<std::string> split(std::string in, char sep) {
+inline std::vector<std::string> split(std::string in, char sep, size_t n) {
+  if (n == 0) return {};
+  if (n == 1) return {in};
   std::stringstream ss(in);
   std::vector<std::string> ret(1);
   while (std::getline(ss, ret.back(), sep)) {
     ret.push_back("");
+    if (ret.size() == n) {
+      ss >> ret.back();
+      return ret;
+    }
   }
   ret.pop_back();
   return ret;
 }
+
+// _____________________________________________________________________________
+inline std::vector<std::string> split(std::string in, char sep) {
+  return split(in, sep, -1);
+}
+
 
 // _____________________________________________________________________________
 inline std::string ltrim(std::string str, std::string c) {
