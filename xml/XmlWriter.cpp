@@ -63,11 +63,11 @@ XmlWriter::XmlWriter(const std::string& file, bool pret, size_t indent)
 #ifdef BZLIB_FOUND
     _bzbuf = new char[BUFFER_S];
 
-    FILE* f = fopen(file.c_str(), "w");
+    _bzfhandle = fopen(file.c_str(), "w");
     int err;
-    if (!f) throw std::runtime_error("Could not open file for writing.");
+    if (!_bzfhandle) throw std::runtime_error("Could not open file for writing.");
 
-    _bzfile = BZ2_bzWriteOpen(&err, f, 9, 0, 30);
+    _bzfile = BZ2_bzWriteOpen(&err, _bzfhandle, 9, 0, 30);
 
     if (err != BZ_OK) {
       throw std::runtime_error("Could not open bzip file for writing.");

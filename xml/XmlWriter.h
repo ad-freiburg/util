@@ -16,6 +16,7 @@
 #include <fstream>
 #include <stack>
 #include <string>
+#include "util/log/Log.h"
 
 namespace util {
 namespace xml {
@@ -50,8 +51,15 @@ class XmlWriter {
 #ifdef BZLIB_FOUND
     int err;
     if (_bzfile) {
-      flushBzip();
+      try {
+        flushBzip();
+      } catch (std::exception& e) {
+        LOG(ERROR) << e.what();
+      }
       BZ2_bzWriteClose(&err, _bzfile, 0, 0, 0);
+    }
+    if (_bzfhandle) {
+      fclose(_bzfhandle);
     }
 #endif
   };
@@ -117,6 +125,8 @@ class XmlWriter {
 #else
   int _bzfile;
 #endif
+
+  FILE* _bzfhandle = 0;
 
   // handles indentation
   void doIndent();

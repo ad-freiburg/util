@@ -1456,14 +1456,16 @@ inline RotatedBox<T> getOrientedEnvelope(std::vector<Geometry<T>> pol,
   Box<T> tmpBox = getBoundingBox(pol);
   double rotateDeg = 0;
 
-  // rotate in 1 deg steps
-  for (double i = step; i < 360; i += step) {
+  // rotate in steps
+  double i = step;
+  while (i < 360) {
     pol = rotate(pol, step, center);
     Box<T> e = getBoundingBox(pol);
     if (area(tmpBox) > area(e)) {
       tmpBox = e;
       rotateDeg = i;
     }
+    i+= step;
   }
 
   return RotatedBox<T>(tmpBox, -rotateDeg, center);
