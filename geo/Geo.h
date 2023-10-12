@@ -2027,13 +2027,16 @@ inline RotatedBox<T> getOrientedEnvelopeAvg(MultiLine<T> ml) {
   double bestDeg = -45;
   double score = parallelity(rbox.getBox(), ml);
 
-  for (double i = -45; i <= 45; i += .5) {
+  double i = -45;
+  while (i <= 45) {
     ml = rotate(ml, -.5, center);
     double p = parallelity(rbox.getBox(), ml);
     if (parallelity(rbox.getBox(), ml) > score) {
       bestDeg = i;
       score = p;
     }
+
+    i += .5;
   }
 
   rbox.setDegree(rbox.getDegree() + bestDeg);

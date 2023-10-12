@@ -353,7 +353,8 @@ void Queue::add(int c) {
 // _____________________________________________________________________________
 int Queue::get() {
   std::unique_lock<std::mutex> lock(_mut);
-  while (_jobs.empty()) _hasNew.wait(lock);
+  // wait until a job arrives, but only block iff we do not have job
+  _hasNew.wait(lock, []return{!_jobs.empty();});
   int next = _jobs.front();
   _jobs.pop();
   return next;
