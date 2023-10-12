@@ -10,6 +10,7 @@
 #include <netdb.h>
 #include <netinet/in.h>
 #include <netinet/tcp.h>
+
 #include <algorithm>
 #include <csignal>
 #include <memory>
@@ -21,10 +22,11 @@
 #include <zlib.h>
 #endif
 #include <vector>
+
 #include "Server.h"
+#include "util/Misc.h"
 #include "util/String.h"
 #include "util/log/Log.h"
-#include "util/Misc.h"
 
 using util::http::HeaderState;
 using util::http::HttpErr;
@@ -111,7 +113,7 @@ void HttpServer::handle() {
       Req req = getReq(connection);
       answ = _handler->handle(req, connection);
       if (answ.raw) {
-        close(connection); // the handle did everything
+        close(connection);  // the handle did everything
         continue;
       }
       answ.gzip = req.gzip;
@@ -354,7 +356,8 @@ void Queue::add(int c) {
 int Queue::get() {
   std::unique_lock<std::mutex> lock(_mut);
   // wait until a job arrives, but only block iff we do not have job
-  _hasNew.wait(lock, []return{!_jobs.empty();});
+  _hasNew.wait(
+      lock, [] return { !_jobs.empty(); });
   int next = _jobs.front();
   _jobs.pop();
   return next;
