@@ -323,7 +323,7 @@ PolyLine<T> PolyLine<T>::average(const std::vector<const PolyLine<T>*>& lines,
     avg[1] = {(a[1].getX() + b[1].getX()) / 2.0,
               (a[1].getY() + b[1].getY()) / 2.0};
 
-    return avg;
+    return PolyLine<T>(avg);
   }
 
   double stepSize;
