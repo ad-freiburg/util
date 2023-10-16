@@ -19,7 +19,7 @@ namespace graph {
 template <typename N, typename E>
 class Graph {
  public:
-  Graph() {} ;
+  Graph() = default;
   Graph(const Graph& g) = delete;
   Graph(Graph& g) = delete;
   void operator=(const Graph& other) = delete;

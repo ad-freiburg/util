@@ -40,7 +40,7 @@ struct SplitFunc {
 
 template <typename V, typename T>
 struct CapaSplitFunc : SplitFunc<V, T> {
-  CapaSplitFunc(size_t c) : _c(c) {}
+  explicit CapaSplitFunc(size_t c) : _c(c) {}
   virtual bool operator()(const QuadNode<T>& nd,
                        const QuadValue<V, T>& newVal) const {
     UNUSED(newVal);

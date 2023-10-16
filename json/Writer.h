@@ -16,8 +16,8 @@ namespace json {
 
 class WriterException : public std::exception {
  public:
-  WriterException(std::string msg) : _msg(msg) {}
-  ~WriterException() throw() {}
+  explicit WriterException(std::string msg) : _msg(msg) {}
+  ~WriterException() throw() = default;
 
   virtual const char* what() const throw() { return _msg.c_str(); };
 
@@ -64,7 +64,7 @@ class Writer {
   Writer(std::ostream* out, size_t prec);
   Writer(std::ostream* out, size_t prec, bool pretty);
   Writer(std::ostream* out, size_t prec, bool pretty, size_t indent);
-  ~Writer(){};
+  ~Writer() = default;
 
   void obj();
   void arr();

@@ -25,8 +25,8 @@ static const size_t BUFFER_S = 32 * 1024 * 1024;
 
 class XmlWriterException : public std::exception {
  public:
-  XmlWriterException(std::string msg) : _msg(msg) {}
-  ~XmlWriterException() throw() {}
+  explicit XmlWriterException(std::string msg) : _msg(msg) {}
+  ~XmlWriterException() throw() = default;
 
   virtual const char* what() const throw() { return _msg.c_str(); };
 
@@ -126,7 +126,7 @@ class XmlWriter {
   int _bzfile;
 #endif
 
-  FILE* _bzfhandle = 0;
+  FILE* _bzfhandle = nullptr;
 
   // handles indentation
   void doIndent();

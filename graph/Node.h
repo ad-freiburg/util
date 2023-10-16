@@ -41,7 +41,7 @@ class Node {
 };
 
 template <typename N, typename E>
-inline Node<N, E>::~Node() {}
+inline Node<N, E>::~Node() = default;
 
 }  // namespace graph
 }  // namespace util

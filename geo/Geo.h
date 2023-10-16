@@ -1766,7 +1766,7 @@ Point<T> pointAt(const Line<T> l, double at, size_t* lastI, double* totPos) {
 // _____________________________________________________________________________
 template <typename T>
 Point<T> pointAtDist(const Line<T> l, double atDist) {
-  return pointAtDist(l, atDist, 0, 0);
+  return pointAtDist(l, atDist, nullptr, nullptr);
 }
 
 // _____________________________________________________________________________
@@ -1839,8 +1839,8 @@ Line<T> segment(const Line<T>& line, double a, double b) {
     b = c;
   }
   size_t startI, endI;
-  auto start = pointAt(line, a, &startI, 0);
-  auto end = pointAt(line, b, &endI, 0);
+  auto start = pointAt(line, a, &startI, nullptr);
+  auto end = pointAt(line, b, &endI, nullptr);
 
   return segment(line, start, startI, end, endI);
 }

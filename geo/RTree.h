@@ -15,7 +15,7 @@ namespace geo {
 
 class RTreeException : public std::runtime_error {
  public:
-  RTreeException(std::string const& msg) : std::runtime_error(msg) {}
+  explicit RTreeException(std::string const& msg) : std::runtime_error(msg) {}
 };
 
 template <typename V, template <typename> class G, typename T>

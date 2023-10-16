@@ -5,12 +5,13 @@
 #ifndef UTIL_GRAPH_BIDIJKSTRA_H_
 #define UTIL_GRAPH_BIDIJKSTRA_H_
 
+#include <algorithm>
 #include <limits>
 #include <list>
 #include <queue>
 #include <set>
-#include <algorithm>
 #include <unordered_map>
+
 #include "util/graph/Edge.h"
 #include "util/graph/Graph.h"
 #include "util/graph/Node.h"
@@ -28,8 +29,8 @@ class BiDijkstra : public ShortestPath<BiDijkstra> {
  public:
   template <typename N, typename E, typename C>
   struct RouteNode {
-    RouteNode() : n(0), parent(0), d(), h() {}
-    RouteNode(Node<N, E>* n) : n(n), parent(0), d(), h() {}
+    RouteNode() : n(nullptr), parent(nullptr), d(), h() {}
+    explicit RouteNode(Node<N, E>* n) : n(n), parent(nullptr), d(), h() {}
     RouteNode(Node<N, E>* n, Node<N, E>* parent, C d)
         : n(n), parent(parent), d(d), h() {}
     RouteNode(Node<N, E>* n, Node<N, E>* parent, C d, C h)
@@ -55,7 +56,8 @@ class BiDijkstra : public ShortestPath<BiDijkstra> {
 
   template <typename N, typename E, typename C>
   struct CostFunc : public util::graph::CostFunc<N, E, C> {
-    virtual ~CostFunc() = default; C operator()(const Edge<N, E>* from, const Node<N, E>* n,
+    virtual ~CostFunc() = default;
+    C operator()(const Edge<N, E>* from, const Node<N, E>* n,
                  const Edge<N, E>* to) const {
       UNUSED(from);
       UNUSED(n);

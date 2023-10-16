@@ -26,17 +26,21 @@
 
 using std::setfill;
 using std::setw;
-using namespace std::chrono;
+using std::chrono::system_clock;
+using std::chrono::duration_cast;
+using std::chrono::milliseconds;
+using std::chrono::seconds;
+using std::chrono::time_point_cast;
 
 namespace util {
 
-static const char* LOGS[] = {"ERROR", "WARN ", "INFO ", "DEBUG", "DEBUG"};
+const static char* LOGS[] = {"ERROR", "WARN ", "INFO ", "DEBUG", "DEBUG"};
 
 template <char LVL>
 class Log {
  public:
   Log() { if (LVL < INFO) os = &std::cerr; else os = &std::cout; }
-  Log(std::ostream* s) { os = s; }
+  explicit Log(std::ostream* s) { os = s; }
   ~Log() { buf << std::endl; (*os) << buf.str(); }
   std::ostream& log() { return ts() << LOGS[(size_t)LVL] << ": "; }
 

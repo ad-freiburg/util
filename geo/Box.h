@@ -45,7 +45,7 @@ template <typename T>
 class RotatedBox {
  public:
   RotatedBox() : _box(), _deg(0), _center() {}
-  RotatedBox(const Box<T>& box)
+  explicit RotatedBox(const Box<T>& box)
       : _box(box),
         _deg(0),
         _center(Point<T>(

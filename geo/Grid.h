@@ -15,7 +15,7 @@ namespace geo {
 
 class GridException : public std::runtime_error {
  public:
-  GridException(std::string const& msg) : std::runtime_error(msg) {}
+  explicit GridException(std::string const& msg) : std::runtime_error(msg) {}
 };
 
 template <typename V, template <typename> class G, typename T>

@@ -41,8 +41,8 @@ enum HeaderState { NONE, I_COM, I_URL, I_VER, A_KEY, I_KEY, A_VAL, I_VAL };
  */
 class HttpErr : public std::exception {
  public:
-  HttpErr(std::string msg) : _msg(msg) {}
-  ~HttpErr() throw() {}
+  explicit HttpErr(std::string msg) : _msg(msg) {}
+  ~HttpErr() throw() = default;
 
   virtual const char* what() const throw() { return _msg.c_str(); }
 
@@ -101,7 +101,7 @@ class Queue {
  */
 class Socket {
  public:
-  Socket(int port);
+  explicit Socket(int port);
   ~Socket();
   int wait();
 

@@ -54,7 +54,7 @@ class PolyLine {
  public:
   PolyLine();
   PolyLine(const Point<T>& from, const Point<T>& to);
-  PolyLine(const Line<T>& l);
+  explicit PolyLine(const Line<T>& l);
   PolyLine(const PolyLine<T>& l);
   PolyLine(PolyLine<T>&& l);
 

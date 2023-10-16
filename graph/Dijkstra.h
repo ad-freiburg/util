@@ -27,8 +27,8 @@ class Dijkstra : public ShortestPath<Dijkstra> {
  public:
   template <typename N, typename E, typename C>
   struct RouteNode {
-    RouteNode() : n(0), parent(0), d(), h() {}
-    RouteNode(Node<N, E>* n) : n(n), parent(0), d(), h() {}
+    RouteNode() : n(nullptr), parent(nullptr), d(), h() {}
+    explicit RouteNode(Node<N, E>* n) : n(n), parent(nullptr), d(), h() {}
     RouteNode(Node<N, E>* n, Node<N, E>* parent, C d)
         : n(n), parent(parent), d(d), h() {}
     RouteNode(Node<N, E>* n, Node<N, E>* parent, C d, C h)

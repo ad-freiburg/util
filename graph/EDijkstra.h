@@ -9,6 +9,7 @@
 #include <list>
 #include <set>
 #include <unordered_map>
+
 #include "util/PriorityQueue.h"
 #include "util/graph/Edge.h"
 #include "util/graph/Graph.h"
@@ -29,8 +30,9 @@ class EDijkstra : public ShortestPath<EDijkstra> {
  public:
   template <typename N, typename E, typename C>
   struct RouteEdge {
-    RouteEdge() : e(0), parent(0), d(), n(0) {}
-    RouteEdge(Edge<N, E>* e) : e(e), parent(0), d(), n(0) {}
+    RouteEdge() : e(nullptr), parent(nullptr), d(), n(nullptr) {}
+    explicit RouteEdge(Edge<N, E>* e)
+        : e(e), parent(nullptr), d(), n(nullptr) {}
     RouteEdge(Edge<N, E>* e, Edge<N, E>* parent, Node<N, E>* n, C d)
         : e(e), parent(parent), d(d), n(n) {}
 
@@ -45,8 +47,9 @@ class EDijkstra : public ShortestPath<EDijkstra> {
 
   template <typename N, typename E, typename C>
   struct RouteEdgeInit {
-    RouteEdgeInit() : e(0), parent(0), d(), dwi(), n(0) {}
-    RouteEdgeInit(Edge<N, E>* e) : e(e), parent(0), d(), dwi(), n(0) {}
+    RouteEdgeInit() : e(nullptr), parent(nullptr), d(), dwi(), n(nullptr) {}
+    explicit RouteEdgeInit(Edge<N, E>* e)
+        : e(e), parent(nullptr), d(), dwi(), n(nullptr) {}
     RouteEdgeInit(Edge<N, E>* e, Edge<N, E>* parent, Node<N, E>* n, C d)
         : e(e), parent(parent), d(d), dwi(), n(n) {}
     RouteEdgeInit(Edge<N, E>* e, Edge<N, E>* parent, Node<N, E>* n, C d, C dwi)
@@ -67,7 +70,7 @@ class EDijkstra : public ShortestPath<EDijkstra> {
   template <typename N, typename E, typename C>
   struct RouteEdgeInitNoRes {
     RouteEdgeInitNoRes() : e(0), parent(0), d(), dwi() {}
-    RouteEdgeInitNoRes(Edge<N, E>* e) : e(e), parent(0), d(), dwi() {}
+    explicit RouteEdgeInitNoRes(Edge<N, E>* e) : e(e), parent(0), d(), dwi() {}
     RouteEdgeInitNoRes(Edge<N, E>* e, Edge<N, E>* parent, C d)
         : e(e), parent(parent), d(d), dwi() {}
     RouteEdgeInitNoRes(Edge<N, E>* e, Edge<N, E>* parent, C d, C dwi)

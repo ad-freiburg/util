@@ -6,6 +6,7 @@
 #define UTIL_GEO_POLYGON_H_
 
 #include <vector>
+
 #include "./Box.h"
 #include "./Line.h"
 #include "./Point.h"
@@ -16,10 +17,10 @@ namespace geo {
 template <typename T>
 class Polygon {
  public:
-  Polygon() {}
+  Polygon() = default;
 
-  Polygon(const Line<T>& l) : _outer(l) {}
-  Polygon(const Box<T>& b)
+  explicit Polygon(const Line<T>& l) : _outer(l) {}
+  explicit Polygon(const Box<T>& b)
       : _outer({b.getLowerLeft(),
                 Point<T>(b.getLowerLeft().getX(), b.getUpperRight().getY()),
                 b.getUpperRight(),

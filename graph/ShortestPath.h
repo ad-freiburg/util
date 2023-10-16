@@ -212,7 +212,7 @@ class ShortestPath {
     if (to->getInDeg() == 0) return costFunc.inf();
     std::set<Node<N, E>*> tos;
     tos.insert(to);
-    EList<N, E>* el = 0;
+    EList<N, E>* el = nullptr;
     return shortestPath(from, tos, costFunc, el, resNodes);
   }
 
@@ -459,8 +459,8 @@ class ShortestPath {
   template <typename N, typename E, typename C>
   static C shortestPath(Edge<N, E>* from, Edge<N, E>* to,
                         const CostFunc<N, E, C>& costFunc) {
-    NList<N, E>* nl = 0;
-    EList<N, E>* el = 0;
+    NList<N, E>* nl = nullptr;
+    EList<N, E>* el = nullptr;
     std::set<Edge<N, E>*> tos{to};
     std::set<Edge<N, E>*> froms{from};
     return D::shortestPathImpl(froms, tos, costFunc, ZeroHeurFunc<N, E, C>(),
@@ -471,8 +471,8 @@ class ShortestPath {
   static C shortestPath(Edge<N, E>* from, Edge<N, E>* to,
                         const CostFunc<N, E, C>& costFunc,
                         const HeurFunc<N, E, C>& heurFunc) {
-    NList<N, E>* nl = 0;
-    EList<N, E>* el = 0;
+    NList<N, E>* nl = nullptr;
+    EList<N, E>* el = nullptr;
     std::set<Edge<N, E>*> tos{to};
     std::set<Edge<N, E>*> froms{from};
     return D::shortestPathImpl(froms, tos, costFunc, heurFunc, el, nl);
