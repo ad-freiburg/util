@@ -118,15 +118,15 @@ class XmlWriter {
   int _gzfile;
 #endif
 
+#ifdef BZLIB_FOUND
   char* _bzbuf;
   size_t _bzbufpos = 0;
-#ifdef BZLIB_FOUND
   BZFILE* _bzfile;
+  FILE* _bzfhandle = nullptr;
 #else
   int _bzfile;
 #endif
 
-  FILE* _bzfhandle = nullptr;
 
   // handles indentation
   void doIndent();
