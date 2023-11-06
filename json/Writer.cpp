@@ -2,16 +2,19 @@
 // Chair of Algorithms and Data Structures.
 // Authors: Patrick Brosi <brosi@informatik.uni-freiburg.de>
 
+#include <stdint.h>
+
 #include <iomanip>
 #include <limits>
+
 #include "Writer.h"
 #include "util/String.h"
 using namespace util;
 using namespace json;
 
+using std::map;
 using std::ostream;
 using std::string;
-using std::map;
 
 // _____________________________________________________________________________
 Writer::Writer(std::ostream* out)

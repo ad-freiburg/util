@@ -5,6 +5,8 @@
 #ifndef UTIL_JSON_WRITER_H_
 #define UTIL_JSON_WRITER_H_
 
+#include <stdint.h>
+
 #include <map>
 #include <ostream>
 #include <stack>
