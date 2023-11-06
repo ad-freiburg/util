@@ -5,6 +5,8 @@
 #ifndef UTIL_STRING_H_
 #define UTIL_STRING_H_
 
+#include <stdint.h>
+
 #include <algorithm>
 #include <bitset>
 #include <cassert>
@@ -154,7 +156,6 @@ inline std::vector<std::string> split(std::string in, char sep, size_t n) {
 inline std::vector<std::string> split(std::string in, char sep) {
   return split(in, sep, -1);
 }
-
 
 // _____________________________________________________________________________
 inline std::string ltrim(std::string str, std::string c) {
