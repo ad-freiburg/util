@@ -10,6 +10,7 @@
 #include <netdb.h>
 #include <netinet/in.h>
 #include <netinet/tcp.h>
+#include <sys/socket.h>
 
 #include <algorithm>
 #include <csignal>
@@ -94,7 +95,8 @@ void HttpServer::send(int sock, Answer* aw) {
   size_t writes = 0;
 
   while (writes != buff.size()) {
-    int64_t out = write(sock, buff.c_str() + writes, buff.size() - writes);
+    int64_t out =
+        ::send(sock, buff.c_str() + writes, buff.size() - writes, MSG_NOSIGNAL);
     if (out < 0) {
       if (errno == EWOULDBLOCK || errno == EAGAIN || errno == EINTR) continue;
       throw std::runtime_error("Failed to write to socket");
@@ -356,8 +358,7 @@ void Queue::add(int c) {
 int Queue::get() {
   std::unique_lock<std::mutex> lock(_mut);
   // wait until a job arrives, but only block iff we do not have job
-  _hasNew.wait(
-      lock, [this] { return !_jobs.empty(); });
+  _hasNew.wait(lock, [this] { return !_jobs.empty(); });
   int next = _jobs.front();
   _jobs.pop();
   return next;
