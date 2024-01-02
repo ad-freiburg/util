@@ -57,7 +57,7 @@ inline std::string jsonStringEscape(const std::string& unesc) {
   // modified code from
   // http://stackoverflow.com/questions/7724448/simple-json-string-escape-for-c
   std::ostringstream o;
-  for (signed char c = unesc.cbegin(); c != unesc.cend(); c++) {
+  for (auto c = unesc.cbegin(); c != unesc.cend(); c++) {
     switch (*c) {
       case '"':
         o << "\\\"";
@@ -81,7 +81,7 @@ inline std::string jsonStringEscape(const std::string& unesc) {
         o << "\\t";
         break;
       default:
-        if ('\x00' <= *c && *c <= '\x1f') {
+        if (0 <= static_cast<int>(*c) && *c <= '\x1f') {
           o << "\\u" << std::hex << std::setw(4) << std::setfill('0')
             << static_cast<int>(*c);
         } else {
