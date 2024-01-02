@@ -81,7 +81,7 @@ inline std::string jsonStringEscape(const std::string& unesc) {
         o << "\\t";
         break;
       default:
-        if (0 <= static_cast<int>(*c) && *c <= '\x1f') {
+        if (0 <= static_cast<signed char>(*c) && *c <= '\x1f') {
           o << "\\u" << std::hex << std::setw(4) << std::setfill('0')
             << static_cast<int>(*c);
         } else {
