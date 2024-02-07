@@ -245,9 +245,10 @@ Req HttpServer::getReq(int connection) {
 
     rcvd += curRcvd;
 
-    // buffer is full
-    if (rcvd == BSIZE) throw HttpErr("431 Request Header Fields Too Large");
     if (brk) break;
+
+    // buffer is full and we are still in header
+    if (rcvd == BSIZE) throw HttpErr("431 Request Header Fields Too Large");
   }
 
   // POST payload
