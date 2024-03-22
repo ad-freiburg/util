@@ -101,6 +101,17 @@ inline Box<T> extendBox(const Point<T>& p, Box<T> b) {
   return b;
 }
 
+// _____________________________________________________________________________
+template <typename T>
+inline Box<T> extendBox(const Box<T>& a, Box<T> b) {
+  if (a.getLowerLeft().getX() > a.getUpperRight().getX()) return b;
+  if (a.getLowerLeft().getY() > a.getUpperRight().getY()) return b;
+
+  b = extendBox(a.getLowerLeft(), b);
+  b = extendBox(a.getUpperRight(), b);
+  return b;
+}
+
 }  // namespace geo
 }  // namespace util
 

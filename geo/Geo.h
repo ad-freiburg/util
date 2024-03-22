@@ -2347,28 +2347,6 @@ inline Polygon<T> buffer(const Polygon<T>& pol, double d, size_t points) {
 
 // _____________________________________________________________________________
 template <typename T>
-inline Box<T> extendBox(const Box<T>& a, Box<T> b) {
-  if (a.getLowerLeft().getX() > a.getUpperRight().getX()) return b;
-  if (a.getLowerLeft().getY() > a.getUpperRight().getY()) return b;
-
-  b = extendBox(a.getLowerLeft(), b);
-  b = extendBox(a.getUpperRight(), b);
-  return b;
-}
-
-// _____________________________________________________________________________
-template <typename T>
-inline Box<T> extendBox(const Point<T>& p, Box<T> b) {
-  if (p.getX() < b.getLowerLeft().getX()) b.getLowerLeft().setX(p.getX());
-  if (p.getY() < b.getLowerLeft().getY()) b.getLowerLeft().setY(p.getY());
-
-  if (p.getX() > b.getUpperRight().getX()) b.getUpperRight().setX(p.getX());
-  if (p.getY() > b.getUpperRight().getY()) b.getUpperRight().setY(p.getY());
-  return b;
-}
-
-// _____________________________________________________________________________
-template <typename T>
 inline Box<T> getBoundingBox(const Point<T>& p) {
   return Box<T>(p, p);
 }
@@ -2781,20 +2759,6 @@ template <typename T>
 inline double area(const Box<T>& b) {
   return (1.0 * b.getUpperRight().getX() - 1.0 * b.getLowerLeft().getX()) *
          (1.0 * b.getUpperRight().getY() - 1.0 * b.getLowerLeft().getY());
-}
-
-// _____________________________________________________________________________
-template <typename T>
-inline double area(const Polygon<T>& b) {
-  double ret = 0;
-  size_t j = b.getOuter().size() - 1;
-  for (size_t i = 0; i < b.getOuter().size(); i++) {
-    ret += (1.0 * b.getOuter()[j].getX() + 1.0 * b.getOuter()[i].getX()) *
-           (1.0 * b.getOuter()[j].getY() - 1.0 * b.getOuter()[i].getY());
-    j = i;
-  }
-
-  return fabs(ret / 2.0);
 }
 
 // _____________________________________________________________________________
