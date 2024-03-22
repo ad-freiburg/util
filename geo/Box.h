@@ -24,11 +24,13 @@ class Box {
   Point<T>& getLowerLeft() { return _ll; }
   Point<T>& getUpperRight() { return _ur; }
 
-  Point<T> getUpperLeft() { return {_ll.getX(), _ur.getY()}; }
-  Point<T> getLowerRight() { return {_ur.getX(), _ll.getY()}; }
+  Point<T> getUpperLeft() const { return {_ll.getX(), _ur.getY()}; }
+  Point<T> getLowerRight() const { return {_ur.getX(), _ll.getY()}; }
 
   void setLowerLeft(const Point<T>& ll) { _ll = ll; }
   void setUpperRight(const Point<T>& ur) { _ur = ur; }
+
+  void isNull() { return _ll.getX() > _ur.getX(); }
 
   bool operator==(const Box<T>& b) const {
     return getLowerLeft() == b.getLowerLeft() &&
@@ -87,6 +89,17 @@ class RotatedBox {
   double _deg;
   Point<T> _center;
 };
+
+// _____________________________________________________________________________
+template <typename T>
+inline Box<T> extendBox(const Point<T>& p, Box<T> b) {
+  if (p.getX() < b.getLowerLeft().getX()) b.getLowerLeft().setX(p.getX());
+  if (p.getY() < b.getLowerLeft().getY()) b.getLowerLeft().setY(p.getY());
+
+  if (p.getX() > b.getUpperRight().getX()) b.getUpperRight().setX(p.getX());
+  if (p.getY() > b.getUpperRight().getY()) b.getUpperRight().setY(p.getY());
+  return b;
+}
 
 }  // namespace geo
 }  // namespace util

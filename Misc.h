@@ -9,26 +9,36 @@
 #include <cstring>
 #include <chrono>
 #include <sstream>
+#include <stdio.h>
+#include <cstdio>
+#include <unistd.h>
+#include <cstdlib>
 #include <iomanip>
+#include <immintrin.h>
 #include <iostream>
 #include <sstream>
 #include <vector>
+#include <queue>
 #include <unistd.h>
 #include <sys/types.h>
+#include <fcntl.h>
 #include <pwd.h>
 #include <map>
 #include <thread>
+#include "String.h"
 #include "3rdparty/dtoa_milo.h"
-#include "util/String.h"
+
+static const size_t SORT_BUFFER_S = 64 * 128 * 1024;
 
 #define UNUSED(expr) do { (void)(expr); } while (0)
 #define TIME() std::chrono::high_resolution_clock::now()
-#define TOOK(t1, t2) (std::chrono::duration_cast<std::chrono::microseconds>(t2 - t1).count() / 1000.0)
+#define TOOK_UNTIL(t1, t2) (std::chrono::duration_cast<std::chrono::nanoseconds>(t2 - t1).count())
+#define TOOK(t1) (std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::high_resolution_clock::now() - t1).count())
 #define T_START(n)  auto _tstart_##n = std::chrono::high_resolution_clock::now()
-#define T_STOP(n) (std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now() - _tstart_##n).count() / 1000.0)
+#define T_STOP(n) (std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::high_resolution_clock::now() - _tstart_##n).count())
 
 #define _TEST3(s, o, e) if (!(s o e)) {  std::cerr << "\n" << __FILE__ << ":" << __LINE__ << ": Test failed!\n  Expected " << #s << " " << #o " " << (e) << ", got " << (s) << std::endl;  exit(1);}
-#define _TEST2(s, e) _TEST3(s, ==, e)
+#define _TEST2(s, e) _TEST3(s, ==, o)
 #define _TEST1(s) _TEST3(static_cast<bool>(s), ==, true)
 
 #define _GET_TEST_MACRO(_1,_2,_3,NAME,...) NAME
@@ -285,6 +295,8 @@ inline std::string formatFloat(double f, size_t digits) {
 inline double atof(const char* p, uint8_t mn) {
   // this atof implementation works only on "normal" float strings like
   // 56.445 or -345.00, but should be faster than std::atof
+  while (*p && isspace(*p)) p++;
+
   double ret = 0.0;
   bool neg = false;
   if (*p == '-') {
@@ -555,6 +567,89 @@ inline char* readableSize(double size, size_t n, char* buf) {
 inline std::string readableSize(double size) {
   char buffer[30];
   return readableSize(size, 30, buffer);
+}
+
+// _____________________________________________________________________________
+inline void externalSort(int file, int newFile, size_t size, size_t numobjs,
+                        int (*cmpf)(const void*, const void*)) {
+  // sort a file via an external sort
+
+  size_t fsize = size * numobjs;
+
+  size_t bufferSize = SORT_BUFFER_S * size;
+
+  size_t parts = fsize / bufferSize + 1;
+  size_t partsBufSize = ((bufferSize / size) / parts + 1) * size;
+  unsigned char* buf = new unsigned char[bufferSize];
+  unsigned char** partbufs = new unsigned char*[parts];
+  size_t* partpos = new size_t[parts];
+  size_t* partsize = new size_t[parts];
+
+  auto pqComp = [cmpf](const std::pair<const void*, size_t>& a,
+                       const std::pair<const void*, size_t>& b) {
+    return cmpf(a.first, b.first) != -1;
+  };
+  std::priority_queue<std::pair<const void*, size_t>,
+                      std::vector<std::pair<const void*, size_t>>,
+                      decltype(pqComp)>
+      pq(pqComp);
+
+  // sort the 'parts' number of file parts independently
+  for (size_t i = 0; i < parts; i++) {
+    partbufs[i] = new unsigned char[partsBufSize];
+    partpos[i] = 0;
+    partsize[i] = 0;
+    lseek(file, bufferSize * i, SEEK_SET);
+    ssize_t n = read(file, buf, bufferSize);
+    if (n < 0) continue;
+    qsort(buf, n / size, size, cmpf);
+    lseek(file, bufferSize * i, SEEK_SET);
+    write(file, buf, n);
+
+    memcpy(partbufs[i], buf, std::min<size_t>(n, partsBufSize));
+    partsize[i] = n;
+  }
+
+  for (size_t j = 0; j < parts; j++) {
+    if (partpos[j] == partsize[j]) continue;  // bucket already empty
+    pq.push({&partbufs[j][partpos[j] % partsBufSize], j});
+  }
+
+  for (size_t i = 0; i < fsize; i += size) {
+    auto top = pq.top();
+    pq.pop();
+
+    const void* smallest = top.first;
+    ssize_t smallestP = top.second;
+
+    memcpy(buf + (i % bufferSize), smallest, size);
+
+    if ((i % bufferSize) == bufferSize - size || i == fsize - size) {
+      // write to output file
+      write(newFile, buf, i % bufferSize + size);
+    }
+
+    partpos[smallestP] += size;
+
+    if (partpos[smallestP] % partsBufSize == 0) {
+      lseek(file, bufferSize * smallestP + partpos[smallestP], SEEK_SET);
+      read(file, partbufs[smallestP], partsBufSize);
+    }
+    pq.push(
+        {&partbufs[smallestP][partpos[smallestP] % partsBufSize], smallestP});
+  }
+
+  // cleanup
+  delete[] buf;
+  for (size_t j = 0; j < parts; j++) delete[] partbufs[j];
+  delete[] partbufs;
+  delete[] partpos;
+  delete[] partsize;
+}
+
+// _____________________________________________________________________________
+inline float f_rsqrt(float x) {
+  return _mm_cvtss_f32(_mm_rsqrt_ss(_mm_set_ss(x)));
 }
 
 // _____________________________________________________________________________

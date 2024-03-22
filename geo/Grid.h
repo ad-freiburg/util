@@ -90,9 +90,8 @@ class Grid {
   void get(const std::vector<GG<T>>& geom, double d, std::set<V>* s) const;
 
   void get(size_t x, size_t y, std::set<V>* s) const;
-  void remove(V val);
-
   const std::set<V>& getCell(size_t x, size_t y) const;
+  void remove(V val);
 
   void getNeighbors(const V& val, double d, std::set<V>* s) const;
   void getCellNeighbors(const V& val, size_t d, std::set<V>* s) const;
@@ -108,6 +107,7 @@ class Grid {
   size_t getCellYFromY(double lat) const;
 
   Box<T> getBox(size_t x, size_t y) const;
+
   Box<T> getBBox() const { return _bb; };
 
  private:

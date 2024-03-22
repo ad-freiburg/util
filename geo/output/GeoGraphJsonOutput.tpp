@@ -22,7 +22,7 @@ void GeoGraphJsonOutput::print(const util::graph::Graph<N, E>& outG,
 // _____________________________________________________________________________
 template <typename N, typename E>
 void GeoGraphJsonOutput::printLatLng(const util::graph::Graph<N, E>& outG,
-                                     std::ostream& str) {
+                               std::ostream& str) {
   printImpl(outG, str, true, {});
 }
 
@@ -36,7 +36,7 @@ void GeoGraphJsonOutput::print(const util::graph::Graph<N, E>& outG,
 // _____________________________________________________________________________
 template <typename N, typename E>
 void GeoGraphJsonOutput::printLatLng(const util::graph::Graph<N, E>& outG,
-                                     std::ostream& str, json::Val attrs) {
+                               std::ostream& str, json::Val attrs) {
   printImpl(outG, str, true, attrs);
 }
 

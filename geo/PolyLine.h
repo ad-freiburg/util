@@ -6,11 +6,12 @@
 #define UTIL_GEO_POLYLINE_H_
 
 #include <cfloat>
-#include <ostream>
 #include <iomanip>
-#include <string>
+#include <ostream>
 #include <set>
+#include <string>
 #include <vector>
+
 #include "Geo.h"
 
 namespace util {
@@ -37,7 +38,6 @@ struct LinePointCmp {
     return lh.totalPos < rh.totalPos;
   }
 };
-
 
 template <typename T>
 using LinePointPair = std::pair<LinePoint<T>, LinePoint<T>>;
@@ -96,14 +96,16 @@ class PolyLine {
 
   PolyLine<T> getSegment(double a, double b) const;
   PolyLine<T> getSegmentAtDist(double dista, double distb) const;
-  PolyLine<T> getSegment(const LinePoint<T>& start, const LinePoint<T>& end) const;
+  PolyLine<T> getSegment(const LinePoint<T>& start,
+                         const LinePoint<T>& end) const;
   PolyLine<T> getSegment(const Point<T>& a, const Point<T>& b) const;
 
-  std::set<LinePoint<T>, LinePointCmp<T>> getIntersections(const PolyLine<T>& g) const;
+  std::set<LinePoint<T>, LinePointCmp<T>> getIntersections(
+      const PolyLine<T>& g) const;
 
   static PolyLine<T> average(const std::vector<const PolyLine<T>*>& lines);
   static PolyLine<T> average(const std::vector<const PolyLine<T>*>& lines,
-                          const std::vector<double>& weights);
+                             const std::vector<double>& weights);
 
   void simplify(double d);
   void empty();
@@ -144,7 +146,8 @@ class PolyLine {
 
  private:
   std::set<LinePoint<T>, LinePointCmp<T>> getIntersections(const PolyLine& p,
-                                                     size_t a, size_t b) const;
+                                                           size_t a,
+                                                           size_t b) const;
   Line<T> _line;
 };
 
