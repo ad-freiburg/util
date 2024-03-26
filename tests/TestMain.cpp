@@ -36,6 +36,59 @@ int main(int argc, char** argv) {
   quadTreeTest.run();
 
   {
+    auto a = lineFromWKT<int>("LINESTRING(1 1, 2 1, 3 1)");
+    auto b = lineFromWKT<int>("LINESTRING(2 0, 2 1, 2 2)");
+    auto c = lineFromWKT<int>("LINESTRING(1 0, 2 1, 3 2)");
+
+    TEST(intersects(a, b));
+    TEST(intersects(a, c));
+  }
+
+  {
+    TEST(intersects(LineSegment<double>{{2, 1}, {3, 1}}, LineSegment<double>{{2, 0}, {2, 1}}));
+    TEST(intersects(LineSegment<double>{{2, 0}, {2, 1}}, LineSegment<double>{{2, 1}, {3, 1}}));
+
+    auto ls1 = LineSegment<int>{{2, 0}, {2, 1}};
+    auto ls2 = LineSegment<int>{{2, 1}, {2, 2}};
+    TEST(intersects(ls1, ls2));
+
+    {
+    auto ls1 = LineSegment<int>{{2, 0}, {2, 2}};
+    auto ls2 = LineSegment<int>{{2, 1}, {2, 2}};
+    TEST(!intersects(ls1, ls2));
+    TEST(!intersects(ls2, ls1));
+    }
+
+    {
+    auto ls1 = LineSegment<int>{{2, 2}, {2, 0}};
+    auto ls2 = LineSegment<int>{{2, 1}, {2, 2}};
+    TEST(!intersects(ls1, ls2));
+    TEST(!intersects(ls2, ls1));
+    }
+
+    {
+    auto ls1 = LineSegment<int>{{2, 2}, {2, 0}};
+    auto ls2 = LineSegment<int>{{2, 2}, {2, 1}};
+    TEST(!intersects(ls1, ls2));
+    TEST(!intersects(ls2, ls1));
+    }
+
+    {
+    auto ls1 = LineSegment<int>{{2, 0}, {2, 2}};
+    auto ls2 = LineSegment<int>{{2, 2}, {2, 1}};
+    TEST(!intersects(ls1, ls2));
+    TEST(!intersects(ls2, ls1));
+    }
+
+    {
+    auto ls1 = LineSegment<int>{{2, 0}, {2, 2}};
+    auto ls2 = LineSegment<int>{{2, 2}, {2, 1}};
+    TEST(!intersects(ls1, ls2));
+    TEST(!intersects(ls2, ls1));
+    }
+  }
+
+  {
     auto a = lineFromWKT<double>("LINESTRING(5.816117 51.1096889,5.8162167 51.1091479)");
     auto b = lineFromWKT<double>("LINESTRING(5.8099984 51.1096468,5.8288865 51.1070398)");
 
@@ -118,9 +171,9 @@ int main(int argc, char** argv) {
     TEST(!geo::intersects(spoly4.getOuter(), spoly3.getOuter()));
     TEST(!geo::intersects(spoly3.getOuter(), spoly4.getOuter()));
 
-    // 1 does not intersect in 4
-    TEST(!geo::intersects(spoly4.getOuter(), spoly1.getOuter()));
-    TEST(!geo::intersects(spoly1.getOuter(), spoly4.getOuter()));
+    // 1 does intersect in 4
+    TEST(geo::intersects(spoly4.getOuter(), spoly1.getOuter()));
+    TEST(geo::intersects(spoly1.getOuter(), spoly4.getOuter()));
 
     // 2 does not intersect in 3
     TEST(!geo::intersects(spoly3.getOuter(), spoly2.getOuter()));
@@ -167,12 +220,12 @@ int main(int argc, char** argv) {
     TEST(!geo::intersects(spoly4.getOuter(), spoly3.getOuter(), spoly4.getOuter().getMaxSegLen(), spoly3.getOuter().getMaxSegLen(), util::geo::getBoundingBox(poly4), util::geo::getBoundingBox(poly3)));
     TEST(!geo::intersects(spoly3.getOuter(), spoly4.getOuter(), spoly3.getOuter().getMaxSegLen(), spoly4.getOuter().getMaxSegLen(), util::geo::getBoundingBox(poly3), util::geo::getBoundingBox(poly4)));
 
-    // 1 does not intersect in 4
-    TEST(!geo::intersects(spoly4.getOuter(), spoly1.getOuter(), spoly4.getOuter().getMaxSegLen(), spoly1.getOuter().getMaxSegLen()));
-    TEST(!geo::intersects(spoly1.getOuter(), spoly4.getOuter(), spoly1.getOuter().getMaxSegLen(), spoly4.getOuter().getMaxSegLen()));
+    // 1 does intersect 4
+    TEST(geo::intersects(spoly4.getOuter(), spoly1.getOuter(), spoly4.getOuter().getMaxSegLen(), spoly1.getOuter().getMaxSegLen()));
+    TEST(geo::intersects(spoly1.getOuter(), spoly4.getOuter(), spoly1.getOuter().getMaxSegLen(), spoly4.getOuter().getMaxSegLen()));
 
-    TEST(!geo::intersects(spoly4.getOuter(), spoly1.getOuter(), spoly4.getOuter().getMaxSegLen(), spoly1.getOuter().getMaxSegLen(), util::geo::getBoundingBox(poly4), util::geo::getBoundingBox(poly1)));
-    TEST(!geo::intersects(spoly1.getOuter(), spoly4.getOuter(), spoly1.getOuter().getMaxSegLen(), spoly4.getOuter().getMaxSegLen(), util::geo::getBoundingBox(poly1), util::geo::getBoundingBox(poly4)));
+    TEST(geo::intersects(spoly4.getOuter(), spoly1.getOuter(), spoly4.getOuter().getMaxSegLen(), spoly1.getOuter().getMaxSegLen(), util::geo::getBoundingBox(poly4), util::geo::getBoundingBox(poly1)));
+    TEST(geo::intersects(spoly1.getOuter(), spoly4.getOuter(), spoly1.getOuter().getMaxSegLen(), spoly4.getOuter().getMaxSegLen(), util::geo::getBoundingBox(poly1), util::geo::getBoundingBox(poly4)));
 
     // 2 does not intersect in 3
     TEST(!geo::intersects(spoly3.getOuter(), spoly2.getOuter(), spoly3.getOuter().getMaxSegLen(), spoly2.getOuter().getMaxSegLen()));
@@ -424,11 +477,11 @@ int main(int argc, char** argv) {
     }
 
     {
-    auto a = polygonFromWKT<int>("POLYGON((0 0, 10 0, 10 10, 0 10, 0 0), (4 4, 5 4, 4 5, 4 4))");
-    auto b = polygonFromWKT<int>("POLYGON((4.1 4.1, 5 4, 5 5, 4 5, 4 4))");
+    auto a = polygonFromWKT<double>("POLYGON((0 0, 10 0, 10 10, 0 10, 0 0), (4 4, 5 4, 4 5, 4 4))");
+    auto b = polygonFromWKT<double>("POLYGON((4.1 4.1, 5 4, 5 5, 4 5, 4 4))");
 
-    XSortedPolygon<int> ax(a);
-    XSortedPolygon<int> bx(b);
+    XSortedPolygon<double> ax(a);
+    XSortedPolygon<double> bx(b);
 
     TEST(!geo::intersects(ax.getOuter(), bx.getOuter()));
     TEST(!geo::contains(b, a));
@@ -681,6 +734,15 @@ int main(int argc, char** argv) {
 
     auto g = lineFromWKT<double>("LINESTRING(7.7474260 48.0315058,7.7471089 48.0313495,7.7469772 48.0312969,7.7468330 48.0312542,7.7465918 48.0312217,7.7461004 48.0311654,7.7448848 48.0310228,7.7447654 48.0310061,7.7438386 48.0308847,7.7422778 48.0306987,7.7418575 48.0306491,7.7416456 48.0306305,7.7414244 48.0307030,7.7410954 48.0308640,7.7403929 48.0311892,7.7395434 48.0314729,7.7392033 48.0311807,7.7388704 48.0308606,7.7387041 48.0307871,7.7385780 48.0307297,7.7384841 48.0306705,7.7382950 48.0305189)");
 
+    auto h = lineFromWKT<double>("LINESTRING(7.8611490 48.0350899,7.8610981 48.0354034)");
+    auto i = lineFromWKT<double>("LINESTRING(7.8610981 48.0354034,7.8611490 48.0350899)");
+    auto j = lineFromWKT<double>("LINESTRING(7.7949064 48.0515028,7.7950654 48.0514134)");
+    auto k = lineFromWKT<double>("LINESTRING(7.7926580 48.0441910,7.7933142 48.0437798)");
+
+    auto l = polygonFromWKT<double>("POLYGON((7.7170976 47.9707616,7.7176400 47.9707860,7.7176870 47.9708010,7.7177192 47.9708165,7.7177477 47.9708401,7.7177718 47.9708708,7.7182764 47.9717040,7.7183669 47.9717781,7.7184688 47.9718850,7.7186096 47.9720003,7.7187458 47.9720986,7.7188249 47.9721489,7.7188852 47.9721750,7.7189583 47.9721880,7.7190247 47.9721808,7.7191092 47.9721633,7.7191434 47.9721287,7.7196570 47.9717736,7.7197355 47.9717171,7.7197891 47.9717413,7.7200808 47.9718921,7.7203209 47.9720196,7.7205911 47.9721575,7.7208788 47.9722858,7.7215165 47.9724573,7.7218833 47.9725397,7.7221254 47.9725826,7.7222648 47.9725925,7.7219733 47.9724266,7.7196336 47.9710769,7.7190920 47.9707582,7.7187616 47.9705639,7.7172316 47.9696637,7.7170976 47.9707616))");
+
+    auto m = lineFromWKT<double>("LINESTRING(7.6836484 47.9621916,7.6836785 47.9622837,7.6842552 47.9631705,7.6842821 47.9631893,7.6843223 47.9631965,7.6846603 47.9630780,7.6850545 47.9629828,7.6853078 47.9629364,7.6858791 47.9628997,7.6861057 47.9628981,7.6864851 47.9629446,7.6869630 47.9630323,7.6872101 47.9631002,7.6877307 47.9632756,7.6880211 47.9633735,7.6883685 47.9634665)");
+
     TEST(geo::intersects(a, b));
     TEST(geo::intersects(b, a));
     TEST(!geo::contains(a, b));
@@ -702,6 +764,11 @@ int main(int argc, char** argv) {
     for (const auto& p : b.getOuter()) {
       auto pp = latLngToWebMerc(p);
       bpi.getOuter().push_back({pp.getX() * 10, pp.getY() * 10});
+    }
+    Polygon<int> lpi;
+    for (const auto& p : l.getOuter()) {
+      auto pp = latLngToWebMerc(p);
+      lpi.getOuter().push_back({pp.getX() * 10, pp.getY() * 10});
     }
     Line<int> cpi;
     for (const auto& p : c) {
@@ -728,6 +795,31 @@ int main(int argc, char** argv) {
       auto pp = latLngToWebMerc(p);
       gpi.push_back({pp.getX() * 10, pp.getY() * 10});
     }
+    Line<int> hpi;
+    for (const auto& p : h) {
+      auto pp = latLngToWebMerc(p);
+      hpi.push_back({pp.getX() * 10, pp.getY() * 10});
+    }
+    Line<int> ipi;
+    for (const auto& p : i) {
+      auto pp = latLngToWebMerc(p);
+      ipi.push_back({pp.getX() * 10, pp.getY() * 10});
+    }
+    Line<int> jpi;
+    for (const auto& p : j) {
+      auto pp = latLngToWebMerc(p);
+      jpi.push_back({pp.getX() * 10, pp.getY() * 10});
+    }
+    Line<int> kpi;
+    for (const auto& p : k) {
+      auto pp = latLngToWebMerc(p);
+      kpi.push_back({pp.getX() * 10, pp.getY() * 10});
+    }
+    Line<int> mpi;
+    for (const auto& p : m) {
+      auto pp = latLngToWebMerc(p);
+      mpi.push_back({pp.getX() * 10, pp.getY() * 10});
+    }
     XSortedLine<int> axi(api);
     XSortedPolygon<int> bxi(bpi);
     XSortedLine<int> cxi(cpi);
@@ -735,12 +827,28 @@ int main(int argc, char** argv) {
     XSortedLine<int> exi(epi);
     XSortedLine<int> fxi(fpi);
     XSortedLine<int> gxi(gpi);
+    XSortedLine<int> hxi(hpi);
+    XSortedLine<int> ixi(ipi);
+    XSortedLine<int> jxi(jpi);
+    XSortedLine<int> kxi(kpi);
+    XSortedLine<int> mxi(mpi);
+
+    XSortedPolygon<int> lxi(lpi);
 
     TEST(!geo::intersectsContains(cxi, bxi).second);
     TEST(!geo::intersectsContains(dxi, bxi).second);
     TEST(!geo::intersectsContains(exi, bxi).second);
     TEST(geo::intersectsContains(fxi, bxi).first);
     TEST(!geo::intersectsContains(gxi, bxi).second);
+
+    TEST(!geo::intersectsContains(hxi, bxi).second);
+    TEST(!geo::intersectsContains(ixi, bxi).second);
+    TEST(!geo::intersectsContains(jxi, bxi).second);
+    TEST(!geo::intersectsContains(kxi, bxi).second);
+
+    TEST(!geo::intersectsContains(lxi, bxi).second);
+
+    TEST(!geo::intersectsContains(mxi, bxi).second);
 
     TEST(geo::intersectsContains(axi, bxi).first);
     TEST(!geo::intersectsContains(axi, bxi).second);

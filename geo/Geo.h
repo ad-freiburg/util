@@ -679,7 +679,6 @@ inline bool intersects(const std::vector<XSortedTuple<T>>& ls1,
                        double maxSegLenA, double maxSegLenB, const Box<T>& boxA,
                        const Box<T>& boxB, size_t* firstRelIn1,
                        size_t* firstRelIn2) {
-
   if (ls1.size() == 0 || ls2.size() == 0) return false;
 
   // shortcuts
@@ -897,8 +896,24 @@ inline bool intersects(const LineSegment<T>& ls1, const LineSegment<T>& ls2) {
   // the segments have infinite intersections. We handle this case as non-
   // intersecting
   return intersects(getBoundingBox(ls1), getBoundingBox(ls2)) &&
-         (((contains(ls1.first, ls2) ^ contains(ls1.second, ls2)) ^
-           (contains(ls2.first, ls1) ^ contains(ls2.second, ls1))) ||
+         ((dist(ls1.first, ls2.first) < EPSILON && !contains(ls1.second, ls2) &&
+           !contains(ls2.second, ls1)) ||
+          (dist(ls1.second, ls2.first) < EPSILON && !contains(ls1.first, ls2) &&
+           !contains(ls2.second, ls1)) ||
+          (dist(ls1.second, ls2.second) < EPSILON &&
+           !contains(ls1.first, ls2) && !contains(ls2.first, ls1)) ||
+          (dist(ls1.first, ls2.first) < EPSILON && !contains(ls1.second, ls2) &&
+           !contains(ls2.second, ls1)) ||
+
+          (contains(ls1.first, ls2) && !contains(ls1.second, ls2) &&
+           !contains(ls2.first, ls1) && !contains(ls2.second, ls1)) ||
+          (contains(ls1.second, ls2) && !contains(ls1.first, ls2) &&
+           !contains(ls2.first, ls1) && !contains(ls2.second, ls1)) ||
+          (contains(ls2.first, ls1) && !contains(ls1.second, ls2) &&
+           !contains(ls1.first, ls2) && !contains(ls2.second, ls1)) ||
+          (contains(ls2.second, ls1) && !contains(ls2.first, ls1) &&
+           !contains(ls1.first, ls2) && !contains(ls1.second, ls2)) ||
+
           (((crossProd(ls1.first, ls2) < 0) ^
             (crossProd(ls1.second, ls2) < 0)) &&
            ((crossProd(ls2.first, ls1) < 0) ^
@@ -1122,6 +1137,9 @@ inline std::pair<bool, bool> intersectsContains(
     // intersects
     return {true, false};
   }
+
+  std::cout << a.rawLine().front().seg().second.getX() << ", "
+            << a.rawLine().front().seg().second.getY() << std::endl;
 
   if (util::geo::ringContains(a.rawLine().front().seg().second, b, firstRel2)) {
     // intersects + contains
@@ -1373,7 +1391,12 @@ inline std::pair<bool, bool> intersectsContains(
     return {true, false};
   }
 
-  if (util::geo::contains(a.rawLine().front().seg().second, b, firstRel2)) {
+  auto testPoint = a.rawLine().front().seg().second;
+
+  // special case of a single line segment: it is crucial here to select
+  // if (a.rawLine().size() == 2) testPoint = a.rawLine().front().seg().first;
+
+  if (util::geo::contains(testPoint, b, firstRel2)) {
     // a is inside the outer of B
 
     // check inner polygons
@@ -1416,11 +1439,14 @@ inline std::pair<bool, bool> intersectsContains(
       size_t i =
           std::lower_bound(
               b.getInnerBoxIdx().begin(), b.getInnerBoxIdx().end(),
-              std::pair<T, size_t>{boxA.getLowerLeft().getX() - b.getInnerMaxSegLen(), 0}) -
+              std::pair<T, size_t>{
+                  boxA.getLowerLeft().getX() - b.getInnerMaxSegLen(), 0}) -
           b.getInnerBoxIdx().begin();
 
       for (; i < b.getInners().size(); i++) {
-        if (b.getInnerBoxes()[i].getLowerLeft().getX() > boxA.getLowerLeft().getX()) break;
+        if (b.getInnerBoxes()[i].getLowerLeft().getX() >
+            boxA.getLowerLeft().getX())
+          break;
         if (!util::geo::intersects(boxA, b.getInnerBoxes()[i])) continue;
 
         auto res = intersectsContains(a, b.getInners()[i]);
@@ -1478,15 +1504,14 @@ inline Point<T> intersection(const LineSegment<T>& s1,
 // _____________________________________________________________________________
 template <typename T>
 inline std::vector<Point<T>> intersection(const Line<T>& l1,
-                             const Line<T>& l2) {
-
+                                          const Line<T>& l2) {
   std::vector<Point<T>> ret;
 
   // TODO: better implementation than this naive baseline
   for (size_t i = 1; i < l1.size(); i++) {
     for (size_t j = 1; j < l2.size(); j++) {
-      LineSegment<T> a = {l1[i-1], l1[i]};
-      LineSegment<T> b = {l2[j-1], l2[j]};
+      LineSegment<T> a = {l1[i - 1], l1[i]};
+      LineSegment<T> b = {l2[j - 1], l2[j]};
       if (intersects(a, b)) ret.push_back(intersection(a, b));
     }
   }
@@ -2501,10 +2526,15 @@ inline Polygon<T> convexHull(const MultiPoint<T>& l) {
   if (l.size() == 1) return convexHull(l[0]);
 
   Point<T> left(std::numeric_limits<T>::max(), std::numeric_limits<T>::max());
-  Point<T> right(std::numeric_limits<T>::lowest(), std::numeric_limits<T>::lowest());
+  Point<T> right(std::numeric_limits<T>::lowest(),
+                 std::numeric_limits<T>::lowest());
   for (const auto& p : l) {
-    if (p.getX() < left.getX() || (p.getX() == left.getX() && p.getY() < left.getY())) left = p;
-    if (p.getX() > right.getX() || (p.getX() == right.getX() && p.getY() > right.getY())) right = p;
+    if (p.getX() < left.getX() ||
+        (p.getX() == left.getX() && p.getY() < left.getY()))
+      left = p;
+    if (p.getX() > right.getX() ||
+        (p.getX() == right.getX() && p.getY() > right.getY()))
+      right = p;
   }
 
   Line<T> hull{left, right};
