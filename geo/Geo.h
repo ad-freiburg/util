@@ -678,7 +678,7 @@ inline bool intersects(const std::vector<XSortedTuple<T>>& ls1,
                        const std::vector<XSortedTuple<T>>& ls2,
                        double maxSegLenA, double maxSegLenB, const Box<T>& boxA,
                        const Box<T>& boxB, size_t* firstRelIn1,
-                       size_t* firstRelIn2) {
+                       size_t* firstRelIn2, size_t* lineSegChecks) {
   if (ls1.size() == 0 || ls2.size() == 0) return false;
 
   // shortcuts
@@ -733,11 +733,14 @@ inline bool intersects(const std::vector<XSortedTuple<T>>& ls1,
       if (!ls1[i].out()) {
         auto above = active2.lower_bound(ls1[i].seg());
 
-        if (above != active2.end() && intersects(ls1[i].seg(), *above))
-          return true;
-        if (above != active2.begin() &&
-            intersects(ls1[i].seg(), *(std::prev(above))))
-          return true;
+        if (above != active2.end()) {
+          if (lineSegChecks) (*lineSegChecks)++;
+          if (intersects(ls1[i].seg(), *above)) return true;
+        }
+        if (above != active2.begin()) {
+          if (lineSegChecks) (*lineSegChecks)++;
+          if (intersects(ls1[i].seg(), *(std::prev(above)))) return true;
+        }
 
         active1.insert(ls1[i].seg());
       } else {
@@ -745,14 +748,16 @@ inline bool intersects(const std::vector<XSortedTuple<T>>& ls1,
         if (toDel != active1.end()) {
           auto above = active2.lower_bound(ls1[i].seg());
           auto a = toDel;
-          if (above != active2.end() && a != active1.begin() &&
-              intersects(*above, *(std::prev(a))))
-            return true;
+          if (above != active2.end() && a != active1.begin()) {
+            if (lineSegChecks) (*lineSegChecks)++;
+            if (intersects(*above, *(std::prev(a)))) return true;
+          }
 
           toDel++;
-          if (toDel != active1.end() && above != active2.begin() &&
-              intersects(*(std::prev(above)), *toDel))
-            return true;
+          if (toDel != active1.end() && above != active2.begin()) {
+            if (lineSegChecks) (*lineSegChecks)++;
+            if (intersects(*(std::prev(above)), *toDel)) return true;
+          }
 
           active1.erase(std::prev(toDel));
         }
@@ -781,12 +786,15 @@ inline bool intersects(const std::vector<XSortedTuple<T>>& ls1,
 
       if (!ls2[j].out()) {
         auto above = active1.lower_bound(ls2[j].seg());
-        if (above != active1.end() && intersects(ls2[j].seg(), *above))
-          return true;
+        if (above != active1.end()) {
+          if (lineSegChecks) (*lineSegChecks)++;
+          if (intersects(ls2[j].seg(), *above)) return true;
+        }
 
-        if (above != active1.begin() &&
-            intersects(ls2[j].seg(), *(std::prev(above))))
-          return true;
+        if (above != active1.begin()) {
+          if (lineSegChecks) (*lineSegChecks)++;
+          if (intersects(ls2[j].seg(), *(std::prev(above)))) return true;
+        }
 
         active2.insert(ls2[j].seg());
       } else {
@@ -794,14 +802,16 @@ inline bool intersects(const std::vector<XSortedTuple<T>>& ls1,
         if (toDel != active2.end()) {
           auto above = active1.lower_bound(ls2[j].seg());
           auto a = toDel;
-          if (above != active1.end() && a != active2.begin() &&
-              intersects(*above, *(std::prev(a))))
-            return true;
+          if (above != active1.end() && a != active2.begin()) {
+            if (lineSegChecks) (*lineSegChecks)++;
+            if (intersects(*above, *(std::prev(a)))) return true;
+          }
 
           toDel++;
-          if (toDel != active2.end() && above != active1.begin() &&
-              intersects(*(std::prev(above)), *toDel))
-            return true;
+          if (toDel != active2.end() && above != active1.begin()) {
+            if (lineSegChecks) (*lineSegChecks)++;
+            if (intersects(*(std::prev(above)), *toDel)) return true;
+          }
 
           active2.erase(std::prev(toDel));
         }
@@ -812,6 +822,17 @@ inline bool intersects(const std::vector<XSortedTuple<T>>& ls1,
   }
 
   return false;
+}
+
+// _____________________________________________________________________________
+template <typename T>
+inline bool intersects(const std::vector<XSortedTuple<T>>& ls1,
+                       const std::vector<XSortedTuple<T>>& ls2,
+                       double maxSegLenA, double maxSegLenB, const Box<T>& boxA,
+                       const Box<T>& boxB, size_t* firstRelIn1,
+                       size_t* firstRelIn2) {
+  return intersects(ls1, ls2, maxSegLenA, maxSegLenB, boxA, boxB, firstRelIn1,
+                    firstRelIn2, 0);
 }
 
 // _____________________________________________________________________________
@@ -1137,9 +1158,6 @@ inline std::pair<bool, bool> intersectsContains(
     // intersects
     return {true, false};
   }
-
-  std::cout << a.rawLine().front().seg().second.getX() << ", "
-            << a.rawLine().front().seg().second.getY() << std::endl;
 
   if (util::geo::ringContains(a.rawLine().front().seg().second, b, firstRel2)) {
     // intersects + contains
