@@ -714,7 +714,7 @@ inline bool intersects(const std::vector<XSortedTuple<T>>& ls1,
          (!ls1[i].out() || ls2[j].out()))) {
       // advance ls1
 
-      // we are past ls2, so simple return false (active2 is guaranteed to be
+      // we are past ls2, so simply return false (active2 is guaranteed to be
       // empty!)
       if (ls1[i].p.getX() > ls2.back().p.getX()) return false;
 

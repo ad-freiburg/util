@@ -36,6 +36,49 @@ int main(int argc, char** argv) {
   quadTreeTest.run();
 
   {
+    TEST(LineSegment<int>({1, 1}, {2, 1}) < LineSegment<int>({1, 2}, {2, 2}));
+    TEST(LineSegment<int>({10000, 10000}, {20000, 10000}) < LineSegment<int>({10000, 20000}, {20000, 20000}));
+    TEST(LineSegment<double>({1000000, 1000000}, {2000000, 1000000}) < LineSegment<double>({1000000, 2000000}, {2000000, 2000000}));
+    TEST(LineSegment<int>({1000000, 1000000}, {2000000, 1000000}) < LineSegment<int>({1000000, 2000000}, {2000000, 2000000}));
+  }
+
+  {
+    auto a = lineFromWKT<int>("LINESTRING(8335603 60914025, 8736353 60914025)");
+    auto b = lineFromWKT<int>("LINESTRING(8440562 60918151, 8441122 60913050)");
+
+    auto c = lineFromWKT<int>("LINESTRING(8335603 60593425, 8736353 60593425)");
+
+    TEST(LineSegment<int>(b[0], b[1]) > LineSegment<int>(a[0], a[1]));
+    TEST(LineSegment<int>(b[0], b[1]) > LineSegment<int>(c[0], c[1]));
+
+    TEST(!(LineSegment<int>(a[0], a[1]) > LineSegment<int>(b[0], b[1])));
+    TEST(!(LineSegment<int>(c[0], c[1]) > LineSegment<int>(b[0], b[1])));
+
+    TEST(LineSegment<int>(c[0], c[1]) < LineSegment<int>(a[0], a[1]));
+
+    TEST(LineSegment<int>(a[0], a[1]) < LineSegment<int>(b[0], b[1]));
+    TEST(LineSegment<int>(b[0], b[1]) > LineSegment<int>(a[0], a[1]));
+
+    TEST(intersects(LineSegment<int>(a[0], a[1]),
+                     LineSegment<int>(b[0], b[1])));
+    TEST(intersects(LineSegment<int>(a[1], a[0]),
+                     LineSegment<int>(b[0], b[1])));
+    TEST(intersects(LineSegment<int>(a[1], a[0]),
+                     LineSegment<int>(b[1], b[0])));
+    TEST(intersects(LineSegment<int>(a[0], a[1]),
+                     LineSegment<int>(b[1], b[0])));
+
+    TEST(intersects(LineSegment<int>(b[0], b[1]),
+                     LineSegment<int>(a[0], a[1])));
+    TEST(intersects(LineSegment<int>(b[1], b[0]),
+                     LineSegment<int>(a[0], a[1])));
+    TEST(intersects(LineSegment<int>(b[1], b[0]),
+                     LineSegment<int>(a[1], a[0])));
+    TEST(intersects(LineSegment<int>(b[0], b[1]),
+                     LineSegment<int>(a[1], a[0])));
+  }
+
+  {
     auto a = lineFromWKT<int>("LINESTRING(1 1, 2 1, 3 1)");
     auto b = lineFromWKT<int>("LINESTRING(2 0, 2 1, 2 2)");
     auto c = lineFromWKT<int>("LINESTRING(1 0, 2 1, 3 2)");

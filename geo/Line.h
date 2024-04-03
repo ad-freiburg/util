@@ -81,40 +81,42 @@ bool operator<(const LineSegment<T>& a, const LineSegment<T>& b) {
   if (a.first.getX() < b.first.getX() || b.first.getX() == b.second.getX()) {
     // a was first in active set
     if (a.first.getX() != a.second.getX()) {
+
       // check whether first point of b is right of or left of a
-      double d = -((b.first.getX() - a.first.getX()) *
-                       (a.second.getY() - a.first.getY()) -
-                   (b.first.getY() - a.first.getY()) *
-                       (a.second.getX() - a.first.getX()));
+      double d = -((1.0 * b.first.getX() - a.first.getX()) *
+                       (1.0 * a.second.getY() - a.first.getY()) -
+                   (1.0 * b.first.getY() - a.first.getY()) *
+                       (1.0 * a.second.getX() - a.first.getX()));
       if (d < 0) return false;
       if (d > 0) return true;
 
       // if we arrive here, first point of b was EXACTLY on a, we have to decide
       // based on the second point of b
-      d = -((b.second.getX() - a.first.getX()) *
-                (a.second.getY() - a.first.getY()) -
-            (b.second.getY() - a.first.getY()) *
-                (a.second.getX() - a.first.getX()));
+      d = -((1.0 * b.second.getX() - a.first.getX()) *
+                (1.0 * a.second.getY() - a.first.getY()) -
+            (1.0 * b.second.getY() - a.first.getY()) *
+                (1.0 * a.second.getX() - a.first.getX()));
       if (d < 0) return false;
       if (d > 0) return true;
     }
-
   } else {
     // b was first in active set
     if (b.first.getX() != b.second.getX()) {
-      double d = (a.first.getX() - b.first.getX()) *
-                     (b.second.getY() - b.first.getY()) -
-                 (a.first.getY() - b.first.getY()) *
-                     (b.second.getX() - b.first.getX());
+
+      // check whether first point of a is right of or left of b
+      double d = ((1.0 * a.first.getX() - b.first.getX()) *
+                     (1.0 * b.second.getY() - b.first.getY()) -
+                 (1.0 * a.first.getY() - b.first.getY()) *
+                     (1.0 * b.second.getX() - b.first.getX()));
       if (d < 0) return false;
       if (d > 0) return true;
 
       // if we arrive here, first point of a was EXACTLY on b, we have to decide
       // based on the second point of a
-      d = (a.second.getX() - b.first.getX()) *
-              (b.second.getY() - b.first.getY()) -
-          (a.second.getY() - b.first.getY()) *
-              (b.second.getX() - b.first.getX());
+      d = ((1.0 * a.second.getX() - b.first.getX()) *
+              (1.0 * b.second.getY() - b.first.getY()) -
+          (1.0 * a.second.getY() - b.first.getY()) *
+              (1.0 * b.second.getX() - b.first.getX()));
       if (d < 0) return false;
       if (d > 0) return true;
     }
