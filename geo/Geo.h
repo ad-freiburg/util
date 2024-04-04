@@ -1221,8 +1221,8 @@ inline std::pair<bool, bool> intersectsContains(
   }
 
   if (areaA <= areaB && util::geo::contains(boxA, boxB) &&
-      util::geo::contains(a.getOuter().rawRing().front().seg().second, b,
-                          firstRel2)) {
+      util::geo::ringContains(a.getOuter().rawRing().front().seg().second,
+                              b.getOuter(), firstRel2)) {
     // the outer hull of A is inside the outer hull of B!
 
     // check inner polygons
@@ -1291,16 +1291,30 @@ inline std::pair<bool, bool> intersectsContains(
   }
 
   if (areaB <= areaA && util::geo::contains(boxB, boxA) &&
-      contains(b.getOuter().rawRing().front().seg().second, a, firstRel1)) {
+      ringContains(b.getOuter().rawRing().front().seg().second, a.getOuter(),
+                   firstRel1)) {
     // the outer of B is inside the outer of A
     //
     // now the only possibility is that A intersects B - but if B is fully
     // contained in an inner ring of A, they are disjoint
 
     // check inner polygons
-    for (const auto& innerA : a.getInners()) {
-      auto res = intersectsContains(b.getOuter(), innerA);
-      if (std::get<1>(res)) return {false, false};  // completely disjoint
+    if (a.getInners().size()) {
+      size_t i =
+          std::lower_bound(
+              a.getInnerBoxIdx().begin(), a.getInnerBoxIdx().end(),
+              std::pair<T, size_t>{
+                  boxB.getLowerLeft().getX() - a.getInnerMaxSegLen(), 0}) -
+          a.getInnerBoxIdx().begin();
+      for (; i < a.getInners().size(); i++) {
+        const auto& innerBBox = a.getInnerBoxes()[i];
+
+        if (!util::geo::intersects(innerBBox, boxB)) continue;
+
+        const auto& innerA = a.getInners()[i];
+        auto res = intersectsContains(b.getOuter(), innerA);
+        if (std::get<1>(res)) return {false, false};  // completely disjoint
+      }
     }
     return {true, false};
   }
@@ -1334,24 +1348,65 @@ inline std::pair<bool, bool> intersectsContains(
 
   if (util::geo::ringContains(a.getOuter().rawRing().front().seg().second,
                               b.getOuter(), firstRel2)) {
-    // the outer of A is inside the outer of B
+    // the outer hull of A is inside the outer hull of B!
 
     // check inner polygons
-    for (const auto& innerB : b.getInners()) {
-      auto res = intersectsContains(a.getOuter(), innerB);
-      if (std::get<1>(res)) return {false, false};  // completely disjoint
-      if (std::get<2>(res)) return {true, false};   // border intersect
+    if (b.getInners().size()) {
+      size_t i = std::lower_bound(
+                     b.getInnerBoxIdx().begin(), b.getInnerBoxIdx().end(),
+                     std::pair<T, size_t>{
+                         a.getOuter().rawRing().front().seg().first.getX() -
+                             b.getInnerMaxSegLen(),
+                         0}) -
+                 b.getInnerBoxIdx().begin();
 
-      if (std::get<0>(res)) {
-        // else: inner is in a
-        // it must be covered by an inner polygon of a, otherwise a ist not in
-        // b
-        for (const auto& innerA : a.getInners()) {
-          auto res = intersectsContains(innerB, innerA);
-          if (std::get<1>(res)) return {true, true};
+      for (; i < b.getInners().size(); i++) {
+        if (b.getInnerBoxes()[i].getLowerLeft().getX() >
+            a.getOuter().rawRing().front().seg().first.getX())
+          break;
+
+        const auto& innerBBox = b.getInnerBoxes()[i];
+
+        const auto& innerB = b.getInners()[i];
+
+        auto res = intersectsContains(a.getOuter(), innerB);
+
+        if (std::get<1>(res))
+          return {false, false};  // a is completely in innerB
+        if (std::get<2>(res))
+          return {true, false};  // a intersects border of innerB
+
+        if (std::get<0>(res)) {
+          // else: inner is in a
+          // it must be covered by an inner polygon of a, otherwise a ist not
+          // in b
+          if (a.getInners().size()) {
+            size_t i =
+                std::lower_bound(
+                    a.getInnerBoxIdx().begin(), a.getInnerBoxIdx().end(),
+                    std::pair<T, size_t>{
+                        innerBBox.getLowerLeft().getX() - a.getInnerMaxSegLen(),
+                        0}) -
+                a.getInnerBoxIdx().begin();
+
+            for (; i < a.getInners().size(); i++) {
+              if (a.getInnerBoxes()[i].getLowerLeft().getX() >
+                  innerBBox.getLowerLeft().getX())
+                break;
+
+              const auto& innerABox = a.getInnerBoxes()[i];
+
+              if (!util::geo::intersects(innerBBox, innerABox)) continue;
+
+              const auto& innerA = a.getInners()[i];
+
+              auto res = intersectsContains(innerB, innerA);
+              if (std::get<1>(res)) return {true, true};
+            }
+          }
+
+          return {true, false};
         }
-
-        return {true, false};
       }
     }
 
@@ -1367,9 +1422,19 @@ inline std::pair<bool, bool> intersectsContains(
     // contained in an inner ring of A, they are disjoint
 
     // check inner polygons
-    for (const auto& innerA : a.getInners()) {
-      auto res = intersectsContains(b.getOuter(), innerA);
-      if (std::get<1>(res)) return {false, false};  // completely disjoint
+    if (a.getInners().size()) {
+      size_t i = std::lower_bound(
+                     a.getInnerBoxIdx().begin(), a.getInnerBoxIdx().end(),
+                     std::pair<T, size_t>{
+                         b.getOuter().rawRing().front().seg().first.getX() -
+                             a.getInnerMaxSegLen(),
+                         0}) -
+                 a.getInnerBoxIdx().begin();
+      for (; i < a.getInners().size(); i++) {
+        const auto& innerA = a.getInners()[i];
+        auto res = intersectsContains(b.getOuter(), innerA);
+        if (std::get<1>(res)) return {false, false};  // completely disjoint
+      }
     }
     return {true, false};
   }
@@ -1411,10 +1476,7 @@ inline std::pair<bool, bool> intersectsContains(
 
   auto testPoint = a.rawLine().front().seg().second;
 
-  // special case of a single line segment: it is crucial here to select
-  // if (a.rawLine().size() == 2) testPoint = a.rawLine().front().seg().first;
-
-  if (util::geo::contains(testPoint, b, firstRel2)) {
+  if (util::geo::ringContains(testPoint, b.getOuter(), firstRel2)) {
     // a is inside the outer of B
 
     // check inner polygons
@@ -1449,7 +1511,8 @@ inline std::pair<bool, bool> intersectsContains(
   }
 
   if (util::geo::contains(boxA, boxB) &&
-      util::geo::contains(a.rawLine().front().seg().second, b, firstRel2)) {
+      util::geo::ringContains(a.rawLine().front().seg().second, b.getOuter(),
+                              firstRel2)) {
     // a is inside the outer of B
 
     // check inner polygons
