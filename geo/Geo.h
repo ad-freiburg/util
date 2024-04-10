@@ -1540,7 +1540,7 @@ inline std::tuple<bool, bool, bool> intersectsContainsCovered(
 
       for (; i < b.getInners().size(); i++) {
         if (b.getInnerBoxes()[i].getLowerLeft().getX() >
-            a.getOuter().rawRing().front().seg().first.getX())
+            a.getOuter().rawRing().back().seg().second.getX())
           break;
 
         const auto& innerBBox = b.getInnerBoxes()[i];
@@ -1624,6 +1624,9 @@ inline std::tuple<bool, bool, bool> intersectsContainsCovered(
                  a.getInnerBoxIdx().begin();
       for (; i < a.getInners().size(); i++) {
         const auto& innerBBox = a.getInnerBoxes()[i];
+        if (innerBBox.getLowerLeft().getX() >
+            b.getOuter().rawRing().front().seg().first.getX())
+          break;
 
         if (!util::geo::intersects(innerBBox, boxB)) continue;
 
@@ -1669,42 +1672,15 @@ inline bool intersects(const util::geo::XSortedLine<T>& a,
 template <typename T>
 inline std::pair<bool, bool> intersectsContains(
     const util::geo::XSortedLine<T>& a, const util::geo::XSortedPolygon<T>& b) {
-  size_t firstRel1 = 0;
-  size_t firstRel2 = 0;
-  bool borderInt = util::geo::intersects(
-      a.rawLine(), b.getOuter().rawRing(), a.getMaxSegLen(),
-      b.getOuter().getMaxSegLen(),
+  return intersectsContains(
+      a,
       util::geo::Box<T>(
           {std::numeric_limits<T>::lowest(), std::numeric_limits<T>::lowest()},
           {std::numeric_limits<T>::max(), std::numeric_limits<T>::max()}),
+      b,
       util::geo::Box<T>(
           {std::numeric_limits<T>::lowest(), std::numeric_limits<T>::lowest()},
-          {std::numeric_limits<T>::max(), std::numeric_limits<T>::max()}),
-      &firstRel1, &firstRel2);
-
-  if (borderInt) {
-    // intersects
-    return {true, false};
-  }
-
-  auto testPoint = a.rawLine().front().seg().second;
-
-  if (util::geo::ringContains(testPoint, b.getOuter(), firstRel2)) {
-    // a is inside the outer of B
-
-    // check inner polygons
-    for (const auto& innerB : b.getInners()) {
-      auto res = intersectsContains(a, innerB);
-      if (res.second) return {false, false};  // completely disjoint
-      if (res.first) return {true, false};    // border intersect
-    }
-
-    // intersects + contains
-    return {true, true};
-  }
-
-  // disjoint
-  return {false, false};
+          {std::numeric_limits<T>::max(), std::numeric_limits<T>::max()}));
 }
 
 // _____________________________________________________________________________
@@ -1733,13 +1709,16 @@ inline std::pair<bool, bool> intersectsContains(
       size_t i =
           std::lower_bound(
               b.getInnerBoxIdx().begin(), b.getInnerBoxIdx().end(),
-              std::pair<T, size_t>{
-                  boxA.getLowerLeft().getX() - b.getInnerMaxSegLen(), 0}) -
+              std::pair<T, size_t>{a.rawLine().front().seg().first.getX() -
+                                       b.getInnerMaxSegLen(),
+                                   0}) -
           b.getInnerBoxIdx().begin();
+
+      i = 0;
 
       for (; i < b.getInners().size(); i++) {
         if (b.getInnerBoxes()[i].getLowerLeft().getX() >
-            boxA.getLowerLeft().getX())
+            a.rawLine().back().seg().second.getX())
           break;
         if (!util::geo::intersects(boxA, b.getInnerBoxes()[i])) continue;
 
