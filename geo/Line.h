@@ -27,6 +27,7 @@ struct XSortedTuple {
   // other point, with "vals" holding which of the two points comes first on
   // bit 1, and whether this element is an out event on bit 0. Bit 2 is 1 if
   // the line is completely empty.
+  // bit 3 holds whether the line segment was reversed due to the x order
   // for 64bit points, we thus safe 16 bytes (~29%), which let's more
   // XSortedTuples fit into the CPU caches during tests for intersect / contains
   // (in particular the binary search during startup), and also makes for faster
@@ -40,9 +41,10 @@ struct XSortedTuple {
     if (out) vals = 1;
     vals += 4;
   }
-  XSortedTuple(const Point<T>& p, const LineSegment<T>& seg, bool out)
+  XSortedTuple(const Point<T>& p, const LineSegment<T>& seg, bool rev, bool out)
       : p(p), vals(0) {
     if (out) vals = 1;
+    if (rev) vals += 8;
     if (seg.first == p) {
       vals += 2;
       other = seg.second;
@@ -57,6 +59,19 @@ struct XSortedTuple {
     return {other, p};
   }
 
+  LineSegment<T> origSeg() const {
+    if (vals & 4) {
+      return {{0, 0}, {0, 0}};
+    }
+    if (vals & 2) {
+      if (vals & 8) return {other, p};
+      return {p, other};
+    }
+
+    if (vals & 8) return {p, other};
+    return {other, p};
+  }
+
   bool out() const { return vals & 1; }
 };
 
@@ -68,71 +83,80 @@ bool operator<(const XSortedTuple<T>& a, const XSortedTuple<T>& b) {
 
 template <typename T>
 bool operator<(const LineSegment<T>& a, const LineSegment<T>& b) {
+  auto af = a.first;
+  auto as = a.second;
+
+  auto bf = b.first;
+  auto bs = b.second;
+
+  if (as.getX() < af.getX()) std::swap(af, as);
+  if (bs.getX() < bf.getX()) std::swap(bf, bs);
+
   // this should be implicitely catched by the comparisons below,
   // however, because of floating point imprecisions, we might decide
   // < for equivalent segments. This is a problem, as segments are only
   // identified via they coordinates, not by some ID, in the active sets
-  if (a.first.getX() == b.first.getX() && a.first.getY() == b.first.getY() &&
-      a.second.getX() == b.second.getX() &&
-      a.second.getY() == b.second.getY()) {
+  if (af.getX() == bf.getX() && af.getY() == bf.getY() &&
+      as.getX() == bs.getX() &&
+      as.getY() == bs.getY()) {
     return false;
   }
 
-  if (a.first.getX() < b.first.getX() || b.first.getX() == b.second.getX()) {
+  if (af.getX() < bf.getX() || bf.getX() == bs.getX()) {
     // a was first in active set
-    if (a.first.getX() != a.second.getX()) {
+    if (af.getX() != as.getX()) {
 
       // check whether first point of b is right of or left of a
-      double d = -((1.0 * b.first.getX() - a.first.getX()) *
-                       (1.0 * a.second.getY() - a.first.getY()) -
-                   (1.0 * b.first.getY() - a.first.getY()) *
-                       (1.0 * a.second.getX() - a.first.getX()));
+      double d = -((1.0 * bf.getX() - af.getX()) *
+                       (1.0 * as.getY() - af.getY()) -
+                   (1.0 * bf.getY() - af.getY()) *
+                       (1.0 * as.getX() - af.getX()));
       if (d < 0) return false;
       if (d > 0) return true;
 
       // if we arrive here, first point of b was EXACTLY on a, we have to decide
       // based on the second point of b
-      d = -((1.0 * b.second.getX() - a.first.getX()) *
-                (1.0 * a.second.getY() - a.first.getY()) -
-            (1.0 * b.second.getY() - a.first.getY()) *
-                (1.0 * a.second.getX() - a.first.getX()));
+      d = -((1.0 * bs.getX() - af.getX()) *
+                (1.0 * as.getY() - af.getY()) -
+            (1.0 * bs.getY() - af.getY()) *
+                (1.0 * as.getX() - af.getX()));
       if (d < 0) return false;
       if (d > 0) return true;
     }
   } else {
     // b was first in active set
-    if (b.first.getX() != b.second.getX()) {
+    if (bf.getX() != bs.getX()) {
 
       // check whether first point of a is right of or left of b
-      double d = ((1.0 * a.first.getX() - b.first.getX()) *
-                     (1.0 * b.second.getY() - b.first.getY()) -
-                 (1.0 * a.first.getY() - b.first.getY()) *
-                     (1.0 * b.second.getX() - b.first.getX()));
+      double d = ((1.0 * af.getX() - bf.getX()) *
+                     (1.0 * bs.getY() - bf.getY()) -
+                 (1.0 * af.getY() - bf.getY()) *
+                     (1.0 * bs.getX() - bf.getX()));
       if (d < 0) return false;
       if (d > 0) return true;
 
       // if we arrive here, first point of a was EXACTLY on b, we have to decide
       // based on the second point of a
-      d = ((1.0 * a.second.getX() - b.first.getX()) *
-              (1.0 * b.second.getY() - b.first.getY()) -
-          (1.0 * a.second.getY() - b.first.getY()) *
-              (1.0 * b.second.getX() - b.first.getX()));
+      d = ((1.0 * as.getX() - bf.getX()) *
+              (1.0 * bs.getY() - bf.getY()) -
+          (1.0 * as.getY() - bf.getY()) *
+              (1.0 * bs.getX() - bf.getX()));
       if (d < 0) return false;
       if (d > 0) return true;
     }
   }
 
   // a and b are colinear
-  return a.first.getY() < b.first.getY() ||
-         (a.first.getY() == b.first.getY() &&
-          a.first.getX() < b.first.getX()) ||
-         (a.first.getY() == b.first.getY() &&
-          a.first.getX() == b.first.getX() &&
-          a.second.getY() < b.second.getY()) ||
-         (a.first.getY() == b.first.getY() &&
-          a.first.getX() == b.first.getX() &&
-          a.second.getY() == b.second.getY() &&
-          a.second.getX() < b.second.getX());
+  return af.getY() < bf.getY() ||
+         (af.getY() == bf.getY() &&
+          af.getX() < bf.getX()) ||
+         (af.getY() == bf.getY() &&
+          af.getX() == bf.getX() &&
+          as.getY() < bs.getY()) ||
+         (af.getY() == bf.getY() &&
+          af.getX() == bf.getX() &&
+          as.getY() == bs.getY() &&
+          as.getX() < bs.getX());
 }
 
 template <typename T>
@@ -152,11 +176,11 @@ class XSortedLine {
       if (len > _maxSegLen) _maxSegLen = len;
 
       if (line[i - 1].getX() < line[i].getX()) {
-        _line.push_back({line[i - 1], {line[i - 1], line[i]}, false});
-        _line.push_back({line[i], {line[i - 1], line[i]}, true});
+        _line.push_back({line[i - 1], {line[i - 1], line[i]}, false, false});
+        _line.push_back({line[i], {line[i - 1], line[i]}, false, true});
       } else {
-        _line.push_back({line[i], {line[i], line[i - 1]}, false});
-        _line.push_back({line[i - 1], {line[i], line[i - 1]}, true});
+        _line.push_back({line[i], {line[i], line[i - 1]}, true, false});
+        _line.push_back({line[i - 1], {line[i], line[i - 1]}, true, true});
       }
     }
 
@@ -166,11 +190,11 @@ class XSortedLine {
   XSortedLine(const LineSegment<T>& line) {
     _line.resize(2);
     if (line.first.getX() < line.second.getX()) {
-      _line[0] = {line.first, {line.first, line.second}, false};
-      _line[1] = {line.second, {line.first, line.second}, true};
+      _line[0] = {line.first, {line.first, line.second}, false, false};
+      _line[1] = {line.second, {line.first, line.second}, false, true};
     } else {
-      _line[0] = {line.second, {line.second, line.first}, false};
-      _line[1] = {line.first, {line.second, line.first}, true};
+      _line[0] = {line.second, {line.second, line.first}, true, false};
+      _line[1] = {line.first, {line.second, line.first}, true, true};
     }
     _maxSegLen = fabs(line.first.getX() - line.second.getX());
   }

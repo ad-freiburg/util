@@ -76,6 +76,40 @@ inline double area(const MultiPolygon<T>& b) {
   return ret;
 }
 
+// _____________________________________________________________________________
+template <typename T>
+inline double signedRingArea(const Ring<T>& b) {
+  double ret = 0;
+  size_t j = b.size() - 1;
+  for (size_t i = 0; i < b.size(); i++) {
+    ret += (1.0 * b[j].getX() + 1.0 * b[i].getX()) *
+           (1.0 * b[j].getY() - 1.0 * b[i].getY());
+    j = i;
+  }
+
+  return ret / 2.0;
+}
+
+// _____________________________________________________________________________
+template <typename T>
+inline double signedArea(const Polygon<T>& b) {
+  double ret = signedRingArea(b.getOuter());
+  for (const auto& inner : b.getInners()) ret += signedRingArea(inner);
+
+  return ret;
+}
+
+// _____________________________________________________________________________
+template <typename T>
+inline double signedArea(const MultiPolygon<T>& b) {
+  double ret = 0;
+
+  for (const auto& p : b) ret += signedArea(p);
+
+  return ret;
+}
+
+// _____________________________________________________________________________
 template <typename T>
 class XSortedRing {
  public:
@@ -84,22 +118,22 @@ class XSortedRing {
     _maxSegLen = box.getUpperRight().getX() - box.getLowerLeft().getX();
 
     _ring[0] = {
-        box.getLowerLeft(), {box.getLowerLeft(), box.getUpperLeft()}, false};
+        box.getLowerLeft(), {box.getLowerLeft(), box.getUpperLeft()}, false, false};
     _ring[1] = {
-        box.getLowerLeft(), {box.getLowerLeft(), box.getLowerRight()}, false};
+        box.getLowerLeft(), {box.getLowerLeft(), box.getLowerRight()}, true, false};
     _ring[2] = {
-        box.getUpperLeft(), {box.getUpperLeft(), box.getUpperRight()}, false};
+        box.getUpperLeft(), {box.getUpperLeft(), box.getUpperRight()}, false, false};
     _ring[3] = {
-        box.getUpperLeft(), {box.getLowerLeft(), box.getUpperLeft()}, true};
+        box.getUpperLeft(), {box.getLowerLeft(), box.getUpperLeft()}, false, true};
 
     _ring[4] = {
-        box.getLowerRight(), {box.getLowerRight(), box.getUpperRight()}, false};
+        box.getLowerRight(), {box.getLowerRight(), box.getUpperRight()}, true, false};
     _ring[5] = {
-        box.getLowerRight(), {box.getLowerLeft(), box.getLowerRight()}, true};
+        box.getLowerRight(), {box.getLowerLeft(), box.getLowerRight()}, true, true};
     _ring[6] = {
-        box.getUpperRight(), {box.getUpperLeft(), box.getUpperRight()}, true};
+        box.getUpperRight(), {box.getUpperLeft(), box.getUpperRight()}, false, true};
     _ring[7] = {
-        box.getUpperRight(), {box.getLowerRight(), box.getUpperRight()}, true};
+        box.getUpperRight(), {box.getLowerRight(), box.getUpperRight()}, true, true};
   }
 
   XSortedRing(const Ring<T>& ring) {
@@ -112,17 +146,17 @@ class XSortedRing {
       if (ring[i - 1].getX() < ring[i].getX()) {
         _ring.push_back({ring[i - 1],
                           {ring[i - 1], ring[i]},
-                          false});
+                          false, false});
         _ring.push_back({ring[i],
                           {ring[i - 1], ring[i]},
-                          true});
+                          false, true});
       } else {
         _ring.push_back({ring[i],
                           {ring[i], ring[i - 1]},
-                          false});
+                          true, false});
         _ring.push_back({ring[i - 1],
                           {ring[i], ring[i - 1]},
-                          true});
+                          true, true});
       }
     }
 
@@ -135,17 +169,17 @@ class XSortedRing {
       if (ring[i-1].getX() < ring[0].getX()) {
         _ring.push_back({ring[i - 1],
                           {ring[i - 1], ring[0]},
-                          false});
+                          false, false});
         _ring.push_back({ring[0],
                           {ring[i - 1], ring[0]},
-                          true});
+                          false, true});
       } else {
         _ring.push_back({ring[0],
                           {ring[0], ring[i - 1]},
-                          false});
+                          true, false});
         _ring.push_back({ring[i - 1],
                           {ring[0], ring[i - 1]},
-                          true});
+                          true, true});
       }
     }
 

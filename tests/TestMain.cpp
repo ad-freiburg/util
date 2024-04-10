@@ -464,6 +464,137 @@ int main(int argc, char** argv) {
     TEST(geo::intersects(anotherboxx2mp.getOuter(), anothertestx2.getOuter()));
     }
 
+    {
+    auto a = polygonFromWKT<int>("POLYGON((0 0, 10 0, 10 10, 0 10, 0 0))");
+    auto b = polygonFromWKT<int>("POLYGON((0 0, 10 0, 10 10, 0 10, 0 0))");
+
+    XSortedPolygon<int> ax(a);
+    XSortedPolygon<int> bx(b);
+
+    TEST(std::get<0>(geo::intersectsContainsCovered(ax, util::geo::getBoundingBox(a), util::geo::area(a), bx, util::geo::getBoundingBox(b), util::geo::area(b))));
+    TEST(!std::get<1>(geo::intersectsContainsCovered(ax, util::geo::getBoundingBox(a), util::geo::area(a), bx, util::geo::getBoundingBox(b), util::geo::area(b))));
+    TEST(std::get<2>(geo::intersectsContainsCovered(ax, util::geo::getBoundingBox(a), util::geo::area(a), bx, util::geo::getBoundingBox(b), util::geo::area(b))));
+    TEST(std::get<0>(geo::intersectsContainsCovered(bx, util::geo::getBoundingBox(b), util::geo::area(b), ax, util::geo::getBoundingBox(a), util::geo::area(a))));
+    TEST(!std::get<1>(geo::intersectsContainsCovered(bx, util::geo::getBoundingBox(b), util::geo::area(b), ax, util::geo::getBoundingBox(a), util::geo::area(a))));
+    TEST(std::get<2>(geo::intersectsContainsCovered(bx, util::geo::getBoundingBox(b), util::geo::area(b), ax, util::geo::getBoundingBox(a), util::geo::area(a))));
+    }
+
+    {
+    auto a = polygonFromWKT<int>("POLYGON((0 0, 5 0, 5 5, 0 5, 0 0))");
+    auto b = polygonFromWKT<int>("POLYGON((0 0, 10 0, 10 10, 0 10, 0 0))");
+
+    XSortedPolygon<int> ax(a);
+    XSortedPolygon<int> bx(b);
+
+    TEST(std::get<0>(geo::intersectsContainsCovered(ax, util::geo::getBoundingBox(a), util::geo::area(a), bx, util::geo::getBoundingBox(b), util::geo::area(b))));
+    TEST(!std::get<1>(geo::intersectsContainsCovered(ax, util::geo::getBoundingBox(a), util::geo::area(a), bx, util::geo::getBoundingBox(b), util::geo::area(b))));
+    TEST(std::get<2>(geo::intersectsContainsCovered(ax, util::geo::getBoundingBox(a), util::geo::area(a), bx, util::geo::getBoundingBox(b), util::geo::area(b))));
+    }
+
+    {
+    auto a = polygonFromWKT<int>("POLYGON((0 0, 5 0, 5 5, 0 5, 0 0))");
+    auto b = polygonFromWKT<int>("POLYGON((0 0, 10 0, 10 10, 0 10, 0 0))");
+
+    XSortedPolygon<int> ax(a);
+    XSortedPolygon<int> bx(b);
+
+    TEST(util::geo::intersectsPoly(
+      ax.getOuter(), bx.getOuter(), ax.getOuter().getMaxSegLen(),
+      bx.getOuter().getMaxSegLen(), util::geo::getBoundingBox(a), util::geo::getBoundingBox(b), 0, 0).first);
+    TEST(!util::geo::intersectsPoly(
+      ax.getOuter(), bx.getOuter(), ax.getOuter().getMaxSegLen(),
+      bx.getOuter().getMaxSegLen(), util::geo::getBoundingBox(a), util::geo::getBoundingBox(b), 0, 0).second);
+    }
+
+    {
+    auto a = polygonFromWKT<int>("POLYGON((4 3, 6 3, 6 4, 4 5, 4 4, 4 3))");
+    auto b = polygonFromWKT<int>("POLYGON((3 5, 4 4, 5 5, 4 6, 3 5))");
+
+    XSortedPolygon<int> ax(a);
+    XSortedPolygon<int> bx(b);
+
+    TEST(util::geo::intersectsPoly(
+      ax.getOuter(), bx.getOuter(), ax.getOuter().getMaxSegLen(),
+      bx.getOuter().getMaxSegLen(), util::geo::getBoundingBox(a), util::geo::getBoundingBox(b), 0, 0).first);
+    TEST(util::geo::intersectsPoly(
+      ax.getOuter(), bx.getOuter(), ax.getOuter().getMaxSegLen(),
+      bx.getOuter().getMaxSegLen(), util::geo::getBoundingBox(a), util::geo::getBoundingBox(b), 0, 0).second);
+    }
+
+    {
+    auto a = polygonFromWKT<int>("POLYGON((4 4, 5 4, 5 5, 4 5, 4 4))");
+    auto aa = polygonFromWKT<int>("POLYGON((5 5, 6 5, 6 6, 5 6))");
+    auto b = polygonFromWKT<int>("POLYGON((2 2, 6 2, 6 4, 4 6, 2 4, 2 2))");
+    auto bHole = polygonFromWKT<int>("POLYGON((2 2, 6 2, 6 4, 4 6, 2 4, 2 2), (4 4, 5 4, 5 3, 4 3, 4 4))");
+
+    XSortedPolygon<int> ax(a);
+    XSortedPolygon<int> aax(aa);
+    XSortedPolygon<int> bx(b);
+    XSortedPolygon<int> bHolex(bHole);
+
+    TEST(util::geo::intersectsPoly(
+      ax.getOuter(), bx.getOuter(), ax.getOuter().getMaxSegLen(),
+      bx.getOuter().getMaxSegLen(), util::geo::getBoundingBox(a), util::geo::getBoundingBox(b), 0, 0).first);
+    TEST(!util::geo::intersectsPoly(
+      ax.getOuter(), bx.getOuter(), ax.getOuter().getMaxSegLen(),
+      bx.getOuter().getMaxSegLen(), util::geo::getBoundingBox(a), util::geo::getBoundingBox(b), 0, 0).second);
+
+    TEST(std::get<0>(geo::intersectsContainsCovered(ax, util::geo::getBoundingBox(a), util::geo::area(a), bx, util::geo::getBoundingBox(b), util::geo::area(b))));
+    TEST(!std::get<1>(geo::intersectsContainsCovered(ax, util::geo::getBoundingBox(a), util::geo::area(a), bx, util::geo::getBoundingBox(b), util::geo::area(b))));
+    TEST(std::get<2>(geo::intersectsContainsCovered(ax, util::geo::getBoundingBox(a), util::geo::area(a), bx, util::geo::getBoundingBox(b), util::geo::area(b))));
+
+    TEST(util::geo::intersectsPoly(
+      aax.getOuter(), bx.getOuter(), aax.getOuter().getMaxSegLen(),
+      bx.getOuter().getMaxSegLen(), util::geo::getBoundingBox(aa), util::geo::getBoundingBox(b), 0, 0).first);
+    TEST(util::geo::intersectsPoly(
+      aax.getOuter(), bx.getOuter(), aax.getOuter().getMaxSegLen(),
+      bx.getOuter().getMaxSegLen(), util::geo::getBoundingBox(aa), util::geo::getBoundingBox(b), 0, 0).second);
+
+    TEST(bHole.getInners().size() == 1);
+
+    // TEST(!util::geo::intersectsPoly(
+      // ax.getOuter(), bHolex.getInners().front(), ax.getOuter().getMaxSegLen(),
+      // bHolex.getInners().front().getMaxSegLen(), util::geo::getBoundingBox(a), util::geo::getBoundingBox(bHole.getInners().front()), 0, 0).second);
+
+    TEST(std::get<0>(geo::intersectsContainsCovered(ax, util::geo::getBoundingBox(a), util::geo::area(a), bHolex, util::geo::getBoundingBox(bHole), util::geo::area(bHole))));
+    TEST(!std::get<1>(geo::intersectsContainsCovered(ax, util::geo::getBoundingBox(a), util::geo::area(a), bHolex, util::geo::getBoundingBox(bHole), util::geo::area(bHole))));
+    // TEST(std::get<2>(geo::intersectsContainsCovered(ax, util::geo::getBoundingBox(a), util::geo::area(a), bHolex, util::geo::getBoundingBox(bHole), util::geo::area(bHole))));
+    }
+
+    {
+    auto a = polygonFromWKT<int>("POLYGON((0 0, 10 0, 10 10, 0 10, 0 0))");
+    auto b = polygonFromWKT<int>("POLYGON((0 0, 5 0, 5 -5, 0 -5, 0 0))");
+
+    XSortedPolygon<int> ax(a);
+    XSortedPolygon<int> bx(b);
+
+    TEST(util::geo::intersectsPoly(
+      ax.getOuter(), bx.getOuter(), ax.getOuter().getMaxSegLen(),
+      bx.getOuter().getMaxSegLen(), util::geo::getBoundingBox(a), util::geo::getBoundingBox(b), 0, 0).first);
+    TEST(util::geo::intersectsPoly(
+      ax.getOuter(), bx.getOuter(), ax.getOuter().getMaxSegLen(),
+      bx.getOuter().getMaxSegLen(), util::geo::getBoundingBox(a), util::geo::getBoundingBox(b), 0, 0).second);
+    }
+
+    {
+    auto a = polygonFromWKT<int>("POLYGON((0 0, 10 0, 10 10, 0 10, 0 0))");
+    auto b = polygonFromWKT<int>("POLYGON((1 0, 5 0, 5 -5, 1 -5, 1 0))");
+
+    XSortedPolygon<int> ax(a);
+    XSortedPolygon<int> bx(b);
+
+    TEST(util::geo::intersectsPoly(
+      ax.getOuter(), bx.getOuter(), ax.getOuter().getMaxSegLen(),
+      bx.getOuter().getMaxSegLen(), util::geo::getBoundingBox(a), util::geo::getBoundingBox(b), 0, 0).first);
+    TEST(util::geo::intersectsPoly(
+      ax.getOuter(), bx.getOuter(), ax.getOuter().getMaxSegLen(),
+      bx.getOuter().getMaxSegLen(), util::geo::getBoundingBox(a), util::geo::getBoundingBox(b), 0, 0).second);
+
+    TEST(std::get<0>(geo::intersectsContainsCovered(bx, util::geo::getBoundingBox(b), util::geo::area(b), ax, util::geo::getBoundingBox(a), util::geo::area(a))));
+    TEST(!std::get<1>(geo::intersectsContainsCovered(bx, util::geo::getBoundingBox(b), util::geo::area(b), ax, util::geo::getBoundingBox(a), util::geo::area(a))));
+    TEST(!std::get<2>(geo::intersectsContainsCovered(bx, util::geo::getBoundingBox(b), util::geo::area(b), ax, util::geo::getBoundingBox(a), util::geo::area(a))));
+    }
+
 
     {
     auto a = polygonFromWKT<int>("POLYGON((0 0, 10 0, 10 10, 0 10, 0 0))");
@@ -475,14 +606,14 @@ int main(int argc, char** argv) {
     TEST(!geo::intersects(ax.getOuter(), bx.getOuter()));
     TEST(geo::contains(b, a));
     TEST(geo::intersects(a, b));
-    TEST(geo::intersectsContains(ax, bx).first);
-    TEST(geo::intersectsContains(ax, util::geo::getBoundingBox(a), util::geo::area(a), bx, util::geo::getBoundingBox(b), util::geo::area(b)).first);
-    TEST(!geo::intersectsContains(ax, bx).second);
-    TEST(!geo::intersectsContains(ax, util::geo::getBoundingBox(a), util::geo::area(a), bx, util::geo::getBoundingBox(b), util::geo::area(b)).second);
-    TEST(geo::intersectsContains(bx, ax).first);
-    TEST(geo::intersectsContains(bx, util::geo::getBoundingBox(b), util::geo::area(b), ax, util::geo::getBoundingBox(a), util::geo::area(a)).first);
-    TEST(geo::intersectsContains(bx, ax).second);
-    TEST(geo::intersectsContains(bx, util::geo::getBoundingBox(b), util::geo::area(b), ax, util::geo::getBoundingBox(a), util::geo::area(a)).second);
+    TEST(std::get<0>(geo::intersectsContainsCovered(ax, bx)));
+    TEST(std::get<0>(geo::intersectsContainsCovered(ax, util::geo::getBoundingBox(a), util::geo::area(a), bx, util::geo::getBoundingBox(b), util::geo::area(b))));
+    TEST(!std::get<1>(geo::intersectsContainsCovered(ax, bx)));
+    TEST(!std::get<1>(geo::intersectsContainsCovered(ax, util::geo::getBoundingBox(a), util::geo::area(a), bx, util::geo::getBoundingBox(b), util::geo::area(b))));
+    TEST(std::get<0>(geo::intersectsContainsCovered(bx, ax)));
+    TEST(std::get<0>(geo::intersectsContainsCovered(bx, util::geo::getBoundingBox(b), util::geo::area(b), ax, util::geo::getBoundingBox(a), util::geo::area(a))));
+    TEST(std::get<1>(geo::intersectsContainsCovered(bx, ax)));
+    TEST(std::get<1>(geo::intersectsContainsCovered(bx, util::geo::getBoundingBox(b), util::geo::area(b), ax, util::geo::getBoundingBox(a), util::geo::area(a))));
     }
 
     {
@@ -499,14 +630,14 @@ int main(int argc, char** argv) {
     TEST(!geo::intersects(b, a));
     auto res = intersectsContains(bx.getOuter(), ax.getInners().front());
     TEST(std::get<1>(res));
-    TEST(!geo::intersectsContains(bx, ax).first);
-    TEST(!geo::intersectsContains(bx, util::geo::getBoundingBox(b), util::geo::area(b), ax, util::geo::getBoundingBox(a), util::geo::area(a)).first);
-    TEST(!geo::intersectsContains(bx, ax).second);
-    TEST(!geo::intersectsContains(bx, util::geo::getBoundingBox(b), util::geo::area(b), ax, util::geo::getBoundingBox(a), util::geo::area(a)).second);
-    TEST(!geo::intersectsContains(ax, bx).first);
-    TEST(!geo::intersectsContains(ax, util::geo::getBoundingBox(a), util::geo::area(a), bx, util::geo::getBoundingBox(b), util::geo::area(b)).first);
-    TEST(!geo::intersectsContains(ax, bx).second);
-    TEST(!geo::intersectsContains(ax, util::geo::getBoundingBox(a), util::geo::area(a), bx, util::geo::getBoundingBox(b), util::geo::area(b)).second);
+    TEST(!std::get<0>(geo::intersectsContainsCovered(bx, ax)));
+    TEST(!std::get<0>(geo::intersectsContainsCovered(bx, util::geo::getBoundingBox(b), util::geo::area(b), ax, util::geo::getBoundingBox(a), util::geo::area(a))));
+    TEST(!std::get<1>(geo::intersectsContainsCovered(bx, ax)));
+    TEST(!std::get<1>(geo::intersectsContainsCovered(bx, util::geo::getBoundingBox(b), util::geo::area(b), ax, util::geo::getBoundingBox(a), util::geo::area(a))));
+    TEST(!std::get<0>(geo::intersectsContainsCovered(ax, bx)));
+    TEST(!std::get<0>(geo::intersectsContainsCovered(ax, util::geo::getBoundingBox(a), util::geo::area(a), bx, util::geo::getBoundingBox(b), util::geo::area(b))));
+    TEST(!std::get<1>(geo::intersectsContainsCovered(ax, bx)));
+    TEST(!std::get<1>(geo::intersectsContainsCovered(ax, util::geo::getBoundingBox(a), util::geo::area(a), bx, util::geo::getBoundingBox(b), util::geo::area(b))));
     }
 
     {
@@ -521,10 +652,10 @@ int main(int argc, char** argv) {
     TEST(!geo::contains(a, b));
     TEST(geo::intersects(a, b));
     TEST(geo::intersects(b, a));
-    TEST(geo::intersectsContains(bx, ax).first);
-    TEST(geo::intersectsContains(bx, ax).second);
-    TEST(geo::intersectsContains(ax, bx).first);
-    TEST(!geo::intersectsContains(ax, bx).second);
+    TEST(std::get<0>(geo::intersectsContainsCovered(bx, ax)));
+    TEST(std::get<1>(geo::intersectsContainsCovered(bx, ax)));
+    TEST(std::get<0>(geo::intersectsContainsCovered(ax, bx)));
+    TEST(!std::get<1>(geo::intersectsContainsCovered(ax, bx)));
     }
 
     {
@@ -540,12 +671,12 @@ int main(int argc, char** argv) {
     TEST(geo::intersects(a, b));
     TEST(geo::intersects(b, a));
     TEST(!std::get<1>(geo::intersectsContains(bx.getOuter(), ax.getInners().front())));
-    TEST(std::get<2>(geo::intersectsContains(bx.getOuter(), ax.getInners().front())));
+    TEST(std::get<3>(geo::intersectsContains(bx.getOuter(), ax.getInners().front())));
     TEST(geo::ringContains(bx.getOuter().rawRing().front().seg().first, ax.getOuter(), 0));
-    TEST(geo::intersectsContains(bx, ax).first);
-    TEST(!geo::intersectsContains(bx, ax).second);
-    TEST(geo::intersectsContains(ax, bx).first);
-    TEST(!geo::intersectsContains(ax, bx).second);
+    TEST(std::get<0>(geo::intersectsContainsCovered(bx, ax)));
+    TEST(!std::get<1>(geo::intersectsContainsCovered(bx, ax)));
+    TEST(std::get<0>(geo::intersectsContainsCovered(ax, bx)));
+    TEST(!std::get<1>(geo::intersectsContainsCovered(ax, bx)));
     }
 
     {
@@ -648,12 +779,12 @@ int main(int argc, char** argv) {
     TEST(geo::intersects(a, b));
     TEST(geo::intersects(b, a));
     TEST(!std::get<1>(geo::intersectsContains(bx.getOuter(), ax.getInners().front())));
-    TEST(std::get<2>(geo::intersectsContains(bx.getOuter(), ax.getInners().front())));
+    TEST(std::get<3>(geo::intersectsContains(bx.getOuter(), ax.getInners().front())));
     TEST(geo::ringContains(bx.getOuter().rawRing().front().seg().first, ax.getOuter(), 0));
-    TEST(geo::intersectsContains(bx, ax).first);
-    TEST(!geo::intersectsContains(bx, ax).second);
-    TEST(geo::intersectsContains(ax, bx).first);
-    TEST(!geo::intersectsContains(ax, bx).second);
+    TEST(std::get<0>(geo::intersectsContainsCovered(bx, ax)));
+    TEST(!std::get<1>(geo::intersectsContainsCovered(bx, ax)));
+    TEST(std::get<0>(geo::intersectsContainsCovered(ax, bx)));
+    TEST(!std::get<1>(geo::intersectsContainsCovered(ax, bx)));
     }
 
     {
@@ -673,10 +804,10 @@ int main(int argc, char** argv) {
     XSortedPolygon<int> bx(b);
 
     TEST(!geo::intersects(ax.getOuter(), bx.getOuter()));
-    TEST(geo::intersectsContains(bx, ax).first);
-    TEST(geo::intersectsContains(bx, ax).second);
-    TEST(geo::intersectsContains(ax, bx).first);
-    TEST(!geo::intersectsContains(ax, bx).second);
+    TEST(std::get<0>(geo::intersectsContainsCovered(bx, ax)));
+    TEST(std::get<1>(geo::intersectsContainsCovered(bx, ax)));
+    TEST(std::get<0>(geo::intersectsContainsCovered(ax, bx)));
+    TEST(!std::get<1>(geo::intersectsContainsCovered(ax, bx)));
     }
 
     {
@@ -696,14 +827,14 @@ int main(int argc, char** argv) {
     XSortedPolygon<int> bx(b);
 
     TEST(!geo::intersects(ax.getOuter(), bx.getOuter()));
-    TEST(geo::intersectsContains(bx, ax).first);
-    TEST(geo::intersectsContains(bx, util::geo::getBoundingBox(b), util::geo::area(b),  ax, util::geo::getBoundingBox(a), util::geo::area(a)).first);
-    TEST(geo::intersectsContains(bx, ax).second);
-    TEST(geo::intersectsContains(bx, util::geo::getBoundingBox(b), util::geo::area(b),  ax, util::geo::getBoundingBox(a), util::geo::area(a)).second);
-    TEST(geo::intersectsContains(ax, bx).first);
-    TEST(geo::intersectsContains(ax, util::geo::getBoundingBox(a), util::geo::area(a),  bx, util::geo::getBoundingBox(b), util::geo::area(b)).first);
-    TEST(!geo::intersectsContains(ax, bx).second);
-    TEST(!geo::intersectsContains(ax, util::geo::getBoundingBox(a), util::geo::area(a),  bx, util::geo::getBoundingBox(b), util::geo::area(b)).second);
+    TEST(std::get<0>(geo::intersectsContainsCovered(bx, ax)));
+    TEST(std::get<0>(geo::intersectsContainsCovered(bx, util::geo::getBoundingBox(b), util::geo::area(b),  ax, util::geo::getBoundingBox(a), util::geo::area(a))));
+    TEST(std::get<1>(geo::intersectsContainsCovered(bx, ax)));
+    TEST(std::get<1>(geo::intersectsContainsCovered(bx, util::geo::getBoundingBox(b), util::geo::area(b),  ax, util::geo::getBoundingBox(a), util::geo::area(a))));
+    TEST(std::get<0>(geo::intersectsContainsCovered(ax, bx)));
+    TEST(std::get<0>(geo::intersectsContainsCovered(ax, util::geo::getBoundingBox(a), util::geo::area(a),  bx, util::geo::getBoundingBox(b), util::geo::area(b))));
+    TEST(!std::get<1>(geo::intersectsContainsCovered(ax, bx)));
+    TEST(!std::get<1>(geo::intersectsContainsCovered(ax, util::geo::getBoundingBox(a), util::geo::area(a),  bx, util::geo::getBoundingBox(b), util::geo::area(b))));
     }
 
     {
@@ -718,10 +849,10 @@ int main(int argc, char** argv) {
     XSortedPolygon<int> ax(a);
     XSortedPolygon<int> bx(b);
 
-    TEST(!geo::intersectsContains(bx, ax).first);
-    TEST(!geo::intersectsContains(bx, ax).second);
-    TEST(!geo::intersectsContains(ax, bx).first);
-    TEST(!geo::intersectsContains(ax, bx).second);
+    TEST(!std::get<0>(geo::intersectsContainsCovered(bx, ax)));
+    TEST(!std::get<1>(geo::intersectsContainsCovered(bx, ax)));
+    TEST(!std::get<0>(geo::intersectsContainsCovered(ax, bx)));
+    TEST(!std::get<1>(geo::intersectsContainsCovered(ax, bx)));
     }
 
     {
@@ -736,10 +867,10 @@ int main(int argc, char** argv) {
     XSortedPolygon<int> ax(a);
     XSortedPolygon<int> bx(b);
 
-    TEST(geo::intersectsContains(bx, ax).first);
-    TEST(!geo::intersectsContains(bx, ax).second);
-    TEST(geo::intersectsContains(ax, bx).first);
-    TEST(!geo::intersectsContains(ax, bx).second);
+    TEST(std::get<0>(geo::intersectsContainsCovered(bx, ax)));
+    TEST(!std::get<1>(geo::intersectsContainsCovered(bx, ax)));
+    TEST(std::get<0>(geo::intersectsContainsCovered(ax, bx)));
+    TEST(!std::get<1>(geo::intersectsContainsCovered(ax, bx)));
     }
 
     {
@@ -788,15 +919,15 @@ int main(int argc, char** argv) {
     XSortedPolygon<int> xbburg(bburg);
     XSortedPolygon<int> xfailBox(failBox);
 
-    TEST(util::geo::intersectsContains(
-        xfailBox, util::geo::getBoundingBox(failBox), util::geo::area(failBox), xbburg, util::geo::getBoundingBox(bburg), util::geo::area(bburg)).first);
-    TEST(!util::geo::intersectsContains(
-        xfailBox, util::geo::getBoundingBox(failBox), util::geo::area(failBox), xbburg, util::geo::getBoundingBox(bburg), util::geo::area(bburg)).second);
+    TEST(std::get<0>(util::geo::intersectsContainsCovered(
+        xfailBox, util::geo::getBoundingBox(failBox), util::geo::area(failBox), xbburg, util::geo::getBoundingBox(bburg), util::geo::area(bburg))));
+    TEST(!std::get<1>(util::geo::intersectsContainsCovered(
+        xfailBox, util::geo::getBoundingBox(failBox), util::geo::area(failBox), xbburg, util::geo::getBoundingBox(bburg), util::geo::area(bburg))));
 
-    TEST(geo::intersectsContains(xbburg, xfailBox).first);
-    TEST(!geo::intersectsContains(xbburg, xfailBox).second);
-    TEST(geo::intersectsContains(xfailBox, xbburg).first);
-    TEST(!geo::intersectsContains(xfailBox, xbburg).second);
+    TEST(std::get<0>(geo::intersectsContainsCovered(xbburg, xfailBox)));
+    TEST(!std::get<1>(geo::intersectsContainsCovered(xbburg, xfailBox)));
+    TEST(std::get<0>(geo::intersectsContainsCovered(xfailBox, xbburg)));
+    TEST(!std::get<1>(geo::intersectsContainsCovered(xfailBox, xbburg)));
 
     auto fuss = polygonFromWKT<double>("POLYGON((7.8446456 47.9946778,7.8446551 47.9947343,7.8446586 47.9947489,7.8446618 47.9947618,7.8446680 47.9947874,7.8447134 47.9947817,7.8448593 47.9947636,7.8454206 47.9946939,7.8455627 47.9946710,7.8455804 47.9947127,7.8456399 47.9948661,7.8457995 47.9952555,7.8458449 47.9953556,7.8458452 47.9953594,7.8458680 47.9953563,7.8458894 47.9953518,7.8459007 47.9953495,7.8459077 47.9953526,7.8459896 47.9953386,7.8461010 47.9953202,7.8461719 47.9953073,7.8461167 47.9952933,7.8460616 47.9952778,7.8460033 47.9952558,7.8459497 47.9952270,7.8459145 47.9951973,7.8458918 47.9951627,7.8456854 47.9946198,7.8456398 47.9944865,7.8457887 47.9944689,7.8457337 47.9944441,7.8457194 47.9944454,7.8456794 47.9943032,7.8455339 47.9937855,7.8455340 47.9937617,7.8455418 47.9937464,7.8455532 47.9937317,7.8455763 47.9937174,7.8456011 47.9937092,7.8455910 47.9936854,7.8455855 47.9936668,7.8455552 47.9936158,7.8455459 47.9936204,7.8454343 47.9936753,7.8453567 47.9936898,7.8453360 47.9936937,7.8453205 47.9936969,7.8450527 47.9937481,7.8451718 47.9939167,7.8451742 47.9940307,7.8451412 47.9941020,7.8451471 47.9941235,7.8453055 47.9943480,7.8453216 47.9945057,7.8452917 47.9945577,7.8451256 47.9946230,7.8451130 47.9946408,7.8450849 47.9946649,7.8450236 47.9946786,7.8448211 47.9946601,7.8447221 47.9946701,7.8447051 47.9946718,7.8446775 47.9946746,7.8446456 47.9946778))");
 
@@ -921,8 +1052,8 @@ int main(int argc, char** argv) {
 
     XSortedPolygon<int> lxi(lpi);
 
-    TEST(!geo::intersectsContains(fussxi, stuehlingerxi).first);
-    TEST(!geo::intersectsContains(fussxi, stuehlingerxi).second);
+    TEST(!std::get<0>(geo::intersectsContainsCovered(fussxi, stuehlingerxi)));
+    TEST(!std::get<1>(geo::intersectsContainsCovered(fussxi, stuehlingerxi)));
 
     TEST(!geo::intersectsContains(cxi, bxi).second);
     TEST(!geo::intersectsContains(dxi, bxi).second);
@@ -935,7 +1066,7 @@ int main(int argc, char** argv) {
     TEST(!geo::intersectsContains(jxi, bxi).second);
     TEST(!geo::intersectsContains(kxi, bxi).second);
 
-    TEST(!geo::intersectsContains(lxi, bxi).second);
+    TEST(!std::get<1>(geo::intersectsContainsCovered(lxi, bxi)));
 
     TEST(!geo::intersectsContains(mxi, bxi).second);
 
