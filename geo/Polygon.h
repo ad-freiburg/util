@@ -117,69 +117,102 @@ class XSortedRing {
   XSortedRing(const Box<T>& box) : _ring(8) {
     _maxSegLen = box.getUpperRight().getX() - box.getLowerLeft().getX();
 
-    _ring[0] = {
-        box.getLowerLeft(), {box.getLowerLeft(), box.getUpperLeft()}, false, false};
-    _ring[1] = {
-        box.getLowerLeft(), {box.getLowerLeft(), box.getLowerRight()}, true, false};
-    _ring[2] = {
-        box.getUpperLeft(), {box.getUpperLeft(), box.getUpperRight()}, false, false};
-    _ring[3] = {
-        box.getUpperLeft(), {box.getLowerLeft(), box.getUpperLeft()}, false, true};
+    _ring[0] = {box.getLowerLeft(),
+                {box.getLowerLeft(), box.getUpperLeft()},
+                true,
+                -M_PI/2,
+                false};
+    _ring[1] = {box.getLowerLeft(),
+                {box.getLowerLeft(), box.getLowerRight()},
+                false,
+                -M_PI/2,
+                false};
+    _ring[2] = {box.getUpperLeft(),
+                {box.getUpperLeft(), box.getUpperRight()},
+                true,
+                -M_PI/2,
+                false};
+    _ring[3] = {box.getUpperLeft(),
+                {box.getLowerLeft(), box.getUpperLeft()},
+                true,
+                -M_PI/2,
+                true};
 
-    _ring[4] = {
-        box.getLowerRight(), {box.getLowerRight(), box.getUpperRight()}, true, false};
-    _ring[5] = {
-        box.getLowerRight(), {box.getLowerLeft(), box.getLowerRight()}, true, true};
-    _ring[6] = {
-        box.getUpperRight(), {box.getUpperLeft(), box.getUpperRight()}, false, true};
-    _ring[7] = {
-        box.getUpperRight(), {box.getLowerRight(), box.getUpperRight()}, true, true};
+    _ring[4] = {box.getLowerRight(),
+                {box.getLowerRight(), box.getUpperRight()},
+                false,
+                -M_PI/2,
+                false};
+    _ring[5] = {box.getLowerRight(),
+                {box.getLowerLeft(), box.getLowerRight()},
+                false,
+                -M_PI/2,
+                true};
+    _ring[6] = {box.getUpperRight(),
+                {box.getUpperLeft(), box.getUpperRight()},
+                true,
+                -M_PI/2,
+                true};
+    _ring[7] = {box.getUpperRight(),
+                {box.getLowerRight(), box.getUpperRight()},
+                false,
+                -M_PI/2,
+                true};
   }
 
   XSortedRing(const Ring<T>& ring) {
     _ring.reserve(ring.size());
+
     for (size_t i = 1; i < ring.size(); i++) {
-      double len =
-          fabs(ring[i - 1].getX() - ring[i].getX());
+      double len = fabs(ring[i - 1].getX() - ring[i].getX());
+      if (len > _maxSegLen) _maxSegLen = len;
+
+      double ang = 0;
+
+      size_t next = (i + 1) % ring.size();
+
+      while (ring[next].getX() == ring[i].getX() && ring[next].getY() == ring[i].getY() && next != i) {
+        next = (next + 1) % ring.size();
+      }
+
+      ang = util::geo::angBetween(
+          ring[i - 1], ring[i],
+          {ring[next].getX() - (ring[i].getX() - ring[i - 1].getX()),
+           ring[next].getY() - (ring[i].getY() - ring[i - 1].getY())});
+
       if (len > _maxSegLen) _maxSegLen = len;
 
       if (ring[i - 1].getX() < ring[i].getX()) {
-        _ring.push_back({ring[i - 1],
-                          {ring[i - 1], ring[i]},
-                          false, false});
-        _ring.push_back({ring[i],
-                          {ring[i - 1], ring[i]},
-                          false, true});
+        _ring.push_back({ring[i - 1], {ring[i - 1], ring[i]}, false, ang, false});
+        _ring.push_back({ring[i], {ring[i - 1], ring[i]}, false, ang, true});
       } else {
-        _ring.push_back({ring[i],
-                          {ring[i], ring[i - 1]},
-                          true, false});
-        _ring.push_back({ring[i - 1],
-                          {ring[i], ring[i - 1]},
-                          true, true});
+        _ring.push_back({ring[i], {ring[i], ring[i - 1]}, true, ang, false});
+        _ring.push_back({ring[i - 1], {ring[i], ring[i - 1]}, true, ang, true});
       }
     }
 
     if (ring.size() > 1) {
       size_t i = ring.size();
-      double len =
-          fabs(ring[i - 1].getX() - ring[0].getX());
+      double len = fabs(ring[i - 1].getX() - ring[0].getX());
       if (len > _maxSegLen) _maxSegLen = len;
 
-      if (ring[i-1].getX() < ring[0].getX()) {
-        _ring.push_back({ring[i - 1],
-                          {ring[i - 1], ring[0]},
-                          false, false});
-        _ring.push_back({ring[0],
-                          {ring[i - 1], ring[0]},
-                          false, true});
+      size_t next = 1;
+
+      while (ring[next].getX() == ring[0].getX() && ring[next].getY() == ring[0].getY() && next != 0) {
+        next = (next + 1) % ring.size();
+      }
+
+      double ang = util::geo::angBetween(
+          ring[i - 1], ring[0],
+          {ring[next].getX() - (ring[0].getX() - ring[i - 1].getX()),
+           ring[next].getY() - (ring[0].getY() - ring[i - 1].getY())});
+
+      if (ring[i - 1].getX() < ring[0].getX()) {
+        _ring.push_back({ring[i - 1], {ring[i - 1], ring[0]}, false, ang, false});
+        _ring.push_back({ring[0], {ring[i - 1], ring[0]}, false, ang, true});
       } else {
-        _ring.push_back({ring[0],
-                          {ring[0], ring[i - 1]},
-                          true, false});
-        _ring.push_back({ring[i - 1],
-                          {ring[0], ring[i - 1]},
-                          true, true});
+        _ring.push_back({ring[0], {ring[0], ring[i - 1]}, true, ang, false});
+        _ring.push_back({ring[i - 1], {ring[0], ring[i - 1]}, true, ang, true});
       }
     }
 
@@ -192,16 +225,16 @@ class XSortedRing {
   const std::vector<XSortedTuple<T>>& rawRing() const { return _ring; }
   std::vector<XSortedTuple<T>>& rawRing() { return _ring; }
 
-  private:
-    std::vector<XSortedTuple<T>> _ring;
-    double _maxSegLen = -1;
+ private:
+  std::vector<XSortedTuple<T>> _ring;
+  double _maxSegLen = -1;
 };
 
 template <typename T>
 class XSortedPolygon {
  public:
   XSortedPolygon() {}
-  XSortedPolygon(const Box<T>& box) :_outer(box) {}
+  XSortedPolygon(const Box<T>& box) : _outer(box) {}
   XSortedPolygon(const Polygon<T>& poly) : _outer(poly.getOuter()) {
     for (const auto& inner : poly.getInners()) {
       _inners.push_back(inner);
@@ -211,8 +244,10 @@ class XSortedPolygon {
       _innerBoxes.push_back(box);
       _innerAreas.push_back(area(inner));
       _boxIdx.push_back({box.getLowerLeft().getX(), _innerAreas.size() - 1});
-      if (box.getUpperRight().getX() - box.getLowerLeft().getX() > _innerMaxSegLen)
-        _innerMaxSegLen = box.getUpperRight().getX() - box.getLowerLeft().getX();
+      if (box.getUpperRight().getX() - box.getLowerLeft().getX() >
+          _innerMaxSegLen)
+        _innerMaxSegLen =
+            box.getUpperRight().getX() - box.getLowerLeft().getX();
     }
 
     std::sort(_boxIdx.begin(), _boxIdx.end());
@@ -221,9 +256,7 @@ class XSortedPolygon {
   const XSortedRing<T>& getOuter() const { return _outer; }
   XSortedRing<T>& getOuter() { return _outer; }
 
-  const std::vector<XSortedRing<T>>& getInners() const {
-    return _inners;
-  }
+  const std::vector<XSortedRing<T>>& getInners() const { return _inners; }
   std::vector<XSortedRing<T>>& getInners() { return _inners; }
 
   const std::vector<util::geo::Box<T>>& getInnerBoxes() const {
@@ -236,9 +269,7 @@ class XSortedPolygon {
   }
   std::vector<std::pair<T, size_t>>& getInnerBoxIdx() { return _boxIdx; }
 
-  const std::vector<double>& getInnerAreas() const {
-    return _innerAreas;
-  }
+  const std::vector<double>& getInnerAreas() const { return _innerAreas; }
   std::vector<double>& getInnerAreas() { return _innerAreas; }
 
   double getInnerMaxSegLen() const { return _innerMaxSegLen; }
