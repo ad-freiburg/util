@@ -205,15 +205,27 @@ class XSortedLine {
   XSortedLine() {}
 
   XSortedLine(const Line<T>& line) {
-    _line.reserve(line.size());
+    if (line.size() < 2) return;
+
+    _line.reserve(2 * line.size());
     for (size_t i = 1; i < line.size(); i++) {
       double len = fabs(line[i - 1].getX() - line[i].getX());
       if (len > _maxSegLen) _maxSegLen = len;
 
-      double ang = 0;
+      double ang = M_PI;
 
-      if (i == 1) ang = -M_PI;
-      if (i == line.size() - 1) ang = M_PI;
+      size_t next = (i + 1) % line.size();
+
+      while (line[next].getX() == line[i].getX() && line[next].getY() == line[i].getY() && next < line.size()) {
+        next = next + 1;
+      }
+
+      if (next < line.size()) {
+        ang = util::geo::angBetween(
+            line[i - 1], line[i],
+            {line[next].getX() - (line[i].getX() - line[i - 1].getX()),
+             line[next].getY() - (line[i].getY() - line[i - 1].getY())});
+      }
 
       if (line[i - 1].getX() < line[i].getX()) {
         _line.push_back({line[i - 1], {line[i - 1], line[i]}, false, ang, false});
@@ -224,17 +236,32 @@ class XSortedLine {
       }
     }
 
+    // beginning closure segment
+    if (line[0].getX() < line[1].getX()) {
+        _line.push_back({line[0], {line[0], line[1]}, true, M_PI, false});
+        _line.push_back({line[1], {line[0], line[1]}, true, M_PI, true});
+    } else {
+        _line.push_back({line[1], {line[1], line[0]}, false, M_PI, false});
+        _line.push_back({line[0], {line[1], line[0]}, false, M_PI, true});
+    }
+
     std::sort(_line.begin(), _line.end());
   }
 
   XSortedLine(const LineSegment<T>& line) {
-    _line.resize(2);
+    _line.resize(4);
     if (line.first.getX() < line.second.getX()) {
-      _line[0] = {line.first, {line.first, line.second}, false, 0, false};
-      _line[1] = {line.second, {line.first, line.second}, false, 0, true};
+      _line[0] = {line.first, {line.first, line.second}, true, M_PI, false};
+      _line[1] = {line.second, {line.first, line.second}, true, M_PI, true};
+
+      _line[2] = {line.first, {line.first, line.second}, false, M_PI, false};
+      _line[3] = {line.second, {line.first, line.second}, false, M_PI, true};
     } else {
-      _line[0] = {line.second, {line.second, line.first}, true, 0, false};
-      _line[1] = {line.first, {line.second, line.first}, true, 0, true};
+      _line[0] = {line.second, {line.second, line.first}, false, M_PI, false};
+      _line[1] = {line.first, {line.second, line.first}, false, M_PI, true};
+
+      _line[2] = {line.second, {line.second, line.first}, true, M_PI, false};
+      _line[3] = {line.first, {line.second, line.first}, true, M_PI, true};
     }
     _maxSegLen = fabs(line.first.getX() - line.second.getX());
   }
