@@ -1334,8 +1334,9 @@ inline std::pair<bool, bool> intersectsPolyStrict(const LineSegment<T>& ls1,
                                ls2.second.getY() -
                                    (ls1.second.getY() - ls1.first.getY())}) /
                    M_PI) *
-                  32767) <= nextLs1Ang)
+                  32767) <= nextLs1Ang) {
       return {1, 0};
+    }
     return {1, 1};
   }
 
@@ -1355,8 +1356,9 @@ inline std::pair<bool, bool> intersectsPolyStrict(const LineSegment<T>& ls1,
                                ls2.first.getY() -
                                    (ls1.second.getY() - ls1.first.getY())}) /
                    M_PI) *
-                  32767) <= nextLs1Ang)
+                  32767) <= nextLs1Ang) {
       return {1, 0};
+    }
     return {1, 1};
   }
 
