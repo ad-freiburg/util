@@ -252,15 +252,13 @@ class XSortedLine {
     _line.resize(4);
     if (line.first.getX() < line.second.getX()) {
       _line[0] = {line.first, {line.first, line.second}, true, M_PI, false};
-      _line[1] = {line.second, {line.first, line.second}, true, M_PI, true};
-
-      _line[2] = {line.first, {line.first, line.second}, false, M_PI, false};
+      _line[1] = {line.first, {line.first, line.second}, false, M_PI, false};
+      _line[2] = {line.second, {line.first, line.second}, true, M_PI, true};
       _line[3] = {line.second, {line.first, line.second}, false, M_PI, true};
     } else {
       _line[0] = {line.second, {line.second, line.first}, false, M_PI, false};
-      _line[1] = {line.first, {line.second, line.first}, false, M_PI, true};
-
-      _line[2] = {line.second, {line.second, line.first}, true, M_PI, false};
+      _line[1] = {line.second, {line.second, line.first}, true, M_PI, false};
+      _line[2] = {line.first, {line.second, line.first}, false, M_PI, true};
       _line[3] = {line.first, {line.second, line.first}, true, M_PI, true};
     }
     _maxSegLen = fabs(line.first.getX() - line.second.getX());
