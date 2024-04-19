@@ -604,7 +604,8 @@ inline void externalSort(int file, int newFile, size_t size, size_t numobjs,
     if (n < 0) continue;
     qsort(buf, n / size, size, cmpf);
     lseek(file, bufferSize * i, SEEK_SET);
-    write(file, buf, n);
+    ssize_t r= write(file, buf, n);
+    if (r < 0) throw std::runtime_error("Could not write to file.");
 
     memcpy(partbufs[i], buf, std::min<size_t>(n, partsBufSize));
     partsize[i] = n;
@@ -626,14 +627,16 @@ inline void externalSort(int file, int newFile, size_t size, size_t numobjs,
 
     if ((i % bufferSize) == bufferSize - size || i == fsize - size) {
       // write to output file
-      write(newFile, buf, i % bufferSize + size);
+      ssize_t r = write(newFile, buf, i % bufferSize + size);
+      if (r < 0) throw std::runtime_error("Could not write to file.");
     }
 
     partpos[smallestP] += size;
 
     if (partpos[smallestP] % partsBufSize == 0) {
       lseek(file, bufferSize * smallestP + partpos[smallestP], SEEK_SET);
-      read(file, partbufs[smallestP], partsBufSize);
+      ssize_t r = read(file, partbufs[smallestP], partsBufSize);
+      if (r < 0) throw std::runtime_error("Could not read from file.");
     }
     pq.push(
         {&partbufs[smallestP][partpos[smallestP] % partsBufSize], smallestP});
