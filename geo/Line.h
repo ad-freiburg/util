@@ -23,7 +23,8 @@ using LineSegment = std::pair<Point<T>, Point<T>>;
 template <typename T>
 struct AngledLineSegment {
   LineSegment<T> seg;
-  int16_t ang;
+  int16_t prevAng;
+  int16_t nextAng;
 };
 
 // _____________________________________________________________________________
@@ -35,7 +36,7 @@ inline double angBetween(const Point<T>& o, const Point<T>& p1,
   double dx1 = p1.getX() - o.getX();
   double dx2 = p2.getX() - o.getX();
 
-  return atan2(dy1 * dx2 - dy2 * dx1, dx1*dx2 + dy1*dy2);
+  return atan2(dy1 * dx2 - dy2 * dx1, dx1 * dx2 + dy1 * dy2);
 }
 
 template <typename T>
@@ -53,6 +54,7 @@ struct XSortedTuple {
   Point<T> p;
   Point<T> other;
   int16_t outAngle;
+  int16_t inAngle;
   uint8_t vals : 4;
 
   XSortedTuple() {}
@@ -61,7 +63,7 @@ struct XSortedTuple {
     vals += 4;
   }
   XSortedTuple(const Point<T>& p, const LineSegment<T>& seg, bool rev,
-               double angle, bool out)
+               double prevAngle, double nextAngle, bool out)
       : p(p), vals(0) {
     if (out) vals = 1;
     if (rev) vals += 8;
@@ -71,12 +73,15 @@ struct XSortedTuple {
     } else if (seg.second == p) {
       other = seg.first;
     }
-    outAngle = (angle / M_PI) * 32767;
+    outAngle = (nextAngle / M_PI) * 32767;
+    inAngle = (prevAngle / M_PI) * 32767;
   }
 
-  double ang() const { return ((1.0 * outAngle) / 32767.0) * M_PI; }
+  double nextAng() const { return ((1.0 * outAngle) / 32767.0) * M_PI; }
+  double prevAng() const { return ((1.0 * inAngle) / 32767.0) * M_PI; }
 
-  int16_t rawAng() const { return outAngle; }
+  int16_t rawNextAng() const { return outAngle; }
+  int16_t rawPrevAng() const { return inAngle; }
 
   LineSegment<T> seg() const {
     if (vals & 4) return {{0, 0}, {0, 0}};
@@ -99,15 +104,15 @@ struct XSortedTuple {
 
   AngledLineSegment<T> origSegAng() const {
     if (vals & 4) {
-      return {{{0, 0}, {0, 0}}, rawAng()};
+      return {{{0, 0}, {0, 0}}, rawPrevAng(), rawNextAng()};
     }
     if (vals & 2) {
-      if (vals & 8) return {{other, p}, rawAng()};
-      return {{p, other}, rawAng()};
+      if (vals & 8) return {{other, p}, rawPrevAng(), rawNextAng()};
+      return {{p, other}, rawPrevAng(), rawNextAng()};
     }
 
-    if (vals & 8) return {{p, other}, rawAng()};
-    return {{other, p}, rawAng()};
+    if (vals & 8) return {{p, other}, rawPrevAng(), rawNextAng()};
+    return {{other, p}, rawPrevAng(), rawNextAng()};
   }
 
   bool out() const { return vals & 1; }
@@ -200,6 +205,23 @@ bool operator>(const AngledLineSegment<T>& a, const AngledLineSegment<T>& b) {
 }
 
 template <typename T>
+bool sameLeftX(const LineSegment<T>& a, const LineSegment<T>& b) {
+  if (a.first.getX() < a.second.getX()) {
+    if (b.first.getX() < b.second.getX()) {
+      return a.first.getX() == b.first.getX();
+    } else {
+      return a.first.getX() == b.second.getX();
+    }
+  } else {
+    if (b.first.getX() < b.second.getX()) {
+      return a.second.getX() == b.first.getX();
+    } else {
+      return a.second.getX() == b.second.getX();
+    }
+  }
+}
+
+template <typename T>
 class XSortedLine {
  public:
   XSortedLine() {}
@@ -209,57 +231,79 @@ class XSortedLine {
 
     _line.reserve(2 * line.size());
     for (size_t i = 1; i < line.size(); i++) {
+      if (line[i - 1].getX() == line[i].getX() &&
+          line[i - 1].getY() == line[i].getY())
+        continue;
       double len = fabs(line[i - 1].getX() - line[i].getX());
       if (len > _maxSegLen) _maxSegLen = len;
 
-      double ang = M_PI;
+      double prevAng = M_PI;
+      double nextAng = M_PI;
 
-      size_t next = (i + 1) % line.size();
+      int64_t prev = i - 2;
 
-      while (line[next].getX() == line[i].getX() && line[next].getY() == line[i].getY() && next < line.size()) {
+      while (prev >= 0 && line[prev].getX() == line[i - 1].getX() &&
+             line[prev].getY() == line[i - 1].getY()) {
+        prev = prev - 1;
+      }
+
+      if (prev >= 0) {
+        prevAng = util::geo::angBetween(
+            line[i], line[i - 1],
+            {line[prev].getX() - (line[i - 1].getX() - line[i].getX()),
+             line[prev].getY() - (line[i - 1].getY() - line[i].getY())});
+      }
+
+      size_t next = i + 1;
+
+      while (line[next].getX() == line[i].getX() &&
+             line[next].getY() == line[i].getY() && next < line.size()) {
         next = next + 1;
       }
 
       if (next < line.size()) {
-        ang = util::geo::angBetween(
+        nextAng = util::geo::angBetween(
             line[i - 1], line[i],
             {line[next].getX() - (line[i].getX() - line[i - 1].getX()),
              line[next].getY() - (line[i].getY() - line[i - 1].getY())});
       }
 
       if (line[i - 1].getX() < line[i].getX()) {
-        _line.push_back({line[i - 1], {line[i - 1], line[i]}, false, ang, false});
-        _line.push_back({line[i], {line[i - 1], line[i]}, false, ang, true});
+        _line.push_back({line[i - 1],
+                         {line[i - 1], line[i]},
+                         false,
+                         prevAng,
+                         nextAng,
+                         false});
+        _line.push_back(
+            {line[i], {line[i - 1], line[i]}, false, prevAng, nextAng, true});
       } else {
-        _line.push_back({line[i], {line[i], line[i - 1]}, true, ang, false});
-        _line.push_back({line[i - 1], {line[i], line[i - 1]}, true, ang, true});
+        _line.push_back(
+            {line[i], {line[i], line[i - 1]}, true, prevAng, nextAng, false});
+        _line.push_back({line[i - 1],
+                         {line[i], line[i - 1]},
+                         true,
+                         prevAng,
+                         nextAng,
+                         true});
       }
-    }
-
-    // beginning closure segment
-    if (line[0].getX() < line[1].getX()) {
-        _line.push_back({line[0], {line[0], line[1]}, true, M_PI, false});
-        _line.push_back({line[1], {line[0], line[1]}, true, M_PI, true});
-    } else {
-        _line.push_back({line[1], {line[1], line[0]}, false, M_PI, false});
-        _line.push_back({line[0], {line[1], line[0]}, false, M_PI, true});
     }
 
     std::sort(_line.begin(), _line.end());
   }
 
   XSortedLine(const LineSegment<T>& line) {
-    _line.resize(4);
+    _line.resize(2);
     if (line.first.getX() < line.second.getX()) {
-      _line[0] = {line.first, {line.first, line.second}, true, M_PI, false};
-      _line[1] = {line.first, {line.first, line.second}, false, M_PI, false};
-      _line[2] = {line.second, {line.first, line.second}, true, M_PI, true};
-      _line[3] = {line.second, {line.first, line.second}, false, M_PI, true};
+      _line[0] = {line.first, {line.first, line.second}, false, M_PI, M_PI,
+                  false};
+      _line[1] = {line.second, {line.first, line.second}, false, M_PI, M_PI,
+                  true};
     } else {
-      _line[0] = {line.second, {line.second, line.first}, false, M_PI, false};
-      _line[1] = {line.second, {line.second, line.first}, true, M_PI, false};
-      _line[2] = {line.first, {line.second, line.first}, false, M_PI, true};
-      _line[3] = {line.first, {line.second, line.first}, true, M_PI, true};
+      _line[0] = {line.second, {line.second, line.first}, true, M_PI, M_PI,
+                  false};
+      _line[1] = {line.first, {line.second, line.first}, true, M_PI, M_PI,
+                  true};
     }
     _maxSegLen = fabs(line.first.getX() - line.second.getX());
   }

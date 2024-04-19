@@ -120,43 +120,51 @@ class XSortedRing {
     _ring[0] = {box.getLowerLeft(),
                 {box.getLowerLeft(), box.getUpperLeft()},
                 true,
-                -M_PI/2,
+                M_PI / 2,
+                -M_PI / 2,
                 false};
     _ring[1] = {box.getLowerLeft(),
                 {box.getLowerLeft(), box.getLowerRight()},
                 false,
-                -M_PI/2,
+                M_PI / 2,
+                -M_PI / 2,
                 false};
     _ring[2] = {box.getUpperLeft(),
                 {box.getUpperLeft(), box.getUpperRight()},
                 true,
-                -M_PI/2,
+                M_PI / 2,
+                -M_PI / 2,
                 false};
     _ring[3] = {box.getUpperLeft(),
                 {box.getLowerLeft(), box.getUpperLeft()},
                 true,
-                -M_PI/2,
+                M_PI / 2,
+                -M_PI / 2,
                 true};
 
     _ring[4] = {box.getLowerRight(),
                 {box.getLowerRight(), box.getUpperRight()},
                 false,
-                -M_PI/2,
+                M_PI / 2,
+                -M_PI / 2,
                 false};
     _ring[5] = {box.getLowerRight(),
                 {box.getLowerLeft(), box.getLowerRight()},
                 false,
-                -M_PI/2,
+                M_PI / 2,
+                -M_PI / 2,
                 true};
     _ring[6] = {box.getUpperRight(),
                 {box.getUpperLeft(), box.getUpperRight()},
                 true,
-                -M_PI/2,
+                M_PI / 2,
+                -M_PI / 2,
                 true};
     _ring[7] = {box.getUpperRight(),
                 {box.getLowerRight(), box.getUpperRight()},
                 false,
-                -M_PI/2,
+                M_PI / 2,
+                -M_PI / 2,
                 true};
   }
 
@@ -164,18 +172,43 @@ class XSortedRing {
     _ring.reserve(ring.size());
 
     for (size_t i = 1; i < ring.size(); i++) {
+      if (ring[i - 1].getX() == ring[i].getX() &&
+          ring[i - 1].getY() == ring[i].getY())
+        continue;
       double len = fabs(ring[i - 1].getX() - ring[i].getX());
       if (len > _maxSegLen) _maxSegLen = len;
 
-      double ang = 0;
+      double prevAng = 0;
+      double nextAng = 0;
+
+      size_t prev;
+
+      if (i > 1)
+        prev = i - 2;
+      else
+        prev = ring.size() - 1;
+
+      while (ring[prev].getX() == ring[i - 1].getX() &&
+             ring[prev].getY() == ring[i - 1].getY() && prev != i - 1) {
+        if (prev > 0)
+          prev = prev - 1;
+        else
+          prev = ring.size() - 1;
+      }
+
+      prevAng = util::geo::angBetween(
+          ring[i], ring[i - 1],
+          {ring[prev].getX() - (ring[i - 1].getX() - ring[i].getX()),
+           ring[prev].getY() - (ring[i - 1].getY() - ring[i].getY())});
 
       size_t next = (i + 1) % ring.size();
 
-      while (ring[next].getX() == ring[i].getX() && ring[next].getY() == ring[i].getY() && next != i) {
+      while (ring[next].getX() == ring[i].getX() &&
+             ring[next].getY() == ring[i].getY() && next != i) {
         next = (next + 1) % ring.size();
       }
 
-      ang = util::geo::angBetween(
+      nextAng = util::geo::angBetween(
           ring[i - 1], ring[i],
           {ring[next].getX() - (ring[i].getX() - ring[i - 1].getX()),
            ring[next].getY() - (ring[i].getY() - ring[i - 1].getY())});
@@ -183,36 +216,82 @@ class XSortedRing {
       if (len > _maxSegLen) _maxSegLen = len;
 
       if (ring[i - 1].getX() < ring[i].getX()) {
-        _ring.push_back({ring[i - 1], {ring[i - 1], ring[i]}, false, ang, false});
-        _ring.push_back({ring[i], {ring[i - 1], ring[i]}, false, ang, true});
+        _ring.push_back({ring[i - 1],
+                         {ring[i - 1], ring[i]},
+                         false,
+                         prevAng,
+                         nextAng,
+                         false});
+        _ring.push_back(
+            {ring[i], {ring[i - 1], ring[i]}, false, prevAng, nextAng, true});
       } else {
-        _ring.push_back({ring[i], {ring[i], ring[i - 1]}, true, ang, false});
-        _ring.push_back({ring[i - 1], {ring[i], ring[i - 1]}, true, ang, true});
+        _ring.push_back(
+            {ring[i], {ring[i], ring[i - 1]}, true, prevAng, nextAng, false});
+        _ring.push_back({ring[i - 1],
+                         {ring[i], ring[i - 1]},
+                         true,
+                         prevAng,
+                         nextAng,
+                         true});
       }
     }
 
-    if (ring.size() > 1) {
+    if (ring.size() > 1 && !(ring[ring.size() - 1].getX() == ring[0].getX() &&
+                             ring[ring.size() - 1].getY() == ring[0].getY())) {
       size_t i = ring.size();
       double len = fabs(ring[i - 1].getX() - ring[0].getX());
       if (len > _maxSegLen) _maxSegLen = len;
 
+      size_t prev;
+
+      if (i > 1)
+        prev = i - 2;
+      else
+        prev = ring.size() - 1;
+
+      while (ring[prev].getX() == ring[i - 1].getX() &&
+             ring[prev].getY() == ring[i - 1].getY() && prev != i - 1) {
+        if (prev > 0)
+          prev = prev - 1;
+        else
+          prev = ring.size() - 1;
+      }
+
+      double prevAng = util::geo::angBetween(
+          ring[0], ring[i - 1],
+          {ring[prev].getX() - (ring[i - 1].getX() - ring[0].getX()),
+           ring[prev].getY() - (ring[i - 1].getY() - ring[0].getY())});
+
       size_t next = 1;
 
-      while (ring[next].getX() == ring[0].getX() && ring[next].getY() == ring[0].getY() && next != 0) {
+      while (ring[next].getX() == ring[0].getX() &&
+             ring[next].getY() == ring[0].getY() && next != 0) {
         next = (next + 1) % ring.size();
       }
 
-      double ang = util::geo::angBetween(
+      double nextAng = util::geo::angBetween(
           ring[i - 1], ring[0],
           {ring[next].getX() - (ring[0].getX() - ring[i - 1].getX()),
            ring[next].getY() - (ring[0].getY() - ring[i - 1].getY())});
 
       if (ring[i - 1].getX() < ring[0].getX()) {
-        _ring.push_back({ring[i - 1], {ring[i - 1], ring[0]}, false, ang, false});
-        _ring.push_back({ring[0], {ring[i - 1], ring[0]}, false, ang, true});
+        _ring.push_back({ring[i - 1],
+                         {ring[i - 1], ring[0]},
+                         false,
+                         prevAng,
+                         nextAng,
+                         false});
+        _ring.push_back(
+            {ring[0], {ring[i - 1], ring[0]}, false, prevAng, nextAng, true});
       } else {
-        _ring.push_back({ring[0], {ring[0], ring[i - 1]}, true, ang, false});
-        _ring.push_back({ring[i - 1], {ring[0], ring[i - 1]}, true, ang, true});
+        _ring.push_back(
+            {ring[0], {ring[0], ring[i - 1]}, true, prevAng, nextAng, false});
+        _ring.push_back({ring[i - 1],
+                         {ring[0], ring[i - 1]},
+                         true,
+                         prevAng,
+                         nextAng,
+                         true});
       }
     }
 
@@ -236,7 +315,6 @@ class XSortedPolygon {
   XSortedPolygon() {}
   XSortedPolygon(const Box<T>& box) : _outer(box) {}
   XSortedPolygon(const Polygon<T>& poly) {
-
     auto outer = poly.getOuter();
 
     // outer ring  must be oriented counter-clockwise
