@@ -73,12 +73,15 @@ struct XSortedTuple {
     } else if (seg.second == p) {
       other = seg.first;
     }
-    outAngle = (nextAngle / M_PI) * 32767;
-    inAngle = (prevAngle / M_PI) * 32767;
+    outAngle = (nextAngle / M_PI) * 32766;
+    inAngle = (prevAngle / M_PI) * 32766;
+
+    if (nextAngle > M_PI) outAngle = 32767;
+    if (prevAngle > M_PI) inAngle = 32767;
   }
 
-  double nextAng() const { return ((1.0 * outAngle) / 32767.0) * M_PI; }
-  double prevAng() const { return ((1.0 * inAngle) / 32767.0) * M_PI; }
+  double nextAng() const { return ((1.0 * outAngle) / 32766.0) * M_PI; }
+  double prevAng() const { return ((1.0 * inAngle) / 32766.0) * M_PI; }
 
   int16_t rawNextAng() const { return outAngle; }
   int16_t rawPrevAng() const { return inAngle; }
@@ -268,6 +271,9 @@ class XSortedLine {
              line[next].getY() - (line[i].getY() - line[i - 1].getY())});
       }
 
+      if (i == 1) prevAng = 2 * M_PI;
+      if (i == line.size() - 1) nextAng = 2 * M_PI;
+
       if (line[i - 1].getX() < line[i].getX()) {
         _line.push_back({line[i - 1],
                          {line[i - 1], line[i]},
@@ -295,14 +301,14 @@ class XSortedLine {
   XSortedLine(const LineSegment<T>& line) {
     _line.resize(2);
     if (line.first.getX() < line.second.getX()) {
-      _line[0] = {line.first, {line.first, line.second}, false, M_PI, M_PI,
+      _line[0] = {line.first, {line.first, line.second}, false, 2 * M_PI, 2 * M_PI,
                   false};
-      _line[1] = {line.second, {line.first, line.second}, false, M_PI, M_PI,
+      _line[1] = {line.second, {line.first, line.second}, false, 2 * M_PI, 2 * M_PI,
                   true};
     } else {
-      _line[0] = {line.second, {line.second, line.first}, true, M_PI, M_PI,
+      _line[0] = {line.second, {line.second, line.first}, true, 2 * M_PI, 2 * M_PI,
                   false};
-      _line[1] = {line.first, {line.second, line.first}, true, M_PI, M_PI,
+      _line[1] = {line.first, {line.second, line.first}, true, 2 * M_PI, 2 * M_PI,
                   true};
     }
     _maxSegLen = fabs(line.first.getX() - line.second.getX());

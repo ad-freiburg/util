@@ -59,6 +59,12 @@ inline double ringArea(const Ring<T>& b) {
 
 // _____________________________________________________________________________
 template <typename T>
+inline double outerArea(const Polygon<T>& b) {
+  return ringArea(b.getOuter());
+}
+
+// _____________________________________________________________________________
+template <typename T>
 inline double area(const Polygon<T>& b) {
   double ret = ringArea(b.getOuter());
   for (const auto& inner : b.getInners()) ret -= ringArea(inner);
