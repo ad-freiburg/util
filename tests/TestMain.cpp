@@ -1041,7 +1041,7 @@ int main(int argc, char** argv) {
 
   // ___________________________________________________________________________
   {
-    std::string test = u8"Zuerich, Hauptbahnhof (Nord)";
+    std::string test = "Zuerich, Hauptbahnhof (Nord)";
     auto tokens = util::tokenize(test);
 
     TEST(tokens.size(), ==, 3);
