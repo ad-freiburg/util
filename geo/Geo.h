@@ -1234,160 +1234,104 @@ inline std::tuple<bool, bool, bool, bool, bool, bool> intersectsLineStrict(
 
   // ls2 is completely in ls1
   if (contains(ls2.first, ls1) && contains(ls2.second, ls1)) {
-    if (prevLs2Ang == 0 && nextLs2Ang == 0) return {1, 0, 1, 0, 0, 0};
+    int32_t ang1 = ((angBetween(ls2.first, ls2.second) / M_PI) * 32766);
+    int32_t ang2 = ((angBetween(ls2.second, ls2.first) / M_PI) * 32766);
+    if (prevLs2Ang == ang2 && nextLs2Ang == ang1) return {1, 0, 1, 0, 0, 0};
     return {1, 0, 1, 0, 0, 1};
   }
 
   // ls1 is completely in ls2
   if (contains(ls1.first, ls2) && contains(ls1.second, ls2)) {
-    if (prevLs1Ang == 0 && nextLs1Ang == 0) return {1, 0, 1, 0, 0, 0};
+    int32_t ang1 = ((angBetween(ls1.first, ls1.second) / M_PI) * 32766);
+    int32_t ang2 = ((angBetween(ls1.second, ls1.first) / M_PI) * 32766);
+    if (prevLs1Ang == ang2 && nextLs1Ang == ang1) return {1, 0, 1, 0, 0, 0};
     return {1, 1, 1, 0, 0, 0};
   }
 
   if (dist(ls1.first, ls2.first) < EPSILON && !contains(ls1.second, ls2) &&
       !contains(ls2.second, ls1)) {
-    int32_t ang1 =
-        ((angBetween(
-              ls1.second, ls1.first,
-              {ls2.second.getX() - (ls1.first.getX() - ls1.second.getX()),
-               ls2.second.getY() - (ls1.first.getY() - ls1.second.getY())}) /
-          M_PI) *
-         32766);
-
-    int32_t ang2 =
-        ((angBetween(
-              ls2.second, ls2.first,
-              {ls1.second.getX() - (ls2.first.getX() - ls2.second.getX()),
-               ls1.second.getY() - (ls2.first.getY() - ls2.second.getY())}) /
-          M_PI) *
-         32766);
+    int32_t ang1 = ((angBetween(ls2.first, ls2.second) / M_PI) * 32766);
+    int32_t ang2 = ((angBetween(ls1.first, ls1.second) / M_PI) * 32766);
 
     return {1,
             prevLs1Ang != ang1,
             prevLs1Ang == ang1 || prevLs2Ang == ang2,
             prevLs1Ang == 32767 || prevLs2Ang == 32767,
-            (prevLs2Ang != ang2 || prevLs1Ang != ang1) && prevLs1Ang != 32767 &&
-                prevLs2Ang != 32767,
+            prevLs2Ang != ang2 && prevLs1Ang != ang1 && prevLs1Ang != 32767 &&
+                prevLs2Ang != 32767 && prevLs2Ang != prevLs1Ang,
             prevLs2Ang != ang2};
   }
 
   if (dist(ls1.first, ls2.second) < EPSILON && !contains(ls1.second, ls2) &&
       !contains(ls2.first, ls1)) {
-    int16_t ang1 =
-        ((angBetween(
-              ls1.second, ls1.first,
-              {ls2.first.getX() - (ls1.first.getX() - ls1.second.getX()),
-               ls2.first.getY() - (ls1.first.getY() - ls1.second.getY())}) /
-          M_PI) *
-         32766);
-
-    int16_t ang2 =
-        ((angBetween(
-              ls2.first, ls2.second,
-              {ls1.second.getX() - (ls2.second.getX() - ls2.first.getX()),
-               ls1.second.getY() - (ls2.second.getY() - ls2.first.getY())}) /
-          M_PI) *
-         32766);
+    int32_t ang1 = ((angBetween(ls2.second, ls2.first) / M_PI) * 32766);
+    int32_t ang2 = ((angBetween(ls1.first, ls1.second) / M_PI) * 32766);
 
     return {1,
             prevLs1Ang != ang1,
             prevLs1Ang == ang1 || nextLs2Ang == ang2,
             prevLs1Ang == 32767 || nextLs2Ang == 32767,
-            (nextLs2Ang != ang2 || prevLs1Ang != ang1) && prevLs1Ang != 32767 &&
-                nextLs2Ang != 32767,
+            nextLs2Ang != ang2 && prevLs1Ang != ang1 && prevLs1Ang != 32767 &&
+                nextLs2Ang != 32767 && prevLs1Ang != nextLs2Ang,
             nextLs2Ang != ang2};
   }
 
   if (dist(ls1.second, ls2.first) < EPSILON && !contains(ls1.first, ls2) &&
       !contains(ls2.second, ls1)) {
-    int16_t ang1 =
-        ((angBetween(
-              ls1.first, ls1.second,
-              {ls2.second.getX() - (ls1.second.getX() - ls1.first.getX()),
-               ls2.second.getY() - (ls1.second.getY() - ls1.first.getY())}) /
-          M_PI) *
-         32766);
-
-    int16_t ang2 =
-        ((angBetween(
-              ls2.second, ls2.first,
-              {ls1.first.getX() - (ls2.first.getX() - ls2.second.getX()),
-               ls1.first.getY() - (ls2.first.getY() - ls2.second.getY())}) /
-          M_PI) *
-         32766);
+    int32_t ang1 = ((angBetween(ls2.first, ls2.second) / M_PI) * 32766);
+    int32_t ang2 = ((angBetween(ls1.second, ls1.first) / M_PI) * 32766);
 
     return {1,
             nextLs1Ang != ang1,
             nextLs1Ang == ang1 || prevLs2Ang == ang2,
             nextLs1Ang == 32767 || prevLs2Ang == 32767,
-            (prevLs2Ang != ang2 || nextLs1Ang != ang1) && nextLs1Ang != 32767 &&
-                prevLs2Ang != 32767,
+            prevLs2Ang != ang2 && nextLs1Ang != ang1 && nextLs1Ang != 32767 &&
+                prevLs2Ang != 32767 && prevLs2Ang != nextLs1Ang,
             prevLs2Ang != ang2};
   }
 
   if (dist(ls1.second, ls2.second) < EPSILON && !contains(ls1.first, ls2) &&
       !contains(ls2.first, ls1)) {
-    int16_t ang1 =
-        ((angBetween(
-              ls1.first, ls1.second,
-              {ls2.first.getX() - (ls1.second.getX() - ls1.first.getX()),
-               ls2.first.getY() - (ls1.second.getY() - ls1.first.getY())}) /
-          M_PI) *
-         32766);
-
-    int16_t ang2 =
-        ((angBetween(
-              ls2.first, ls2.second,
-              {ls1.first.getX() - (ls2.second.getX() - ls2.first.getX()),
-               ls1.first.getY() - (ls2.second.getY() - ls2.first.getY())}) /
-          M_PI) *
-         32766);
+    int32_t ang1 = ((angBetween(ls2.second, ls2.first) / M_PI) * 32766);
+    int32_t ang2 = ((angBetween(ls1.second, ls1.first) / M_PI) * 32766);
 
     return {1,
             ang1 != nextLs1Ang,
             ang1 == nextLs1Ang || ang2 == nextLs2Ang,
             nextLs1Ang == 32767 || nextLs2Ang == 32767,
-            (nextLs2Ang != ang2 || nextLs1Ang != ang1) && nextLs1Ang != 32767 &&
-                nextLs2Ang != 32767,
+            nextLs2Ang != ang2 && nextLs1Ang != ang1 && nextLs1Ang != 32767 &&
+                nextLs2Ang != 32767 && nextLs1Ang != nextLs2Ang,
             nextLs2Ang != ang2};
   }
 
   if (contains(ls2.first, ls1) && contains(ls1.second, ls2)) {
-    return {1, nextLs1Ang != 0, 1, 0, 0, prevLs2Ang != 0};
+    int32_t ang1 = ((angBetween(ls1.first, ls1.second) / M_PI) * 32766);
+    int32_t ang2 = ((angBetween(ls2.second, ls2.first) / M_PI) * 32766);
+    return {1, nextLs1Ang != ang1, 1, 0, 0, prevLs2Ang != ang2};
   }
 
   if (contains(ls2.second, ls1) && contains(ls1.second, ls2)) {
-    return {1, nextLs1Ang != 0, 1, 0, 0, nextLs2Ang != 0};
+    int32_t ang1 = ((angBetween(ls1.first, ls1.second) / M_PI) * 32766);
+    int32_t ang2 = ((angBetween(ls2.first, ls2.second) / M_PI) * 32766);
+    return {1, nextLs1Ang != ang1, 1, 0, 0, nextLs2Ang != ang2};
   }
 
   if (contains(ls2.first, ls1) && contains(ls1.first, ls2)) {
-    return {1, prevLs1Ang != 0, 1, 0, 0, prevLs2Ang != 0};
+    int32_t ang1 = ((angBetween(ls1.second, ls1.first) / M_PI) * 32766);
+    int32_t ang2 = ((angBetween(ls2.second, ls2.first) / M_PI) * 32766);
+    return {1, prevLs1Ang != ang1, 1, 0, 0, prevLs2Ang != ang2};
   }
 
   if (contains(ls2.second, ls1) && contains(ls1.first, ls2)) {
-    return {1, prevLs1Ang != 0, 1, 0, 0, nextLs2Ang != 0};
+    int16_t ang1 = ((angBetween(ls1.second, ls1.first) / M_PI) * 32766);
+    int16_t ang2 = ((angBetween(ls2.first, ls2.second) / M_PI) * 32766);
+    return {1, prevLs1Ang != ang1, 1, 0, 0, nextLs2Ang != ang2};
   }
 
   if (contains(ls1.second, ls2) && !contains(ls1.first, ls2) &&
       !contains(ls2.first, ls1) && !contains(ls2.second, ls1)) {
-    // TODO: determine angle between ls1 and ls2, check if
-    // nextLs1 ang is different -> crosses, or the same -> overlaps
-
-    int16_t ang1 =
-        (angBetween(
-             ls1.first, ls1.second,
-             {ls2.first.getX() - (ls1.second.getX() - ls1.first.getX()),
-              ls2.first.getY() - (ls1.second.getY() - ls1.first.getY())}) /
-         M_PI) *
-        32766;
-
-    int16_t ang2 =
-        (angBetween(
-             ls1.first, ls1.second,
-             {ls2.second.getX() - (ls1.second.getX() - ls1.first.getX()),
-              ls2.second.getY() - (ls1.second.getY() - ls1.first.getY())}) /
-         M_PI) *
-        32766;
+    int16_t ang1 = (angBetween(ls2.first, ls2.second) / M_PI) * 32766;
+    int16_t ang2 = (angBetween(ls2.second, ls2.first) / M_PI) * 32766;
 
     return {1,
             1,
@@ -1399,24 +1343,8 @@ inline std::tuple<bool, bool, bool, bool, bool, bool> intersectsLineStrict(
 
   if (contains(ls1.first, ls2) && !contains(ls1.second, ls2) &&
       !contains(ls2.first, ls1) && !contains(ls2.second, ls1)) {
-    // TODO: determine angle between ls1 and ls2, check if
-    // prevLs1 ang is different -> crosses, or the same -> overlaps
-    //
-    int16_t ang1 =
-        (angBetween(
-             ls1.second, ls1.first,
-             {ls2.first.getX() - (ls1.first.getX() - ls1.second.getX()),
-              ls2.first.getY() - (ls1.first.getY() - ls1.second.getY())}) /
-         M_PI) *
-        32766;
-
-    int16_t ang2 =
-        (angBetween(
-             ls1.second, ls1.first,
-             {ls2.second.getX() - (ls1.first.getX() - ls1.second.getX()),
-              ls2.second.getY() - (ls1.first.getY() - ls1.second.getY())}) /
-         M_PI) *
-        32766;
+    int16_t ang1 = (angBetween(ls2.first, ls2.second) / M_PI) * 32766;
+    int16_t ang2 = (angBetween(ls2.second, ls2.first) / M_PI) * 32766;
 
     return {1,
             1,
@@ -1428,23 +1356,8 @@ inline std::tuple<bool, bool, bool, bool, bool, bool> intersectsLineStrict(
 
   if (contains(ls2.first, ls1) && !contains(ls1.second, ls2) &&
       !contains(ls1.first, ls2) && !contains(ls2.second, ls1)) {
-    // TODO: determine angle between ls2 and ls1, check if
-    // prevLs2 ang is different -> crosses, or the same -> overlaps
-    int16_t ang1 =
-        (angBetween(
-             ls2.second, ls2.first,
-             {ls1.first.getX() - (ls2.first.getX() - ls2.second.getX()),
-              ls1.first.getY() - (ls2.first.getY() - ls2.second.getY())}) /
-         M_PI) *
-        32766;
-
-    int16_t ang2 =
-        (angBetween(
-             ls2.second, ls2.first,
-             {ls1.second.getX() - (ls2.first.getX() - ls2.second.getX()),
-              ls1.second.getY() - (ls2.first.getY() - ls2.second.getY())}) /
-         M_PI) *
-        32766;
+    int16_t ang1 = (angBetween(ls1.first, ls1.second) / M_PI) * 32766;
+    int16_t ang2 = (angBetween(ls1.second, ls1.first) / M_PI) * 32766;
 
     return {1,
             1,
@@ -1456,24 +1369,8 @@ inline std::tuple<bool, bool, bool, bool, bool, bool> intersectsLineStrict(
 
   if (contains(ls2.second, ls1) && !contains(ls2.first, ls1) &&
       !contains(ls1.first, ls2) && !contains(ls1.second, ls2)) {
-    // TODO: determine angle between ls2 and ls1, check if
-    // nextLs2 ang is different -> crosses, or the same -> overlaps
-
-    int16_t ang1 =
-        (angBetween(
-             ls2.first, ls2.second,
-             {ls1.first.getX() - (ls2.second.getX() - ls2.first.getX()),
-              ls1.first.getY() - (ls2.second.getY() - ls2.first.getY())}) /
-         M_PI) *
-        32766;
-
-    int16_t ang2 =
-        (angBetween(
-             ls2.first, ls2.second,
-             {ls1.second.getX() - (ls2.second.getX() - ls2.first.getX()),
-              ls1.second.getY() - (ls2.second.getY() - ls2.first.getY())}) /
-         M_PI) *
-        32766;
+    int16_t ang1 = (angBetween(ls1.first, ls1.second) / M_PI) * 32766;
+    int16_t ang2 = (angBetween(ls1.second, ls1.first) / M_PI) * 32766;
 
     return {1,
             1,
@@ -2310,16 +2207,12 @@ inline bool lineIntersects(const Point<T>& p1, const Point<T>& q1,
 }
 
 // _____________________________________________________________________________
-inline double angBetween(double p1x, double p1y, double q1x, double q1y) {
-  double dY = q1y - p1y;
-  double dX = q1x - p1x;
-  return atan2(dY, dX);
-}
+inline double angBetween(double p1x, double p1y) { return atan2(p1x, p1y); }
 
 // _____________________________________________________________________________
 template <typename T>
-inline double angBetween(const Point<T>& p1, const Point<T>& q1) {
-  return angBetween(p1.getX(), p1.getY(), q1.getX(), q1.getY());
+inline double angBetween(const Point<T>& p1) {
+  return atan2(p1.getX(), p1.getY());
 }
 
 // _____________________________________________________________________________

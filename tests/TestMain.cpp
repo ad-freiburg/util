@@ -376,9 +376,28 @@ int main(int argc, char** argv) {
     TEST(!std::get<2>(geo::intersectsCovers(ax, bx, util::geo::getBoundingBox(a), util::geo::getBoundingBox(b))));
     TEST(!std::get<2>(geo::intersectsCovers(bx, ax, util::geo::getBoundingBox(b), util::geo::getBoundingBox(a))));
 
-    // TODO!
-    // TEST(std::get<3>(geo::intersectsCovers(ax, bx, util::geo::getBoundingBox(a), util::geo::getBoundingBox(b))));
-    // TEST(std::get<3>(geo::intersectsCovers(bx, ax, util::geo::getBoundingBox(b), util::geo::getBoundingBox(a))));
+    TEST(std::get<3>(geo::intersectsCovers(ax, bx, util::geo::getBoundingBox(a), util::geo::getBoundingBox(b))));
+    TEST(std::get<3>(geo::intersectsCovers(bx, ax, util::geo::getBoundingBox(b), util::geo::getBoundingBox(a))));
+
+    TEST(!std::get<4>(geo::intersectsCovers(ax, bx, util::geo::getBoundingBox(a), util::geo::getBoundingBox(b))));
+    TEST(!std::get<4>(geo::intersectsCovers(bx, ax, util::geo::getBoundingBox(b), util::geo::getBoundingBox(a))));
+  }
+
+  {
+    auto a = lineFromWKT<int>("LINESTRING(0 0, 3 3, 5 5, 6 6)");
+    auto b = lineFromWKT<int>("LINESTRING(1 1, 4 4, 5 5, 5 7)");
+    XSortedLine<int> ax(a);
+    XSortedLine<int> bx(b);
+
+    TEST(std::get<0>(geo::intersectsCovers(ax, bx, util::geo::getBoundingBox(a), util::geo::getBoundingBox(b))));
+    TEST(!std::get<1>(geo::intersectsCovers(ax, bx, util::geo::getBoundingBox(a), util::geo::getBoundingBox(b))));
+    TEST(std::get<0>(geo::intersectsCovers(bx, ax, util::geo::getBoundingBox(b), util::geo::getBoundingBox(a))));
+    TEST(!std::get<1>(geo::intersectsCovers(bx, ax, util::geo::getBoundingBox(b), util::geo::getBoundingBox(a))));
+    TEST(!std::get<2>(geo::intersectsCovers(ax, bx, util::geo::getBoundingBox(a), util::geo::getBoundingBox(b))));
+    TEST(!std::get<2>(geo::intersectsCovers(bx, ax, util::geo::getBoundingBox(b), util::geo::getBoundingBox(a))));
+
+    TEST(std::get<3>(geo::intersectsCovers(ax, bx, util::geo::getBoundingBox(a), util::geo::getBoundingBox(b))));
+    TEST(std::get<3>(geo::intersectsCovers(bx, ax, util::geo::getBoundingBox(b), util::geo::getBoundingBox(a))));
 
     TEST(!std::get<4>(geo::intersectsCovers(ax, bx, util::geo::getBoundingBox(a), util::geo::getBoundingBox(b))));
     TEST(!std::get<4>(geo::intersectsCovers(bx, ax, util::geo::getBoundingBox(b), util::geo::getBoundingBox(a))));

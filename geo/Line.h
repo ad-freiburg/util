@@ -28,6 +28,19 @@ struct AngledLineSegment {
 };
 
 // _____________________________________________________________________________
+inline double angBetween(double p1x, double p1y, double q1x, double q1y) {
+  double dY = q1y - p1y;
+  double dX = q1x - p1x;
+  return atan2(dY, dX);
+}
+
+// _____________________________________________________________________________
+template <typename T>
+inline double angBetween(const Point<T>& p1, const Point<T>& q1) {
+  return angBetween(p1.getX(), p1.getY(), q1.getX(), q1.getY());
+}
+
+// _____________________________________________________________________________
 template <typename T>
 inline double angBetween(const Point<T>& o, const Point<T>& p1,
                          const Point<T>& p2) {
@@ -251,10 +264,7 @@ class XSortedLine {
       }
 
       if (prev >= 0) {
-        prevAng = util::geo::angBetween(
-            line[i], line[i - 1],
-            {line[prev].getX() - (line[i - 1].getX() - line[i].getX()),
-             line[prev].getY() - (line[i - 1].getY() - line[i].getY())});
+        prevAng = util::geo::angBetween(line[i-1], line[prev]);
       }
 
       size_t next = i + 1;
@@ -265,10 +275,7 @@ class XSortedLine {
       }
 
       if (next < line.size()) {
-        nextAng = util::geo::angBetween(
-            line[i - 1], line[i],
-            {line[next].getX() - (line[i].getX() - line[i - 1].getX()),
-             line[next].getY() - (line[i].getY() - line[i - 1].getY())});
+        nextAng = util::geo::angBetween(line[i], line[next]);
       }
 
       if (i == 1) prevAng = 2 * M_PI;
