@@ -926,25 +926,25 @@ inline std::tuple<bool, bool, bool> intersectsPoly(
 
 // _____________________________________________________________________________
 template <typename T>
-inline std::tuple<bool, bool, bool> intersectsCovers(
+inline std::tuple<bool, bool, bool, bool, bool> intersectsCovers(
     const std::vector<XSortedTuple<T>>& ls1,
     const std::vector<XSortedTuple<T>>& ls2, double maxSegLenA,
     double maxSegLenB, const Box<T>& boxA, const Box<T>& boxB,
     size_t* firstRelIn1, size_t* firstRelIn2, size_t* lineSegChecks) {
+  // {intersects, covers, touches, overlaps, crosses}
 
-  // {intersects, covers, touches}
-
-  if (ls1.size() == 0 || ls2.size() == 0) return {0, 0, 0};
+  if (ls1.size() == 0 || ls2.size() == 0) return {0, 0, 0, 0, 0};
 
   bool strictIntersect = false;
+  bool strictIntersect2 = false;
   bool weakIntersect = false;
   bool touches = false;
-  // bool crosses = false;
-  // bool overlaps = false;
+  bool overlaps = false;
+  bool crosses = false;
 
   // shortcuts
-  if (ls1.front().p.getX() > ls2.back().p.getX()) return {0, 0, 0};
-  if (ls2.front().p.getX() > ls1.back().p.getX()) return {0, 0, 0};
+  if (ls1.front().p.getX() > ls2.back().p.getX()) return {0, 0, 0, 0, 0};
+  if (ls2.front().p.getX() > ls1.back().p.getX()) return {0, 0, 0, 0, 0};
 
   size_t i = 0;  // position in ls1
   size_t j = 0;  // position in ls2
@@ -975,9 +975,8 @@ inline std::tuple<bool, bool, bool> intersectsCovers(
          (!ls1[i].out() || ls2[j].out()))) {
       // advance ls1
 
-      // we are past ls2, so simply return false (active2 is guaranteed to be
-      // empty!)
-      if (ls1[i].p.getX() > ls2.back().p.getX()) return {0, 0, 0};
+      // we are past ls2
+      if (ls1[i].p.getX() > ls2.back().p.getX()) break;
 
       // ignore segments out of the Y range
       if (ls1[i].seg().first.getY() < boxB.getLowerLeft().getY() &&
@@ -996,27 +995,30 @@ inline std::tuple<bool, bool, bool> intersectsCovers(
 
         if (above != active2.end()) {
           if (lineSegChecks) (*lineSegChecks)++;
-          auto r = intersectsLineStrict(above->seg, above->prevAng,
-                                        above->nextAng, ls1[i].origSeg(), ls1[i].rawPrevAng(), ls1[i].rawNextAng());
+          auto r = intersectsLineStrict(
+              above->seg, above->prevAng, above->nextAng, ls1[i].origSeg(),
+              ls1[i].rawPrevAng(), ls1[i].rawNextAng());
 
-          if (std::get<1>(r) && !std::get<3>(r)) return {1, 0, 0};
-
-          // if (std::get<2>(r)) overlaps = true;
+          if (std::get<4>(r)) crosses = true;
+          if (std::get<2>(r)) overlaps = true;
           if (std::get<3>(r)) touches = true;
           if (std::get<1>(r)) strictIntersect = true;
           if (std::get<0>(r)) weakIntersect = true;
+          if (std::get<5>(r)) strictIntersect2 = true;
         }
         if (above != active2.begin()) {
           if (lineSegChecks) (*lineSegChecks)++;
           auto r = intersectsLineStrict(
               (std::prev(above))->seg, (std::prev(above))->prevAng,
-              (std::prev(above))->nextAng, ls1[i].origSeg(), ls1[i].rawPrevAng(), ls1[i].rawNextAng());
+              (std::prev(above))->nextAng, ls1[i].origSeg(),
+              ls1[i].rawPrevAng(), ls1[i].rawNextAng());
 
-          if (std::get<1>(r) && !std::get<3>(r)) return {1, 0 , 0};
-          // if (std::get<2>(r)) overlaps = true;
+          if (std::get<4>(r)) crosses = true;
+          if (std::get<2>(r)) overlaps = true;
           if (std::get<3>(r)) touches = true;
           if (std::get<1>(r)) strictIntersect = true;
           if (std::get<0>(r)) weakIntersect = true;
+          if (std::get<5>(r)) strictIntersect2 = true;
         }
 
         active1.insert(ls1[i].origSegAng());
@@ -1027,14 +1029,16 @@ inline std::tuple<bool, bool, bool> intersectsCovers(
           auto a = toDel;
           if (above != active2.end() && a != active1.begin()) {
             if (lineSegChecks) (*lineSegChecks)++;
-            auto r = intersectsLineStrict(above->seg, above->prevAng,
-                                          above->nextAng, (std::prev(a))->seg, (std::prev(a))->prevAng, (std::prev(a))->nextAng);
+            auto r = intersectsLineStrict(
+                above->seg, above->prevAng, above->nextAng, (std::prev(a))->seg,
+                (std::prev(a))->prevAng, (std::prev(a))->nextAng);
 
-          if (std::get<1>(r) && !std::get<3>(r)) return {1, 0 , 0};
-          // if (std::get<2>(r)) overlaps = true;
-          if (std::get<3>(r)) touches = true;
-          if (std::get<1>(r)) strictIntersect = true;
-          if (std::get<0>(r)) weakIntersect = true;
+            if (std::get<4>(r)) crosses = true;
+            if (std::get<2>(r)) overlaps = true;
+            if (std::get<3>(r)) touches = true;
+            if (std::get<1>(r)) strictIntersect = true;
+            if (std::get<0>(r)) weakIntersect = true;
+            if (std::get<5>(r)) strictIntersect2 = true;
           }
 
           toDel++;
@@ -1042,13 +1046,15 @@ inline std::tuple<bool, bool, bool> intersectsCovers(
             if (lineSegChecks) (*lineSegChecks)++;
             auto r = intersectsLineStrict(
                 (std::prev(above))->seg, (std::prev(above))->prevAng,
-                (std::prev(above))->nextAng, toDel->seg, toDel->prevAng, toDel->nextAng);
+                (std::prev(above))->nextAng, toDel->seg, toDel->prevAng,
+                toDel->nextAng);
 
-          if (std::get<1>(r) && !std::get<3>(r)) return {1, 0 , 0};
-          // if (std::get<2>(r)) overlaps = true;
-          if (std::get<3>(r)) touches = true;
-          if (std::get<1>(r)) strictIntersect = true;
-          if (std::get<0>(r)) weakIntersect = true;
+            if (std::get<4>(r)) crosses = true;
+            if (std::get<2>(r)) overlaps = true;
+            if (std::get<3>(r)) touches = true;
+            if (std::get<1>(r)) strictIntersect = true;
+            if (std::get<0>(r)) weakIntersect = true;
+            if (std::get<5>(r)) strictIntersect2 = true;
           }
 
           active1.erase(std::prev(toDel));
@@ -1060,9 +1066,8 @@ inline std::tuple<bool, bool, bool> intersectsCovers(
                (ls2[j].p.getX() == ls1[i].p.getX() && !ls2[j].out())) {
       // advance ls2
 
-      // we are past ls1, so simple return false (active1 is guaranteed to be
-      // empty!)
-      if (ls2[j].p.getX() > ls1.back().p.getX()) return {0, 0, 0};
+      // we are past ls1
+      if (ls2[j].p.getX() > ls1.back().p.getX()) break;
 
       // ignore segments out of the Y range
       if (ls2[j].seg().first.getY() < boxA.getLowerLeft().getY() &&
@@ -1081,28 +1086,30 @@ inline std::tuple<bool, bool, bool> intersectsCovers(
         if (above != active1.end()) {
           if (lineSegChecks) (*lineSegChecks)++;
           auto r = intersectsLineStrict(ls2[j].origSeg(), ls2[j].rawPrevAng(),
-                                        ls2[j].rawNextAng(), above->seg, above->prevAng, above->nextAng);
+                                        ls2[j].rawNextAng(), above->seg,
+                                        above->prevAng, above->nextAng);
 
-          if (std::get<1>(r) && !std::get<3>(r)) return {1, 0 , 0};
-          // if (std::get<2>(r)) overlaps = true;
+          if (std::get<4>(r)) crosses = true;
+          if (std::get<2>(r)) overlaps = true;
           if (std::get<3>(r)) touches = true;
           if (std::get<1>(r)) strictIntersect = true;
           if (std::get<0>(r)) weakIntersect = true;
+          if (std::get<5>(r)) strictIntersect2 = true;
         }
 
         if (above != active1.begin()) {
           if (lineSegChecks) (*lineSegChecks)++;
-          auto r = intersectsLineStrict(ls2[j].origSeg(), ls2[j].rawPrevAng(),
-                                        ls2[j].rawNextAng(),
-                                        (std::prev(above))->seg,
-                                        (std::prev(above))->prevAng,
-                                        (std::prev(above))->nextAng);
+          auto r = intersectsLineStrict(
+              ls2[j].origSeg(), ls2[j].rawPrevAng(), ls2[j].rawNextAng(),
+              (std::prev(above))->seg, (std::prev(above))->prevAng,
+              (std::prev(above))->nextAng);
 
-          if (std::get<1>(r) && !std::get<3>(r)) return {1, 0 , 0};
-          // if (std::get<2>(r)) overlaps = true;
+          if (std::get<4>(r)) crosses = true;
+          if (std::get<2>(r)) overlaps = true;
           if (std::get<3>(r)) touches = true;
           if (std::get<1>(r)) strictIntersect = true;
           if (std::get<0>(r)) weakIntersect = true;
+          if (std::get<5>(r)) strictIntersect2 = true;
         }
 
         active2.insert(ls2[j].origSegAng());
@@ -1115,29 +1122,31 @@ inline std::tuple<bool, bool, bool> intersectsCovers(
             if (lineSegChecks) (*lineSegChecks)++;
             auto r = intersectsLineStrict((std::prev(a))->seg,
                                           (std::prev(a))->prevAng,
-                                          (std::prev(a))->nextAng, above->seg, above->prevAng, above->nextAng);
+                                          (std::prev(a))->nextAng, above->seg,
+                                          above->prevAng, above->nextAng);
 
-          if (std::get<1>(r) && !std::get<3>(r)) return {1, 0 , 0};
-          // if (std::get<2>(r)) overlaps = true;
-          if (std::get<3>(r)) touches = true;
-          if (std::get<1>(r)) strictIntersect = true;
-          if (std::get<0>(r)) weakIntersect = true;
+            if (std::get<4>(r)) crosses = true;
+            if (std::get<2>(r)) overlaps = true;
+            if (std::get<3>(r)) touches = true;
+            if (std::get<1>(r)) strictIntersect = true;
+            if (std::get<0>(r)) weakIntersect = true;
+            if (std::get<5>(r)) strictIntersect2 = true;
           }
 
           toDel++;
           if (toDel != active2.end() && above != active1.begin()) {
             if (lineSegChecks) (*lineSegChecks)++;
-            auto r =
-                intersectsLineStrict(toDel->seg, toDel->prevAng, toDel->nextAng,
-                                     (std::prev(above))->seg,
-                                     (std::prev(above))->prevAng,
-                                     (std::prev(above))->nextAng);
+            auto r = intersectsLineStrict(
+                toDel->seg, toDel->prevAng, toDel->nextAng,
+                (std::prev(above))->seg, (std::prev(above))->prevAng,
+                (std::prev(above))->nextAng);
 
-          if (std::get<1>(r) && !std::get<3>(r)) return {1, 0 , 0};
-          // if (std::get<2>(r)) overlaps = true;
-          if (std::get<3>(r)) touches = true;
-          if (std::get<1>(r)) strictIntersect = true;
-          if (std::get<0>(r)) weakIntersect = true;
+            if (std::get<4>(r)) crosses = true;
+            if (std::get<2>(r)) overlaps = true;
+            if (std::get<3>(r)) touches = true;
+            if (std::get<1>(r)) strictIntersect = true;
+            if (std::get<0>(r)) weakIntersect = true;
+            if (std::get<5>(r)) strictIntersect2 = true;
           }
 
           active2.erase(std::prev(toDel));
@@ -1148,12 +1157,19 @@ inline std::tuple<bool, bool, bool> intersectsCovers(
     }
   }
 
-  return {weakIntersect, !strictIntersect && weakIntersect, touches};
+  bool aInB = !crosses && !strictIntersect && weakIntersect;
+  bool bInA = !crosses && !strictIntersect2 && weakIntersect;
+
+  return {weakIntersect,                                       // intersects
+          !crosses && !strictIntersect && weakIntersect,       // covers
+          !crosses && touches && !overlaps,                    // touches
+          !crosses && overlaps && !touches && !aInB && !bInA,  // overlaps
+          crosses && !overlaps};                               // crosses
 }
 
 // _____________________________________________________________________________
 template <typename T>
-inline std::tuple<bool, bool, bool> intersectsCovers(
+inline std::tuple<bool, bool, bool, bool, bool> intersectsCovers(
     const std::vector<XSortedTuple<T>>& ls1,
     const std::vector<XSortedTuple<T>>& ls2, double maxSegLenA,
     double maxSegLenB, const Box<T>& boxA, const Box<T>& boxB,
@@ -1164,7 +1180,7 @@ inline std::tuple<bool, bool, bool> intersectsCovers(
 
 // _____________________________________________________________________________
 template <typename T>
-inline std::tuple<bool, bool, bool> intersectsCovers(
+inline std::tuple<bool, bool, bool, bool, bool> intersectsCovers(
     const std::vector<XSortedTuple<T>>& ls1,
     const std::vector<XSortedTuple<T>>& ls2, double maxSegLenA,
     double maxSegLenB) {
@@ -1181,62 +1197,11 @@ inline std::tuple<bool, bool, bool> intersectsCovers(
 
 // _____________________________________________________________________________
 template <typename T>
-inline std::tuple<bool, bool, bool> intersectsCovers(
+inline std::tuple<bool, bool, bool, bool, bool> intersectsCovers(
     const std::vector<XSortedTuple<T>>& ls1,
     const std::vector<XSortedTuple<T>>& ls2) {
   return intersectsCovers(ls1, ls2, std::numeric_limits<double>::infinity(),
                           std::numeric_limits<double>::infinity());
-}
-
-// _____________________________________________________________________________
-template <typename T>
-inline bool intersectsNaive(const XSortedRing<T>& ls1,
-                            const XSortedRing<T>& ls2) {
-  return intersectsNaive(ls1.rawRing(), ls2.rawRing());
-}
-
-// _____________________________________________________________________________
-template <typename T>
-inline std::tuple<bool, bool, bool> intersectsCovers(const XSortedRing<T>& ls1,
-                                              const XSortedRing<T>& ls2) {
-  return intersectsCovers(ls1.rawRing(), ls2.rawRing(), ls1.getMaxSegLen(),
-                          ls2.getMaxSegLen());
-}
-
-// _____________________________________________________________________________
-template <typename T>
-inline std::tuple<bool, bool, bool> intersectsCovers(const XSortedRing<T>& ls1,
-                                              const XSortedRing<T>& ls2,
-                                              double maxSegLenA,
-                                              double maxSegLenB) {
-  return intersectsCovers(
-      ls1.rawRing(), ls2.rawRing(), maxSegLenA, maxSegLenB,
-      util::geo::Box<T>(
-          {std::numeric_limits<T>::lowest(), std::numeric_limits<T>::lowest()},
-          {std::numeric_limits<T>::max(), std::numeric_limits<T>::max()}),
-      util::geo::Box<T>(
-          {std::numeric_limits<T>::lowest(), std::numeric_limits<T>::lowest()},
-          {std::numeric_limits<T>::max(), std::numeric_limits<T>::max()}),
-      0, 0);
-}
-
-// _____________________________________________________________________________
-template <typename T>
-inline std::tuple<bool, bool, bool> intersectsCovers(
-    const XSortedRing<T>& ls1, const XSortedRing<T>& ls2, double maxSegLenA,
-    double maxSegLenB, const Box<T>& boxA, const Box<T>& boxB) {
-  return intersectsCovers(ls1.rawRing(), ls2.rawRing(), maxSegLenA, maxSegLenB,
-                          boxA, boxB, 0, 0);
-}
-
-// _____________________________________________________________________________
-template <typename T>
-inline std::tuple<bool, bool, bool> intersectsCovers(
-    const XSortedRing<T>& ls1, const XSortedRing<T>& ls2, double maxSegLenA,
-    double maxSegLenB, const Box<T>& boxA, const Box<T>& boxB,
-    size_t* firstRelIn1, size_t* firstRelIn2) {
-  return intersectsCovers(ls1.rawRing(), ls2.rawRing(), maxSegLenA, maxSegLenB,
-                          boxA, boxB, firstRelIn1, firstRelIn2);
 }
 
 // _____________________________________________________________________________
@@ -1251,130 +1216,280 @@ inline std::tuple<bool, bool, bool> intersectsPoly(
 
 // _____________________________________________________________________________
 template <typename T>
-inline std::tuple<bool, bool, bool, bool> intersectsLineStrict(const LineSegment<T>& ls1,
-                                                  int16_t prevLs1Ang,
-                                                  int16_t nextLs1Ang,
-                                                  const LineSegment<T>& ls2,
-                                                  int16_t prevLs2Ang,
-                                                  int16_t nextLs2Ang
-                                                  ) {
-  // {intersects, strictly intersects, overlaps, touches}
+inline std::tuple<bool, bool, bool, bool, bool, bool> intersectsLineStrict(
+    const LineSegment<T>& ls1, int32_t prevLs1Ang, int32_t nextLs1Ang,
+    const LineSegment<T>& ls2, int32_t prevLs2Ang, int32_t nextLs2Ang) {
+  // {intersects, strictly intersects, overlaps, touches, crosses, strictly
+  // intersects ls2/ls1}
 
   // trivial case: no intersect
-  if (!intersects(getBoundingBox(ls1), getBoundingBox(ls2))) return {0, 0, 0, 0};
+  if (!intersects(getBoundingBox(ls1), getBoundingBox(ls2)))
+    return {0, 0, 0, 0, 0, 0};
+
+  // ls1 and ls2 are equivalent
+  if (contains(ls2.first, ls1) && contains(ls2.second, ls1) &&
+      contains(ls1.first, ls2) && contains(ls1.second, ls2)) {
+    return {1, 0, 1, 0, 0, 0};
+  }
 
   // ls2 is completely in ls1
-  if (contains(ls2.first, ls1) && contains(ls2.second, ls1)) return {1, 0, 1, 0};
+  if (contains(ls2.first, ls1) && contains(ls2.second, ls1)) {
+    if (prevLs2Ang == 0 && nextLs2Ang == 0) return {1, 0, 1, 0, 0, 0};
+    return {1, 0, 1, 0, 0, 1};
+  }
 
   // ls1 is completely in ls2
   if (contains(ls1.first, ls2) && contains(ls1.second, ls2)) {
-    if (prevLs1Ang == 0 && nextLs1Ang == 0) return {1, 0, 1, 0};
-    return {1, 1, 1, 0};
+    if (prevLs1Ang == 0 && nextLs1Ang == 0) return {1, 0, 1, 0, 0, 0};
+    return {1, 1, 1, 0, 0, 0};
   }
 
   if (dist(ls1.first, ls2.first) < EPSILON && !contains(ls1.second, ls2) &&
       !contains(ls2.second, ls1)) {
-    if ((int16_t)((angBetween(ls1.second, ls1.first,
-                              {ls2.second.getX() -
-                                   (ls1.first.getX() - ls1.second.getX()),
-                               ls2.second.getY() -
-                                   (ls1.first.getY() - ls1.second.getY())}) /
-                   M_PI) *
-                  32766) == prevLs1Ang) {
-      return {1, 0, 1, 0};
-    }
-    return {1, 1, 0, prevLs1Ang == 32767 || prevLs2Ang == 32767};
+    int32_t ang1 =
+        ((angBetween(
+              ls1.second, ls1.first,
+              {ls2.second.getX() - (ls1.first.getX() - ls1.second.getX()),
+               ls2.second.getY() - (ls1.first.getY() - ls1.second.getY())}) /
+          M_PI) *
+         32766);
+
+    int32_t ang2 =
+        ((angBetween(
+              ls2.second, ls2.first,
+              {ls1.second.getX() - (ls2.first.getX() - ls2.second.getX()),
+               ls1.second.getY() - (ls2.first.getY() - ls2.second.getY())}) /
+          M_PI) *
+         32766);
+
+    return {1,
+            prevLs1Ang != ang1,
+            prevLs1Ang == ang1 || prevLs2Ang == ang2,
+            prevLs1Ang == 32767 || prevLs2Ang == 32767,
+            (prevLs2Ang != ang2 || prevLs1Ang != ang1) && prevLs1Ang != 32767 &&
+                prevLs2Ang != 32767,
+            prevLs2Ang != ang2};
   }
 
   if (dist(ls1.first, ls2.second) < EPSILON && !contains(ls1.second, ls2) &&
       !contains(ls2.first, ls1)) {
-    if ((int16_t)((angBetween(ls1.second, ls1.first,
-                              {ls2.first.getX() -
-                                   (ls1.first.getX() - ls1.second.getX()),
-                               ls2.first.getY() -
-                                   (ls1.first.getY() - ls1.second.getY())}) /
-                   M_PI) *
-                  32766) == prevLs1Ang) {
-      return {1, 0, 1, 0};
-    }
-    return {1, 1, 0, prevLs1Ang == 32767 || nextLs2Ang == 32767};
+    int16_t ang1 =
+        ((angBetween(
+              ls1.second, ls1.first,
+              {ls2.first.getX() - (ls1.first.getX() - ls1.second.getX()),
+               ls2.first.getY() - (ls1.first.getY() - ls1.second.getY())}) /
+          M_PI) *
+         32766);
+
+    int16_t ang2 =
+        ((angBetween(
+              ls2.first, ls2.second,
+              {ls1.second.getX() - (ls2.second.getX() - ls2.first.getX()),
+               ls1.second.getY() - (ls2.second.getY() - ls2.first.getY())}) /
+          M_PI) *
+         32766);
+
+    return {1,
+            prevLs1Ang != ang1,
+            prevLs1Ang == ang1 || nextLs2Ang == ang2,
+            prevLs1Ang == 32767 || nextLs2Ang == 32767,
+            (nextLs2Ang != ang2 || prevLs1Ang != ang1) && prevLs1Ang != 32767 &&
+                nextLs2Ang != 32767,
+            nextLs2Ang != ang2};
   }
 
   if (dist(ls1.second, ls2.first) < EPSILON && !contains(ls1.first, ls2) &&
       !contains(ls2.second, ls1)) {
-    if ((int16_t)((angBetween(ls1.first, ls1.second,
-                              {ls2.second.getX() -
-                                   (ls1.second.getX() - ls1.first.getX()),
-                               ls2.second.getY() -
-                                   (ls1.second.getY() - ls1.first.getY())}) /
-                   M_PI) *
-                  32766) == nextLs1Ang) {
-      return {1, 0, 1, 0};
-    }
-    return {1, 1, 0, nextLs1Ang == 32767 || prevLs2Ang == 32767};
+    int16_t ang1 =
+        ((angBetween(
+              ls1.first, ls1.second,
+              {ls2.second.getX() - (ls1.second.getX() - ls1.first.getX()),
+               ls2.second.getY() - (ls1.second.getY() - ls1.first.getY())}) /
+          M_PI) *
+         32766);
+
+    int16_t ang2 =
+        ((angBetween(
+              ls2.second, ls2.first,
+              {ls1.first.getX() - (ls2.first.getX() - ls2.second.getX()),
+               ls1.first.getY() - (ls2.first.getY() - ls2.second.getY())}) /
+          M_PI) *
+         32766);
+
+    return {1,
+            nextLs1Ang != ang1,
+            nextLs1Ang == ang1 || prevLs2Ang == ang2,
+            nextLs1Ang == 32767 || prevLs2Ang == 32767,
+            (prevLs2Ang != ang2 || nextLs1Ang != ang1) && nextLs1Ang != 32767 &&
+                prevLs2Ang != 32767,
+            prevLs2Ang != ang2};
   }
 
   if (dist(ls1.second, ls2.second) < EPSILON && !contains(ls1.first, ls2) &&
       !contains(ls2.first, ls1)) {
-    if ((int16_t)((angBetween(ls1.first, ls1.second,
-                              {ls2.first.getX() -
-                                   (ls1.second.getX() - ls1.first.getX()),
-                               ls2.first.getY() -
-                                   (ls1.second.getY() - ls1.first.getY())}) /
-                   M_PI) *
-                  32766) == nextLs1Ang) {
-      return {1, 0, 1, 0};
-    }
-    return {1, 1, 0, nextLs1Ang == 32767 || nextLs2Ang == 32767};
+    int16_t ang1 =
+        ((angBetween(
+              ls1.first, ls1.second,
+              {ls2.first.getX() - (ls1.second.getX() - ls1.first.getX()),
+               ls2.first.getY() - (ls1.second.getY() - ls1.first.getY())}) /
+          M_PI) *
+         32766);
+
+    int16_t ang2 =
+        ((angBetween(
+              ls2.first, ls2.second,
+              {ls1.first.getX() - (ls2.second.getX() - ls2.first.getX()),
+               ls1.first.getY() - (ls2.second.getY() - ls2.first.getY())}) /
+          M_PI) *
+         32766);
+
+    return {1,
+            ang1 != nextLs1Ang,
+            ang1 == nextLs1Ang || ang2 == nextLs2Ang,
+            nextLs1Ang == 32767 || nextLs2Ang == 32767,
+            (nextLs2Ang != ang2 || nextLs1Ang != ang1) && nextLs1Ang != 32767 &&
+                nextLs2Ang != 32767,
+            nextLs2Ang != ang2};
   }
 
   if (contains(ls2.first, ls1) && contains(ls1.second, ls2)) {
-    if (nextLs1Ang == 0) return {1, 0, 1, 0};
-    return {1, 1, 1, 0};
+    return {1, nextLs1Ang != 0, 1, 0, 0, prevLs2Ang != 0};
   }
 
   if (contains(ls2.second, ls1) && contains(ls1.second, ls2)) {
-    if (nextLs1Ang == 0) return {1, 0, 1, 0};
-    return {1, 1, 1, 0};
+    return {1, nextLs1Ang != 0, 1, 0, 0, nextLs2Ang != 0};
   }
 
   if (contains(ls2.first, ls1) && contains(ls1.first, ls2)) {
-    if (prevLs1Ang == 0) return {1, 0, 1, 0};
-    return {1, 1, 1, 0};
+    return {1, prevLs1Ang != 0, 1, 0, 0, prevLs2Ang != 0};
   }
 
   if (contains(ls2.second, ls1) && contains(ls1.first, ls2)) {
-    if (prevLs1Ang == 0) return {1, 0, 1, 0};
-    return {1, 1, 1, 0};
+    return {1, prevLs1Ang != 0, 1, 0, 0, nextLs2Ang != 0};
   }
 
   if (contains(ls1.second, ls2) && !contains(ls1.first, ls2) &&
       !contains(ls2.first, ls1) && !contains(ls2.second, ls1)) {
-    return {1, 1, 0, nextLs1Ang == 32767};
+    // TODO: determine angle between ls1 and ls2, check if
+    // nextLs1 ang is different -> crosses, or the same -> overlaps
+
+    int16_t ang1 =
+        (angBetween(
+             ls1.first, ls1.second,
+             {ls2.first.getX() - (ls1.second.getX() - ls1.first.getX()),
+              ls2.first.getY() - (ls1.second.getY() - ls1.first.getY())}) /
+         M_PI) *
+        32766;
+
+    int16_t ang2 =
+        (angBetween(
+             ls1.first, ls1.second,
+             {ls2.second.getX() - (ls1.second.getX() - ls1.first.getX()),
+              ls2.second.getY() - (ls1.second.getY() - ls1.first.getY())}) /
+         M_PI) *
+        32766;
+
+    return {1,
+            1,
+            nextLs1Ang == ang1 || nextLs1Ang == ang2,
+            nextLs1Ang == 32767,
+            nextLs1Ang != 32767 && nextLs1Ang != ang1 && nextLs1Ang != ang2,
+            1};
   }
 
   if (contains(ls1.first, ls2) && !contains(ls1.second, ls2) &&
       !contains(ls2.first, ls1) && !contains(ls2.second, ls1)) {
-    return {1, 1, 0, prevLs1Ang == 32767};
+    // TODO: determine angle between ls1 and ls2, check if
+    // prevLs1 ang is different -> crosses, or the same -> overlaps
+    //
+    int16_t ang1 =
+        (angBetween(
+             ls1.second, ls1.first,
+             {ls2.first.getX() - (ls1.first.getX() - ls1.second.getX()),
+              ls2.first.getY() - (ls1.first.getY() - ls1.second.getY())}) /
+         M_PI) *
+        32766;
+
+    int16_t ang2 =
+        (angBetween(
+             ls1.second, ls1.first,
+             {ls2.second.getX() - (ls1.first.getX() - ls1.second.getX()),
+              ls2.second.getY() - (ls1.first.getY() - ls1.second.getY())}) /
+         M_PI) *
+        32766;
+
+    return {1,
+            1,
+            prevLs1Ang == ang1 || prevLs1Ang == ang2,
+            prevLs1Ang == 32767,
+            prevLs1Ang != 32767 && prevLs1Ang != ang1 && prevLs1Ang != ang2,
+            1};
   }
 
   if (contains(ls2.first, ls1) && !contains(ls1.second, ls2) &&
       !contains(ls1.first, ls2) && !contains(ls2.second, ls1)) {
-    return {1, 1, 0, prevLs2Ang == 32767};
+    // TODO: determine angle between ls2 and ls1, check if
+    // prevLs2 ang is different -> crosses, or the same -> overlaps
+    int16_t ang1 =
+        (angBetween(
+             ls2.second, ls2.first,
+             {ls1.first.getX() - (ls2.first.getX() - ls2.second.getX()),
+              ls1.first.getY() - (ls2.first.getY() - ls2.second.getY())}) /
+         M_PI) *
+        32766;
+
+    int16_t ang2 =
+        (angBetween(
+             ls2.second, ls2.first,
+             {ls1.second.getX() - (ls2.first.getX() - ls2.second.getX()),
+              ls1.second.getY() - (ls2.first.getY() - ls2.second.getY())}) /
+         M_PI) *
+        32766;
+
+    return {1,
+            1,
+            prevLs2Ang == ang1 || prevLs2Ang == ang2,
+            prevLs2Ang == 32767,
+            prevLs2Ang != 32767 && prevLs2Ang != ang1 && prevLs2Ang != ang2,
+            1};
   }
 
   if (contains(ls2.second, ls1) && !contains(ls2.first, ls1) &&
       !contains(ls1.first, ls2) && !contains(ls1.second, ls2)) {
-    return {1, 1, 0, nextLs2Ang == 32767};
+    // TODO: determine angle between ls2 and ls1, check if
+    // nextLs2 ang is different -> crosses, or the same -> overlaps
+
+    int16_t ang1 =
+        (angBetween(
+             ls2.first, ls2.second,
+             {ls1.first.getX() - (ls2.second.getX() - ls2.first.getX()),
+              ls1.first.getY() - (ls2.second.getY() - ls2.first.getY())}) /
+         M_PI) *
+        32766;
+
+    int16_t ang2 =
+        (angBetween(
+             ls2.first, ls2.second,
+             {ls1.second.getX() - (ls2.second.getX() - ls2.first.getX()),
+              ls1.second.getY() - (ls2.second.getY() - ls2.first.getY())}) /
+         M_PI) *
+        32766;
+
+    return {1,
+            1,
+            nextLs2Ang == ang1 || nextLs2Ang == ang2,
+            nextLs2Ang == 32767,
+            nextLs2Ang != 32767 && nextLs2Ang != ang1 && nextLs2Ang != ang2,
+            1};
   }
 
   // the line segments strictly intersect
   if (((crossProd(ls1.first, ls2) < 0) ^ (crossProd(ls1.second, ls2) < 0)) &&
       ((crossProd(ls2.first, ls1) < 0) ^ (crossProd(ls2.second, ls1) < 0))) {
-    return {1, 1, 0, 0};
+    return {1, 1, 0, 0, 1, 1};
   }
 
-  return {0, 0, 0, 0};
+  return {0, 0, 0, 0, 0, 0};
 }
 
 // _____________________________________________________________________________
@@ -1879,10 +1994,11 @@ inline std::tuple<bool, bool, bool, bool> intersectsContainsCovers(
           return {false, false, false, false};  // a is contained by innerB
         }
         if (std::get<2>(res))
-          return {true, false, false, true};  // a is covered, not contained by innerB
+          return {true, false, false,
+                  true};  // a is covered, not contained by innerB
         if (std::get<4>(res))
-          return {true, false,
-                  false, false};  // a strictly intersects border of innerB
+          return {true, false, false,
+                  false};  // a strictly intersects border of innerB
 
         if (std::get<3>(res))
           intersectsInnerBorder = true;  // a overlaps border of innerB
@@ -1964,8 +2080,7 @@ inline std::tuple<bool, bool, bool, bool> intersectsContainsCovers(
         auto res = intersectsContainsInner(b.getOuter(), innerA);
         if (std::get<1>(res))
           return {std::get<0>(borderInt), false, false, false};
-        if (std::get<2>(res))
-          return {true, false, false, true};
+        if (std::get<2>(res)) return {true, false, false, true};
       }
     }
     return {true, false, false, false};
@@ -1993,7 +2108,7 @@ inline std::tuple<bool, bool, bool, bool> intersectsContainsCovers(
 
 // _____________________________________________________________________________
 template <typename T>
-inline std::tuple<bool, bool, bool> intersectsCovers(
+inline std::tuple<bool, bool, bool, bool, bool> intersectsCovers(
     const util::geo::XSortedLine<T>& a, const util::geo::XSortedLine<T>& b,
     const Box<T>& boxA, const Box<T>& boxB) {
   return util::geo::intersectsCovers(a.rawLine(), b.rawLine(), a.getMaxSegLen(),
@@ -2048,11 +2163,12 @@ inline std::tuple<bool, bool, bool, bool> intersectsContainsCovers(
           return {false, false, false, false};  // a is contained by innerB
 
         if (std::get<4>(res))
-          return {true, false,
-                  false, std::get<2>(res)};  // a strictly intersects border of innerB
+          return {true, false, false,
+                  std::get<2>(res)};  // a strictly intersects border of innerB
 
         if (std::get<2>(res))
-          return {true, false, true, true};  // a is completely covered by innerB
+          return {true, false, true,
+                  true};  // a is completely covered by innerB
 
         if (std::get<3>(res))
           intersectsInnerBorder = true;  // a intersects border of innerB
@@ -2061,7 +2177,8 @@ inline std::tuple<bool, bool, bool, bool> intersectsContainsCovers(
 
     // intersects + contains
     return {true, !std::get<0>(borderInt) && !intersectsInnerBorder,
-            !std::get<1>(borderInt), !std::get<2>(borderInt) && !intersectsInnerBorder};
+            !std::get<1>(borderInt),
+            !std::get<2>(borderInt) && !intersectsInnerBorder};
   }
 
   // disjoint
@@ -2703,6 +2820,20 @@ inline double len(const Line<T>& g) {
   double ret = 0;
   for (size_t i = 1; i < g.size(); i++) ret += dist(g[i - 1], g[i]);
   return ret;
+}
+
+// _____________________________________________________________________________
+template <typename T>
+inline double len(const std::vector<XSortedTuple<T>>& g) {
+  double ret = 0;
+  for (size_t i = 0; i < g.size(); i++) ret += len(g[i].seg());
+  return ret / 2;
+}
+
+// _____________________________________________________________________________
+template <typename T>
+inline double len(const XSortedLine<T>& g) {
+  return len(g.rawLine());
 }
 
 // _____________________________________________________________________________

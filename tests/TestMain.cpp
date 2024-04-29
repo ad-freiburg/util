@@ -45,6 +45,30 @@ int main(int argc, char** argv) {
   }
 
   {
+    auto a = lineFromWKT<int>("LINESTRING(1 1, 2 2)");
+    auto b = lineFromWKT<int>("LINESTRING(0 0, 4 4)");
+    XSortedLine<int> ax(a);
+    XSortedLine<int> bx(b);
+
+    TEST(std::get<0>(geo::intersectsCovers(ax, bx, util::geo::getBoundingBox(a), util::geo::getBoundingBox(b))));
+    TEST(std::get<1>(geo::intersectsCovers(ax, bx, util::geo::getBoundingBox(a), util::geo::getBoundingBox(b))));
+  }
+
+  {
+    auto a = lineFromWKT<int>("LINESTRING(1 1, 2 2)");
+    auto b = lineFromWKT<int>("LINESTRING(2 2, 1 1)");
+    XSortedLine<int> ax(a);
+    XSortedLine<int> bx(b);
+
+    TEST(std::get<0>(geo::intersectsCovers(ax, bx, util::geo::getBoundingBox(a), util::geo::getBoundingBox(b))));
+    TEST(std::get<1>(geo::intersectsCovers(ax, bx, util::geo::getBoundingBox(a), util::geo::getBoundingBox(b))));
+    TEST(std::get<1>(geo::intersectsCovers(bx, ax, util::geo::getBoundingBox(b), util::geo::getBoundingBox(a))));
+    TEST(!std::get<2>(geo::intersectsCovers(ax, bx, util::geo::getBoundingBox(a), util::geo::getBoundingBox(b))));
+    TEST(!std::get<3>(geo::intersectsCovers(ax, bx, util::geo::getBoundingBox(a), util::geo::getBoundingBox(b))));
+    TEST(!std::get<4>(geo::intersectsCovers(ax, bx, util::geo::getBoundingBox(a), util::geo::getBoundingBox(b))));
+  }
+
+  {
     auto a = lineFromWKT<int>("LINESTRING(0 0, 2 2)");
     auto b = lineFromWKT<int>("LINESTRING(1 1, 1 2)");
     XSortedLine<int> ax(a);
@@ -55,6 +79,12 @@ int main(int argc, char** argv) {
 
     TEST(std::get<2>(geo::intersectsCovers(ax, bx, util::geo::getBoundingBox(a), util::geo::getBoundingBox(b))));
     TEST(std::get<2>(geo::intersectsCovers(bx, ax, util::geo::getBoundingBox(b), util::geo::getBoundingBox(a))));
+
+    TEST(!std::get<3>(geo::intersectsCovers(ax, bx, util::geo::getBoundingBox(a), util::geo::getBoundingBox(b))));
+    TEST(!std::get<3>(geo::intersectsCovers(bx, ax, util::geo::getBoundingBox(b), util::geo::getBoundingBox(a))));
+
+    TEST(!std::get<4>(geo::intersectsCovers(ax, bx, util::geo::getBoundingBox(a), util::geo::getBoundingBox(b))));
+    TEST(!std::get<4>(geo::intersectsCovers(bx, ax, util::geo::getBoundingBox(b), util::geo::getBoundingBox(a))));
   }
 
   {
@@ -68,6 +98,12 @@ int main(int argc, char** argv) {
 
     TEST(std::get<2>(geo::intersectsCovers(ax, bx, util::geo::getBoundingBox(a), util::geo::getBoundingBox(b))));
     TEST(std::get<2>(geo::intersectsCovers(bx, ax, util::geo::getBoundingBox(b), util::geo::getBoundingBox(a))));
+
+    TEST(!std::get<3>(geo::intersectsCovers(ax, bx, util::geo::getBoundingBox(a), util::geo::getBoundingBox(b))));
+    TEST(!std::get<3>(geo::intersectsCovers(bx, ax, util::geo::getBoundingBox(b), util::geo::getBoundingBox(a))));
+
+    TEST(!std::get<4>(geo::intersectsCovers(ax, bx, util::geo::getBoundingBox(a), util::geo::getBoundingBox(b))));
+    TEST(!std::get<4>(geo::intersectsCovers(bx, ax, util::geo::getBoundingBox(b), util::geo::getBoundingBox(a))));
   }
 
   {
@@ -81,6 +117,12 @@ int main(int argc, char** argv) {
 
     TEST(std::get<2>(geo::intersectsCovers(ax, bx, util::geo::getBoundingBox(a), util::geo::getBoundingBox(b))));
     TEST(std::get<2>(geo::intersectsCovers(bx, ax, util::geo::getBoundingBox(b), util::geo::getBoundingBox(a))));
+
+    TEST(!std::get<3>(geo::intersectsCovers(ax, bx, util::geo::getBoundingBox(a), util::geo::getBoundingBox(b))));
+    TEST(!std::get<3>(geo::intersectsCovers(bx, ax, util::geo::getBoundingBox(b), util::geo::getBoundingBox(a))));
+
+    TEST(!std::get<4>(geo::intersectsCovers(ax, bx, util::geo::getBoundingBox(a), util::geo::getBoundingBox(b))));
+    TEST(!std::get<4>(geo::intersectsCovers(bx, ax, util::geo::getBoundingBox(b), util::geo::getBoundingBox(a))));
   }
 
   {
@@ -94,6 +136,12 @@ int main(int argc, char** argv) {
 
     TEST(!std::get<2>(geo::intersectsCovers(ax, bx, util::geo::getBoundingBox(a), util::geo::getBoundingBox(b))));
     TEST(!std::get<2>(geo::intersectsCovers(bx, ax, util::geo::getBoundingBox(b), util::geo::getBoundingBox(a))));
+
+    TEST(!std::get<3>(geo::intersectsCovers(ax, bx, util::geo::getBoundingBox(a), util::geo::getBoundingBox(b))));
+    TEST(!std::get<3>(geo::intersectsCovers(bx, ax, util::geo::getBoundingBox(b), util::geo::getBoundingBox(a))));
+
+    TEST(std::get<4>(geo::intersectsCovers(ax, bx, util::geo::getBoundingBox(a), util::geo::getBoundingBox(b))));
+    TEST(std::get<4>(geo::intersectsCovers(bx, ax, util::geo::getBoundingBox(b), util::geo::getBoundingBox(a))));
   }
 
   {
@@ -107,6 +155,12 @@ int main(int argc, char** argv) {
 
     TEST(std::get<2>(geo::intersectsCovers(ax, bx, util::geo::getBoundingBox(a), util::geo::getBoundingBox(b))));
     TEST(std::get<2>(geo::intersectsCovers(bx, ax, util::geo::getBoundingBox(b), util::geo::getBoundingBox(a))));
+
+    TEST(!std::get<3>(geo::intersectsCovers(ax, bx, util::geo::getBoundingBox(a), util::geo::getBoundingBox(b))));
+    TEST(!std::get<3>(geo::intersectsCovers(bx, ax, util::geo::getBoundingBox(b), util::geo::getBoundingBox(a))));
+
+    TEST(!std::get<4>(geo::intersectsCovers(ax, bx, util::geo::getBoundingBox(a), util::geo::getBoundingBox(b))));
+    TEST(!std::get<4>(geo::intersectsCovers(bx, ax, util::geo::getBoundingBox(b), util::geo::getBoundingBox(a))));
   }
 
   {
@@ -120,6 +174,12 @@ int main(int argc, char** argv) {
 
     TEST(std::get<2>(geo::intersectsCovers(ax, bx, util::geo::getBoundingBox(a), util::geo::getBoundingBox(b))));
     TEST(std::get<2>(geo::intersectsCovers(bx, ax, util::geo::getBoundingBox(b), util::geo::getBoundingBox(a))));
+
+    TEST(!std::get<3>(geo::intersectsCovers(ax, bx, util::geo::getBoundingBox(a), util::geo::getBoundingBox(b))));
+    TEST(!std::get<3>(geo::intersectsCovers(bx, ax, util::geo::getBoundingBox(b), util::geo::getBoundingBox(a))));
+
+    TEST(!std::get<4>(geo::intersectsCovers(ax, bx, util::geo::getBoundingBox(a), util::geo::getBoundingBox(b))));
+    TEST(!std::get<4>(geo::intersectsCovers(bx, ax, util::geo::getBoundingBox(b), util::geo::getBoundingBox(a))));
   }
 
   {
@@ -155,10 +215,18 @@ int main(int argc, char** argv) {
     XSortedLine<int> bx(b);
 
     TEST(std::get<0>(geo::intersectsCovers(ax, bx, util::geo::getBoundingBox(a), util::geo::getBoundingBox(b))));
+
     TEST(!std::get<1>(geo::intersectsCovers(ax, bx, util::geo::getBoundingBox(a), util::geo::getBoundingBox(b))));
     TEST(std::get<1>(geo::intersectsCovers(bx, ax, util::geo::getBoundingBox(b), util::geo::getBoundingBox(a))));
+
     TEST(!std::get<2>(geo::intersectsCovers(ax, bx, util::geo::getBoundingBox(a), util::geo::getBoundingBox(b))));
     TEST(!std::get<2>(geo::intersectsCovers(bx, ax, util::geo::getBoundingBox(b), util::geo::getBoundingBox(a))));
+
+    TEST(!std::get<3>(geo::intersectsCovers(bx, ax, util::geo::getBoundingBox(b), util::geo::getBoundingBox(a))));
+    TEST(!std::get<3>(geo::intersectsCovers(ax, bx, util::geo::getBoundingBox(a), util::geo::getBoundingBox(b))));
+
+    TEST(!std::get<4>(geo::intersectsCovers(ax, bx, util::geo::getBoundingBox(a), util::geo::getBoundingBox(b))));
+    TEST(!std::get<4>(geo::intersectsCovers(bx, ax, util::geo::getBoundingBox(b), util::geo::getBoundingBox(a))));
   }
 
   {
@@ -171,6 +239,12 @@ int main(int argc, char** argv) {
     TEST(!std::get<1>(geo::intersectsCovers(ax, bx, util::geo::getBoundingBox(a), util::geo::getBoundingBox(b))));
     TEST(!std::get<2>(geo::intersectsCovers(ax, bx, util::geo::getBoundingBox(a), util::geo::getBoundingBox(b))));
     TEST(!std::get<2>(geo::intersectsCovers(bx, ax, util::geo::getBoundingBox(b), util::geo::getBoundingBox(a))));
+
+    TEST(!std::get<3>(geo::intersectsCovers(bx, ax, util::geo::getBoundingBox(b), util::geo::getBoundingBox(a))));
+    TEST(!std::get<3>(geo::intersectsCovers(ax, bx, util::geo::getBoundingBox(a), util::geo::getBoundingBox(b))));
+
+    TEST(!std::get<4>(geo::intersectsCovers(ax, bx, util::geo::getBoundingBox(a), util::geo::getBoundingBox(b))));
+    TEST(!std::get<4>(geo::intersectsCovers(bx, ax, util::geo::getBoundingBox(b), util::geo::getBoundingBox(a))));
   }
   {
     auto a = lineFromWKT<int>("LINESTRING(0 0, 3 3, 0 3)");
@@ -181,6 +255,12 @@ int main(int argc, char** argv) {
     TEST(std::get<0>(geo::intersectsCovers(ax, bx, util::geo::getBoundingBox(a), util::geo::getBoundingBox(b))));
     TEST(!std::get<2>(geo::intersectsCovers(ax, bx, util::geo::getBoundingBox(a), util::geo::getBoundingBox(b))));
     TEST(!std::get<2>(geo::intersectsCovers(bx, ax, util::geo::getBoundingBox(b), util::geo::getBoundingBox(a))));
+
+    TEST(std::get<3>(geo::intersectsCovers(bx, ax, util::geo::getBoundingBox(b), util::geo::getBoundingBox(a))));
+    TEST(std::get<3>(geo::intersectsCovers(ax, bx, util::geo::getBoundingBox(a), util::geo::getBoundingBox(b))));
+
+    TEST(!std::get<4>(geo::intersectsCovers(ax, bx, util::geo::getBoundingBox(a), util::geo::getBoundingBox(b))));
+    TEST(!std::get<4>(geo::intersectsCovers(bx, ax, util::geo::getBoundingBox(b), util::geo::getBoundingBox(a))));
   }
 
   {
@@ -195,6 +275,12 @@ int main(int argc, char** argv) {
     TEST(!std::get<1>(geo::intersectsCovers(bx, ax, util::geo::getBoundingBox(b), util::geo::getBoundingBox(a))));
     TEST(!std::get<2>(geo::intersectsCovers(ax, bx, util::geo::getBoundingBox(a), util::geo::getBoundingBox(b))));
     TEST(!std::get<2>(geo::intersectsCovers(bx, ax, util::geo::getBoundingBox(b), util::geo::getBoundingBox(a))));
+
+    TEST(std::get<3>(geo::intersectsCovers(ax, bx, util::geo::getBoundingBox(a), util::geo::getBoundingBox(b))));
+    TEST(std::get<3>(geo::intersectsCovers(bx, ax, util::geo::getBoundingBox(b), util::geo::getBoundingBox(a))));
+
+    TEST(!std::get<4>(geo::intersectsCovers(ax, bx, util::geo::getBoundingBox(a), util::geo::getBoundingBox(b))));
+    TEST(!std::get<4>(geo::intersectsCovers(bx, ax, util::geo::getBoundingBox(b), util::geo::getBoundingBox(a))));
   }
 
   {
@@ -209,6 +295,12 @@ int main(int argc, char** argv) {
     TEST(std::get<1>(geo::intersectsCovers(bx, ax, util::geo::getBoundingBox(b), util::geo::getBoundingBox(a))));
     TEST(!std::get<2>(geo::intersectsCovers(ax, bx, util::geo::getBoundingBox(a), util::geo::getBoundingBox(b))));
     TEST(!std::get<2>(geo::intersectsCovers(bx, ax, util::geo::getBoundingBox(b), util::geo::getBoundingBox(a))));
+
+    TEST(!std::get<3>(geo::intersectsCovers(ax, bx, util::geo::getBoundingBox(a), util::geo::getBoundingBox(b))));
+    TEST(!std::get<3>(geo::intersectsCovers(bx, ax, util::geo::getBoundingBox(b), util::geo::getBoundingBox(a))));
+
+    TEST(!std::get<4>(geo::intersectsCovers(ax, bx, util::geo::getBoundingBox(a), util::geo::getBoundingBox(b))));
+    TEST(!std::get<4>(geo::intersectsCovers(bx, ax, util::geo::getBoundingBox(b), util::geo::getBoundingBox(a))));
   }
 
   {
@@ -223,6 +315,12 @@ int main(int argc, char** argv) {
     TEST(std::get<1>(geo::intersectsCovers(bx, ax, util::geo::getBoundingBox(b), util::geo::getBoundingBox(a))));
     TEST(!std::get<2>(geo::intersectsCovers(ax, bx, util::geo::getBoundingBox(a), util::geo::getBoundingBox(b))));
     TEST(!std::get<2>(geo::intersectsCovers(bx, ax, util::geo::getBoundingBox(b), util::geo::getBoundingBox(a))));
+
+    TEST(!std::get<3>(geo::intersectsCovers(ax, bx, util::geo::getBoundingBox(a), util::geo::getBoundingBox(b))));
+    TEST(!std::get<3>(geo::intersectsCovers(bx, ax, util::geo::getBoundingBox(b), util::geo::getBoundingBox(a))));
+
+    TEST(!std::get<4>(geo::intersectsCovers(ax, bx, util::geo::getBoundingBox(a), util::geo::getBoundingBox(b))));
+    TEST(!std::get<4>(geo::intersectsCovers(bx, ax, util::geo::getBoundingBox(b), util::geo::getBoundingBox(a))));
   }
 
   {
@@ -237,6 +335,12 @@ int main(int argc, char** argv) {
     TEST(std::get<1>(geo::intersectsCovers(bx, ax, util::geo::getBoundingBox(b), util::geo::getBoundingBox(a))));
     TEST(!std::get<2>(geo::intersectsCovers(ax, bx, util::geo::getBoundingBox(a), util::geo::getBoundingBox(b))));
     TEST(!std::get<2>(geo::intersectsCovers(bx, ax, util::geo::getBoundingBox(b), util::geo::getBoundingBox(a))));
+
+    TEST(!std::get<3>(geo::intersectsCovers(ax, bx, util::geo::getBoundingBox(a), util::geo::getBoundingBox(b))));
+    TEST(!std::get<3>(geo::intersectsCovers(bx, ax, util::geo::getBoundingBox(b), util::geo::getBoundingBox(a))));
+
+    TEST(!std::get<4>(geo::intersectsCovers(ax, bx, util::geo::getBoundingBox(a), util::geo::getBoundingBox(b))));
+    TEST(!std::get<4>(geo::intersectsCovers(bx, ax, util::geo::getBoundingBox(b), util::geo::getBoundingBox(a))));
   }
 
   {
@@ -251,6 +355,12 @@ int main(int argc, char** argv) {
     TEST(std::get<1>(geo::intersectsCovers(bx, ax, util::geo::getBoundingBox(b), util::geo::getBoundingBox(a))));
     TEST(!std::get<2>(geo::intersectsCovers(ax, bx, util::geo::getBoundingBox(a), util::geo::getBoundingBox(b))));
     TEST(!std::get<2>(geo::intersectsCovers(bx, ax, util::geo::getBoundingBox(b), util::geo::getBoundingBox(a))));
+
+    TEST(!std::get<3>(geo::intersectsCovers(ax, bx, util::geo::getBoundingBox(a), util::geo::getBoundingBox(b))));
+    TEST(!std::get<3>(geo::intersectsCovers(bx, ax, util::geo::getBoundingBox(b), util::geo::getBoundingBox(a))));
+
+    TEST(!std::get<4>(geo::intersectsCovers(ax, bx, util::geo::getBoundingBox(a), util::geo::getBoundingBox(b))));
+    TEST(!std::get<4>(geo::intersectsCovers(bx, ax, util::geo::getBoundingBox(b), util::geo::getBoundingBox(a))));
   }
 
   {
@@ -265,6 +375,13 @@ int main(int argc, char** argv) {
     TEST(!std::get<1>(geo::intersectsCovers(bx, ax, util::geo::getBoundingBox(b), util::geo::getBoundingBox(a))));
     TEST(!std::get<2>(geo::intersectsCovers(ax, bx, util::geo::getBoundingBox(a), util::geo::getBoundingBox(b))));
     TEST(!std::get<2>(geo::intersectsCovers(bx, ax, util::geo::getBoundingBox(b), util::geo::getBoundingBox(a))));
+
+    // TODO!
+    // TEST(std::get<3>(geo::intersectsCovers(ax, bx, util::geo::getBoundingBox(a), util::geo::getBoundingBox(b))));
+    // TEST(std::get<3>(geo::intersectsCovers(bx, ax, util::geo::getBoundingBox(b), util::geo::getBoundingBox(a))));
+
+    TEST(!std::get<4>(geo::intersectsCovers(ax, bx, util::geo::getBoundingBox(a), util::geo::getBoundingBox(b))));
+    TEST(!std::get<4>(geo::intersectsCovers(bx, ax, util::geo::getBoundingBox(b), util::geo::getBoundingBox(a))));
   }
 
   {
@@ -279,6 +396,12 @@ int main(int argc, char** argv) {
     TEST(std::get<1>(geo::intersectsCovers(bx, ax, util::geo::getBoundingBox(b), util::geo::getBoundingBox(a))));
     TEST(!std::get<2>(geo::intersectsCovers(ax, bx, util::geo::getBoundingBox(a), util::geo::getBoundingBox(b))));
     TEST(!std::get<2>(geo::intersectsCovers(bx, ax, util::geo::getBoundingBox(b), util::geo::getBoundingBox(a))));
+
+    TEST(!std::get<3>(geo::intersectsCovers(ax, bx, util::geo::getBoundingBox(a), util::geo::getBoundingBox(b))));
+    TEST(!std::get<3>(geo::intersectsCovers(bx, ax, util::geo::getBoundingBox(b), util::geo::getBoundingBox(a))));
+
+    TEST(!std::get<4>(geo::intersectsCovers(ax, bx, util::geo::getBoundingBox(a), util::geo::getBoundingBox(b))));
+    TEST(!std::get<4>(geo::intersectsCovers(bx, ax, util::geo::getBoundingBox(b), util::geo::getBoundingBox(a))));
   }
 
   {
@@ -293,6 +416,12 @@ int main(int argc, char** argv) {
     TEST(std::get<1>(geo::intersectsCovers(bx, ax, util::geo::getBoundingBox(b), util::geo::getBoundingBox(a))));
     TEST(!std::get<2>(geo::intersectsCovers(ax, bx, util::geo::getBoundingBox(a), util::geo::getBoundingBox(b))));
     TEST(!std::get<2>(geo::intersectsCovers(bx, ax, util::geo::getBoundingBox(b), util::geo::getBoundingBox(a))));
+
+    TEST(!std::get<3>(geo::intersectsCovers(ax, bx, util::geo::getBoundingBox(a), util::geo::getBoundingBox(b))));
+    TEST(!std::get<3>(geo::intersectsCovers(bx, ax, util::geo::getBoundingBox(b), util::geo::getBoundingBox(a))));
+
+    TEST(!std::get<4>(geo::intersectsCovers(ax, bx, util::geo::getBoundingBox(a), util::geo::getBoundingBox(b))));
+    TEST(!std::get<4>(geo::intersectsCovers(bx, ax, util::geo::getBoundingBox(b), util::geo::getBoundingBox(a))));
   }
 
   {
@@ -307,6 +436,12 @@ int main(int argc, char** argv) {
     TEST(!std::get<1>(geo::intersectsCovers(bx, ax, util::geo::getBoundingBox(b), util::geo::getBoundingBox(a))));
     TEST(std::get<2>(geo::intersectsCovers(ax, bx, util::geo::getBoundingBox(a), util::geo::getBoundingBox(b))));
     TEST(std::get<2>(geo::intersectsCovers(bx, ax, util::geo::getBoundingBox(b), util::geo::getBoundingBox(a))));
+
+    TEST(!std::get<3>(geo::intersectsCovers(ax, bx, util::geo::getBoundingBox(a), util::geo::getBoundingBox(b))));
+    TEST(!std::get<3>(geo::intersectsCovers(bx, ax, util::geo::getBoundingBox(b), util::geo::getBoundingBox(a))));
+
+    TEST(!std::get<4>(geo::intersectsCovers(ax, bx, util::geo::getBoundingBox(a), util::geo::getBoundingBox(b))));
+    TEST(!std::get<4>(geo::intersectsCovers(bx, ax, util::geo::getBoundingBox(b), util::geo::getBoundingBox(a))));
   }
 
   {
@@ -319,6 +454,15 @@ int main(int argc, char** argv) {
     TEST(!std::get<1>(geo::intersectsCovers(ax, bx, util::geo::getBoundingBox(a), util::geo::getBoundingBox(b))));
     TEST(std::get<0>(geo::intersectsCovers(bx, ax, util::geo::getBoundingBox(b), util::geo::getBoundingBox(a))));
     TEST(!std::get<1>(geo::intersectsCovers(bx, ax, util::geo::getBoundingBox(b), util::geo::getBoundingBox(a))));
+
+    TEST(std::get<2>(geo::intersectsCovers(ax, bx, util::geo::getBoundingBox(a), util::geo::getBoundingBox(b))));
+    TEST(std::get<2>(geo::intersectsCovers(bx, ax, util::geo::getBoundingBox(b), util::geo::getBoundingBox(a))));
+
+    TEST(!std::get<3>(geo::intersectsCovers(ax, bx, util::geo::getBoundingBox(a), util::geo::getBoundingBox(b))));
+    TEST(!std::get<3>(geo::intersectsCovers(bx, ax, util::geo::getBoundingBox(b), util::geo::getBoundingBox(a))));
+
+    TEST(!std::get<4>(geo::intersectsCovers(ax, bx, util::geo::getBoundingBox(a), util::geo::getBoundingBox(b))));
+    TEST(!std::get<4>(geo::intersectsCovers(bx, ax, util::geo::getBoundingBox(b), util::geo::getBoundingBox(a))));
   }
 
   {
@@ -331,6 +475,15 @@ int main(int argc, char** argv) {
     TEST(!std::get<1>(geo::intersectsCovers(ax, bx, util::geo::getBoundingBox(a), util::geo::getBoundingBox(b))));
     TEST(std::get<0>(geo::intersectsCovers(bx, ax, util::geo::getBoundingBox(b), util::geo::getBoundingBox(a))));
     TEST(!std::get<1>(geo::intersectsCovers(bx, ax, util::geo::getBoundingBox(b), util::geo::getBoundingBox(a))));
+
+    TEST(std::get<2>(geo::intersectsCovers(ax, bx, util::geo::getBoundingBox(a), util::geo::getBoundingBox(b))));
+    TEST(std::get<2>(geo::intersectsCovers(bx, ax, util::geo::getBoundingBox(b), util::geo::getBoundingBox(a))));
+
+    TEST(!std::get<3>(geo::intersectsCovers(ax, bx, util::geo::getBoundingBox(a), util::geo::getBoundingBox(b))));
+    TEST(!std::get<3>(geo::intersectsCovers(bx, ax, util::geo::getBoundingBox(b), util::geo::getBoundingBox(a))));
+
+    TEST(!std::get<4>(geo::intersectsCovers(ax, bx, util::geo::getBoundingBox(a), util::geo::getBoundingBox(b))));
+    TEST(!std::get<4>(geo::intersectsCovers(bx, ax, util::geo::getBoundingBox(b), util::geo::getBoundingBox(a))));
   }
 
   {
@@ -343,6 +496,15 @@ int main(int argc, char** argv) {
     TEST(!std::get<1>(geo::intersectsCovers(ax, bx, util::geo::getBoundingBox(a), util::geo::getBoundingBox(b))));
     TEST(std::get<0>(geo::intersectsCovers(bx, ax, util::geo::getBoundingBox(b), util::geo::getBoundingBox(a))));
     TEST(!std::get<1>(geo::intersectsCovers(bx, ax, util::geo::getBoundingBox(b), util::geo::getBoundingBox(a))));
+
+    TEST(std::get<2>(geo::intersectsCovers(ax, bx, util::geo::getBoundingBox(a), util::geo::getBoundingBox(b))));
+    TEST(std::get<2>(geo::intersectsCovers(bx, ax, util::geo::getBoundingBox(b), util::geo::getBoundingBox(a))));
+
+    TEST(!std::get<3>(geo::intersectsCovers(ax, bx, util::geo::getBoundingBox(a), util::geo::getBoundingBox(b))));
+    TEST(!std::get<3>(geo::intersectsCovers(bx, ax, util::geo::getBoundingBox(b), util::geo::getBoundingBox(a))));
+
+    TEST(!std::get<4>(geo::intersectsCovers(ax, bx, util::geo::getBoundingBox(a), util::geo::getBoundingBox(b))));
+    TEST(!std::get<4>(geo::intersectsCovers(bx, ax, util::geo::getBoundingBox(b), util::geo::getBoundingBox(a))));
   }
 
   {
@@ -355,6 +517,15 @@ int main(int argc, char** argv) {
     TEST(!std::get<1>(geo::intersectsCovers(ax, bx, util::geo::getBoundingBox(a), util::geo::getBoundingBox(b))));
     TEST(std::get<0>(geo::intersectsCovers(bx, ax, util::geo::getBoundingBox(b), util::geo::getBoundingBox(a))));
     TEST(!std::get<1>(geo::intersectsCovers(bx, ax, util::geo::getBoundingBox(b), util::geo::getBoundingBox(a))));
+
+    TEST(std::get<2>(geo::intersectsCovers(ax, bx, util::geo::getBoundingBox(a), util::geo::getBoundingBox(b))));
+    TEST(std::get<2>(geo::intersectsCovers(bx, ax, util::geo::getBoundingBox(b), util::geo::getBoundingBox(a))));
+
+    TEST(!std::get<3>(geo::intersectsCovers(ax, bx, util::geo::getBoundingBox(a), util::geo::getBoundingBox(b))));
+    TEST(!std::get<3>(geo::intersectsCovers(bx, ax, util::geo::getBoundingBox(b), util::geo::getBoundingBox(a))));
+
+    TEST(!std::get<4>(geo::intersectsCovers(ax, bx, util::geo::getBoundingBox(a), util::geo::getBoundingBox(b))));
+    TEST(!std::get<4>(geo::intersectsCovers(bx, ax, util::geo::getBoundingBox(b), util::geo::getBoundingBox(a))));
   }
 
   {
@@ -367,6 +538,15 @@ int main(int argc, char** argv) {
     TEST(!std::get<1>(geo::intersectsCovers(ax, bx, util::geo::getBoundingBox(a), util::geo::getBoundingBox(b))));
     TEST(std::get<0>(geo::intersectsCovers(bx, ax, util::geo::getBoundingBox(b), util::geo::getBoundingBox(a))));
     TEST(!std::get<1>(geo::intersectsCovers(bx, ax, util::geo::getBoundingBox(b), util::geo::getBoundingBox(a))));
+
+    TEST(std::get<2>(geo::intersectsCovers(ax, bx, util::geo::getBoundingBox(a), util::geo::getBoundingBox(b))));
+    TEST(std::get<2>(geo::intersectsCovers(bx, ax, util::geo::getBoundingBox(b), util::geo::getBoundingBox(a))));
+
+    TEST(!std::get<3>(geo::intersectsCovers(ax, bx, util::geo::getBoundingBox(a), util::geo::getBoundingBox(b))));
+    TEST(!std::get<3>(geo::intersectsCovers(bx, ax, util::geo::getBoundingBox(b), util::geo::getBoundingBox(a))));
+
+    TEST(!std::get<4>(geo::intersectsCovers(ax, bx, util::geo::getBoundingBox(a), util::geo::getBoundingBox(b))));
+    TEST(!std::get<4>(geo::intersectsCovers(bx, ax, util::geo::getBoundingBox(b), util::geo::getBoundingBox(a))));
   }
 
   {
@@ -379,6 +559,15 @@ int main(int argc, char** argv) {
     TEST(!std::get<1>(geo::intersectsCovers(ax, bx, util::geo::getBoundingBox(a), util::geo::getBoundingBox(b))));
     TEST(std::get<0>(geo::intersectsCovers(bx, ax, util::geo::getBoundingBox(b), util::geo::getBoundingBox(a))));
     TEST(!std::get<1>(geo::intersectsCovers(bx, ax, util::geo::getBoundingBox(b), util::geo::getBoundingBox(a))));
+
+    TEST(std::get<2>(geo::intersectsCovers(ax, bx, util::geo::getBoundingBox(a), util::geo::getBoundingBox(b))));
+    TEST(std::get<2>(geo::intersectsCovers(bx, ax, util::geo::getBoundingBox(b), util::geo::getBoundingBox(a))));
+
+    TEST(!std::get<3>(geo::intersectsCovers(ax, bx, util::geo::getBoundingBox(a), util::geo::getBoundingBox(b))));
+    TEST(!std::get<3>(geo::intersectsCovers(bx, ax, util::geo::getBoundingBox(b), util::geo::getBoundingBox(a))));
+
+    TEST(!std::get<4>(geo::intersectsCovers(ax, bx, util::geo::getBoundingBox(a), util::geo::getBoundingBox(b))));
+    TEST(!std::get<4>(geo::intersectsCovers(bx, ax, util::geo::getBoundingBox(b), util::geo::getBoundingBox(a))));
   }
 
   {
@@ -391,6 +580,15 @@ int main(int argc, char** argv) {
     TEST(!std::get<1>(geo::intersectsCovers(ax, bx, util::geo::getBoundingBox(a), util::geo::getBoundingBox(b))));
     TEST(std::get<0>(geo::intersectsCovers(bx, ax, util::geo::getBoundingBox(b), util::geo::getBoundingBox(a))));
     TEST(!std::get<1>(geo::intersectsCovers(bx, ax, util::geo::getBoundingBox(b), util::geo::getBoundingBox(a))));
+
+    TEST(std::get<2>(geo::intersectsCovers(ax, bx, util::geo::getBoundingBox(a), util::geo::getBoundingBox(b))));
+    TEST(std::get<2>(geo::intersectsCovers(bx, ax, util::geo::getBoundingBox(b), util::geo::getBoundingBox(a))));
+
+    TEST(!std::get<3>(geo::intersectsCovers(ax, bx, util::geo::getBoundingBox(a), util::geo::getBoundingBox(b))));
+    TEST(!std::get<3>(geo::intersectsCovers(bx, ax, util::geo::getBoundingBox(b), util::geo::getBoundingBox(a))));
+
+    TEST(!std::get<4>(geo::intersectsCovers(ax, bx, util::geo::getBoundingBox(a), util::geo::getBoundingBox(b))));
+    TEST(!std::get<4>(geo::intersectsCovers(bx, ax, util::geo::getBoundingBox(b), util::geo::getBoundingBox(a))));
   }
 
   {
@@ -403,6 +601,15 @@ int main(int argc, char** argv) {
     TEST(!std::get<1>(geo::intersectsCovers(ax, bx, util::geo::getBoundingBox(a), util::geo::getBoundingBox(b))));
     TEST(std::get<0>(geo::intersectsCovers(bx, ax, util::geo::getBoundingBox(b), util::geo::getBoundingBox(a))));
     TEST(!std::get<1>(geo::intersectsCovers(bx, ax, util::geo::getBoundingBox(b), util::geo::getBoundingBox(a))));
+
+    TEST(std::get<2>(geo::intersectsCovers(ax, bx, util::geo::getBoundingBox(a), util::geo::getBoundingBox(b))));
+    TEST(std::get<2>(geo::intersectsCovers(bx, ax, util::geo::getBoundingBox(b), util::geo::getBoundingBox(a))));
+
+    TEST(!std::get<3>(geo::intersectsCovers(ax, bx, util::geo::getBoundingBox(a), util::geo::getBoundingBox(b))));
+    TEST(!std::get<3>(geo::intersectsCovers(bx, ax, util::geo::getBoundingBox(b), util::geo::getBoundingBox(a))));
+
+    TEST(!std::get<4>(geo::intersectsCovers(ax, bx, util::geo::getBoundingBox(a), util::geo::getBoundingBox(b))));
+    TEST(!std::get<4>(geo::intersectsCovers(bx, ax, util::geo::getBoundingBox(b), util::geo::getBoundingBox(a))));
   }
 
   {
@@ -415,6 +622,15 @@ int main(int argc, char** argv) {
     TEST(!std::get<1>(geo::intersectsCovers(ax, bx, util::geo::getBoundingBox(a), util::geo::getBoundingBox(b))));
     TEST(std::get<0>(geo::intersectsCovers(bx, ax, util::geo::getBoundingBox(b), util::geo::getBoundingBox(a))));
     TEST(!std::get<1>(geo::intersectsCovers(bx, ax, util::geo::getBoundingBox(b), util::geo::getBoundingBox(a))));
+
+    TEST(std::get<2>(geo::intersectsCovers(ax, bx, util::geo::getBoundingBox(a), util::geo::getBoundingBox(b))));
+    TEST(std::get<2>(geo::intersectsCovers(bx, ax, util::geo::getBoundingBox(b), util::geo::getBoundingBox(a))));
+
+    TEST(!std::get<3>(geo::intersectsCovers(ax, bx, util::geo::getBoundingBox(a), util::geo::getBoundingBox(b))));
+    TEST(!std::get<3>(geo::intersectsCovers(bx, ax, util::geo::getBoundingBox(b), util::geo::getBoundingBox(a))));
+
+    TEST(!std::get<4>(geo::intersectsCovers(ax, bx, util::geo::getBoundingBox(a), util::geo::getBoundingBox(b))));
+    TEST(!std::get<4>(geo::intersectsCovers(bx, ax, util::geo::getBoundingBox(b), util::geo::getBoundingBox(a))));
   }
 
   {
@@ -427,6 +643,15 @@ int main(int argc, char** argv) {
     TEST(!std::get<1>(geo::intersectsCovers(ax, bx, util::geo::getBoundingBox(a), util::geo::getBoundingBox(b))));
     TEST(std::get<0>(geo::intersectsCovers(bx, ax, util::geo::getBoundingBox(b), util::geo::getBoundingBox(a))));
     TEST(std::get<1>(geo::intersectsCovers(bx, ax, util::geo::getBoundingBox(b), util::geo::getBoundingBox(a))));
+
+    TEST(!std::get<2>(geo::intersectsCovers(ax, bx, util::geo::getBoundingBox(a), util::geo::getBoundingBox(b))));
+    TEST(!std::get<2>(geo::intersectsCovers(bx, ax, util::geo::getBoundingBox(b), util::geo::getBoundingBox(a))));
+
+    TEST(!std::get<3>(geo::intersectsCovers(ax, bx, util::geo::getBoundingBox(a), util::geo::getBoundingBox(b))));
+    TEST(!std::get<3>(geo::intersectsCovers(bx, ax, util::geo::getBoundingBox(b), util::geo::getBoundingBox(a))));
+
+    TEST(!std::get<4>(geo::intersectsCovers(ax, bx, util::geo::getBoundingBox(a), util::geo::getBoundingBox(b))));
+    TEST(!std::get<4>(geo::intersectsCovers(bx, ax, util::geo::getBoundingBox(b), util::geo::getBoundingBox(a))));
   }
 
   {
@@ -1207,95 +1432,86 @@ int main(int argc, char** argv) {
 
   ///
 
-    TEST(std::get<0>(geo::intersectsCovers(spoly1.getOuter(), spoly2.getOuter())));
-    TEST(std::get<0>(geo::intersectsCovers(spoly2.getOuter(), spoly1.getOuter())));
+    TEST(std::get<0>(geo::intersectsCovers(spoly1.getOuter().rawRing(), spoly2.getOuter().rawRing())));
+    TEST(std::get<0>(geo::intersectsCovers(spoly2.getOuter().rawRing(), spoly1.getOuter().rawRing())));
 
-    TEST(!std::get<0>(geo::intersectsCovers(spoly1.getOuter(), spoly3.getOuter())));
-    TEST(!std::get<0>(geo::intersectsCovers(spoly3.getOuter(), spoly1.getOuter())));
+    TEST(!std::get<0>(geo::intersectsCovers(spoly1.getOuter().rawRing(), spoly3.getOuter().rawRing())));
+    TEST(!std::get<0>(geo::intersectsCovers(spoly3.getOuter().rawRing(), spoly1.getOuter().rawRing())));
 
     // 3 is contained in 4
-    TEST(!std::get<0>(geo::intersectsCovers(spoly4.getOuter(), spoly3.getOuter())));
-    TEST(!std::get<0>(geo::intersectsCovers(spoly3.getOuter(), spoly4.getOuter())));
+    TEST(!std::get<0>(geo::intersectsCovers(spoly4.getOuter().rawRing(), spoly3.getOuter().rawRing())));
+    TEST(!std::get<0>(geo::intersectsCovers(spoly3.getOuter().rawRing(), spoly4.getOuter().rawRing())));
 
     // 1 does intersect in 4
-    TEST(std::get<0>(geo::intersectsCovers(spoly4.getOuter(), spoly1.getOuter())));
-    TEST(std::get<0>(geo::intersectsCovers(spoly1.getOuter(), spoly4.getOuter())));
+    TEST(std::get<0>(geo::intersectsCovers(spoly4.getOuter().rawRing(), spoly1.getOuter().rawRing())));
+    TEST(std::get<0>(geo::intersectsCovers(spoly1.getOuter().rawRing(), spoly4.getOuter().rawRing())));
 
     // 2 does not intersect in 3
-    TEST(!std::get<0>(geo::intersectsCovers(spoly3.getOuter(), spoly2.getOuter())));
-    TEST(!std::get<0>(geo::intersectsCovers(spoly2.getOuter(), spoly3.getOuter())));
+    TEST(!std::get<0>(geo::intersectsCovers(spoly3.getOuter().rawRing(), spoly2.getOuter().rawRing())));
+    TEST(!std::get<0>(geo::intersectsCovers(spoly2.getOuter().rawRing(), spoly3.getOuter().rawRing())));
 
     // 2 does not intersect in 4
-    TEST(!std::get<0>(geo::intersectsCovers(spoly4.getOuter(), spoly2.getOuter())));
-    TEST(!std::get<0>(geo::intersectsCovers(spoly2.getOuter(), spoly4.getOuter())));
+    TEST(!std::get<0>(geo::intersectsCovers(spoly4.getOuter().rawRing(), spoly2.getOuter().rawRing())));
+    TEST(!std::get<0>(geo::intersectsCovers(spoly2.getOuter().rawRing(), spoly4.getOuter().rawRing())));
 
     // 5 intersects 4
-    TEST(std::get<0>(geo::intersectsCovers(spoly4.getOuter(), spoly5.getOuter())));
-    TEST(std::get<0>(geo::intersectsCovers(spoly5.getOuter(), spoly4.getOuter())));
+    TEST(std::get<0>(geo::intersectsCovers(spoly4.getOuter().rawRing(), spoly5.getOuter().rawRing())));
+    TEST(std::get<0>(geo::intersectsCovers(spoly5.getOuter().rawRing(), spoly4.getOuter().rawRing())));
 
     // 5 intersects 3
-    TEST(std::get<0>(geo::intersectsCovers(spoly3.getOuter(), spoly5.getOuter())));
-    TEST(std::get<0>(geo::intersectsCovers(spoly5.getOuter(), spoly3.getOuter())));
+    TEST(std::get<0>(geo::intersectsCovers(spoly3.getOuter().rawRing(), spoly5.getOuter().rawRing())));
+    TEST(std::get<0>(geo::intersectsCovers(spoly5.getOuter().rawRing(), spoly3.getOuter().rawRing())));
 
     // 5 intersects 1
-    TEST(std::get<0>(geo::intersectsCovers(spoly1.getOuter(), spoly5.getOuter())));
-    TEST(std::get<0>(geo::intersectsCovers(spoly5.getOuter(), spoly1.getOuter())));
+    TEST(std::get<0>(geo::intersectsCovers(spoly1.getOuter().rawRing(), spoly5.getOuter().rawRing())));
+    TEST(std::get<0>(geo::intersectsCovers(spoly5.getOuter().rawRing(), spoly1.getOuter().rawRing())));
 
     // 5 does intersects 2
-    TEST(!std::get<0>(geo::intersectsCovers(spoly2.getOuter(), spoly5.getOuter())));
-    TEST(!std::get<0>(geo::intersectsCovers(spoly5.getOuter(), spoly2.getOuter())));
+    TEST(!std::get<0>(geo::intersectsCovers(spoly2.getOuter().rawRing(), spoly5.getOuter().rawRing())));
+    TEST(!std::get<0>(geo::intersectsCovers(spoly5.getOuter().rawRing(), spoly2.getOuter().rawRing())));
 
     ///
 
-    TEST(std::get<0>(geo::intersectsCovers(spoly1.getOuter(), spoly2.getOuter(), spoly1.getOuter().getMaxSegLen(), spoly2.getOuter().getMaxSegLen())));
-    TEST(std::get<0>(geo::intersectsCovers(spoly2.getOuter(), spoly1.getOuter(), spoly2.getOuter().getMaxSegLen(), spoly1.getOuter().getMaxSegLen())));
+    TEST(std::get<0>(geo::intersectsCovers(spoly1.getOuter().rawRing(), spoly2.getOuter().rawRing())));
+    TEST(std::get<0>(geo::intersectsCovers(spoly2.getOuter().rawRing(), spoly1.getOuter().rawRing())));
 
-    TEST(std::get<0>(geo::intersectsCovers(spoly1.getOuter(), spoly2.getOuter(), spoly1.getOuter().getMaxSegLen(), spoly2.getOuter().getMaxSegLen(), util::geo::getBoundingBox(poly1), util::geo::getBoundingBox(poly2))));
-    TEST(std::get<0>(geo::intersectsCovers(spoly2.getOuter(), spoly1.getOuter(), spoly2.getOuter().getMaxSegLen(), spoly1.getOuter().getMaxSegLen(), util::geo::getBoundingBox(poly2), util::geo::getBoundingBox(poly1))));
 
-    TEST(!std::get<0>(geo::intersectsCovers(spoly1.getOuter(), spoly3.getOuter(), spoly1.getOuter().getMaxSegLen(), spoly3.getOuter().getMaxSegLen())));
-    TEST(!std::get<0>(geo::intersectsCovers(spoly3.getOuter(), spoly1.getOuter(), spoly3.getOuter().getMaxSegLen(), spoly1.getOuter().getMaxSegLen())));
-
-    TEST(!std::get<0>(geo::intersectsCovers(spoly1.getOuter(), spoly3.getOuter(), spoly1.getOuter().getMaxSegLen(), spoly3.getOuter().getMaxSegLen(), util::geo::getBoundingBox(poly1), util::geo::getBoundingBox(poly3))));
-    TEST(!std::get<0>(geo::intersectsCovers(spoly3.getOuter(), spoly1.getOuter(), spoly3.getOuter().getMaxSegLen(), spoly1.getOuter().getMaxSegLen(), util::geo::getBoundingBox(poly3), util::geo::getBoundingBox(poly1))));
+    TEST(!std::get<0>(geo::intersectsCovers(spoly1.getOuter().rawRing(), spoly3.getOuter().rawRing())));
+    TEST(!std::get<0>(geo::intersectsCovers(spoly3.getOuter().rawRing(), spoly1.getOuter().rawRing())));
 
     // 3 is contained in 4
-    TEST(!std::get<0>(geo::intersectsCovers(spoly4.getOuter(), spoly3.getOuter(), spoly4.getOuter().getMaxSegLen(), spoly3.getOuter().getMaxSegLen())));
-    TEST(!std::get<0>(geo::intersectsCovers(spoly3.getOuter(), spoly4.getOuter(), spoly3.getOuter().getMaxSegLen(), spoly4.getOuter().getMaxSegLen())));
+    TEST(!std::get<0>(geo::intersectsCovers(spoly4.getOuter().rawRing(), spoly3.getOuter().rawRing())));
+    TEST(!std::get<0>(geo::intersectsCovers(spoly3.getOuter().rawRing(), spoly4.getOuter().rawRing())));
 
-    TEST(!std::get<0>(geo::intersectsCovers(spoly4.getOuter(), spoly3.getOuter(), spoly4.getOuter().getMaxSegLen(), spoly3.getOuter().getMaxSegLen(), util::geo::getBoundingBox(poly4), util::geo::getBoundingBox(poly3))));
-    TEST(!std::get<0>(geo::intersectsCovers(spoly3.getOuter(), spoly4.getOuter(), spoly3.getOuter().getMaxSegLen(), spoly4.getOuter().getMaxSegLen(), util::geo::getBoundingBox(poly3), util::geo::getBoundingBox(poly4))));
 
     // 1 does intersect 4
-    TEST(std::get<0>(geo::intersectsCovers(spoly4.getOuter(), spoly1.getOuter(), spoly4.getOuter().getMaxSegLen(), spoly1.getOuter().getMaxSegLen())));
-    TEST(std::get<0>(geo::intersectsCovers(spoly1.getOuter(), spoly4.getOuter(), spoly1.getOuter().getMaxSegLen(), spoly4.getOuter().getMaxSegLen())));
+    TEST(std::get<0>(geo::intersectsCovers(spoly4.getOuter().rawRing(), spoly1.getOuter().rawRing())));
+    TEST(std::get<0>(geo::intersectsCovers(spoly1.getOuter().rawRing(), spoly4.getOuter().rawRing())));
 
-    TEST(std::get<0>(geo::intersectsCovers(spoly4.getOuter(), spoly1.getOuter(), spoly4.getOuter().getMaxSegLen(), spoly1.getOuter().getMaxSegLen(), util::geo::getBoundingBox(poly4), util::geo::getBoundingBox(poly1))));
-    TEST(std::get<0>(geo::intersectsCovers(spoly1.getOuter(), spoly4.getOuter(), spoly1.getOuter().getMaxSegLen(), spoly4.getOuter().getMaxSegLen(), util::geo::getBoundingBox(poly1), util::geo::getBoundingBox(poly4))));
 
     // 2 does not intersect in 3
-    TEST(!std::get<0>(geo::intersectsCovers(spoly3.getOuter(), spoly2.getOuter(), spoly3.getOuter().getMaxSegLen(), spoly2.getOuter().getMaxSegLen())));
-    TEST(!std::get<0>(geo::intersectsCovers(spoly2.getOuter(), spoly3.getOuter(), spoly2.getOuter().getMaxSegLen(), spoly3.getOuter().getMaxSegLen())));
+    TEST(!std::get<0>(geo::intersectsCovers(spoly3.getOuter().rawRing(), spoly2.getOuter().rawRing())));
+    TEST(!std::get<0>(geo::intersectsCovers(spoly2.getOuter().rawRing(), spoly3.getOuter().rawRing())));
 
     // 2 does not intersect in 4
-    TEST(!std::get<0>(geo::intersectsCovers(spoly4.getOuter(), spoly2.getOuter(), spoly4.getOuter().getMaxSegLen(), spoly2.getOuter().getMaxSegLen())));
-    TEST(!std::get<0>(geo::intersectsCovers(spoly2.getOuter(), spoly4.getOuter(), spoly2.getOuter().getMaxSegLen(), spoly4.getOuter().getMaxSegLen())));
+    TEST(!std::get<0>(geo::intersectsCovers(spoly4.getOuter().rawRing(), spoly2.getOuter().rawRing())));
+    TEST(!std::get<0>(geo::intersectsCovers(spoly2.getOuter().rawRing(), spoly4.getOuter().rawRing())));
 
     // 5 intersects 4
-    TEST(std::get<0>(geo::intersectsCovers(spoly4.getOuter(), spoly5.getOuter(), spoly4.getOuter().getMaxSegLen(), spoly5.getOuter().getMaxSegLen())));
-    TEST(std::get<0>(geo::intersectsCovers(spoly5.getOuter(), spoly4.getOuter(), spoly5.getOuter().getMaxSegLen(), spoly4.getOuter().getMaxSegLen())));
+    TEST(std::get<0>(geo::intersectsCovers(spoly4.getOuter().rawRing(), spoly5.getOuter().rawRing())));
+    TEST(std::get<0>(geo::intersectsCovers(spoly5.getOuter().rawRing(), spoly4.getOuter().rawRing())));
 
     // 5 intersects 3
-    TEST(std::get<0>(geo::intersectsCovers(spoly3.getOuter(), spoly5.getOuter(), spoly3.getOuter().getMaxSegLen(), spoly5.getOuter().getMaxSegLen())));
-    TEST(std::get<0>(geo::intersectsCovers(spoly5.getOuter(), spoly3.getOuter(), spoly5.getOuter().getMaxSegLen(), spoly3.getOuter().getMaxSegLen())));
+    TEST(std::get<0>(geo::intersectsCovers(spoly3.getOuter().rawRing(), spoly5.getOuter().rawRing())));
+    TEST(std::get<0>(geo::intersectsCovers(spoly5.getOuter().rawRing(), spoly3.getOuter().rawRing())));
 
     // 5 intersects 1
-    TEST(std::get<0>(geo::intersectsCovers(spoly1.getOuter(), spoly5.getOuter())));
-    TEST(std::get<0>(geo::intersectsCovers(spoly5.getOuter(), spoly1.getOuter())));
+    TEST(std::get<0>(geo::intersectsCovers(spoly1.getOuter().rawRing(), spoly5.getOuter().rawRing())));
+    TEST(std::get<0>(geo::intersectsCovers(spoly5.getOuter().rawRing(), spoly1.getOuter().rawRing())));
 
     // 5 does intersects 2
-    TEST(!std::get<0>(geo::intersectsCovers(spoly2.getOuter(), spoly5.getOuter())));
-    TEST(!std::get<0>(geo::intersectsCovers(spoly5.getOuter(), spoly2.getOuter())));
+    TEST(!std::get<0>(geo::intersectsCovers(spoly2.getOuter().rawRing(), spoly5.getOuter().rawRing())));
+    TEST(!std::get<0>(geo::intersectsCovers(spoly5.getOuter().rawRing(), spoly2.getOuter().rawRing())));
 
     // point contains tests
     TEST(geo::containsCovers(Point<int>(4, 2), spoly1).first);
@@ -1325,19 +1541,15 @@ int main(int argc, char** argv) {
 
     TEST(geo::intersects(bp[0].getOuter(), ap[0].getOuter()));
 
-    TEST(std::get<0>(geo::intersectsCovers(bpp.getOuter(), app.getOuter())));
+    TEST(std::get<0>(geo::intersectsCovers(bpp.getOuter().rawRing(), app.getOuter().rawRing())));
 
     TEST(geo::intersects(ap[0].getOuter(), bp[0].getOuter()));
-    TEST(std::get<0>(geo::intersectsCovers(app.getOuter(), bpp.getOuter())));
-    TEST(std::get<0>(geo::intersectsCovers(app.getOuter(), bpp.getOuter(), app.getOuter().getMaxSegLen(), bpp.getOuter().getMaxSegLen())));
-    TEST(std::get<0>(geo::intersectsCovers(app.getOuter(), bpp.getOuter(), app.getOuter().getMaxSegLen(), bpp.getOuter().getMaxSegLen(), util::geo::getBoundingBox(ap[0]), util::geo::getBoundingBox(bp[0]))));
+    TEST(std::get<0>(geo::intersectsCovers(app.getOuter().rawRing(), bpp.getOuter().rawRing())));
 
     XSortedPolygon<int> appi(api);
     XSortedPolygon<int> bppi(bpi);
 
-    TEST(std::get<0>(geo::intersectsCovers(appi.getOuter(), bppi.getOuter())));
-    TEST(std::get<0>(geo::intersectsCovers(appi.getOuter(), bppi.getOuter(), appi.getOuter().getMaxSegLen(), bppi.getOuter().getMaxSegLen())));
-    TEST(std::get<0>(geo::intersectsCovers(appi.getOuter(), bppi.getOuter(), appi.getOuter().getMaxSegLen(), bppi.getOuter().getMaxSegLen(), util::geo::getBoundingBox(api), util::geo::getBoundingBox(bpi))));
+    TEST(std::get<0>(geo::intersectsCovers(appi.getOuter().rawRing(), bppi.getOuter().rawRing())));
 
     auto failtest = polygonFromWKT<int>("POLYGON((1 6, 3 1, 7 1, 8 8, 1 8, 1 6))");
     auto bboxfail = polygonFromWKT<int>("POLYGON((2 2, 6 2, 6 6, 2 6, 2 2))");
@@ -1346,8 +1558,8 @@ int main(int argc, char** argv) {
     XSortedPolygon<int> bboxfailx(bboxfail);
 
     TEST(geo::intersects(failtest.getOuter(), bboxfail.getOuter()));
-    TEST(std::get<0>(geo::intersectsCovers(failtestx.getOuter(), bboxfailx.getOuter())));
-    TEST(std::get<0>(geo::intersectsCovers(bboxfailx.getOuter(), failtestx.getOuter())));
+    TEST(std::get<0>(geo::intersectsCovers(failtestx.getOuter().rawRing(), bboxfailx.getOuter().rawRing())));
+    TEST(std::get<0>(geo::intersectsCovers(bboxfailx.getOuter().rawRing(), failtestx.getOuter().rawRing())));
 
     auto bremer = polygonFromWKT<int>("POLYGON((1015809 7145218, 1012312 7144769, 1002806 7139896, 999939 7140594, 990566 7138626, 983285 7139256, 975967 7141358, 967081 7150512, 958806 7148906, 950876 7137498, 947207 7124657, 942697 7112847, 943271 7104783, 947659 7096463, 946968 7095405, 950408 7089285, 946959 7086008, 942172 7086314, 933754 7090164, 929359 7097636, 924945 7098974, 920492 7097197, 917320 7092782, 915594 7079870, 908884 7079883, 909849 7083046, 907594 7095477, 900084 7104114, 895517 7106541, 893739 7128746, 878146 7200635, 882580 7204925, 966909 7220260, 972527 7224139, 977476 7222917, 981986 7224770, 983763 7221751, 983075 7211566, 980973 7209253, 979769 7203807, 980438 7201476, 982941 7195781, 986018 7191864, 989572 7194272, 992248 7194826, 993757 7192896, 995095 7186647, 996968 7181660, 994522 7178870, 988177 7179768, 980935 7176424, 984126 7167805, 988216 7160200, 994178 7152327, 997770 7149613, 1000264 7149050, 1003321 7149289, 1005576 7150397, 1012656 7148429, 1015828 7148352, 1015809 7145218, 1015809 7145218))");
     auto bbox = polygonFromWKT<int>("POLYGON((889665 7133352, 905695 7133352, 905695 7149382, 889665 7149382, 889665 7133352))");
@@ -1356,10 +1568,9 @@ int main(int argc, char** argv) {
     XSortedPolygon<int> bboxx(bbox);
 
     TEST(geo::intersects(bbox.getOuter(), bremer.getOuter()));
-    TEST(geo::intersectsNaive(bremerx.getOuter(), bboxx.getOuter()));
+    TEST(geo::intersectsNaive(bremerx.getOuter().rawRing(), bboxx.getOuter().rawRing()));
     TEST(std::get<0>(geo::intersectsCovers(bremerx.getOuter().rawRing(), bboxx.getOuter().rawRing())));
-    TEST(std::get<0>(geo::intersectsCovers(bremerx.getOuter(), bboxx.getOuter())));
-    TEST(std::get<0>(geo::intersectsCovers(bboxx.getOuter(), bremerx.getOuter())));
+    TEST(std::get<0>(geo::intersectsCovers(bboxx.getOuter().rawRing(), bremerx.getOuter().rawRing())));
 
     auto wattbbox = polygonFromWKT<int>("POLYGON ((7614253 71173229, 7774553 71173229, 7774553 71333529, 7614253 71333529, 7614253 71173229))");
 
@@ -1370,11 +1581,11 @@ int main(int argc, char** argv) {
     XSortedPolygon<int> wattbboxx(wattbbox);
 
     TEST(geo::intersects(watt.getOuter(), wattbbox.getOuter()));
-    TEST(std::get<0>(geo::intersectsCovers(wattx.getOuter(), wattbboxx.getOuter())));
-    TEST(std::get<0>(geo::intersectsCovers(wattbboxx.getOuter(), wattx.getOuter())));
+    TEST(std::get<0>(geo::intersectsCovers(wattx.getOuter().rawRing(), wattbboxx.getOuter().rawRing())));
+    TEST(std::get<0>(geo::intersectsCovers(wattbboxx.getOuter().rawRing(), wattx.getOuter().rawRing())));
 
-    TEST(std::get<0>(geo::intersectsCovers(wattx.getOuter(), wattx.getOuter())));
-    TEST(std::get<0>(geo::intersectsCovers(wattbboxx.getOuter(), wattbboxx.getOuter())));
+    TEST(std::get<0>(geo::intersectsCovers(wattx.getOuter().rawRing(), wattx.getOuter().rawRing())));
+    TEST(std::get<0>(geo::intersectsCovers(wattbboxx.getOuter().rawRing(), wattbboxx.getOuter().rawRing())));
 
 
     auto wattbbox2 = polygonFromWKT<int>("POLYGON ((913710 7093277, 937755 7093277, 937755 7109307, 913710 7109307, 913710 7093277))");
@@ -1384,8 +1595,8 @@ int main(int argc, char** argv) {
     XSortedPolygon<int> wattbboxx2(wattbbox2);
 
     TEST(geo::intersects(watt2.getOuter(), wattbbox2.getOuter()));
-    TEST(std::get<0>(geo::intersectsCovers(wattx2.getOuter(), wattbboxx2.getOuter())));
-    TEST(std::get<0>(geo::intersectsCovers(wattbboxx2.getOuter(), wattx2.getOuter())));
+    TEST(std::get<0>(geo::intersectsCovers(wattx2.getOuter().rawRing(), wattbboxx2.getOuter().rawRing())));
+    TEST(std::get<0>(geo::intersectsCovers(wattbboxx2.getOuter().rawRing(), wattx2.getOuter().rawRing())));
 
 
     auto anothertest = polygonFromWKT<int64_t>("POLYGON ((15482959 73076173, 15596431 73176015, 15706928 73045744, 15749740 73081874, 15870403 73277506, 16051803 73257507, 16026155 73024804, 16292312 72722538, 16419624 72654248, 16320974 72522587, 16249995 72429299, 15974662 72019053, 15849195 71940131, 15849066 71940131, 15806390 72177589, 15768752 72203056, 15758857 72275088, 15702653 72305851, 15709997 72540286, 15671882 72541478, 15609994 72860919, 15598659 72894904, 15582016 72940327, 15565146 72972142, 15551031 72994672, 15532330 73020790, 15498495 73060139, 15482959 73076173, 15482959 73076173))");
@@ -1395,8 +1606,8 @@ int main(int argc, char** argv) {
     XSortedPolygon<int64_t> anotherboxx(anotherbox);
 
     TEST(geo::intersects(anothertest.getOuter(), anotherbox.getOuter()));
-    TEST(std::get<0>(geo::intersectsCovers(anothertestx.getOuter(), anotherboxx.getOuter())));
-    TEST(std::get<0>(geo::intersectsCovers(anotherboxx.getOuter(), anothertestx.getOuter())));
+    TEST(std::get<0>(geo::intersectsCovers(anothertestx.getOuter().rawRing(), anotherboxx.getOuter().rawRing())));
+    TEST(std::get<0>(geo::intersectsCovers(anotherboxx.getOuter().rawRing(), anothertestx.getOuter().rawRing())));
 
 
     auto anothertest2 = polygonFromWKT<int64_t>("POLYGON ((10158098 71452187, 10123128 71447696, 10028060 71398968, 9999396 71405943, 9905665 71386260, 9832859 71392566, 9759670 71413587, 9670812 71505120, 9588069 71489068, 9508765 71374986, 9472076 71246572, 9426978 71128476, 9432711 71047835, 9476590 70964638, 9469687 70954056, 9504084 70892859, 9469592 70860087, 9421723 70863144, 9337547 70901649, 9293595 70976367, 9249453 70989743, 9204928 70971972, 9173207 70927829, 9155949 70798708, 9088840 70798834, 9098490 70830467, 9075941 70954773, 9000842 71041147, 8955170 71065416, 8937399 71287466, 8781467 72006356, 8825801 72049256, 9669092 72202608, 9725274 72241399, 9774767 72229170, 9819864 72247706, 9837636 72217513, 9830757 72115661, 9809736 72092538, 9797698 72038077, 9804386 72014764, 9829419 71957818, 9860185 71918644, 9895728 71942722, 9922481 71948263, 9937577 71928963, 9950954 71866476, 9969681 71816601, 9945221 71788701, 9881778 71797683, 9809354 71764241, 9841266 71678059, 9882161 71602004, 9941781 71523274, 9977707 71496139, 10002645 71490501, 10033219 71492890, 10055768 71503973, 10126568 71484291, 10158289 71483526, 10158098 71452187, 10158098 71452187))");
@@ -1410,14 +1621,14 @@ int main(int argc, char** argv) {
     XSortedPolygon<int64_t> anotherboxx2mp(Polygon<int64_t>{anotherbox2m});
 
     TEST(geo::intersects(anothertest2.getOuter(), anotherbox2.getOuter()));
-    TEST(std::get<0>(geo::intersectsCovers(anothertestx2.getOuter(), anotherboxx2.getOuter())));
-    TEST(std::get<0>(geo::intersectsCovers(anotherboxx2.getOuter(), anothertestx2.getOuter())));
+    TEST(std::get<0>(geo::intersectsCovers(anothertestx2.getOuter().rawRing(), anotherboxx2.getOuter().rawRing())));
+    TEST(std::get<0>(geo::intersectsCovers(anotherboxx2.getOuter().rawRing(), anothertestx2.getOuter().rawRing())));
 
-    TEST(std::get<0>(geo::intersectsCovers(anothertestx2.getOuter(), anotherboxx2m.getOuter())));
-    TEST(std::get<0>(geo::intersectsCovers(anotherboxx2m.getOuter(), anothertestx2.getOuter())));
+    TEST(std::get<0>(geo::intersectsCovers(anothertestx2.getOuter().rawRing(), anotherboxx2m.getOuter().rawRing())));
+    TEST(std::get<0>(geo::intersectsCovers(anotherboxx2m.getOuter().rawRing(), anothertestx2.getOuter().rawRing())));
 
-    TEST(std::get<0>(geo::intersectsCovers(anothertestx2.getOuter(), anotherboxx2mp.getOuter())));
-    TEST(std::get<0>(geo::intersectsCovers(anotherboxx2mp.getOuter(), anothertestx2.getOuter())));
+    TEST(std::get<0>(geo::intersectsCovers(anothertestx2.getOuter().rawRing(), anotherboxx2mp.getOuter().rawRing())));
+    TEST(std::get<0>(geo::intersectsCovers(anotherboxx2mp.getOuter().rawRing(), anothertestx2.getOuter().rawRing())));
 
     {
 
@@ -1433,14 +1644,14 @@ int main(int argc, char** argv) {
     XSortedPolygon<int64_t> anotherboxx2mp(Polygon<int64_t>{anotherbox2m});
 
     TEST(geo::intersects(anothertest2.getOuter(), anotherbox2.getOuter()));
-    TEST(std::get<0>(geo::intersectsCovers(anothertestx2.getOuter(), anotherboxx2.getOuter())));
-    TEST(std::get<0>(geo::intersectsCovers(anotherboxx2.getOuter(), anothertestx2.getOuter())));
+    TEST(std::get<0>(geo::intersectsCovers(anothertestx2.getOuter().rawRing(), anotherboxx2.getOuter().rawRing())));
+    TEST(std::get<0>(geo::intersectsCovers(anotherboxx2.getOuter().rawRing(), anothertestx2.getOuter().rawRing())));
 
-    TEST(std::get<0>(geo::intersectsCovers(anothertestx2.getOuter(), anotherboxx2m.getOuter())));
-    TEST(std::get<0>(geo::intersectsCovers(anotherboxx2m.getOuter(), anothertestx2.getOuter())));
+    TEST(std::get<0>(geo::intersectsCovers(anothertestx2.getOuter().rawRing(), anotherboxx2m.getOuter().rawRing())));
+    TEST(std::get<0>(geo::intersectsCovers(anotherboxx2m.getOuter().rawRing(), anothertestx2.getOuter().rawRing())));
 
-    TEST(std::get<0>(geo::intersectsCovers(anothertestx2.getOuter(), anotherboxx2mp.getOuter())));
-    TEST(std::get<0>(geo::intersectsCovers(anotherboxx2mp.getOuter(), anothertestx2.getOuter())));
+    TEST(std::get<0>(geo::intersectsCovers(anothertestx2.getOuter().rawRing(), anotherboxx2mp.getOuter().rawRing())));
+    TEST(std::get<0>(geo::intersectsCovers(anotherboxx2mp.getOuter().rawRing(), anothertestx2.getOuter().rawRing())));
     }
 
     {
@@ -1457,14 +1668,14 @@ int main(int argc, char** argv) {
 
     TEST(geo::intersects(LineSegment<int64_t>{{8896653,67486328}, {8896653,67646628}},LineSegment<int64_t>{{8903384,67582563}, {8879688,67591736}}));
 
-    TEST(std::get<0>(geo::intersectsCovers(anothertestx2.getOuter(), anotherboxx2.getOuter())));
-    TEST(std::get<0>(geo::intersectsCovers(anotherboxx2.getOuter(), anothertestx2.getOuter())));
+    TEST(std::get<0>(geo::intersectsCovers(anothertestx2.getOuter().rawRing(), anotherboxx2.getOuter().rawRing())));
+    TEST(std::get<0>(geo::intersectsCovers(anotherboxx2.getOuter().rawRing(), anothertestx2.getOuter().rawRing())));
 
-    TEST(std::get<0>(geo::intersectsCovers(anothertestx2.getOuter(), anotherboxx2m.getOuter())));
-    TEST(std::get<0>(geo::intersectsCovers(anotherboxx2m.getOuter(), anothertestx2.getOuter())));
+    TEST(std::get<0>(geo::intersectsCovers(anothertestx2.getOuter().rawRing(), anotherboxx2m.getOuter().rawRing())));
+    TEST(std::get<0>(geo::intersectsCovers(anotherboxx2m.getOuter().rawRing(), anothertestx2.getOuter().rawRing())));
 
-    TEST(std::get<0>(geo::intersectsCovers(anothertestx2.getOuter(), anotherboxx2mp.getOuter())));
-    TEST(std::get<0>(geo::intersectsCovers(anotherboxx2mp.getOuter(), anothertestx2.getOuter())));
+    TEST(std::get<0>(geo::intersectsCovers(anothertestx2.getOuter().rawRing(), anotherboxx2mp.getOuter().rawRing())));
+    TEST(std::get<0>(geo::intersectsCovers(anotherboxx2mp.getOuter().rawRing(), anothertestx2.getOuter().rawRing())));
     }
 
     {
@@ -1606,7 +1817,7 @@ int main(int argc, char** argv) {
     XSortedPolygon<int> ax(a);
     XSortedPolygon<int> bx(b);
 
-    TEST(!std::get<0>(geo::intersectsCovers(ax.getOuter(), bx.getOuter())));
+    TEST(!std::get<0>(geo::intersectsCovers(ax.getOuter().rawRing(), bx.getOuter().rawRing())));
     TEST(geo::contains(b, a));
     TEST(geo::intersects(a, b));
     TEST(std::get<0>(geo::intersectsContainsCovers(ax, bx)));
@@ -1626,7 +1837,7 @@ int main(int argc, char** argv) {
     XSortedPolygon<int> ax(a);
     XSortedPolygon<int> bx(b);
 
-    TEST(!std::get<0>(geo::intersectsCovers(ax.getOuter(), bx.getOuter())));
+    TEST(!std::get<0>(geo::intersectsCovers(ax.getOuter().rawRing(), bx.getOuter().rawRing())));
     TEST(!geo::contains(b, a));
     TEST(!geo::contains(a, b));
     TEST(!geo::intersects(a, b));
@@ -1650,7 +1861,7 @@ int main(int argc, char** argv) {
     XSortedPolygon<int> ax(a);
     XSortedPolygon<int> bx(b);
 
-    TEST(!std::get<0>(geo::intersectsCovers(ax.getOuter(), bx.getOuter())));
+    TEST(!std::get<0>(geo::intersectsCovers(ax.getOuter().rawRing(), bx.getOuter().rawRing())));
     TEST(geo::contains(b, a));
     TEST(!geo::contains(a, b));
     TEST(geo::intersects(a, b));
@@ -1668,7 +1879,7 @@ int main(int argc, char** argv) {
     XSortedPolygon<double> ax(a);
     XSortedPolygon<double> bx(b);
 
-    TEST(!std::get<0>(geo::intersectsCovers(ax.getOuter(), bx.getOuter())));
+    TEST(!std::get<0>(geo::intersectsCovers(ax.getOuter().rawRing(), bx.getOuter().rawRing())));
     TEST(!geo::contains(b, a));
     TEST(!geo::contains(a, b));
     TEST(geo::intersects(a, b));
@@ -1776,7 +1987,7 @@ int main(int argc, char** argv) {
     XSortedPolygon<double> ax(a);
     XSortedPolygon<double> bx(b);
 
-    TEST(!std::get<0>(geo::intersectsCovers(ax.getOuter(), bx.getOuter())));
+    TEST(!std::get<0>(geo::intersectsCovers(ax.getOuter().rawRing(), bx.getOuter().rawRing())));
     TEST(!geo::contains(b, a));
     TEST(!geo::contains(a, b));
     TEST(geo::intersects(a, b));
@@ -1806,7 +2017,7 @@ int main(int argc, char** argv) {
     XSortedPolygon<int> ax(a);
     XSortedPolygon<int> bx(b);
 
-    TEST(!std::get<0>(geo::intersectsCovers(ax.getOuter(), bx.getOuter())));
+    TEST(!std::get<0>(geo::intersectsCovers(ax.getOuter().rawRing(), bx.getOuter().rawRing())));
     TEST(std::get<0>(geo::intersectsContainsCovers(bx, ax)));
     TEST(std::get<1>(geo::intersectsContainsCovers(bx, ax)));
     TEST(std::get<0>(geo::intersectsContainsCovers(ax, bx)));
@@ -1829,7 +2040,7 @@ int main(int argc, char** argv) {
     XSortedPolygon<int> ax(a);
     XSortedPolygon<int> bx(b);
 
-    TEST(!std::get<0>(geo::intersectsCovers(ax.getOuter(), bx.getOuter())));
+    TEST(!std::get<0>(geo::intersectsCovers(ax.getOuter().rawRing(), bx.getOuter().rawRing())));
     TEST(std::get<0>(geo::intersectsContainsCovers(bx, ax)));
     TEST(std::get<0>(geo::intersectsContainsCovers(bx, util::geo::getBoundingBox(b), util::geo::outerArea(b),  ax, util::geo::getBoundingBox(a), util::geo::outerArea(a))));
     TEST(std::get<1>(geo::intersectsContainsCovers(bx, ax)));
@@ -2097,17 +2308,10 @@ int main(int argc, char** argv) {
     TEST(!std::get<0>(geo::intersectsContainsCovers(fussxi, stuehlingerxi)));
     TEST(!std::get<1>(geo::intersectsContainsCovers(fussxi, stuehlingerxi)));
     TEST(!std::get<0>(util::geo::intersectsCovers(
-        failWayxi.rawLine(), xbburg.getOuter().rawRing(), failWayxi.getMaxSegLen(),
-        xbburg.getOuter().getMaxSegLen(), util::geo::Box<int>(
-          {std::numeric_limits<int>::lowest(), std::numeric_limits<int>::lowest()},
-          {std::numeric_limits<int>::max(), std::numeric_limits<int>::max()}),
-      util::geo::Box<int>(
-          {std::numeric_limits<int>::lowest(), std::numeric_limits<int>::lowest()},
-          {std::numeric_limits<int>::max(), std::numeric_limits<int>::max()}), 0, 0)));
+        failWayxi.rawLine(), xbburg.getOuter().rawRing())));
 
     TEST(!std::get<0>(util::geo::intersectsCovers(
-        failWayxi.rawLine(), xbburg.getOuter().rawRing(), failWayxi.getMaxSegLen(),
-        xbburg.getOuter().getMaxSegLen(), util::geo::getBoundingBox(failWaypi), util::geo::getBoundingBox(bburg), 0, 0)));
+        failWayxi.rawLine(), xbburg.getOuter().rawRing())));
 
     auto r = geo::intersectsContainsCovers(failWayxi, xbburg);
 
