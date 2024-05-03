@@ -14,9 +14,6 @@
 #include <unistd.h>
 #include <cstdlib>
 #include <iomanip>
-#if defined(__i386__) || defined(__x86_64__)
-#include <immintrin.h>
-#endif
 #include <iostream>
 #include <sstream>
 #include <vector>
@@ -650,11 +647,6 @@ inline void externalSort(int file, int newFile, size_t size, size_t numobjs,
   delete[] partbufs;
   delete[] partpos;
   delete[] partsize;
-}
-
-// _____________________________________________________________________________
-inline float f_rsqrt(float x) {
-  return _mm_cvtss_f32(_mm_rsqrt_ss(_mm_set_ss(x)));
 }
 
 // _____________________________________________________________________________
