@@ -14,7 +14,9 @@
 #include <unistd.h>
 #include <cstdlib>
 #include <iomanip>
+#if defined(__i386__) || defined(__x86_64__)
 #include <immintrin.h>
+#endif
 #include <iostream>
 #include <sstream>
 #include <vector>
