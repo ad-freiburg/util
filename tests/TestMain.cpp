@@ -808,15 +808,15 @@ int main(int argc, char** argv) {
 
     TEST(std::get<0>(util::geo::intersectsPoly(
       bx.rawLine(), ax.getOuter().rawRing(), bx.getMaxSegLen(),
-      ax.getOuter().getMaxSegLen(), util::geo::getBoundingBox(b), util::geo::getBoundingBox(a), 0, 0, 0)));
+      ax.getOuter().getMaxSegLen(), util::geo::getBoundingBox(b), util::geo::getBoundingBox(a), 0, 0)));
 
     TEST(!std::get<1>(util::geo::intersectsPoly(
       bx.rawLine(), ax.getOuter().rawRing(), bx.getMaxSegLen(),
-      ax.getOuter().getMaxSegLen(), util::geo::getBoundingBox(b), util::geo::getBoundingBox(a), 0, 0, 0)));
+      ax.getOuter().getMaxSegLen(), util::geo::getBoundingBox(b), util::geo::getBoundingBox(a), 0, 0)));
 
     TEST(std::get<2>(util::geo::intersectsPoly(
       bx.rawLine(), ax.getOuter().rawRing(), bx.getMaxSegLen(),
-      ax.getOuter().getMaxSegLen(), util::geo::getBoundingBox(b), util::geo::getBoundingBox(a), 0, 0, 0)));
+      ax.getOuter().getMaxSegLen(), util::geo::getBoundingBox(b), util::geo::getBoundingBox(a), 0, 0)));
 
     TEST(!std::get<1>(geo::intersectsContainsCovers(bx, util::geo::getBoundingBox(b), ax, util::geo::getBoundingBox(a))));
     TEST(std::get<2>(geo::intersectsContainsCovers(bx, util::geo::getBoundingBox(b), ax, util::geo::getBoundingBox(a))));
@@ -835,15 +835,15 @@ int main(int argc, char** argv) {
 
     TEST(std::get<0>(util::geo::intersectsPoly(
       bx.rawLine(), ax.getOuter().rawRing(), bx.getMaxSegLen(),
-      ax.getOuter().getMaxSegLen(), util::geo::getBoundingBox(b), util::geo::getBoundingBox(a), 0, 0, 0)));
+      ax.getOuter().getMaxSegLen(), util::geo::getBoundingBox(b), util::geo::getBoundingBox(a), 0, 0)));
 
     TEST(std::get<1>(util::geo::intersectsPoly(
       bx.rawLine(), ax.getOuter().rawRing(), bx.getMaxSegLen(),
-      ax.getOuter().getMaxSegLen(), util::geo::getBoundingBox(b), util::geo::getBoundingBox(a), 0, 0, 0)));
+      ax.getOuter().getMaxSegLen(), util::geo::getBoundingBox(b), util::geo::getBoundingBox(a), 0, 0)));
 
     TEST(!std::get<2>(util::geo::intersectsPoly(
       bx.rawLine(), ax.getOuter().rawRing(), bx.getMaxSegLen(),
-      ax.getOuter().getMaxSegLen(), util::geo::getBoundingBox(b), util::geo::getBoundingBox(a), 0, 0, 0)));
+      ax.getOuter().getMaxSegLen(), util::geo::getBoundingBox(b), util::geo::getBoundingBox(a), 0, 0)));
 
     TEST(!std::get<1>(geo::intersectsContainsCovers(bx, util::geo::getBoundingBox(b), ax, util::geo::getBoundingBox(a))));
     TEST(!std::get<2>(geo::intersectsContainsCovers(bx, util::geo::getBoundingBox(b), ax, util::geo::getBoundingBox(a))));
