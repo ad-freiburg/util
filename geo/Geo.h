@@ -210,7 +210,7 @@ inline LineSegment<T> rotate(LineSegment<T> geo, double deg,
 // _____________________________________________________________________________
 template <typename T>
 inline LineSegment<T> rotateRAD(LineSegment<T> geo, double deg,
-                             const Point<T>& c) {
+                                const Point<T>& c) {
   geo.first = rotateRAD(geo.first, deg, c);
   geo.second = rotateRAD(geo.second, deg, c);
   return geo;
@@ -276,7 +276,7 @@ inline std::vector<Geometry<T>> rotate(std::vector<Geometry<T>> multigeo,
 // _____________________________________________________________________________
 template <template <typename> class Geometry, typename T>
 inline std::vector<Geometry<T>> rotateRAD(std::vector<Geometry<T>> multigeo,
-                                       double deg, const Point<T>& c) {
+                                          double deg, const Point<T>& c) {
   for (size_t i = 0; i < multigeo.size(); i++)
     multigeo[i] = rotateRAD(multigeo[i], deg, c);
   return multigeo;
@@ -295,7 +295,7 @@ inline std::vector<Geometry<T>> rotate(std::vector<Geometry<T>> multigeo,
 // _____________________________________________________________________________
 template <template <typename> class Geometry, typename T>
 inline std::vector<Geometry<T>> rotateRAD(std::vector<Geometry<T>> multigeo,
-                                       double deg) {
+                                          double deg) {
   auto c = centroid(multigeo);
   for (size_t i = 0; i < multigeo.size(); i++)
     multigeo[i] = rotateRAD(multigeo[i], deg, c);
@@ -1472,8 +1472,7 @@ inline uint8_t intersectsPolyStrict(const LineSegment<T>& ls1,
     return 0b011;
   }
 
-  if (ls2FirstInLs1 && !ls1SecondInLs2 && !ls1FirstInLs2 &&
-      !ls2SecondInLs1) {
+  if (ls2FirstInLs1 && !ls1SecondInLs2 && !ls1FirstInLs2 && !ls2SecondInLs1) {
     // ls2.first is strictly (excluding end-points) on ls1
     if (crossProd(ls2.second, ls1) > 0) return 0b101;
     return 0b011;
@@ -1731,8 +1730,13 @@ inline std::tuple<bool, bool, bool, bool, bool> intersectsContainsInner(
     const util::geo::XSortedLine<T>& a, const util::geo::XSortedRing<T>& b) {
   // returns {intersects, contains, covered, border intersects, border
   // intersects strict}
+
   size_t firstRel1 = 0;
   size_t firstRel2 = 0;
+
+  if (a.rawLine().size() == 0 || b.rawRing().size() == 0)
+    return {0, 0, 0, 0, 0};
+
   auto borderInt = util::geo::intersectsPoly(
       a.rawLine(), b.rawRing(), a.getMaxSegLen(), b.getMaxSegLen(),
       util::geo::Box<T>(
@@ -1764,6 +1768,10 @@ template <typename T>
 inline std::tuple<bool, bool, bool, bool, bool> intersectsContainsInner(
     const util::geo::XSortedRing<T>& a, const util::geo::XSortedRing<T>& b) {
   // returns {intersects, contains, covered, border isect, border isect strict}
+
+  if (a.rawRing().size() == 0 || b.rawRing().size() == 0)
+    return {0, 0, 0, 0, 0};
+
   size_t firstRel1 = 0;
   size_t firstRel2 = 0;
   auto borderInt = util::geo::intersectsPoly(
@@ -1821,7 +1829,8 @@ inline std::tuple<bool, bool, bool, bool, bool> intersectsContainsCovers(
             std::get<2>(borderInt)};
   }
 
-  if (a.getOuter().rawRing().size() > 1 && outerAreaA <= outerAreaB && util::geo::contains(boxA, boxB) &&
+  if (a.getOuter().rawRing().size() > 1 && outerAreaA <= outerAreaB &&
+      util::geo::contains(boxA, boxB) &&
       (std::get<0>(borderInt) ||
        util::geo::ringContains(a.getOuter().rawRing().front().seg().second,
                                b.getOuter(), firstRel2)
@@ -1913,7 +1922,8 @@ inline std::tuple<bool, bool, bool, bool, bool> intersectsContainsCovers(
             !std::get<1>(borderInt), false, false};
   }
 
-  if (b.getOuter().rawRing().size() > 1 && outerAreaB <= outerAreaA && util::geo::contains(boxB, boxA) &&
+  if (b.getOuter().rawRing().size() > 1 && outerAreaB <= outerAreaA &&
+      util::geo::contains(boxB, boxA) &&
       (std::get<0>(borderInt) ||
        ringContains(b.getOuter().rawRing().front().seg().second, a.getOuter(),
                     firstRel1)
@@ -2963,7 +2973,7 @@ inline RotatedBox<T> getOrientedEnvelope(std::vector<Geometry<T>> pol) {
   // check each segment
   for (size_t i = 1; i < hull.size(); i++) {
     // rotate segment such that it is parallel to the x axis
-    const auto s = hull[i] - hull[i-1];
+    const auto s = hull[i] - hull[i - 1];
     const double angle = -std::atan2(s.getY(), s.getX());
     const auto p = rotateRAD(pol, angle, center);
     Box<T> e = getBoundingBox(p);
@@ -2973,7 +2983,7 @@ inline RotatedBox<T> getOrientedEnvelope(std::vector<Geometry<T>> pol) {
     }
   }
   // Check segment between the ends of the hull line
-  if (hull[0] != hull[hull.size()-1]) {
+  if (hull[0] != hull[hull.size() - 1]) {
     const auto s = hull[0] - hull[hull.size() - 1];
     const double angle = -std::atan2(s.getY(), s.getX());
     const auto p = rotateRAD(pol, angle, center);
@@ -3204,7 +3214,8 @@ inline Polygon<T> convexHull(const Polygon<T>& p) {
 template <typename T>
 inline Polygon<T> convexHull(const MultiPolygon<T>& ps) {
   MultiPoint<T> mp;
-  for (const auto& p : ps) mp.insert(mp.end(), p.getOuter().begin(), p.getOuter().end());
+  for (const auto& p : ps)
+    mp.insert(mp.end(), p.getOuter().begin(), p.getOuter().end());
   return convexHull(mp);
 }
 
