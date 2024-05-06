@@ -329,6 +329,8 @@ class XSortedPolygon {
     _outer = outer;
 
     for (const auto& innerRaw : poly.getInners()) {
+      // skip empty polygons
+      if (innerRaw.size() < 2) continue;
       auto inner = innerRaw;
 
       // inner rings must be oriented clockwise
