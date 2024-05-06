@@ -14,7 +14,6 @@
 #include <unistd.h>
 #include <cstdlib>
 #include <iomanip>
-#include <immintrin.h>
 #include <iostream>
 #include <sstream>
 #include <vector>
@@ -37,7 +36,7 @@ static const size_t SORT_BUFFER_S = 64 * 128 * 1024;
 #define T_START(n)  auto _tstart_##n = std::chrono::high_resolution_clock::now()
 #define T_STOP(n) (std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::high_resolution_clock::now() - _tstart_##n).count())
 
-#define _TEST3(s, o, e) if (!(s o e)) {  std::cerr << "\n" << __FILE__ << ":" << __LINE__ << ": Test failed!\n  Expected " << #s << " " << #o " " << (e) << ", got " << (s) << std::endl;  exit(1);}
+#define _TEST3(s, o, e) {auto __ss = s; if (!(__ss o e)) {  std::cerr << "\n" << __FILE__ << ":" << __LINE__ << ": Test failed!\n  Expected " << #s << " " << #o " " << (e) << ", got " << (__ss) << std::endl;  exit(1);}}
 #define _TEST2(s, e) _TEST3(s, ==, o)
 #define _TEST1(s) _TEST3(static_cast<bool>(s), ==, true)
 
@@ -604,7 +603,8 @@ inline void externalSort(int file, int newFile, size_t size, size_t numobjs,
     if (n < 0) continue;
     qsort(buf, n / size, size, cmpf);
     lseek(file, bufferSize * i, SEEK_SET);
-    write(file, buf, n);
+    ssize_t r= write(file, buf, n);
+    if (r < 0) throw std::runtime_error("Could not write to file.");
 
     memcpy(partbufs[i], buf, std::min<size_t>(n, partsBufSize));
     partsize[i] = n;
@@ -626,14 +626,16 @@ inline void externalSort(int file, int newFile, size_t size, size_t numobjs,
 
     if ((i % bufferSize) == bufferSize - size || i == fsize - size) {
       // write to output file
-      write(newFile, buf, i % bufferSize + size);
+      ssize_t r = write(newFile, buf, i % bufferSize + size);
+      if (r < 0) throw std::runtime_error("Could not write to file.");
     }
 
     partpos[smallestP] += size;
 
     if (partpos[smallestP] % partsBufSize == 0) {
       lseek(file, bufferSize * smallestP + partpos[smallestP], SEEK_SET);
-      read(file, partbufs[smallestP], partsBufSize);
+      ssize_t r = read(file, partbufs[smallestP], partsBufSize);
+      if (r < 0) throw std::runtime_error("Could not read from file.");
     }
     pq.push(
         {&partbufs[smallestP][partpos[smallestP] % partsBufSize], smallestP});
@@ -645,11 +647,6 @@ inline void externalSort(int file, int newFile, size_t size, size_t numobjs,
   delete[] partbufs;
   delete[] partpos;
   delete[] partsize;
-}
-
-// _____________________________________________________________________________
-inline float f_rsqrt(float x) {
-  return _mm_cvtss_f32(_mm_rsqrt_ss(_mm_set_ss(x)));
 }
 
 // _____________________________________________________________________________
