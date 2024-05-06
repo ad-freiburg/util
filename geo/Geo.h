@@ -175,15 +175,27 @@ inline Point<T> rotate(const Point<T>& p, double deg) {
 
 // _____________________________________________________________________________
 template <typename T>
-inline Point<T> rotate(Point<T> p, double deg, const Point<T>& c) {
-  deg *= -RAD;
-  double si = sin(deg);
-  double co = cos(deg);
+inline Point<T> rotateRAD(const Point<T>& p, double deg) {
+  UNUSED(deg);
+  return p;
+}
+
+// _____________________________________________________________________________
+template <typename T>
+inline Point<T> rotateRAD(Point<T> p, double rad, const Point<T>& c) {
+  double si = sin(rad);
+  double co = cos(rad);
   p = p - c;
 
   return Point<T>(p.getX() * co - p.getY() * si,
                   p.getX() * si + p.getY() * co) +
          c;
+}
+
+// _____________________________________________________________________________
+template <typename T>
+inline Point<T> rotate(Point<T> p, double deg, const Point<T>& c) {
+  return rotateRAD(p, deg * -RAD, c);
 }
 
 // _____________________________________________________________________________
@@ -197,8 +209,23 @@ inline LineSegment<T> rotate(LineSegment<T> geo, double deg,
 
 // _____________________________________________________________________________
 template <typename T>
+inline LineSegment<T> rotateRAD(LineSegment<T> geo, double deg,
+                             const Point<T>& c) {
+  geo.first = rotateRAD(geo.first, deg, c);
+  geo.second = rotateRAD(geo.second, deg, c);
+  return geo;
+}
+
+// _____________________________________________________________________________
+template <typename T>
 inline LineSegment<T> rotate(LineSegment<T> geo, double deg) {
-  return (geo, deg, centroid(geo));
+  return rotate(geo, deg, centroid(geo));
+}
+
+// _____________________________________________________________________________
+template <typename T>
+inline LineSegment<T> rotateRAD(LineSegment<T> geo, double deg) {
+  return rotateRAD(geo, deg, centroid(geo));
 }
 
 // _____________________________________________________________________________
@@ -210,9 +237,30 @@ inline Line<T> rotate(Line<T> geo, double deg, const Point<T>& c) {
 
 // _____________________________________________________________________________
 template <typename T>
+inline Line<T> rotateRAD(Line<T> geo, double deg, const Point<T>& c) {
+  for (size_t i = 0; i < geo.size(); i++) geo[i] = rotateRAD(geo[i], deg, c);
+  return geo;
+}
+
+// _____________________________________________________________________________
+template <typename T>
 inline Polygon<T> rotate(Polygon<T> geo, double deg, const Point<T>& c) {
   for (size_t i = 0; i < geo.getOuter().size(); i++)
     geo.getOuter()[i] = rotate(geo.getOuter()[i], deg, c);
+  for (size_t i = 0; i < geo.getInners().size(); i++)
+    for (size_t j = 0; j < geo.getInners()[i].size(); j++)
+      geo.getInners()[i][j] = rotate(geo.getInners()[i][j], deg, c);
+  return geo;
+}
+
+// _____________________________________________________________________________
+template <typename T>
+inline Polygon<T> rotateRAD(Polygon<T> geo, double deg, const Point<T>& c) {
+  for (size_t i = 0; i < geo.getOuter().size(); i++)
+    geo.getOuter()[i] = rotateRAD(geo.getOuter()[i], deg, c);
+  for (size_t i = 0; i < geo.getInners().size(); i++)
+    for (size_t j = 0; j < geo.getInners()[i].size(); j++)
+      geo.getInners()[i][j] = rotateRAD(geo.getInners()[i][j], deg, c);
   return geo;
 }
 
@@ -227,11 +275,30 @@ inline std::vector<Geometry<T>> rotate(std::vector<Geometry<T>> multigeo,
 
 // _____________________________________________________________________________
 template <template <typename> class Geometry, typename T>
+inline std::vector<Geometry<T>> rotateRAD(std::vector<Geometry<T>> multigeo,
+                                       double deg, const Point<T>& c) {
+  for (size_t i = 0; i < multigeo.size(); i++)
+    multigeo[i] = rotateRAD(multigeo[i], deg, c);
+  return multigeo;
+}
+
+// _____________________________________________________________________________
+template <template <typename> class Geometry, typename T>
 inline std::vector<Geometry<T>> rotate(std::vector<Geometry<T>> multigeo,
                                        double deg) {
   auto c = centroid(multigeo);
   for (size_t i = 0; i < multigeo.size(); i++)
     multigeo[i] = rotate(multigeo[i], deg, c);
+  return multigeo;
+}
+
+// _____________________________________________________________________________
+template <template <typename> class Geometry, typename T>
+inline std::vector<Geometry<T>> rotateRAD(std::vector<Geometry<T>> multigeo,
+                                       double deg) {
+  auto c = centroid(multigeo);
+  for (size_t i = 0; i < multigeo.size(); i++)
+    multigeo[i] = rotateRAD(multigeo[i], deg, c);
   return multigeo;
 }
 
@@ -2887,50 +2954,44 @@ inline double parallelity(const Box<T>& box, const MultiLine<T>& multiline) {
 
 // _____________________________________________________________________________
 template <template <typename> class Geometry, typename T>
-inline RotatedBox<T> getOrientedEnvelope(std::vector<Geometry<T>> pol,
-                                         double step) {
-  // TODO: implement this nicer, works for now, but inefficient
-  // see
-  // https://geidav.wordpress.com/tag/gift-wrapping/#fn-1057-FreemanShapira1975
-  // for a nicer algorithm
-
+inline RotatedBox<T> getOrientedEnvelope(std::vector<Geometry<T>> pol) {
   Point<T> center = centroid(pol);
   Box<T> tmpBox = getBoundingBox(pol);
-  double rotateDeg = 0;
+  Line<T> hull = convexHull(pol).getOuter();
+  double rotateAngle = 0;
 
-  // rotate in steps
-  double i = step;
-  while (i < 360) {
-    pol = rotate(pol, step, center);
-    Box<T> e = getBoundingBox(pol);
+  // check each segment
+  for (size_t i = 1; i < hull.size(); i++) {
+    // rotate segment such that it is parallel to the x axis
+    const auto s = hull[i] - hull[i-1];
+    const double angle = -std::atan2(s.getY(), s.getX());
+    const auto p = rotateRAD(pol, angle, center);
+    Box<T> e = getBoundingBox(p);
     if (area(tmpBox) > area(e)) {
       tmpBox = e;
-      rotateDeg = i;
+      rotateAngle = angle;
     }
-    i += step;
+  }
+  // Check segment between the ends of the hull line
+  if (hull[0] != hull[hull.size()-1]) {
+    const auto s = hull[0] - hull[hull.size() - 1];
+    const double angle = -std::atan2(s.getY(), s.getX());
+    const auto p = rotateRAD(pol, angle, center);
+    Box<T> e = getBoundingBox(p);
+    if (area(tmpBox) > area(e)) {
+      tmpBox = e;
+      rotateAngle = angle;
+    }
   }
 
-  return RotatedBox<T>(tmpBox, -rotateDeg, center);
-}
-
-// _____________________________________________________________________________
-template <template <typename> class Geometry, typename T>
-inline RotatedBox<T> getOrientedEnvelope(std::vector<Geometry<T>> pol) {
-  return getOrientedEnvelope(pol, 1);
-}
-
-// _____________________________________________________________________________
-template <template <typename> class Geometry, typename T>
-inline RotatedBox<T> getOrientedEnvelope(Geometry<T> pol, double step) {
-  std::vector<Geometry<T>> mult{pol};
-  return getOrientedEnvelope(mult, step);
+  return RotatedBox<T>(tmpBox, -rotateAngle * -IRAD, center);
 }
 
 // _____________________________________________________________________________
 template <template <typename> class Geometry, typename T>
 inline RotatedBox<T> getOrientedEnvelope(Geometry<T> pol) {
   std::vector<Geometry<T>> mult{pol};
-  return getOrientedEnvelope(mult, 1);
+  return getOrientedEnvelope(mult);
 }
 
 // _____________________________________________________________________________
@@ -3137,6 +3198,14 @@ inline Polygon<T> convexHull(const MultiPoint<T>& l) {
 template <typename T>
 inline Polygon<T> convexHull(const Polygon<T>& p) {
   return convexHull(p.getOuter());
+}
+
+// _____________________________________________________________________________
+template <typename T>
+inline Polygon<T> convexHull(const MultiPolygon<T>& ps) {
+  MultiPoint<T> mp;
+  for (const auto& p : ps) mp.insert(mp.end(), p.getOuter().begin(), p.getOuter().end());
+  return convexHull(mp);
 }
 
 // _____________________________________________________________________________
