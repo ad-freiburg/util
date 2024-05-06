@@ -269,8 +269,8 @@ class XSortedLine {
 
       size_t next = i + 1;
 
-      while (line[next].getX() == line[i].getX() &&
-             line[next].getY() == line[i].getY() && next < line.size()) {
+      while (next < line.size() && line[next].getX() == line[i].getX() &&
+             line[next].getY() == line[i].getY()) {
         next = next + 1;
       }
 

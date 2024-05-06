@@ -1741,6 +1741,9 @@ inline std::tuple<bool, bool, bool, bool, bool> intersectsContainsCovers(
   size_t firstRel1 = 0;
   size_t firstRel2 = 0;
 
+  if (a.getOuter().rawRing().size() < 2) return {0, 0, 0, 0, 0};
+  if (b.getOuter().rawRing().size() < 2) return {0, 0, 0, 0, 0};
+
   auto borderInt = util::geo::intersectsPoly(
       a.getOuter(), b.getOuter(), a.getOuter().getMaxSegLen(),
       b.getOuter().getMaxSegLen(), boxA, boxB, &firstRel1, &firstRel2);
@@ -1751,7 +1754,7 @@ inline std::tuple<bool, bool, bool, bool, bool> intersectsContainsCovers(
             std::get<2>(borderInt)};
   }
 
-  if (outerAreaA <= outerAreaB && util::geo::contains(boxA, boxB) &&
+  if (a.getOuter().rawRing().size() > 1 && outerAreaA <= outerAreaB && util::geo::contains(boxA, boxB) &&
       (std::get<0>(borderInt) ||
        util::geo::ringContains(a.getOuter().rawRing().front().seg().second,
                                b.getOuter(), firstRel2)
@@ -1843,7 +1846,7 @@ inline std::tuple<bool, bool, bool, bool, bool> intersectsContainsCovers(
             !std::get<1>(borderInt), false, false};
   }
 
-  if (outerAreaB <= outerAreaA && util::geo::contains(boxB, boxA) &&
+  if (b.getOuter().rawRing().size() > 1 && outerAreaB <= outerAreaA && util::geo::contains(boxB, boxA) &&
       (std::get<0>(borderInt) ||
        ringContains(b.getOuter().rawRing().front().seg().second, a.getOuter(),
                     firstRel1)
@@ -1949,6 +1952,8 @@ inline std::tuple<bool, bool, bool, bool, bool> intersectsContainsCovers(
     const util::geo::XSortedLine<T>& a, const util::geo::Box<T>& boxA,
     const util::geo::XSortedPolygon<T>& b, const util::geo::Box<T>& boxB) {
   // returns {intersects, contains, covers, touches, crosses}
+  if (a.rawLine().size() == 0) return {0, 0, 0, 0, 0};
+  if (b.getOuter().rawRing().size() < 2) return {0, 0, 0, 0, 0};
 
   size_t firstRel1 = 0;
   size_t firstRel2 = 0;
@@ -1983,6 +1988,7 @@ inline std::tuple<bool, bool, bool, bool, bool> intersectsContainsCovers(
       i = 0;
 
       for (; i < b.getInners().size(); i++) {
+        if (b.getInners()[i].rawRing().size() < 2) continue;
         if (b.getInnerBoxes()[i].getLowerLeft().getX() >
             a.rawLine().back().seg().second.getX())
           break;
