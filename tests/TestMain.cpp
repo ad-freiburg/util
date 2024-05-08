@@ -4241,11 +4241,8 @@ int main(int argc, char** argv) {
   auto obox =
       geo::getOrientedEnvelope(geo::Line<double>{{0, 0}, {1, 1}, {1.5, 0.5}});
   TEST(geo::contains(
-      geo::convexHull(obox),
-      geo::Polygon<double>({{0.0, 0.0}, {1.0, 1.0}, {1.5, 0.5}, {0.5, -0.5}})));
-  TEST(geo::contains(
-      geo::Polygon<double>({{0.0, 0.0}, {1.0, 1.0}, {1.5, 0.5}, {0.5, -0.5}}),
-      geo::convexHull(obox)));
+      geo::Line<double>{{0, 0}, {1, 1}, {1.5, 0.5}}, geo::convexHull(obox)));
+  TEST(geo::area(geo::convexHull(obox)), ==, approx(1));
 
   obox =
       geo::getOrientedEnvelope(geo::Polygon<double>({{0.0, 1.0}, {0.9, 1.1},
@@ -4253,11 +4250,11 @@ int main(int argc, char** argv) {
                                                     {2.0, 1.0}, {1.1, 0.9},
                                                     {1.0, 0.0}, {0.9, 0.9}}));
   TEST(geo::contains(
-      geo::convexHull(obox),
-      geo::Polygon<double>({{0.0, 1.0}, {1.0, 2.0}, {2.0, 1.0}, {1.0, 0.0}})));
-  TEST(geo::contains(
-      geo::Polygon<double>({{0.0, 1.0}, {1.0, 2.0}, {2.0, 1.0}, {1.0, 0.0}}),
-      geo::convexHull(obox)));
+      geo::Polygon<double>({{0.0, 1.0}, {0.9, 1.1},
+                                                    {1.0, 2.0}, {1.1, 1.1},
+                                                    {2.0, 1.0}, {1.1, 0.9},
+                                                    {1.0, 0.0}, {0.9, 0.9}}), geo::convexHull(obox)));
+  TEST(geo::area(geo::convexHull(obox)), ==, approx(2));
 
   TEST(geo::dist(geo::LineSegment<double>{{1, 1}, {3, 1}},
                    geo::LineSegment<double>{{2, 2}, {2, 0}}) == approx(0));
