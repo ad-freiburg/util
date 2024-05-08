@@ -535,10 +535,8 @@ inline std::pair<bool, bool> ringContains(const Point<T>& p,
 // _____________________________________________________________________________
 template <typename T>
 inline std::tuple<bool, bool> intersectsContains(const Point<T>& p,
-                                                 const XSortedLine<T>& line) {
+                                                 const XSortedLine<T>& line, size_t i) {
   // check if point p lies on line
-
-  size_t i = 0;
 
   // skip irrelevant parts inline
   if (line.getMaxSegLen() < std::numeric_limits<double>::infinity()) {
@@ -559,6 +557,13 @@ inline std::tuple<bool, bool> intersectsContains(const Point<T>& p,
   }
 
   return {0, 0};
+}
+
+// _____________________________________________________________________________
+template <typename T>
+inline std::tuple<bool, bool> intersectsContains(const Point<T>& p,
+                                                 const XSortedLine<T>& line) {
+  return intersectsContains(p, line, 0);
 }
 
 // _____________________________________________________________________________
@@ -812,6 +817,9 @@ inline std::tuple<bool, bool, bool> intersectsPoly(
   size_t i = 0;  // position in ls1
   size_t j = 0;  // position in ls2
 
+  if (firstRelIn1) i = *firstRelIn1;
+  if (firstRelIn2) j = *firstRelIn2;
+
   // skip irrelevant parts in ls1
   if (maxSegLenA < std::numeric_limits<double>::infinity()) {
     i = std::lower_bound(
@@ -988,6 +996,9 @@ inline std::tuple<bool, bool, bool, bool, bool> intersectsCovers(
 
   size_t i = 0;  // position in ls1
   size_t j = 0;  // position in ls2
+
+  if (firstRelIn1) i = *firstRelIn1;
+  if (firstRelIn2) j = *firstRelIn2;
 
   // skip irrelevant parts in ls1
   if (maxSegLenA < std::numeric_limits<double>::infinity()) {
@@ -1811,17 +1822,16 @@ template <typename T>
 inline std::tuple<bool, bool, bool, bool, bool> intersectsContainsCovers(
     const util::geo::XSortedPolygon<T>& a, const util::geo::Box<T>& boxA,
     double outerAreaA, const util::geo::XSortedPolygon<T>& b,
-    const util::geo::Box<T>& boxB, double outerAreaB) {
+    const util::geo::Box<T>& boxB, double outerAreaB, size_t* firstRel1,
+    size_t* firstRel2) {
   // returns {intersects, contains, covers, touches, overlaps}
-  size_t firstRel1 = 0;
-  size_t firstRel2 = 0;
 
   if (a.getOuter().rawRing().size() < 2) return {0, 0, 0, 0, 0};
   if (b.getOuter().rawRing().size() < 2) return {0, 0, 0, 0, 0};
 
   auto borderInt = util::geo::intersectsPoly(
       a.getOuter(), b.getOuter(), a.getOuter().getMaxSegLen(),
-      b.getOuter().getMaxSegLen(), boxA, boxB, &firstRel1, &firstRel2);
+      b.getOuter().getMaxSegLen(), boxA, boxB, firstRel1, firstRel2);
 
   if (std::get<1>(borderInt)) {
     // intersects, not contained, not covered, touches
@@ -1833,7 +1843,7 @@ inline std::tuple<bool, bool, bool, bool, bool> intersectsContainsCovers(
       util::geo::contains(boxA, boxB) &&
       (std::get<0>(borderInt) ||
        util::geo::ringContains(a.getOuter().rawRing().front().seg().second,
-                               b.getOuter(), firstRel2)
+                               b.getOuter(), *firstRel2)
            .second)) {
     // the outer hull of A is inside the outer hull of B!
 
@@ -1926,7 +1936,7 @@ inline std::tuple<bool, bool, bool, bool, bool> intersectsContainsCovers(
       util::geo::contains(boxB, boxA) &&
       (std::get<0>(borderInt) ||
        ringContains(b.getOuter().rawRing().front().seg().second, a.getOuter(),
-                    firstRel1)
+                    *firstRel1)
            .second)) {
     // the outer of B is inside the outer of A
     //
@@ -2000,6 +2010,18 @@ inline std::tuple<bool, bool, bool, bool, bool> intersectsContainsCovers(
 // _____________________________________________________________________________
 template <typename T>
 inline std::tuple<bool, bool, bool, bool, bool> intersectsContainsCovers(
+    const util::geo::XSortedPolygon<T>& a, const util::geo::Box<T>& boxA,
+    double outerAreaA, const util::geo::XSortedPolygon<T>& b,
+    const util::geo::Box<T>& boxB, double outerAreaB) {
+  size_t firstA = 0;
+  size_t firstB = 0;
+  return intersectsContainsCovers(a, boxA, outerAreaA, b, boxB, outerAreaB,
+                                  &firstA, &firstB);
+}
+
+// _____________________________________________________________________________
+template <typename T>
+inline std::tuple<bool, bool, bool, bool, bool> intersectsContainsCovers(
     const util::geo::XSortedPolygon<T>& a,
     const util::geo::XSortedPolygon<T>& b) {
   return intersectsContainsCovers(
@@ -2018,6 +2040,15 @@ inline std::tuple<bool, bool, bool, bool, bool> intersectsContainsCovers(
 template <typename T>
 inline std::tuple<bool, bool, bool, bool, bool> intersectsCovers(
     const util::geo::XSortedLine<T>& a, const util::geo::XSortedLine<T>& b,
+    const Box<T>& boxA, const Box<T>& boxB, size_t* firstRelIn1, size_t* firstRelIn2) {
+  return util::geo::intersectsCovers(a.rawLine(), b.rawLine(), a.getMaxSegLen(),
+                                     b.getMaxSegLen(), boxA, boxB, firstRelIn1, firstRelIn2);
+}
+
+// _____________________________________________________________________________
+template <typename T>
+inline std::tuple<bool, bool, bool, bool, bool> intersectsCovers(
+    const util::geo::XSortedLine<T>& a, const util::geo::XSortedLine<T>& b,
     const Box<T>& boxA, const Box<T>& boxB) {
   return util::geo::intersectsCovers(a.rawLine(), b.rawLine(), a.getMaxSegLen(),
                                      b.getMaxSegLen(), boxA, boxB, 0, 0);
@@ -2027,16 +2058,15 @@ inline std::tuple<bool, bool, bool, bool, bool> intersectsCovers(
 template <typename T>
 inline std::tuple<bool, bool, bool, bool, bool> intersectsContainsCovers(
     const util::geo::XSortedLine<T>& a, const util::geo::Box<T>& boxA,
-    const util::geo::XSortedPolygon<T>& b, const util::geo::Box<T>& boxB) {
+    const util::geo::XSortedPolygon<T>& b, const util::geo::Box<T>& boxB,
+    size_t* firstRel1, size_t* firstRel2) {
   // returns {intersects, contains, covers, touches, crosses}
   if (a.rawLine().size() == 0) return {0, 0, 0, 0, 0};
   if (b.getOuter().rawRing().size() < 2) return {0, 0, 0, 0, 0};
 
-  size_t firstRel1 = 0;
-  size_t firstRel2 = 0;
   auto borderInt = util::geo::intersectsPoly(
       a.rawLine(), b.getOuter().rawRing(), a.getMaxSegLen(),
-      b.getOuter().getMaxSegLen(), boxA, boxB, &firstRel1, &firstRel2);
+      b.getOuter().getMaxSegLen(), boxA, boxB, firstRel1, firstRel2);
 
   if (std::get<1>(borderInt)) {
     // intersects, not contained, not covered, touches
@@ -2047,7 +2077,7 @@ inline std::tuple<bool, bool, bool, bool, bool> intersectsContainsCovers(
   if (util::geo::contains(boxA, boxB) &&
       (std::get<0>(borderInt) ||
        util::geo::ringContains(a.rawLine().front().seg().second, b.getOuter(),
-                               firstRel2)
+                               *firstRel2)
            .second)) {
     // a is inside the outer of B
     bool intersectsInnerBorder = false;
@@ -2102,6 +2132,15 @@ inline std::tuple<bool, bool, bool, bool, bool> intersectsContainsCovers(
   return {std::get<0>(borderInt), false, false, false, false};
 }
 
+// _____________________________________________________________________________
+template <typename T>
+inline std::tuple<bool, bool, bool, bool, bool> intersectsContainsCovers(
+    const util::geo::XSortedLine<T>& a, const util::geo::Box<T>& boxA,
+    const util::geo::XSortedPolygon<T>& b, const util::geo::Box<T>& boxB) {
+  size_t firstRel1 = 0;
+  size_t firstRel2 = 0;
+  return intersectsContainsCovers(a, boxA, b, boxB, &firstRel1, &firstRel2);
+}
 // _____________________________________________________________________________
 template <typename T>
 inline std::tuple<bool, bool, bool, bool, bool> intersectsContainsCovers(
