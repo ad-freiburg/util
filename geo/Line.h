@@ -250,7 +250,7 @@ class XSortedLine {
       if (line[i - 1].getX() == line[i].getX() &&
           line[i - 1].getY() == line[i].getY())
         continue;
-      double len = fabs(line[i - 1].getX() - line[i].getX());
+      T len = fabs(line[i - 1].getX() - line[i].getX());
       if (len > _maxSegLen) _maxSegLen = len;
 
       double prevAng = M_PI;
@@ -321,15 +321,15 @@ class XSortedLine {
     _maxSegLen = fabs(line.first.getX() - line.second.getX());
   }
 
-  double getMaxSegLen() const { return _maxSegLen; }
-  void setMaxSegLen(double l) { _maxSegLen = l; }
+  T getMaxSegLen() const { return _maxSegLen; }
+  void setMaxSegLen(T l) { _maxSegLen = l; }
 
   const std::vector<XSortedTuple<T>>& rawLine() const { return _line; }
   std::vector<XSortedTuple<T>>& rawLine() { return _line; }
 
  private:
   std::vector<XSortedTuple<T>> _line;
-  double _maxSegLen = -1;
+  T _maxSegLen = -1;
 };
 
 template <typename T>

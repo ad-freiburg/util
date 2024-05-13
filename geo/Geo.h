@@ -535,7 +535,8 @@ inline std::pair<bool, bool> ringContains(const Point<T>& p,
 // _____________________________________________________________________________
 template <typename T>
 inline std::tuple<bool, bool> intersectsContains(const Point<T>& p,
-                                                 const XSortedLine<T>& line, size_t i) {
+                                                 const XSortedLine<T>& line,
+                                                 size_t i) {
   // check if point p lies on line
 
   // skip irrelevant parts inline
@@ -580,11 +581,14 @@ inline std::pair<bool, bool> containsCovers(const Point<T>& p,
   bool onInnerBorder = false;
 
   if (poly.getInners().size()) {
-    size_t i =
-        std::lower_bound(
-            poly.getInnerBoxIdx().begin(), poly.getInnerBoxIdx().end(),
-            std::pair<T, size_t>{p.getX() - poly.getInnerMaxSegLen(), 0}) -
-        poly.getInnerBoxIdx().begin();
+    size_t i = 0;
+
+    if (poly.getInnerMaxSegLen() < std::numeric_limits<double>::infinity()) {
+      i = std::lower_bound(
+              poly.getInnerBoxIdx().begin(), poly.getInnerBoxIdx().end(),
+              std::pair<T, size_t>{p.getX() - poly.getInnerMaxSegLen(), 0}) -
+          poly.getInnerBoxIdx().begin();
+    }
 
     for (; i < poly.getInners().size(); i++) {
       if (poly.getInnerBoxes()[i].getLowerLeft().getX() > p.getX()) break;
@@ -821,16 +825,16 @@ inline std::tuple<bool, bool, bool> intersectsPoly(
   if (firstRelIn2) j = *firstRelIn2;
 
   // skip irrelevant parts in ls1
-  if (maxSegLenA < std::numeric_limits<double>::infinity()) {
+  if (maxSegLenA < std::numeric_limits<T>::max()) {
     i = std::lower_bound(
-            ls1.begin(), ls1.end(),
+            ls1.begin() + i, ls1.end(),
             XSortedTuple<T>{{ls2.front().p.getX() - maxSegLenA, 0}, false}) -
         ls1.begin();
   }
 
-  if (maxSegLenB < std::numeric_limits<double>::infinity()) {
+  if (maxSegLenB < std::numeric_limits<T>::max()) {
     j = std::lower_bound(
-            ls2.begin(), ls2.end(),
+            ls2.begin() + j, ls2.end(),
             XSortedTuple<T>{{ls1.front().p.getX() - maxSegLenB, 0}, false}) -
         ls2.begin();
   }
@@ -1001,16 +1005,16 @@ inline std::tuple<bool, bool, bool, bool, bool> intersectsCovers(
   if (firstRelIn2) j = *firstRelIn2;
 
   // skip irrelevant parts in ls1
-  if (maxSegLenA < std::numeric_limits<double>::infinity()) {
+  if (maxSegLenA < std::numeric_limits<T>::max()) {
     i = std::lower_bound(
-            ls1.begin(), ls1.end(),
+            ls1.begin() + i, ls1.end(),
             XSortedTuple<T>{{ls2.front().p.getX() - maxSegLenA, 0}, false}) -
         ls1.begin();
   }
 
-  if (maxSegLenB < std::numeric_limits<double>::infinity()) {
+  if (maxSegLenB < std::numeric_limits<T>::max()) {
     j = std::lower_bound(
-            ls2.begin(), ls2.end(),
+            ls2.begin() + j, ls2.end(),
             XSortedTuple<T>{{ls1.front().p.getX() - maxSegLenB, 0}, false}) -
         ls2.begin();
   }
@@ -1851,13 +1855,17 @@ inline std::tuple<bool, bool, bool, bool, bool> intersectsContainsCovers(
 
     // check inner polygons
     if (b.getInners().size()) {
-      size_t i = std::lower_bound(
-                     b.getInnerBoxIdx().begin(), b.getInnerBoxIdx().end(),
-                     std::pair<T, size_t>{
-                         a.getOuter().rawRing().front().seg().first.getX() -
-                             b.getInnerMaxSegLen(),
-                         0}) -
-                 b.getInnerBoxIdx().begin();
+      size_t i = 0;
+
+      if (b.getInnerMaxSegLen() < std::numeric_limits<T>::max()) {
+        i = std::lower_bound(
+                       b.getInnerBoxIdx().begin(), b.getInnerBoxIdx().end(),
+                       std::pair<T, size_t>{
+                           a.getOuter().rawRing().front().seg().first.getX() -
+                               b.getInnerMaxSegLen(),
+                           0}) -
+                   b.getInnerBoxIdx().begin();
+      }
 
       for (; i < b.getInners().size(); i++) {
         if (b.getInnerBoxes()[i].getLowerLeft().getX() >
@@ -1893,13 +1901,17 @@ inline std::tuple<bool, bool, bool, bool, bool> intersectsContainsCovers(
           // it must be covered by an inner polygon of a, otherwise a ist not
           // in b
           if (a.getInners().size()) {
-            size_t i =
+            size_t i = 0;
+
+      if (a.getInnerMaxSegLen() < std::numeric_limits<T>::max()) {
+             i =
                 std::lower_bound(
                     a.getInnerBoxIdx().begin(), a.getInnerBoxIdx().end(),
                     std::pair<T, size_t>{
                         innerBBox.getLowerLeft().getX() - a.getInnerMaxSegLen(),
                         0}) -
                 a.getInnerBoxIdx().begin();
+      }
 
             for (; i < a.getInners().size(); i++) {
               if (a.getInnerBoxes()[i].getLowerLeft().getX() >
@@ -1946,13 +1958,18 @@ inline std::tuple<bool, bool, bool, bool, bool> intersectsContainsCovers(
     // check inner polygons
     bool intersects = false;
     if (a.getInners().size()) {
-      size_t i = std::lower_bound(
+      size_t i = 0;
+
+      if (a.getInnerMaxSegLen() < std::numeric_limits<T>::max()) {
+       i = std::lower_bound(
                      a.getInnerBoxIdx().begin(), a.getInnerBoxIdx().end(),
                      std::pair<T, size_t>{
                          b.getOuter().rawRing().front().seg().first.getX() -
                              a.getInnerMaxSegLen(),
                          0}) -
                  a.getInnerBoxIdx().begin();
+      }
+
       for (; i < a.getInners().size(); i++) {
         const auto& innerBBox = a.getInnerBoxes()[i];
         if (innerBBox.getLowerLeft().getX() >
@@ -1971,13 +1988,17 @@ inline std::tuple<bool, bool, bool, bool, bool> intersectsContainsCovers(
           // by an inner ring of B
           intersects = true;
           if (b.getInners().size()) {
-            size_t i =
+            size_t i = 0;
+
+            if (b.getInnerMaxSegLen() < std::numeric_limits<T>::max()) {
+             i =
                 std::lower_bound(
                     b.getInnerBoxIdx().begin(), b.getInnerBoxIdx().end(),
                     std::pair<T, size_t>{
                         innerBBox.getLowerLeft().getX() - b.getInnerMaxSegLen(),
                         0}) -
                 b.getInnerBoxIdx().begin();
+            }
 
             for (; i < b.getInners().size(); i++) {
               if (b.getInnerBoxes()[i].getLowerLeft().getX() >
@@ -2040,9 +2061,11 @@ inline std::tuple<bool, bool, bool, bool, bool> intersectsContainsCovers(
 template <typename T>
 inline std::tuple<bool, bool, bool, bool, bool> intersectsCovers(
     const util::geo::XSortedLine<T>& a, const util::geo::XSortedLine<T>& b,
-    const Box<T>& boxA, const Box<T>& boxB, size_t* firstRelIn1, size_t* firstRelIn2) {
+    const Box<T>& boxA, const Box<T>& boxB, size_t* firstRelIn1,
+    size_t* firstRelIn2) {
   return util::geo::intersectsCovers(a.rawLine(), b.rawLine(), a.getMaxSegLen(),
-                                     b.getMaxSegLen(), boxA, boxB, firstRelIn1, firstRelIn2);
+                                     b.getMaxSegLen(), boxA, boxB, firstRelIn1,
+                                     firstRelIn2);
 }
 
 // _____________________________________________________________________________
@@ -2084,15 +2107,17 @@ inline std::tuple<bool, bool, bool, bool, bool> intersectsContainsCovers(
 
     // check inner polygons
     if (b.getInners().size()) {
-      size_t i =
+      size_t i = 0;
+
+      if (b.getInnerMaxSegLen() < std::numeric_limits<T>::max()) {
+       i =
           std::lower_bound(
               b.getInnerBoxIdx().begin(), b.getInnerBoxIdx().end(),
               std::pair<T, size_t>{a.rawLine().front().seg().first.getX() -
                                        b.getInnerMaxSegLen(),
                                    0}) -
           b.getInnerBoxIdx().begin();
-
-      i = 0;
+      }
 
       for (; i < b.getInners().size(); i++) {
         if (b.getInners()[i].rawRing().size() < 2) continue;

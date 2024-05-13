@@ -181,7 +181,7 @@ class XSortedRing {
       if (ring[i - 1].getX() == ring[i].getX() &&
           ring[i - 1].getY() == ring[i].getY())
         continue;
-      double len = fabs(ring[i - 1].getX() - ring[i].getX());
+      T len = fabs(ring[i - 1].getX() - ring[i].getX());
       if (len > _maxSegLen) _maxSegLen = len;
 
       double prevAng = 0;
@@ -245,7 +245,7 @@ class XSortedRing {
     if (ring.size() > 1 && !(ring[ring.size() - 1].getX() == ring[0].getX() &&
                              ring[ring.size() - 1].getY() == ring[0].getY())) {
       size_t i = ring.size();
-      double len = fabs(ring[i - 1].getX() - ring[0].getX());
+      T len = fabs(ring[i - 1].getX() - ring[0].getX());
       if (len > _maxSegLen) _maxSegLen = len;
 
       size_t prev;
@@ -304,15 +304,15 @@ class XSortedRing {
     std::sort(_ring.begin(), _ring.end());
   }
 
-  double getMaxSegLen() const { return _maxSegLen; }
-  void setMaxSegLen(double l) { _maxSegLen = l; }
+  T getMaxSegLen() const { return _maxSegLen; }
+  void setMaxSegLen(T l) { _maxSegLen = l; }
 
   const std::vector<XSortedTuple<T>>& rawRing() const { return _ring; }
   std::vector<XSortedTuple<T>>& rawRing() { return _ring; }
 
  private:
   std::vector<XSortedTuple<T>> _ring;
-  double _maxSegLen = -1;
+  T _maxSegLen = -1;
 };
 
 template <typename T>
@@ -371,8 +371,8 @@ class XSortedPolygon {
   const std::vector<double>& getInnerAreas() const { return _innerAreas; }
   std::vector<double>& getInnerAreas() { return _innerAreas; }
 
-  double getInnerMaxSegLen() const { return _innerMaxSegLen; }
-  void setInnerMaxSegLen(double len) { _innerMaxSegLen = len; }
+  T getInnerMaxSegLen() const { return _innerMaxSegLen; }
+  void setInnerMaxSegLen(T len) { _innerMaxSegLen = len; }
 
  private:
   XSortedRing<T> _outer;

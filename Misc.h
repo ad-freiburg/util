@@ -328,6 +328,16 @@ inline double atof(const char* p, uint8_t mn) {
 }
 
 // _____________________________________________________________________________
+inline void writeAll(int file, const unsigned char* buf, size_t count ) {
+  ssize_t r;
+  ssize_t rem = count;
+  while ((r = write(file, buf + (count - rem), rem))) {
+    if (r < 0) throw std::runtime_error("Could not write to file.");
+    rem -= r;
+  }
+}
+
+// _____________________________________________________________________________
 inline double atof(const char* p) { return atof(p, 38); }
 
 // _____________________________________________________________________________
@@ -603,8 +613,7 @@ inline void externalSort(int file, int newFile, size_t size, size_t numobjs,
     if (n < 0) continue;
     qsort(buf, n / size, size, cmpf);
     lseek(file, bufferSize * i, SEEK_SET);
-    ssize_t r= write(file, buf, n);
-    if (r < 0) throw std::runtime_error("Could not write to file.");
+    writeAll(file, buf, n);
 
     memcpy(partbufs[i], buf, std::min<size_t>(n, partsBufSize));
     partsize[i] = n;
@@ -626,8 +635,7 @@ inline void externalSort(int file, int newFile, size_t size, size_t numobjs,
 
     if ((i % bufferSize) == bufferSize - size || i == fsize - size) {
       // write to output file
-      ssize_t r = write(newFile, buf, i % bufferSize + size);
-      if (r < 0) throw std::runtime_error("Could not write to file.");
+      writeAll(newFile, buf, i % bufferSize + size);
     }
 
     partpos[smallestP] += size;
