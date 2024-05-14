@@ -828,25 +828,41 @@ inline std::tuple<bool, bool, bool> intersectsPoly(
   if (maxSegLenA < std::numeric_limits<T>::max()) {
     i = std::lower_bound(
             ls1.begin() + i, ls1.end(),
-            XSortedTuple<T>{{ls2.front().p.getX() - maxSegLenA, 0}, false}) -
+            XSortedTuple<T>{{ls2[j].p.getX() - maxSegLenA, 0}, false}) -
         ls1.begin();
   }
 
+  // skip irrelevant parts in ls2
   if (maxSegLenB < std::numeric_limits<T>::max()) {
     j = std::lower_bound(
             ls2.begin() + j, ls2.end(),
-            XSortedTuple<T>{{ls1.front().p.getX() - maxSegLenB, 0}, false}) -
+            XSortedTuple<T>{{ls1[i].p.getX() - maxSegLenB, 0}, false}) -
         ls2.begin();
   }
 
   if (firstRelIn1) *firstRelIn1 = i;
   if (firstRelIn2) *firstRelIn2 = j;
 
+  bool firstRelIn1Found = false;
+  bool firstRelIn2Found = false;
+
   uint8_t ret = 0;
 
   std::set<AngledLineSegment<T>> active1, active2;
 
   while (i < ls1.size() && j < ls2.size()) {
+    if (!firstRelIn1Found &&
+        ls1[i].seg().second.getX() >= boxB.getLowerLeft().getX()) {
+      firstRelIn1Found = true;
+      if (firstRelIn1) *firstRelIn1 = i;
+    }
+
+    if (!firstRelIn2Found &&
+        ls2[j].seg().second.getX() >= boxA.getLowerLeft().getX()) {
+      firstRelIn2Found = true;
+      if (firstRelIn2) *firstRelIn2 = j;
+    }
+
     if (ls1[i].p.getX() < ls2[j].p.getX() ||
         (ls1[i].p.getX() == ls2[j].p.getX() &&
          (!ls1[i].out() || ls2[j].out()))) {
@@ -857,12 +873,19 @@ inline std::tuple<bool, bool, bool> intersectsPoly(
       if (ls1[i].p.getX() > ls2.back().p.getX())
         return {(ret >> 0) & 1, (ret >> 1) & 1, (ret >> 2) & 1};
 
+      // ignore segments out of the X range
+      if (ls1[i].seg().second.getX() < boxB.getLowerLeft().getX()) {
+        i++;
+        continue;
+      }
+
       // ignore segments out of the Y range
       if (ls1[i].seg().first.getY() < boxB.getLowerLeft().getY() &&
           ls1[i].seg().second.getY() < boxB.getLowerLeft().getY()) {
         i++;
         continue;
       }
+
       if (ls1[i].seg().first.getY() > boxB.getUpperRight().getY() &&
           ls1[i].seg().second.getY() > boxB.getUpperRight().getY()) {
         i++;
@@ -917,6 +940,12 @@ inline std::tuple<bool, bool, bool> intersectsPoly(
       // empty!)
       if (ls2[j].p.getX() > ls1.back().p.getX())
         return {(ret >> 0) & 1, (ret >> 1) & 1, (ret >> 2) & 1};
+
+      // ignore segments out of the X range
+      if (ls2[j].seg().second.getX() < boxA.getLowerLeft().getX()) {
+        j++;
+        continue;
+      }
 
       // ignore segments out of the Y range
       if (ls2[j].seg().first.getY() < boxA.getLowerLeft().getY() &&
@@ -1008,16 +1037,19 @@ inline std::tuple<bool, bool, bool, bool, bool> intersectsCovers(
   if (maxSegLenA < std::numeric_limits<T>::max()) {
     i = std::lower_bound(
             ls1.begin() + i, ls1.end(),
-            XSortedTuple<T>{{ls2.front().p.getX() - maxSegLenA, 0}, false}) -
+            XSortedTuple<T>{{ls2[j].p.getX() - maxSegLenA, 0}, false}) -
         ls1.begin();
   }
 
   if (maxSegLenB < std::numeric_limits<T>::max()) {
     j = std::lower_bound(
             ls2.begin() + j, ls2.end(),
-            XSortedTuple<T>{{ls1.front().p.getX() - maxSegLenB, 0}, false}) -
+            XSortedTuple<T>{{ls1[i].p.getX() - maxSegLenB, 0}, false}) -
         ls2.begin();
   }
+
+  bool firstRelIn1Found = false;
+  bool firstRelIn2Found = false;
 
   if (firstRelIn1) *firstRelIn1 = i;
   if (firstRelIn2) *firstRelIn2 = j;
@@ -1025,6 +1057,18 @@ inline std::tuple<bool, bool, bool, bool, bool> intersectsCovers(
   std::set<AngledLineSegment<T>> active1, active2;
 
   while (i < ls1.size() && j < ls2.size()) {
+    if (!firstRelIn1Found &&
+        ls1[i].seg().second.getX() >= boxB.getLowerLeft().getX()) {
+      firstRelIn1Found = true;
+      if (firstRelIn1) *firstRelIn1 = i;
+    }
+
+    if (!firstRelIn2Found &&
+        ls2[j].seg().second.getX() >= boxA.getLowerLeft().getX()) {
+      firstRelIn2Found = true;
+      if (firstRelIn2) *firstRelIn2 = j;
+    }
+
     if (ls1[i].p.getX() < ls2[j].p.getX() ||
         (ls1[i].p.getX() == ls2[j].p.getX() &&
          (!ls1[i].out() || ls2[j].out()))) {
@@ -1032,6 +1076,12 @@ inline std::tuple<bool, bool, bool, bool, bool> intersectsCovers(
 
       // we are past ls2
       if (ls1[i].p.getX() > ls2.back().p.getX()) break;
+
+      // ignore segments out of the X range
+      if (ls1[i].seg().second.getX() < boxB.getLowerLeft().getX()) {
+        i++;
+        continue;
+      }
 
       // ignore segments out of the Y range
       if (ls1[i].seg().first.getY() < boxB.getLowerLeft().getY() &&
@@ -1092,6 +1142,12 @@ inline std::tuple<bool, bool, bool, bool, bool> intersectsCovers(
 
       // we are past ls1
       if (ls2[j].p.getX() > ls1.back().p.getX()) break;
+
+      // ignore segments out of the X range
+      if (ls2[j].seg().second.getX() < boxA.getLowerLeft().getX()) {
+        j++;
+        continue;
+      }
 
       // ignore segments out of the Y range
       if (ls2[j].seg().first.getY() < boxA.getLowerLeft().getY() &&
@@ -1240,7 +1296,7 @@ inline uint8_t intersectsLineStrict(const LineSegment<T>& ls1,
     return 0b000111;
   }
 
-  if (dist(ls1.first, ls2.first) < EPSILON && !ls1SecondInLs2 &&
+  if (ls1.first == ls2.first && !ls1SecondInLs2 &&
       !ls2SecondInLs1) {
     int32_t ang1 = ((angBetween(ls2.first, ls2.second) / M_PI) * 32766);
     int32_t ang2 = ((angBetween(ls1.first, ls1.second) / M_PI) * 32766);
@@ -1253,7 +1309,7 @@ inline uint8_t intersectsLineStrict(const LineSegment<T>& ls1,
          prevLs2Ang != ang2});
   }
 
-  if (dist(ls1.first, ls2.second) < EPSILON && !ls1SecondInLs2 &&
+  if (ls1.first == ls2.second && !ls1SecondInLs2 &&
       !ls2FirstInLs1) {
     int32_t ang1 = ((angBetween(ls2.second, ls2.first) / M_PI) * 32766);
     int32_t ang2 = ((angBetween(ls1.first, ls1.second) / M_PI) * 32766);
@@ -1266,7 +1322,7 @@ inline uint8_t intersectsLineStrict(const LineSegment<T>& ls1,
          nextLs2Ang != ang2});
   }
 
-  if (dist(ls1.second, ls2.first) < EPSILON && !ls1FirstInLs2 &&
+  if (ls1.second == ls2.first && !ls1FirstInLs2 &&
       !ls2SecondInLs1) {
     int32_t ang1 = ((angBetween(ls2.first, ls2.second) / M_PI) * 32766);
     int32_t ang2 = ((angBetween(ls1.second, ls1.first) / M_PI) * 32766);
@@ -1279,7 +1335,7 @@ inline uint8_t intersectsLineStrict(const LineSegment<T>& ls1,
          prevLs2Ang != ang2});
   }
 
-  if (dist(ls1.second, ls2.second) < EPSILON && !ls1FirstInLs2 &&
+  if (ls1.second == ls2.second && !ls1FirstInLs2 &&
       !ls2FirstInLs1) {
     int32_t ang1 = ((angBetween(ls2.second, ls2.first) / M_PI) * 32766);
     int32_t ang2 = ((angBetween(ls1.second, ls1.first) / M_PI) * 32766);
@@ -1378,15 +1434,12 @@ inline uint8_t intersectsPolyStrict(const LineSegment<T>& ls1,
   const bool ls2SecondInLs1 = contains(ls2.second, ls1);
 
   // ls2 is completely in ls1
-  if (ls2FirstInLs1 && ls2SecondInLs1) {
-    return 0b001;
-  }
+  if (ls2FirstInLs1 && ls2SecondInLs1) return 0b001;
 
   bool ls1FirstInLs2 = contains(ls1.first, ls2);
   bool ls1SecondInLs2 = contains(ls1.second, ls2);
 
-  if (dist(ls1.first, ls2.first) < EPSILON && !ls1SecondInLs2 &&
-      !ls2SecondInLs1) {
+  if (ls1.first == ls2.first && !ls1SecondInLs2 && !ls2SecondInLs1) {
     int16_t ang =
         (angBetween(
              ls1.second, ls1.first,
@@ -1400,8 +1453,7 @@ inline uint8_t intersectsPolyStrict(const LineSegment<T>& ls1,
     return 0b011;
   }
 
-  if (dist(ls1.first, ls2.second) < EPSILON && !ls1SecondInLs2 &&
-      !ls2FirstInLs1) {
+  if (ls1.first == ls2.second && !ls1SecondInLs2 && !ls2FirstInLs1) {
     int16_t ang =
         (angBetween(
              ls1.second, ls1.first,
@@ -1414,8 +1466,7 @@ inline uint8_t intersectsPolyStrict(const LineSegment<T>& ls1,
     return 0b011;
   }
 
-  if (dist(ls1.second, ls2.first) < EPSILON && !ls1FirstInLs2 &&
-      !ls2SecondInLs1) {
+  if (ls1.second == ls2.first  && !ls1FirstInLs2 && !ls2SecondInLs1) {
     int16_t ang =
         (angBetween(
              ls1.first, ls1.second,
@@ -1429,8 +1480,7 @@ inline uint8_t intersectsPolyStrict(const LineSegment<T>& ls1,
     return 0b011;
   }
 
-  if (dist(ls1.second, ls2.second) < EPSILON && !ls1FirstInLs2 &&
-      !ls2FirstInLs1) {
+  if (ls1.second == ls2.second  && !ls1FirstInLs2 && !ls2FirstInLs1) {
     int16_t ang =
         (angBetween(
              ls1.first, ls1.second,
@@ -1859,12 +1909,12 @@ inline std::tuple<bool, bool, bool, bool, bool> intersectsContainsCovers(
 
       if (b.getInnerMaxSegLen() < std::numeric_limits<T>::max()) {
         i = std::lower_bound(
-                       b.getInnerBoxIdx().begin(), b.getInnerBoxIdx().end(),
-                       std::pair<T, size_t>{
-                           a.getOuter().rawRing().front().seg().first.getX() -
-                               b.getInnerMaxSegLen(),
-                           0}) -
-                   b.getInnerBoxIdx().begin();
+                b.getInnerBoxIdx().begin(), b.getInnerBoxIdx().end(),
+                std::pair<T, size_t>{
+                    a.getOuter().rawRing().front().seg().first.getX() -
+                        b.getInnerMaxSegLen(),
+                    0}) -
+            b.getInnerBoxIdx().begin();
       }
 
       for (; i < b.getInners().size(); i++) {
@@ -1903,15 +1953,14 @@ inline std::tuple<bool, bool, bool, bool, bool> intersectsContainsCovers(
           if (a.getInners().size()) {
             size_t i = 0;
 
-      if (a.getInnerMaxSegLen() < std::numeric_limits<T>::max()) {
-             i =
-                std::lower_bound(
-                    a.getInnerBoxIdx().begin(), a.getInnerBoxIdx().end(),
-                    std::pair<T, size_t>{
-                        innerBBox.getLowerLeft().getX() - a.getInnerMaxSegLen(),
-                        0}) -
-                a.getInnerBoxIdx().begin();
-      }
+            if (a.getInnerMaxSegLen() < std::numeric_limits<T>::max()) {
+              i = std::lower_bound(
+                      a.getInnerBoxIdx().begin(), a.getInnerBoxIdx().end(),
+                      std::pair<T, size_t>{innerBBox.getLowerLeft().getX() -
+                                               a.getInnerMaxSegLen(),
+                                           0}) -
+                  a.getInnerBoxIdx().begin();
+            }
 
             for (; i < a.getInners().size(); i++) {
               if (a.getInnerBoxes()[i].getLowerLeft().getX() >
@@ -1961,13 +2010,13 @@ inline std::tuple<bool, bool, bool, bool, bool> intersectsContainsCovers(
       size_t i = 0;
 
       if (a.getInnerMaxSegLen() < std::numeric_limits<T>::max()) {
-       i = std::lower_bound(
-                     a.getInnerBoxIdx().begin(), a.getInnerBoxIdx().end(),
-                     std::pair<T, size_t>{
-                         b.getOuter().rawRing().front().seg().first.getX() -
-                             a.getInnerMaxSegLen(),
-                         0}) -
-                 a.getInnerBoxIdx().begin();
+        i = std::lower_bound(
+                a.getInnerBoxIdx().begin(), a.getInnerBoxIdx().end(),
+                std::pair<T, size_t>{
+                    b.getOuter().rawRing().front().seg().first.getX() -
+                        a.getInnerMaxSegLen(),
+                    0}) -
+            a.getInnerBoxIdx().begin();
       }
 
       for (; i < a.getInners().size(); i++) {
@@ -1991,13 +2040,12 @@ inline std::tuple<bool, bool, bool, bool, bool> intersectsContainsCovers(
             size_t i = 0;
 
             if (b.getInnerMaxSegLen() < std::numeric_limits<T>::max()) {
-             i =
-                std::lower_bound(
-                    b.getInnerBoxIdx().begin(), b.getInnerBoxIdx().end(),
-                    std::pair<T, size_t>{
-                        innerBBox.getLowerLeft().getX() - b.getInnerMaxSegLen(),
-                        0}) -
-                b.getInnerBoxIdx().begin();
+              i = std::lower_bound(
+                      b.getInnerBoxIdx().begin(), b.getInnerBoxIdx().end(),
+                      std::pair<T, size_t>{innerBBox.getLowerLeft().getX() -
+                                               b.getInnerMaxSegLen(),
+                                           0}) -
+                  b.getInnerBoxIdx().begin();
             }
 
             for (; i < b.getInners().size(); i++) {
@@ -2110,13 +2158,12 @@ inline std::tuple<bool, bool, bool, bool, bool> intersectsContainsCovers(
       size_t i = 0;
 
       if (b.getInnerMaxSegLen() < std::numeric_limits<T>::max()) {
-       i =
-          std::lower_bound(
-              b.getInnerBoxIdx().begin(), b.getInnerBoxIdx().end(),
-              std::pair<T, size_t>{a.rawLine().front().seg().first.getX() -
-                                       b.getInnerMaxSegLen(),
-                                   0}) -
-          b.getInnerBoxIdx().begin();
+        i = std::lower_bound(
+                b.getInnerBoxIdx().begin(), b.getInnerBoxIdx().end(),
+                std::pair<T, size_t>{a.rawLine().front().seg().first.getX() -
+                                         b.getInnerMaxSegLen(),
+                                     0}) -
+            b.getInnerBoxIdx().begin();
       }
 
       for (; i < b.getInners().size(); i++) {
@@ -2291,7 +2338,9 @@ inline bool lineIntersects(const Point<T>& p1, const Point<T>& q1,
 }
 
 // _____________________________________________________________________________
-inline double angBetween(double p1x, double p1y) { return atan2(p1x, p1y); }
+inline double angBetween(double p1x, double p1y) {
+  return atan2(p1x, p1y);
+}
 
 // _____________________________________________________________________________
 template <typename T>
@@ -3008,11 +3057,11 @@ inline double parallelity(const Box<T>& box, const Line<T>& line) {
   for (double ang : vals) {
     double v = fabs(ang - e);
     if (v > M_PI) v = 2 * M_PI - v;
-    if (v > M_PI / 2) v = M_PI - v;
+    if (v > M_PI_2) v = M_PI - v;
     if (v < ret) ret = v;
   }
 
-  return 1 - (ret / (M_PI / 4));
+  return 1 - (ret / (M_PI_4));
 }
 
 // _____________________________________________________________________________
@@ -3389,11 +3438,11 @@ Line<T> orthoLineAtDist(const Line<T>& l, double d, double length) {
 
   double angle = angBetween(pointAtDist(l, d - 5), pointAtDist(l, d + 5));
 
-  double angleX1 = 1.0 * avgP.getX() + cos(angle + M_PI / 2) * length / 2;
-  double angleY1 = 1.0 * avgP.getY() + sin(angle + M_PI / 2) * length / 2;
+  double angleX1 = 1.0 * avgP.getX() + cos(angle + M_PI_2) * length / 2;
+  double angleY1 = 1.0 * avgP.getY() + sin(angle + M_PI_2) * length / 2;
 
-  double angleX2 = 1.0 * avgP.getX() + cos(angle + M_PI / 2) * -length / 2;
-  double angleY2 = 1.0 * avgP.getY() + sin(angle + M_PI / 2) * -length / 2;
+  double angleX2 = 1.0 * avgP.getX() + cos(angle + M_PI_2) * -length / 2;
+  double angleY2 = 1.0 * avgP.getY() + sin(angle + M_PI_2) * -length / 2;
 
   return Line<T>{Point<T>(angleX1, angleY1), Point<T>(angleX2, angleY2)};
 }
