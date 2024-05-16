@@ -352,6 +352,8 @@ class XSortedPolygon {
     std::sort(_boxIdx.begin(), _boxIdx.end());
   }
 
+  bool empty() const { return _outer.rawRing().size() == 0; };
+
   const XSortedRing<T>& getOuter() const { return _outer; }
   XSortedRing<T>& getOuter() { return _outer; }
 

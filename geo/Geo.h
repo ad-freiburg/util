@@ -1296,8 +1296,7 @@ inline uint8_t intersectsLineStrict(const LineSegment<T>& ls1,
     return 0b000111;
   }
 
-  if (ls1.first == ls2.first && !ls1SecondInLs2 &&
-      !ls2SecondInLs1) {
+  if (ls1.first == ls2.first && !ls1SecondInLs2 && !ls2SecondInLs1) {
     int32_t ang1 = ((angBetween(ls2.first, ls2.second) / M_PI) * 32766);
     int32_t ang2 = ((angBetween(ls1.first, ls1.second) / M_PI) * 32766);
 
@@ -1309,8 +1308,7 @@ inline uint8_t intersectsLineStrict(const LineSegment<T>& ls1,
          prevLs2Ang != ang2});
   }
 
-  if (ls1.first == ls2.second && !ls1SecondInLs2 &&
-      !ls2FirstInLs1) {
+  if (ls1.first == ls2.second && !ls1SecondInLs2 && !ls2FirstInLs1) {
     int32_t ang1 = ((angBetween(ls2.second, ls2.first) / M_PI) * 32766);
     int32_t ang2 = ((angBetween(ls1.first, ls1.second) / M_PI) * 32766);
 
@@ -1322,8 +1320,7 @@ inline uint8_t intersectsLineStrict(const LineSegment<T>& ls1,
          nextLs2Ang != ang2});
   }
 
-  if (ls1.second == ls2.first && !ls1FirstInLs2 &&
-      !ls2SecondInLs1) {
+  if (ls1.second == ls2.first && !ls1FirstInLs2 && !ls2SecondInLs1) {
     int32_t ang1 = ((angBetween(ls2.first, ls2.second) / M_PI) * 32766);
     int32_t ang2 = ((angBetween(ls1.second, ls1.first) / M_PI) * 32766);
 
@@ -1335,8 +1332,7 @@ inline uint8_t intersectsLineStrict(const LineSegment<T>& ls1,
          prevLs2Ang != ang2});
   }
 
-  if (ls1.second == ls2.second && !ls1FirstInLs2 &&
-      !ls2FirstInLs1) {
+  if (ls1.second == ls2.second && !ls1FirstInLs2 && !ls2FirstInLs1) {
     int32_t ang1 = ((angBetween(ls2.second, ls2.first) / M_PI) * 32766);
     int32_t ang2 = ((angBetween(ls1.second, ls1.first) / M_PI) * 32766);
 
@@ -1466,7 +1462,7 @@ inline uint8_t intersectsPolyStrict(const LineSegment<T>& ls1,
     return 0b011;
   }
 
-  if (ls1.second == ls2.first  && !ls1FirstInLs2 && !ls2SecondInLs1) {
+  if (ls1.second == ls2.first && !ls1FirstInLs2 && !ls2SecondInLs1) {
     int16_t ang =
         (angBetween(
              ls1.first, ls1.second,
@@ -1480,7 +1476,7 @@ inline uint8_t intersectsPolyStrict(const LineSegment<T>& ls1,
     return 0b011;
   }
 
-  if (ls1.second == ls2.second  && !ls1FirstInLs2 && !ls2FirstInLs1) {
+  if (ls1.second == ls2.second && !ls1FirstInLs2 && !ls2FirstInLs1) {
     int16_t ang =
         (angBetween(
              ls1.first, ls1.second,
@@ -2338,9 +2334,7 @@ inline bool lineIntersects(const Point<T>& p1, const Point<T>& q1,
 }
 
 // _____________________________________________________________________________
-inline double angBetween(double p1x, double p1y) {
-  return atan2(p1x, p1y);
-}
+inline double angBetween(double p1x, double p1y) { return atan2(p1x, p1y); }
 
 // _____________________________________________________________________________
 template <typename T>
