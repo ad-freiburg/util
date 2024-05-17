@@ -28,6 +28,21 @@ struct AngledLineSegment {
 };
 
 // _____________________________________________________________________________
+template <typename T>
+inline bool sameOrig(const LineSegment<T>& a, const LineSegment<T>& b) {
+  if (a.first.getX() <= a.second.getX() && b.first.getX() <= b.second.getX())
+    return a.first == b.first;
+  if (a.first.getX() <= a.second.getX() && b.first.getX() >= b.second.getX())
+    return a.first == b.second;
+  if (a.first.getX() >= a.second.getX() && b.first.getX() <= b.second.getX())
+    return a.second == b.first;
+  if (a.first.getX() >= a.second.getX() && b.first.getX() >= b.second.getX())
+    return a.second == b.second;
+
+  return false;
+}
+
+// _____________________________________________________________________________
 inline double angBetween(double p1x, double p1y, double q1x, double q1y) {
   double dY = q1y - p1y;
   double dX = q1x - p1x;
@@ -264,7 +279,7 @@ class XSortedLine {
       }
 
       if (prev >= 0) {
-        prevAng = util::geo::angBetween(line[i-1], line[prev]);
+        prevAng = util::geo::angBetween(line[i - 1], line[prev]);
       }
 
       size_t next = i + 1;
@@ -308,15 +323,19 @@ class XSortedLine {
   XSortedLine(const LineSegment<T>& line) {
     _line.resize(2);
     if (line.first.getX() < line.second.getX()) {
-      _line[0] = {line.first, {line.first, line.second}, false, 2 * M_PI, 2 * M_PI,
-                  false};
-      _line[1] = {line.second, {line.first, line.second}, false, 2 * M_PI, 2 * M_PI,
-                  true};
+      _line[0] = {line.first, {line.first, line.second},
+                  false,      2 * M_PI,
+                  2 * M_PI,   false};
+      _line[1] = {line.second, {line.first, line.second},
+                  false,       2 * M_PI,
+                  2 * M_PI,    true};
     } else {
-      _line[0] = {line.second, {line.second, line.first}, true, 2 * M_PI, 2 * M_PI,
-                  false};
-      _line[1] = {line.first, {line.second, line.first}, true, 2 * M_PI, 2 * M_PI,
-                  true};
+      _line[0] = {line.second, {line.second, line.first},
+                  true,        2 * M_PI,
+                  2 * M_PI,    false};
+      _line[1] = {line.first, {line.second, line.first},
+                  true,       2 * M_PI,
+                  2 * M_PI,   true};
     }
     _maxSegLen = fabs(line.first.getX() - line.second.getX());
   }

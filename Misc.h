@@ -460,12 +460,12 @@ inline std::string getTmpDir() {
 
 // _____________________________________________________________________________
 inline std::string getTmpFName(std::string dir, std::string name,
-    std::string postf) {
+                               std::string postf) {
   if (postf.size()) postf = "-" + postf;
   if (dir == "<tmp>") dir = util::getTmpDir();
   if (dir.size() && dir.back() != '/') dir = dir + "/";
 
-  std::string f = dir + name + postf;
+  std::string f = dir + name + postf + "-" + std::to_string(getpid());
 
   size_t c = 0;
 
@@ -477,7 +477,8 @@ inline std::string getTmpFName(std::string dir, std::string name,
       exit(1);
     }
     std::stringstream ss;
-    ss << dir << name << postf << "-" << std::rand();
+    ss << dir << name << postf << "-" << std::to_string(getpid()) << "-"
+       << std::rand();
     f = ss.str().c_str();
   }
 

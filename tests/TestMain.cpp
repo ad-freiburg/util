@@ -4256,6 +4256,12 @@ int main(int argc, char** argv) {
                                                     // {1.0, 0.0}, {0.9, 0.9}}), geo::convexHull(obox)));
   TEST(geo::area(geo::convexHull(obox)), ==, approx(2));
 
+  obox =
+      geo::getOrientedEnvelope(std::vector<geo::Polygon<double>>({geo::Polygon<double>({{0.0, 1.0}, {0.9, 1.1},
+                                                    {1.0, 2.0}, {1.1, 1.1},
+                                                    {2.0, 1.0}, {1.1, 0.9},
+                                                    {1.0, 0.0}, {0.9, 0.9}})}));
+
   TEST(geo::dist(geo::LineSegment<double>{{1, 1}, {3, 1}},
                    geo::LineSegment<double>{{2, 2}, {2, 0}}) == approx(0));
   TEST(geo::dist(geo::LineSegment<double>{{1, 1}, {3, 1}},

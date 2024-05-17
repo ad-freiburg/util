@@ -124,6 +124,12 @@ inline Box<T> pad(const Box<T>& box, double padding) {
 
 // _____________________________________________________________________________
 template <typename T>
+inline RotatedBox<T> pad(const RotatedBox<T>& box, double padding) {
+  return {pad(box.getBox(), padding), box.getDegree(), box.getCenter()};
+}
+
+// _____________________________________________________________________________
+template <typename T>
 inline Point<T> centroid(const Point<T> p) {
   return p;
 }
@@ -182,14 +188,18 @@ inline Point<T> rotateRAD(const Point<T>& p, double deg) {
 
 // _____________________________________________________________________________
 template <typename T>
-inline Point<T> rotateRAD(Point<T> p, double rad, const Point<T>& c) {
-  double si = sin(rad);
-  double co = cos(rad);
+inline Point<T> rotateSinCos(Point<T> p, double si, double co, const Point<T>& c) {
   p = p - c;
 
   return Point<T>(p.getX() * co - p.getY() * si,
                   p.getX() * si + p.getY() * co) +
          c;
+}
+
+// _____________________________________________________________________________
+template <typename T>
+inline Point<T> rotateRAD(Point<T> p, double rad, const Point<T>& c) {
+  return rotateSinCos(p, sin(rad), cos(rad), c);
 }
 
 // _____________________________________________________________________________
@@ -230,39 +240,52 @@ inline LineSegment<T> rotateRAD(LineSegment<T> geo, double deg) {
 
 // _____________________________________________________________________________
 template <typename T>
-inline Line<T> rotate(Line<T> geo, double deg, const Point<T>& c) {
-  for (size_t i = 0; i < geo.size(); i++) geo[i] = rotate(geo[i], deg, c);
+inline Line<T> rotateSinCos(Line<T> geo, double si, double co, const Point<T>& c) {
+  for (size_t i = 0; i < geo.size(); i++) geo[i] = rotateSinCos(geo[i], si, co, c);
   return geo;
 }
 
 // _____________________________________________________________________________
 template <typename T>
 inline Line<T> rotateRAD(Line<T> geo, double deg, const Point<T>& c) {
-  for (size_t i = 0; i < geo.size(); i++) geo[i] = rotateRAD(geo[i], deg, c);
-  return geo;
+  const double si = sin(deg);
+  const double co = cos(deg);
+  return rotateSinCos(geo, si, co, c);
+}
+
+
+// _____________________________________________________________________________
+template <typename T>
+inline Line<T> rotate(Line<T> geo, double deg, const Point<T>& c) {
+  return rotateRAD(geo, deg * -RAD, c);
 }
 
 // _____________________________________________________________________________
 template <typename T>
-inline Polygon<T> rotate(Polygon<T> geo, double deg, const Point<T>& c) {
+inline Polygon<T> rotateSinCos(Polygon<T> geo, double si, double co, const Point<T>& c) {
   for (size_t i = 0; i < geo.getOuter().size(); i++)
-    geo.getOuter()[i] = rotate(geo.getOuter()[i], deg, c);
+    geo.getOuter()[i] = rotateSinCos(geo.getOuter()[i], si, co, c);
   for (size_t i = 0; i < geo.getInners().size(); i++)
     for (size_t j = 0; j < geo.getInners()[i].size(); j++)
-      geo.getInners()[i][j] = rotate(geo.getInners()[i][j], deg, c);
+      geo.getInners()[i][j] = rotateSinCos(geo.getInners()[i][j], si, co, c);
   return geo;
 }
 
 // _____________________________________________________________________________
 template <typename T>
 inline Polygon<T> rotateRAD(Polygon<T> geo, double deg, const Point<T>& c) {
-  for (size_t i = 0; i < geo.getOuter().size(); i++)
-    geo.getOuter()[i] = rotateRAD(geo.getOuter()[i], deg, c);
-  for (size_t i = 0; i < geo.getInners().size(); i++)
-    for (size_t j = 0; j < geo.getInners()[i].size(); j++)
-      geo.getInners()[i][j] = rotateRAD(geo.getInners()[i][j], deg, c);
-  return geo;
+  const double si = sin(deg);
+  const double co = cos(deg);
+
+  return rotateSinCos(geo, si, co, c);
 }
+
+// _____________________________________________________________________________
+template <typename T>
+inline Polygon<T> rotate(Polygon<T> geo, double deg, const Point<T>& c) {
+  return rotateRAD(geo, deg * -RAD, c);
+}
+
 
 // _____________________________________________________________________________
 template <template <typename> class Geometry, typename T>
@@ -375,6 +398,311 @@ inline RotatedBox<T> shrink(const RotatedBox<T>& b, double d) {
 
 // _____________________________________________________________________________
 inline bool doubleEq(double a, double b) { return fabs(a - b) < EPSILON; }
+
+// _____________________________________________________________________________
+template <typename T>
+inline Point<T> pointFromWKT(std::string wkt) {
+  wkt = util::normalizeWhiteSpace(util::trim(wkt));
+  if (wkt.rfind("POINT") == 0 || wkt.rfind("MPOINT") == 0) {
+    size_t b = wkt.find("(") + 1;
+    size_t e = wkt.find(")", b);
+    if (b > e) throw std::runtime_error("Could not parse WKT");
+    auto xy = util::split(util::trim(wkt.substr(b, e - b)), ' ');
+    if (xy.size() < 2) throw std::runtime_error("Could not parse WKT");
+    double x = atof(xy[0].c_str());
+    double y = atof(xy[1].c_str());
+    return Point<T>(x, y);
+  }
+  throw std::runtime_error("Could not parse WKT");
+}
+
+// _____________________________________________________________________________
+template <typename T>
+inline Line<T> lineFromWKT(std::string wkt) {
+  wkt = util::normalizeWhiteSpace(util::trim(wkt));
+  if (wkt.rfind("LINESTRING") == 0 || wkt.rfind("MLINESTRING") == 0) {
+    Line<T> ret;
+    size_t b = wkt.find("(") + 1;
+    size_t e = wkt.find(")", b);
+    if (b > e) throw std::runtime_error("Could not parse WKT");
+    auto pairs = util::split(wkt.substr(b, e - b), ',');
+    for (const auto& p : pairs) {
+      auto xy = util::split(util::trim(p), ' ');
+      if (xy.size() < 2) throw std::runtime_error("Could not parse WKT");
+      double x = atof(xy[0].c_str());
+      double y = atof(xy[1].c_str());
+      ret.push_back({x, y});
+    }
+    return ret;
+  }
+  throw std::runtime_error("Could not parse WKT");
+}
+
+// _____________________________________________________________________________
+template <typename T>
+inline MultiPolygon<T> multiPolygonFromWKT(std::string wkt) {
+  wkt = util::normalizeWhiteSpace(util::trim(wkt));
+  util::replaceAll(wkt, "))", ")!");
+  util::replaceAll(wkt, ") )", ")!");
+  if (wkt.rfind("MULTIPOLYGON") == 0 || wkt.rfind("MMULTIPOLYGON") == 0) {
+    MultiPolygon<T> ret;
+    size_t b = wkt.find("(") + 1;
+    size_t e = wkt.rfind(")");
+    if (b > e) throw std::runtime_error("Could not parse WKT");
+
+    auto polyPairs = util::split(wkt.substr(b, e - b), '!');
+
+    for (const auto& polyPair : polyPairs) {
+      size_t b = polyPair.find("(") + 1;
+      size_t e = polyPair.rfind(")");
+      auto pairs = util::split(polyPair.substr(b, e - b), ')');
+
+      ret.push_back({});
+
+      for (size_t i = 0; i < pairs.size(); i++) {
+        size_t b = pairs[i].find("(") + 1;
+        size_t e = pairs[i].rfind(")", b);
+        auto pairsLoc = util::split(pairs[i].substr(b, e - b), ',');
+
+        if (i > 0) {
+          ret.back().getInners().push_back({});
+        }
+
+        for (const auto& p : pairsLoc) {
+          auto xy = util::split(util::trim(p), ' ');
+          if (xy.size() < 2) throw std::runtime_error("Could not parse WKT");
+          double x = atof(xy[0].c_str());
+          double y = atof(xy[1].c_str());
+
+          if (i == 0) {
+            ret.back().getOuter().push_back({x, y});
+          } else {
+            ret.back().getInners().back().push_back({x, y});
+          }
+        }
+      }
+    }
+    return ret;
+  }
+  throw std::runtime_error("Could not parse WKT");
+}
+
+// _____________________________________________________________________________
+template <typename T>
+inline Polygon<T> polygonFromWKT(std::string wkt) {
+  wkt = util::normalizeWhiteSpace(util::trim(wkt));
+  if (wkt.rfind("POLYGON") == 0 || wkt.rfind("MPOLYGON") == 0) {
+    Polygon<T> ret;
+    size_t b = wkt.find("(") + 1;
+    size_t e = wkt.rfind(")");
+    if (b > e) throw std::runtime_error("Could not parse WKT");
+
+    auto pairs = util::split(wkt.substr(b, e - b), ')');
+
+    for (size_t i = 0; i < pairs.size(); i++) {
+      size_t b = pairs[i].find("(") + 1;
+      size_t e = pairs[i].rfind(")", b);
+      auto pairsLoc = util::split(pairs[i].substr(b, e - b), ',');
+
+      if (i > 0) {
+        ret.getInners().push_back({});
+      }
+
+      for (const auto& p : pairsLoc) {
+        auto xy = util::split(util::trim(p), ' ');
+        if (xy.size() < 2) throw std::runtime_error("Could not parse WKT");
+        double x = atof(xy[0].c_str());
+        double y = atof(xy[1].c_str());
+
+        if (i == 0) {
+          ret.getOuter().push_back({x, y});
+        } else {
+          ret.getInners().back().push_back({x, y});
+        }
+      }
+    }
+
+    if (ret.getOuter().size() > 1 &&
+        ret.getOuter().back() == ret.getOuter().front())
+      ret.getOuter().pop_back();
+
+    for (auto& inner : ret.getInners()) {
+      if (inner.size() > 1 && inner.back() == inner.front()) inner.pop_back();
+    }
+
+    return ret;
+  }
+  throw std::runtime_error("Could not parse WKT");
+}
+
+// _____________________________________________________________________________
+template <typename T>
+inline std::string getWKT(const Point<T>& p) {
+  return std::string("POINT (") + formatFloat(p.getX(), 6) + " " +
+         formatFloat(p.getY(), 6) + ")";
+}
+
+// _____________________________________________________________________________
+template <typename T>
+inline std::string getWKT(const std::vector<Point<T>>& p) {
+  std::stringstream ss;
+  ss << "MULTIPOINT (";
+  for (size_t i = 0; i < p.size(); i++) {
+    if (i) ss << ", ";
+    ss << "(" << formatFloat(p.getX(), 6) << " " << formatFloat(p.getY(), 6)
+       << ")";
+  }
+  ss << ")";
+  return ss.str();
+}
+
+// _____________________________________________________________________________
+template <typename T>
+inline std::string getWKT(const Line<T>& l) {
+  std::stringstream ss;
+  ss << "LINESTRING (";
+  for (size_t i = 0; i < l.size(); i++) {
+    if (i) ss << ", ";
+    ss << formatFloat(l[i].getX(), 6) << " " << formatFloat(l[i].getY(), 6);
+  }
+  ss << ")";
+  return ss.str();
+}
+
+// _____________________________________________________________________________
+template <typename T>
+inline std::string getWKT(const std::vector<Line<T>>& ls) {
+  std::stringstream ss;
+  ss << "MULTILINESTRING (";
+
+  for (size_t j = 0; j < ls.size(); j++) {
+    if (j) ss << ", ";
+    ss << "(";
+    for (size_t i = 0; i < ls[j].size(); i++) {
+      if (i) ss << ", ";
+      ss << formatFloat(ls[j][i].getX(), 6) << " "
+         << formatFloat(ls[j][i].getY(), 6);
+    }
+    ss << ")";
+  }
+
+  ss << ")";
+  return ss.str();
+}
+
+// _____________________________________________________________________________
+template <typename T>
+inline std::string getWKT(const XSortedPolygon<T>& ls) {
+  std::stringstream ss;
+  ss << "MULTILINESTRING (";
+
+  for (size_t j = 0; j < ls.getOuter().rawRing().size(); j++) {
+    if (ls.getOuter().rawRing()[j].out()) continue;
+    if (j) ss << ", ";
+    ss << "(";
+    ss << formatFloat(ls.getOuter().rawRing()[j].seg().first.getX() * 1.0 / 10,
+                      6)
+       << " "
+       << formatFloat(ls.getOuter().rawRing()[j].seg().first.getY() * 1.0 / 10,
+                      6)
+       << ",";
+    ss << formatFloat(ls.getOuter().rawRing()[j].seg().second.getX() * 1.0 / 10,
+                      6)
+       << " "
+       << formatFloat(ls.getOuter().rawRing()[j].seg().second.getY() * 1.0 / 10,
+                      6);
+    ss << ")";
+  }
+
+  ss << ")";
+  return ss.str();
+}
+
+// _____________________________________________________________________________
+template <typename T>
+inline std::string getWKT(const LineSegment<T>& l) {
+  return getWKT(Line<T>{l.first, l.second});
+}
+
+// _____________________________________________________________________________
+template <typename T>
+inline std::string getWKT(const Box<T>& l) {
+  std::stringstream ss;
+  ss << "POLYGON ((";
+  ss << formatFloat(l.getLowerLeft().getX(), 6) << " "
+     << formatFloat(l.getLowerLeft().getY(), 6);
+  ss << ", " << formatFloat(l.getUpperRight().getX(), 6) << " "
+     << formatFloat(l.getLowerLeft().getY(), 6);
+  ss << ", " << formatFloat(l.getUpperRight().getX(), 6) << " "
+     << formatFloat(l.getUpperRight().getY(), 6);
+  ss << ", " << formatFloat(l.getLowerLeft().getX(), 6) << " "
+     << formatFloat(l.getUpperRight().getY(), 6);
+  ss << ", " << formatFloat(l.getLowerLeft().getX(), 6) << " "
+     << formatFloat(l.getLowerLeft().getY(), 6);
+  ss << "))";
+  return ss.str();
+}
+
+// _____________________________________________________________________________
+template <typename T>
+inline std::string getWKT(const Polygon<T>& p) {
+  std::stringstream ss;
+  ss << "POLYGON ((";
+  for (size_t i = 0; i < p.getOuter().size(); i++) {
+    ss << formatFloat(p.getOuter()[i].getX(), 6) << " "
+       << formatFloat(p.getOuter()[i].getY(), 6) << ", ";
+  }
+  ss << formatFloat(p.getOuter().front().getX(), 6) << " "
+     << formatFloat(p.getOuter().front().getY(), 6);
+  ss << ")";
+
+  for (const auto& inner : p.getInners()) {
+    ss << ", (";
+    for (size_t i = 0; i < inner.size(); i++) {
+      ss << formatFloat(inner[i].getX(), 6) << " "
+         << formatFloat(inner[i].getY(), 6) << ", ";
+    }
+    ss << formatFloat(inner.front().getX(), 6) << " "
+       << formatFloat(inner.front().getY(), 6);
+    ss << ")";
+  }
+  ss << ")";
+  return ss.str();
+}
+
+// _____________________________________________________________________________
+template <typename T>
+inline std::string getWKT(const std::vector<Polygon<T>>& ls) {
+  std::stringstream ss;
+  ss << "MULTIPOLYGON (";
+
+  for (size_t j = 0; j < ls.size(); j++) {
+    if (j) ss << ", ";
+    ss << "((";
+    for (size_t i = 0; i < ls[j].getOuter().size(); i++) {
+      ss << formatFloat(ls[j].getOuter()[i].getX(), 6) << " "
+         << formatFloat(ls[j].getOuter()[i].getY(), 6) << ", ";
+    }
+    ss << formatFloat(ls[j].getOuter().front().getX(), 6) << " "
+       << formatFloat(ls[j].getOuter().front().getY(), 6);
+    ss << ")";
+
+    for (const auto& inner : ls[j].getInners()) {
+      ss << ", (";
+      for (size_t i = 0; i < inner.size(); i++) {
+        ss << formatFloat(inner[i].getX(), 6) << " "
+           << formatFloat(inner[i].getY(), 6) << ", ";
+      }
+      ss << formatFloat(inner.front().getX(), 6) << " "
+         << formatFloat(inner.front().getY(), 6);
+      ss << ")";
+    }
+    ss << ")";
+  }
+
+  ss << ")";
+  return ss.str();
+}
 
 // _____________________________________________________________________________
 template <typename T>
@@ -896,15 +1224,23 @@ inline std::tuple<bool, bool, bool> intersectsPoly(
         auto above = active2.lower_bound(ls1[i].origSegAng());
 
         if (above != active2.end()) {
-          ret |= intersectsPolyStrict(above->seg, above->prevAng,
-                                      above->nextAng, ls1[i].origSeg());
-          if (ret >= 6) return {1, 1, 1};
+          auto a = above;
+          do {
+            ret |= intersectsPolyStrict(above->seg, above->prevAng,
+                                        above->nextAng, ls1[i].origSeg());
+            if (ret >= 6) return {1, 1, 1};
+            a = std::next(a);
+          } while (a != active2.end() && sameOrig(a->seg, above->seg));
         }
         if (above != active2.begin()) {
-          const auto a = std::prev(above);
-          ret |= intersectsPolyStrict(a->seg, a->prevAng, a->nextAng,
-                                      ls1[i].origSeg());
-          if (ret >= 6) return {1, 1, 1};
+          auto a = std::prev(above);
+          do {
+            ret |= intersectsPolyStrict(a->seg, a->prevAng, a->nextAng,
+                                        ls1[i].origSeg());
+            if (ret >= 6) return {1, 1, 1};
+            if (a == active2.begin()) break;
+            a = std::prev(a);
+          } while (sameOrig(a->seg, above->seg));
         }
 
         active1.insert(ls1[i].origSegAng());
@@ -914,17 +1250,25 @@ inline std::tuple<bool, bool, bool> intersectsPoly(
           auto above = active2.lower_bound(ls1[i].origSegAng());
           auto a = toDel;
           if (above != active2.end() && a != active1.begin()) {
-            ret |= intersectsPolyStrict(above->seg, above->prevAng,
-                                        above->nextAng, (std::prev(a))->seg);
-            if (ret >= 6) return {1, 1, 1};
+            auto aa = above;
+            do {
+              ret |= intersectsPolyStrict(aa->seg, aa->prevAng, aa->nextAng,
+                                          (std::prev(a))->seg);
+              if (ret >= 6) return {1, 1, 1};
+              aa = std::next(aa);
+            } while (aa != active2.end() && sameOrig(aa->seg, above->seg));
           }
 
           toDel++;
           if (toDel != active1.end() && above != active2.begin()) {
-            const auto a = std::prev(above);
-            ret |= intersectsPolyStrict(a->seg, a->prevAng, a->nextAng,
-                                        toDel->seg);
-            if (ret >= 6) return {1, 1, 1};
+            auto a = std::prev(above);
+            do {
+              ret |= intersectsPolyStrict(a->seg, a->prevAng, a->nextAng,
+                                          toDel->seg);
+              if (ret >= 6) return {1, 1, 1};
+              if (a == active2.begin()) break;
+              a = std::prev(a);
+            } while (sameOrig(a->seg, above->seg));
           }
 
           active1.erase(std::prev(toDel));
@@ -962,18 +1306,24 @@ inline std::tuple<bool, bool, bool> intersectsPoly(
       if (!ls2[j].out()) {
         auto above = active1.lower_bound(ls2[j].origSegAng());
         if (above != active1.end()) {
-          ret |= intersectsPolyStrict(ls2[j].origSeg(), ls2[j].rawPrevAng(),
-                                      ls2[j].rawNextAng(), above->seg);
-
-          if (ret >= 6) return {1, 1, 1};
+          auto a = above;
+          do {
+            ret |= intersectsPolyStrict(ls2[j].origSeg(), ls2[j].rawPrevAng(),
+                                        ls2[j].rawNextAng(), a->seg);
+            if (ret >= 6) return {1, 1, 1};
+            a = std::next(a);
+          } while (a != active1.end() && sameOrig(a->seg, above->seg));
         }
 
         if (above != active1.begin()) {
-          ret |= intersectsPolyStrict(ls2[j].origSeg(), ls2[j].rawPrevAng(),
-                                      ls2[j].rawNextAng(),
-                                      (std::prev(above))->seg);
-
-          if (ret >= 6) return {1, 1, 1};
+          auto a = std::prev(above);
+          do {
+            ret |= intersectsPolyStrict(ls2[j].origSeg(), ls2[j].rawPrevAng(),
+                                        ls2[j].rawNextAng(), a->seg);
+            if (ret >= 6) return {1, 1, 1};
+            if (a == active1.begin()) break;
+            a = std::prev(a);
+          } while (sameOrig(a->seg, above->seg));
         }
 
         active2.insert(ls2[j].origSegAng());
@@ -983,20 +1333,26 @@ inline std::tuple<bool, bool, bool> intersectsPoly(
           auto above = active1.lower_bound(ls2[j].origSegAng());
           auto a = toDel;
           if (above != active1.end() && a != active2.begin()) {
-            ret |= intersectsPolyStrict((std::prev(a))->seg,
-                                        (std::prev(a))->prevAng,
-                                        (std::prev(a))->nextAng, above->seg);
-
-            if (ret >= 6) return {1, 1, 1};
+            auto aa = above;
+            do {
+              ret |= intersectsPolyStrict((std::prev(a))->seg,
+                                          (std::prev(a))->prevAng,
+                                          (std::prev(a))->nextAng, aa->seg);
+              if (ret >= 6) return {1, 1, 1};
+              aa = std::next(aa);
+            } while (aa != active1.end() && sameOrig(aa->seg, above->seg));
           }
 
           toDel++;
           if (toDel != active2.end() && above != active1.begin()) {
-            ret |=
-                intersectsPolyStrict(toDel->seg, toDel->prevAng, toDel->nextAng,
-                                     (std::prev(above))->seg);
-
-            if (ret >= 6) return {1, 1, 1};
+            auto a = std::prev(above);
+            do {
+              ret |= intersectsPolyStrict(toDel->seg, toDel->prevAng,
+                                          toDel->nextAng, a->seg);
+              if (ret >= 6) return {1, 1, 1};
+              if (a == active1.begin()) break;
+              a = std::prev(a);
+            } while (sameOrig(a->seg, above->seg));
           }
 
           active2.erase(std::prev(toDel));
@@ -2531,304 +2887,6 @@ inline double dist(const Point<T>& p1, const Point<T>& p2) {
 
 // _____________________________________________________________________________
 template <typename T>
-inline Point<T> pointFromWKT(std::string wkt) {
-  wkt = util::normalizeWhiteSpace(util::trim(wkt));
-  if (wkt.rfind("POINT") == 0 || wkt.rfind("MPOINT") == 0) {
-    size_t b = wkt.find("(") + 1;
-    size_t e = wkt.find(")", b);
-    if (b > e) throw std::runtime_error("Could not parse WKT");
-    auto xy = util::split(util::trim(wkt.substr(b, e - b)), ' ');
-    if (xy.size() < 2) throw std::runtime_error("Could not parse WKT");
-    double x = atof(xy[0].c_str());
-    double y = atof(xy[1].c_str());
-    return Point<T>(x, y);
-  }
-  throw std::runtime_error("Could not parse WKT");
-}
-
-// _____________________________________________________________________________
-template <typename T>
-inline Line<T> lineFromWKT(std::string wkt) {
-  wkt = util::normalizeWhiteSpace(util::trim(wkt));
-  if (wkt.rfind("LINESTRING") == 0 || wkt.rfind("MLINESTRING") == 0) {
-    Line<T> ret;
-    size_t b = wkt.find("(") + 1;
-    size_t e = wkt.find(")", b);
-    if (b > e) throw std::runtime_error("Could not parse WKT");
-    auto pairs = util::split(wkt.substr(b, e - b), ',');
-    for (const auto& p : pairs) {
-      auto xy = util::split(util::trim(p), ' ');
-      if (xy.size() < 2) throw std::runtime_error("Could not parse WKT");
-      double x = atof(xy[0].c_str());
-      double y = atof(xy[1].c_str());
-      ret.push_back({x, y});
-    }
-    return ret;
-  }
-  throw std::runtime_error("Could not parse WKT");
-}
-
-// _____________________________________________________________________________
-template <typename T>
-inline MultiPolygon<T> multiPolygonFromWKT(std::string wkt) {
-  wkt = util::normalizeWhiteSpace(util::trim(wkt));
-  util::replaceAll(wkt, "))", ")!");
-  util::replaceAll(wkt, ") )", ")!");
-  if (wkt.rfind("MULTIPOLYGON") == 0 || wkt.rfind("MMULTIPOLYGON") == 0) {
-    MultiPolygon<T> ret;
-    size_t b = wkt.find("(") + 1;
-    size_t e = wkt.rfind(")");
-    if (b > e) throw std::runtime_error("Could not parse WKT");
-
-    auto polyPairs = util::split(wkt.substr(b, e - b), '!');
-
-    for (const auto& polyPair : polyPairs) {
-      size_t b = polyPair.find("(") + 1;
-      size_t e = polyPair.rfind(")");
-      auto pairs = util::split(polyPair.substr(b, e - b), ')');
-
-      ret.push_back({});
-
-      for (size_t i = 0; i < pairs.size(); i++) {
-        size_t b = pairs[i].find("(") + 1;
-        size_t e = pairs[i].rfind(")", b);
-        auto pairsLoc = util::split(pairs[i].substr(b, e - b), ',');
-
-        if (i > 0) {
-          ret.back().getInners().push_back({});
-        }
-
-        for (const auto& p : pairsLoc) {
-          auto xy = util::split(util::trim(p), ' ');
-          if (xy.size() < 2) throw std::runtime_error("Could not parse WKT");
-          double x = atof(xy[0].c_str());
-          double y = atof(xy[1].c_str());
-
-          if (i == 0) {
-            ret.back().getOuter().push_back({x, y});
-          } else {
-            ret.back().getInners().back().push_back({x, y});
-          }
-        }
-      }
-    }
-    return ret;
-  }
-  throw std::runtime_error("Could not parse WKT");
-}
-
-// _____________________________________________________________________________
-template <typename T>
-inline Polygon<T> polygonFromWKT(std::string wkt) {
-  wkt = util::normalizeWhiteSpace(util::trim(wkt));
-  if (wkt.rfind("POLYGON") == 0 || wkt.rfind("MPOLYGON") == 0) {
-    Polygon<T> ret;
-    size_t b = wkt.find("(") + 1;
-    size_t e = wkt.rfind(")");
-    if (b > e) throw std::runtime_error("Could not parse WKT");
-
-    auto pairs = util::split(wkt.substr(b, e - b), ')');
-
-    for (size_t i = 0; i < pairs.size(); i++) {
-      size_t b = pairs[i].find("(") + 1;
-      size_t e = pairs[i].rfind(")", b);
-      auto pairsLoc = util::split(pairs[i].substr(b, e - b), ',');
-
-      if (i > 0) {
-        ret.getInners().push_back({});
-      }
-
-      for (const auto& p : pairsLoc) {
-        auto xy = util::split(util::trim(p), ' ');
-        if (xy.size() < 2) throw std::runtime_error("Could not parse WKT");
-        double x = atof(xy[0].c_str());
-        double y = atof(xy[1].c_str());
-
-        if (i == 0) {
-          ret.getOuter().push_back({x, y});
-        } else {
-          ret.getInners().back().push_back({x, y});
-        }
-      }
-    }
-
-    if (ret.getOuter().size() > 1 &&
-        ret.getOuter().back() == ret.getOuter().front())
-      ret.getOuter().pop_back();
-
-    for (auto& inner : ret.getInners()) {
-      if (inner.size() > 1 && inner.back() == inner.front()) inner.pop_back();
-    }
-
-    return ret;
-  }
-  throw std::runtime_error("Could not parse WKT");
-}
-
-// _____________________________________________________________________________
-template <typename T>
-inline std::string getWKT(const Point<T>& p) {
-  return std::string("POINT (") + formatFloat(p.getX(), 6) + " " +
-         formatFloat(p.getY(), 6) + ")";
-}
-
-// _____________________________________________________________________________
-template <typename T>
-inline std::string getWKT(const std::vector<Point<T>>& p) {
-  std::stringstream ss;
-  ss << "MULTIPOINT (";
-  for (size_t i = 0; i < p.size(); i++) {
-    if (i) ss << ", ";
-    ss << "(" << formatFloat(p.getX(), 6) << " " << formatFloat(p.getY(), 6)
-       << ")";
-  }
-  ss << ")";
-  return ss.str();
-}
-
-// _____________________________________________________________________________
-template <typename T>
-inline std::string getWKT(const Line<T>& l) {
-  std::stringstream ss;
-  ss << "LINESTRING (";
-  for (size_t i = 0; i < l.size(); i++) {
-    if (i) ss << ", ";
-    ss << formatFloat(l[i].getX(), 6) << " " << formatFloat(l[i].getY(), 6);
-  }
-  ss << ")";
-  return ss.str();
-}
-
-// _____________________________________________________________________________
-template <typename T>
-inline std::string getWKT(const std::vector<Line<T>>& ls) {
-  std::stringstream ss;
-  ss << "MULTILINESTRING (";
-
-  for (size_t j = 0; j < ls.size(); j++) {
-    if (j) ss << ", ";
-    ss << "(";
-    for (size_t i = 0; i < ls[j].size(); i++) {
-      if (i) ss << ", ";
-      ss << formatFloat(ls[j][i].getX(), 6) << " "
-         << formatFloat(ls[j][i].getY(), 6);
-    }
-    ss << ")";
-  }
-
-  ss << ")";
-  return ss.str();
-}
-
-// _____________________________________________________________________________
-template <typename T>
-inline std::string getWKT(const XSortedPolygon<T>& ls) {
-  std::stringstream ss;
-  ss << "MULTILINESTRING (";
-
-  for (size_t j = 0; j < ls.getOuter().rawRing().size(); j++) {
-    if (ls.getOuter().rawRing()[j].out()) continue;
-    if (j) ss << ", ";
-    ss << "(";
-    ss << formatFloat(ls.getOuter().rawRing()[j].seg().first.getX(), 6) << " "
-       << formatFloat(ls.getOuter().rawRing()[j].seg().first.getY(), 6) << ",";
-    ss << formatFloat(ls.getOuter().rawRing()[j].seg().second.getX(), 6) << " "
-       << formatFloat(ls.getOuter().rawRing()[j].seg().second.getY(), 6);
-    ss << ")";
-  }
-
-  ss << ")";
-  return ss.str();
-}
-
-// _____________________________________________________________________________
-template <typename T>
-inline std::string getWKT(const LineSegment<T>& l) {
-  return getWKT(Line<T>{l.first, l.second});
-}
-
-// _____________________________________________________________________________
-template <typename T>
-inline std::string getWKT(const Box<T>& l) {
-  std::stringstream ss;
-  ss << "POLYGON ((";
-  ss << formatFloat(l.getLowerLeft().getX(), 6) << " "
-     << formatFloat(l.getLowerLeft().getY(), 6);
-  ss << ", " << formatFloat(l.getUpperRight().getX(), 6) << " "
-     << formatFloat(l.getLowerLeft().getY(), 6);
-  ss << ", " << formatFloat(l.getUpperRight().getX(), 6) << " "
-     << formatFloat(l.getUpperRight().getY(), 6);
-  ss << ", " << formatFloat(l.getLowerLeft().getX(), 6) << " "
-     << formatFloat(l.getUpperRight().getY(), 6);
-  ss << ", " << formatFloat(l.getLowerLeft().getX(), 6) << " "
-     << formatFloat(l.getLowerLeft().getY(), 6);
-  ss << "))";
-  return ss.str();
-}
-
-// _____________________________________________________________________________
-template <typename T>
-inline std::string getWKT(const Polygon<T>& p) {
-  std::stringstream ss;
-  ss << "POLYGON ((";
-  for (size_t i = 0; i < p.getOuter().size(); i++) {
-    ss << formatFloat(p.getOuter()[i].getX(), 6) << " "
-       << formatFloat(p.getOuter()[i].getY(), 6) << ", ";
-  }
-  ss << formatFloat(p.getOuter().front().getX(), 6) << " "
-     << formatFloat(p.getOuter().front().getY(), 6);
-  ss << ")";
-
-  for (const auto& inner : p.getInners()) {
-    ss << ", (";
-    for (size_t i = 0; i < inner.size(); i++) {
-      ss << formatFloat(inner[i].getX(), 6) << " "
-         << formatFloat(inner[i].getY(), 6) << ", ";
-    }
-    ss << formatFloat(inner.front().getX(), 6) << " "
-       << formatFloat(inner.front().getY(), 6);
-    ss << ")";
-  }
-  ss << ")";
-  return ss.str();
-}
-
-// _____________________________________________________________________________
-template <typename T>
-inline std::string getWKT(const std::vector<Polygon<T>>& ls) {
-  std::stringstream ss;
-  ss << "MULTIPOLYGON (";
-
-  for (size_t j = 0; j < ls.size(); j++) {
-    if (j) ss << ", ";
-    ss << "((";
-    for (size_t i = 0; i < ls[j].getOuter().size(); i++) {
-      ss << formatFloat(ls[j].getOuter()[i].getX(), 6) << " "
-         << formatFloat(ls[j].getOuter()[i].getY(), 6) << ", ";
-    }
-    ss << formatFloat(ls[j].getOuter().front().getX(), 6) << " "
-       << formatFloat(ls[j].getOuter().front().getY(), 6);
-    ss << ")";
-
-    for (const auto& inner : ls[j].getInners()) {
-      ss << ", (";
-      for (size_t i = 0; i < inner.size(); i++) {
-        ss << formatFloat(inner[i].getX(), 6) << " "
-           << formatFloat(inner[i].getY(), 6) << ", ";
-      }
-      ss << formatFloat(inner.front().getX(), 6) << " "
-         << formatFloat(inner.front().getY(), 6);
-      ss << ")";
-    }
-    ss << ")";
-  }
-
-  ss << ")";
-  return ss.str();
-}
-
-// _____________________________________________________________________________
-template <typename T>
 inline double len(const Point<T>& g) {
   UNUSED(g);
   return 0;
@@ -3071,33 +3129,45 @@ inline double parallelity(const Box<T>& box, const MultiLine<T>& multiline) {
 
 // _____________________________________________________________________________
 template <template <typename> class Geometry, typename T>
-inline RotatedBox<T> getOrientedEnvelope(std::vector<Geometry<T>> pol) {
-  Point<T> center = centroid(pol);
+inline RotatedBox<T> getOrientedEnvelope(const std::vector<Geometry<T>>& pol) {
+  const Point<T> center = centroid(pol);
   Box<T> tmpBox = getBoundingBox(pol);
+  double tmpArea = area(tmpBox);
   Line<T> hull = convexHull(pol).getOuter();
   double rotateAngle = 0;
 
-  // check each segment
+  std::vector<double> angles;;
+  angles.reserve(hull.size());
+
   for (size_t i = 1; i < hull.size(); i++) {
-    // rotate segment such that it is parallel to the x axis
     const auto s = hull[i] - hull[i - 1];
-    const double angle = -std::atan2(s.getY(), s.getX());
-    const auto p = rotateRAD(pol, angle, center);
-    Box<T> e = getBoundingBox(p);
-    if (area(tmpBox) > area(e)) {
-      tmpBox = e;
-      rotateAngle = angle;
-    }
+    double ang = -std::atan2(s.getY(), s.getX());
+    if (ang < 0) ang = M_PI + ang;
+    if (fabs(ang) > EPSILON && fabs(ang - M_PI_2) > EPSILON) angles.push_back(ang);
   }
+
   // Check segment between the ends of the hull line
-  if (hull[0] != hull[hull.size() - 1]) {
-    const auto s = hull[0] - hull[hull.size() - 1];
-    const double angle = -std::atan2(s.getY(), s.getX());
-    const auto p = rotateRAD(pol, angle, center);
-    Box<T> e = getBoundingBox(p);
-    if (area(tmpBox) > area(e)) {
+  const auto s = hull[0] - hull[hull.size() - 1];
+  double ang = -std::atan2(s.getY(), s.getX());
+  if (ang < 0) ang = M_PI + ang;
+  if (fabs(ang) > EPSILON && fabs(ang - M_PI_2) > EPSILON) angles.push_back(ang);
+
+  auto end = angles.end();
+
+  // only interested in unique angles!
+  std::sort(angles.begin(), angles.end());
+  end = std::unique(angles.begin(), angles.end());
+
+  // check each segment
+  for (auto i = angles.begin(); i != end; i++) {
+    // rotate segment such that it is parallel to the x axis
+    const auto p = rotateRAD(pol, *i, center);
+    const Box<T>& e = getBoundingBox(p);
+    const double newArea = area(e);
+    if (tmpArea > newArea) {
       tmpBox = e;
-      rotateAngle = angle;
+      tmpArea = newArea;
+      rotateAngle = *i;
     }
   }
 
@@ -3106,9 +3176,8 @@ inline RotatedBox<T> getOrientedEnvelope(std::vector<Geometry<T>> pol) {
 
 // _____________________________________________________________________________
 template <template <typename> class Geometry, typename T>
-inline RotatedBox<T> getOrientedEnvelope(Geometry<T> pol) {
-  std::vector<Geometry<T>> mult{pol};
-  return getOrientedEnvelope(mult);
+inline RotatedBox<T> getOrientedEnvelope(const Geometry<T>& pol) {
+  return getOrientedEnvelope(std::vector<Geometry<T>>{pol});
 }
 
 // _____________________________________________________________________________
