@@ -611,7 +611,10 @@ inline void externalSort(int file, int newFile, size_t size, size_t numobjs,
     partsize[i] = 0;
     lseek(file, bufferSize * i, SEEK_SET);
     ssize_t n = read(file, buf, bufferSize);
-    if (n < 0) continue;
+    if (n < 0) {
+      partsize[i] = 0;
+      continue;
+    }
     qsort(buf, n / size, size, cmpf);
     lseek(file, bufferSize * i, SEEK_SET);
     writeAll(file, buf, n);
@@ -625,6 +628,8 @@ inline void externalSort(int file, int newFile, size_t size, size_t numobjs,
     pq.push({&partbufs[j][partpos[j] % partsBufSize], j});
   }
 
+  size_t bla = 0;
+
   for (size_t i = 0; i < fsize; i += size) {
     auto top = pq.top();
     pq.pop();
@@ -634,20 +639,23 @@ inline void externalSort(int file, int newFile, size_t size, size_t numobjs,
 
     memcpy(buf + (i % bufferSize), smallest, size);
 
-    if ((i % bufferSize) == bufferSize - size || i == fsize - size) {
+    if ((i % bufferSize) + size == bufferSize || i + size == fsize) {
       // write to output file
       writeAll(newFile, buf, i % bufferSize + size);
+      bla += i % bufferSize + size;
     }
 
     partpos[smallestP] += size;
+
+    if (partpos[smallestP] == partsize[smallestP]) continue;
 
     if (partpos[smallestP] % partsBufSize == 0) {
       lseek(file, bufferSize * smallestP + partpos[smallestP], SEEK_SET);
       ssize_t r = read(file, partbufs[smallestP], partsBufSize);
       if (r < 0) throw std::runtime_error("Could not read from file.");
     }
-    pq.push(
-        {&partbufs[smallestP][partpos[smallestP] % partsBufSize], smallestP});
+      pq.push(
+          {&partbufs[smallestP][partpos[smallestP] % partsBufSize], smallestP});
   }
 
   // cleanup

@@ -320,6 +320,15 @@ class XSortedPolygon {
  public:
   XSortedPolygon() {}
   XSortedPolygon(const Box<T>& box) : _outer(box) {}
+  XSortedPolygon(const Ring<T>& ring) {
+    auto outer = ring;
+
+    // outer ring  must be oriented counter-clockwise
+    if (signedRingArea(outer) > 0) std::reverse(outer.begin(), outer.end());
+
+    _outer = outer;
+  }
+
   XSortedPolygon(const Polygon<T>& poly) {
     auto outer = poly.getOuter();
 
