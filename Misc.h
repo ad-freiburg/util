@@ -328,6 +328,18 @@ inline double atof(const char* p, uint8_t mn) {
 }
 
 // _____________________________________________________________________________
+inline size_t readAll(int file, unsigned char* buf, size_t count ) {
+  ssize_t r;
+  ssize_t rem = count;
+  while ((r = read(file, buf + (count - rem), rem))) {
+    if (r < 0) throw std::runtime_error("Could not write to file.");
+    rem -= r;
+  }
+
+  return count - rem;
+}
+
+// _____________________________________________________________________________
 inline void writeAll(int file, const unsigned char* buf, size_t count ) {
   ssize_t r;
   ssize_t rem = count;
@@ -610,7 +622,7 @@ inline void externalSort(int file, int newFile, size_t size, size_t numobjs,
     partpos[i] = 0;
     partsize[i] = 0;
     lseek(file, bufferSize * i, SEEK_SET);
-    ssize_t n = read(file, buf, bufferSize);
+    ssize_t n = readAll(file, buf, bufferSize);
     if (n < 0) {
       partsize[i] = 0;
       continue;
@@ -628,8 +640,6 @@ inline void externalSort(int file, int newFile, size_t size, size_t numobjs,
     pq.push({&partbufs[j][partpos[j] % partsBufSize], j});
   }
 
-  size_t bla = 0;
-
   for (size_t i = 0; i < fsize; i += size) {
     auto top = pq.top();
     pq.pop();
@@ -642,7 +652,6 @@ inline void externalSort(int file, int newFile, size_t size, size_t numobjs,
     if ((i % bufferSize) + size == bufferSize || i + size == fsize) {
       // write to output file
       writeAll(newFile, buf, i % bufferSize + size);
-      bla += i % bufferSize + size;
     }
 
     partpos[smallestP] += size;
@@ -651,7 +660,7 @@ inline void externalSort(int file, int newFile, size_t size, size_t numobjs,
 
     if (partpos[smallestP] % partsBufSize == 0) {
       lseek(file, bufferSize * smallestP + partpos[smallestP], SEEK_SET);
-      ssize_t r = read(file, partbufs[smallestP], partsBufSize);
+      ssize_t r = readAll(file, partbufs[smallestP], partsBufSize);
       if (r < 0) throw std::runtime_error("Could not read from file.");
     }
       pq.push(
