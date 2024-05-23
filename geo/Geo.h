@@ -188,7 +188,8 @@ inline Point<T> rotateRAD(const Point<T>& p, double deg) {
 
 // _____________________________________________________________________________
 template <typename T>
-inline Point<T> rotateSinCos(Point<T> p, double si, double co, const Point<T>& c) {
+inline Point<T> rotateSinCos(Point<T> p, double si, double co,
+                             const Point<T>& c) {
   p = p - c;
 
   return Point<T>(p.getX() * co - p.getY() * si,
@@ -240,8 +241,10 @@ inline LineSegment<T> rotateRAD(LineSegment<T> geo, double deg) {
 
 // _____________________________________________________________________________
 template <typename T>
-inline Line<T> rotateSinCos(Line<T> geo, double si, double co, const Point<T>& c) {
-  for (size_t i = 0; i < geo.size(); i++) geo[i] = rotateSinCos(geo[i], si, co, c);
+inline Line<T> rotateSinCos(Line<T> geo, double si, double co,
+                            const Point<T>& c) {
+  for (size_t i = 0; i < geo.size(); i++)
+    geo[i] = rotateSinCos(geo[i], si, co, c);
   return geo;
 }
 
@@ -253,7 +256,6 @@ inline Line<T> rotateRAD(Line<T> geo, double deg, const Point<T>& c) {
   return rotateSinCos(geo, si, co, c);
 }
 
-
 // _____________________________________________________________________________
 template <typename T>
 inline Line<T> rotate(Line<T> geo, double deg, const Point<T>& c) {
@@ -262,7 +264,8 @@ inline Line<T> rotate(Line<T> geo, double deg, const Point<T>& c) {
 
 // _____________________________________________________________________________
 template <typename T>
-inline Polygon<T> rotateSinCos(Polygon<T> geo, double si, double co, const Point<T>& c) {
+inline Polygon<T> rotateSinCos(Polygon<T> geo, double si, double co,
+                               const Point<T>& c) {
   for (size_t i = 0; i < geo.getOuter().size(); i++)
     geo.getOuter()[i] = rotateSinCos(geo.getOuter()[i], si, co, c);
   for (size_t i = 0; i < geo.getInners().size(); i++)
@@ -285,7 +288,6 @@ template <typename T>
 inline Polygon<T> rotate(Polygon<T> geo, double deg, const Point<T>& c) {
   return rotateRAD(geo, deg * -RAD, c);
 }
-
 
 // _____________________________________________________________________________
 template <template <typename> class Geometry, typename T>
@@ -840,12 +842,17 @@ inline std::pair<bool, bool> ringContains(const Point<T>& p,
   int8_t c = -1;
 
   // skip irrelevant parts in poly
-  if (ph.getMaxSegLen() < std::numeric_limits<double>::infinity()) {
+  if (ph.getMaxSegLen() < std::numeric_limits<double>::infinity() &&
+      ph.rawRing()[i].p.getX() < p.getX() - ph.getMaxSegLen()) {
     i = std::lower_bound(
             ph.rawRing().begin() + i, ph.rawRing().end(),
             XSortedTuple<T>{{p.getX() - ph.getMaxSegLen(), 0}, false}) -
         ph.rawRing().begin();
   }
+
+  while (i < ph.rawRing().size() &&
+         ph.rawRing()[i].seg().second.getX() < p.getX())
+    i++;
 
   for (; i < ph.rawRing().size(); i++) {
     if (ph.rawRing()[i].out()) continue;
@@ -1153,7 +1160,8 @@ inline std::tuple<bool, bool, bool> intersectsPoly(
   if (firstRelIn2) j = *firstRelIn2;
 
   // skip irrelevant parts in ls1
-  if (maxSegLenA < std::numeric_limits<T>::max()) {
+  if (maxSegLenA < std::numeric_limits<T>::max() &&
+      ls1[i].p.getX() < ls2[j].p.getX() - maxSegLenA) {
     i = std::lower_bound(
             ls1.begin() + i, ls1.end(),
             XSortedTuple<T>{{ls2[j].p.getX() - maxSegLenA, 0}, false}) -
@@ -1161,36 +1169,29 @@ inline std::tuple<bool, bool, bool> intersectsPoly(
   }
 
   // skip irrelevant parts in ls2
-  if (maxSegLenB < std::numeric_limits<T>::max()) {
+  if (maxSegLenB < std::numeric_limits<T>::max() &&
+      ls2[j].p.getX() < ls1[i].p.getX() - maxSegLenB) {
     j = std::lower_bound(
             ls2.begin() + j, ls2.end(),
             XSortedTuple<T>{{ls1[i].p.getX() - maxSegLenB, 0}, false}) -
         ls2.begin();
   }
 
+  while (i < ls1.size() &&
+         ls1[i].seg().second.getX() < ls2[j].seg().first.getX())
+    i++;
+  while (j < ls2.size() &&
+         ls2[j].seg().second.getX() < ls1[i].seg().first.getX())
+    j++;
+
   if (firstRelIn1) *firstRelIn1 = i;
   if (firstRelIn2) *firstRelIn2 = j;
-
-  bool firstRelIn1Found = false;
-  bool firstRelIn2Found = false;
 
   uint8_t ret = 0;
 
   std::set<AngledLineSegment<T>> active1, active2;
 
   while (i < ls1.size() && j < ls2.size()) {
-    if (!firstRelIn1Found &&
-        ls1[i].seg().second.getX() >= boxB.getLowerLeft().getX()) {
-      firstRelIn1Found = true;
-      if (firstRelIn1) *firstRelIn1 = i;
-    }
-
-    if (!firstRelIn2Found &&
-        ls2[j].seg().second.getX() >= boxA.getLowerLeft().getX()) {
-      firstRelIn2Found = true;
-      if (firstRelIn2) *firstRelIn2 = j;
-    }
-
     if (ls1[i].p.getX() < ls2[j].p.getX() ||
         (ls1[i].p.getX() == ls2[j].p.getX() &&
          (!ls1[i].out() || ls2[j].out()))) {
@@ -1390,22 +1391,28 @@ inline std::tuple<bool, bool, bool, bool, bool> intersectsCovers(
   if (firstRelIn2) j = *firstRelIn2;
 
   // skip irrelevant parts in ls1
-  if (maxSegLenA < std::numeric_limits<T>::max()) {
+  if (maxSegLenA < std::numeric_limits<T>::max() &&
+      ls1[i].p.getX() < ls2[j].p.getX() - maxSegLenA) {
     i = std::lower_bound(
             ls1.begin() + i, ls1.end(),
             XSortedTuple<T>{{ls2[j].p.getX() - maxSegLenA, 0}, false}) -
         ls1.begin();
   }
 
-  if (maxSegLenB < std::numeric_limits<T>::max()) {
+  if (maxSegLenB < std::numeric_limits<T>::max() &&
+      ls2[j].p.getX() < ls1[i].p.getX() - maxSegLenB) {
     j = std::lower_bound(
             ls2.begin() + j, ls2.end(),
             XSortedTuple<T>{{ls1[i].p.getX() - maxSegLenB, 0}, false}) -
         ls2.begin();
   }
 
-  bool firstRelIn1Found = false;
-  bool firstRelIn2Found = false;
+  while (i < ls1.size() &&
+         ls1[i].seg().second.getX() < ls2[j].seg().first.getX())
+    i++;
+  while (j < ls2.size() &&
+         ls2[j].seg().second.getX() < ls1[i].seg().first.getX())
+    j++;
 
   if (firstRelIn1) *firstRelIn1 = i;
   if (firstRelIn2) *firstRelIn2 = j;
@@ -1413,18 +1420,6 @@ inline std::tuple<bool, bool, bool, bool, bool> intersectsCovers(
   std::set<AngledLineSegment<T>> active1, active2;
 
   while (i < ls1.size() && j < ls2.size()) {
-    if (!firstRelIn1Found &&
-        ls1[i].seg().second.getX() >= boxB.getLowerLeft().getX()) {
-      firstRelIn1Found = true;
-      if (firstRelIn1) *firstRelIn1 = i;
-    }
-
-    if (!firstRelIn2Found &&
-        ls2[j].seg().second.getX() >= boxA.getLowerLeft().getX()) {
-      firstRelIn2Found = true;
-      if (firstRelIn2) *firstRelIn2 = j;
-    }
-
     if (ls1[i].p.getX() < ls2[j].p.getX() ||
         (ls1[i].p.getX() == ls2[j].p.getX() &&
          (!ls1[i].out() || ls2[j].out()))) {
@@ -3136,21 +3131,24 @@ inline RotatedBox<T> getOrientedEnvelope(const std::vector<Geometry<T>>& pol) {
   Line<T> hull = convexHull(pol).getOuter();
   double rotateAngle = 0;
 
-  std::vector<double> angles;;
+  std::vector<double> angles;
+  ;
   angles.reserve(hull.size());
 
   for (size_t i = 1; i < hull.size(); i++) {
     const auto s = hull[i] - hull[i - 1];
     double ang = -std::atan2(s.getY(), s.getX());
     if (ang < 0) ang = M_PI + ang;
-    if (fabs(ang) > EPSILON && fabs(ang - M_PI_2) > EPSILON) angles.push_back(ang);
+    if (fabs(ang) > EPSILON && fabs(ang - M_PI_2) > EPSILON)
+      angles.push_back(ang);
   }
 
   // Check segment between the ends of the hull line
   const auto s = hull[0] - hull[hull.size() - 1];
   double ang = -std::atan2(s.getY(), s.getX());
   if (ang < 0) ang = M_PI + ang;
-  if (fabs(ang) > EPSILON && fabs(ang - M_PI_2) > EPSILON) angles.push_back(ang);
+  if (fabs(ang) > EPSILON && fabs(ang - M_PI_2) > EPSILON)
+    angles.push_back(ang);
 
   auto end = angles.end();
 
