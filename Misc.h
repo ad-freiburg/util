@@ -621,20 +621,32 @@ inline void externalSort(int file, int newFile, size_t size, size_t numobjs,
     partbufs[i] = new unsigned char[partsBufSize];
     partpos[i] = 0;
     partsize[i] = 0;
+
+    // seek to begin of part in file
     lseek(file, bufferSize * i, SEEK_SET);
+
+    // read entire part to buf
     ssize_t n = readAll(file, buf, bufferSize);
-    if (n < 0) {
-      partsize[i] = 0;
-      continue;
-    }
+    if (n < 0) continue;
+
+    // sort entire part in memory
     qsort(buf, n / size, size, cmpf);
+
+    // seek back to begin of part in file
     lseek(file, bufferSize * i, SEEK_SET);
+
+    // write entire part, now sorted, back to file
     writeAll(file, buf, n);
 
+    // already copy to beginning of the read part to the parts buffer
     memcpy(partbufs[i], buf, std::min<size_t>(n, partsBufSize));
+
+    // save size of this part (which might be different than bufferSize for the
+    // last part (might be even 0)
     partsize[i] = n;
   }
 
+  // init priority queue, push all parts to it
   for (size_t j = 0; j < parts; j++) {
     if (partpos[j] == partsize[j]) continue;  // bucket already empty
     pq.push({&partbufs[j][partpos[j] % partsBufSize], j});
@@ -647,24 +659,31 @@ inline void externalSort(int file, int newFile, size_t size, size_t numobjs,
     const void* smallest = top.first;
     ssize_t smallestP = top.second;
 
+    // write the smallest element to the current buffer position
     memcpy(buf + (i % bufferSize), smallest, size);
 
+    // if buffer is full (or if we are at the end of the file), flush
     if ((i % bufferSize) + size == bufferSize || i + size == fsize) {
       // write to output file
       writeAll(newFile, buf, i % bufferSize + size);
     }
 
+    // increment the position in the current smallest part by 1
     partpos[smallestP] += size;
 
+    // we have reached the end of this part, do not re-add again
     if (partpos[smallestP] == partsize[smallestP]) continue;
 
+    // we have reached the end of the parts buffer, re-fill
     if (partpos[smallestP] % partsBufSize == 0) {
       lseek(file, bufferSize * smallestP + partpos[smallestP], SEEK_SET);
       ssize_t r = readAll(file, partbufs[smallestP], partsBufSize);
       if (r < 0) throw std::runtime_error("Could not read from file.");
     }
-      pq.push(
-          {&partbufs[smallestP][partpos[smallestP] % partsBufSize], smallestP});
+
+    // re-add part with new smallest element to PQ
+    pq.push(
+        {&partbufs[smallestP][partpos[smallestP] % partsBufSize], smallestP});
   }
 
   // cleanup

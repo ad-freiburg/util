@@ -1234,14 +1234,15 @@ inline std::tuple<bool, bool, bool> intersectsPoly(
           } while (a != active2.end() && sameOrig(a->seg, above->seg));
         }
         if (above != active2.begin()) {
-          auto a = std::prev(above);
+          auto aa = std::prev(above);
+          auto a = aa;
           do {
             ret |= intersectsPolyStrict(a->seg, a->prevAng, a->nextAng,
                                         ls1[i].origSeg());
             if (ret >= 6) return {1, 1, 1};
             if (a == active2.begin()) break;
             a = std::prev(a);
-          } while (sameOrig(a->seg, above->seg));
+          } while (sameOrig(a->seg, aa->seg));
         }
 
         active1.insert(ls1[i].origSegAng());
@@ -1262,14 +1263,15 @@ inline std::tuple<bool, bool, bool> intersectsPoly(
 
           toDel++;
           if (toDel != active1.end() && above != active2.begin()) {
-            auto a = std::prev(above);
+            auto aa = std::prev(above);
+            auto a = aa;
             do {
               ret |= intersectsPolyStrict(a->seg, a->prevAng, a->nextAng,
                                           toDel->seg);
               if (ret >= 6) return {1, 1, 1};
               if (a == active2.begin()) break;
               a = std::prev(a);
-            } while (sameOrig(a->seg, above->seg));
+            } while (sameOrig(a->seg, aa->seg));
           }
 
           active1.erase(std::prev(toDel));
@@ -1317,14 +1319,15 @@ inline std::tuple<bool, bool, bool> intersectsPoly(
         }
 
         if (above != active1.begin()) {
-          auto a = std::prev(above);
+          auto aa = std::prev(above);
+          auto a = aa;
           do {
             ret |= intersectsPolyStrict(ls2[j].origSeg(), ls2[j].rawPrevAng(),
                                         ls2[j].rawNextAng(), a->seg);
             if (ret >= 6) return {1, 1, 1};
             if (a == active1.begin()) break;
             a = std::prev(a);
-          } while (sameOrig(a->seg, above->seg));
+          } while (sameOrig(a->seg, aa->seg));
         }
 
         active2.insert(ls2[j].origSegAng());
@@ -1346,14 +1349,15 @@ inline std::tuple<bool, bool, bool> intersectsPoly(
 
           toDel++;
           if (toDel != active2.end() && above != active1.begin()) {
-            auto a = std::prev(above);
+            auto aa = std::prev(above);
+            auto a = aa;
             do {
               ret |= intersectsPolyStrict(toDel->seg, toDel->prevAng,
                                           toDel->nextAng, a->seg);
               if (ret >= 6) return {1, 1, 1};
               if (a == active1.begin()) break;
               a = std::prev(a);
-            } while (sameOrig(a->seg, above->seg));
+            } while (sameOrig(a->seg, aa->seg));
           }
 
           active2.erase(std::prev(toDel));
