@@ -45,6 +45,31 @@ int main(int argc, char** argv) {
   }
 
   {
+    auto c = LineSegment<int>{{8830335, 62149579}, {8829909, 62149287}};
+    auto d = LineSegment<int>{{8829947, 62149129}, {8829997, 62148988}};
+    auto a = LineSegment<int>{{8829974, 62148972}, {8829997, 62148988}};
+    auto b = LineSegment<int>{{8829997, 62148988}, {8830058, 62148937}};
+
+    TEST(a > b);
+    TEST(!(a < b));
+
+    TEST(b < c);
+    TEST(!(b > c));
+
+    // TEST(d < b);
+    // TEST(!(d > b));
+
+    TEST(a < c);
+    TEST(!(a > c));
+
+    TEST(a < d);
+    TEST(!(a > d));
+
+    TEST(d < c);
+    TEST(!(d > c));
+  }
+
+  {
     auto a = lineFromWKT<int>("LINESTRING(1 1, 2 2)");
     auto b = lineFromWKT<int>("LINESTRING(0 0, 4 4)");
     XSortedLine<int> ax(a);

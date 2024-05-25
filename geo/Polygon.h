@@ -363,6 +363,11 @@ class XSortedPolygon {
 
   bool empty() const { return _outer.rawRing().size() == 0; };
 
+  size_t size() const {
+    // TODO: also count inner sizes!
+    return _outer.rawRing().size();
+  }
+
   const XSortedRing<T>& getOuter() const { return _outer; }
   XSortedRing<T>& getOuter() { return _outer; }
 

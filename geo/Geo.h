@@ -843,7 +843,7 @@ inline std::pair<bool, bool> ringContains(const Point<T>& p,
 
   // skip irrelevant parts in poly
   if (ph.getMaxSegLen() < std::numeric_limits<double>::infinity() &&
-      ph.rawRing()[i].p.getX() < p.getX() - ph.getMaxSegLen()) {
+      i < ph.rawRing().size() && ph.rawRing()[i].p.getX() < p.getX() - ph.getMaxSegLen()) {
     i = std::lower_bound(
             ph.rawRing().begin() + i, ph.rawRing().end(),
             XSortedTuple<T>{{p.getX() - ph.getMaxSegLen(), 0}, false}) -
@@ -875,7 +875,7 @@ inline std::tuple<bool, bool> intersectsContains(const Point<T>& p,
   // check if point p lies on line
 
   // skip irrelevant parts inline
-  if (line.getMaxSegLen() < std::numeric_limits<double>::infinity()) {
+  if (line.getMaxSegLen() < std::numeric_limits<double>::infinity() && i < line.rawLine().size()) {
     i = std::lower_bound(
             line.rawLine().begin() + i, line.rawLine().end(),
             XSortedTuple<T>{{p.getX() - line.getMaxSegLen(), 0}, false}) -
@@ -1159,6 +1159,9 @@ inline std::tuple<bool, bool, bool> intersectsPoly(
   if (firstRelIn1) i = *firstRelIn1;
   if (firstRelIn2) j = *firstRelIn2;
 
+  if (i >= ls1.size()) return {0, 0, 0};
+  if (j >= ls2.size()) return {0, 0, 0};
+
   // skip irrelevant parts in ls1
   if (maxSegLenA < std::numeric_limits<T>::max() &&
       ls1[i].p.getX() < ls2[j].p.getX() - maxSegLenA) {
@@ -1178,10 +1181,10 @@ inline std::tuple<bool, bool, bool> intersectsPoly(
   }
 
   while (i < ls1.size() &&
-         ls1[i].seg().second.getX() < ls2[j].seg().first.getX())
+         ls1[i].seg().second.getX() < boxB.getLowerLeft().getX())
     i++;
   while (j < ls2.size() &&
-         ls2[j].seg().second.getX() < ls1[i].seg().first.getX())
+         ls2[j].seg().second.getX() < boxA.getLowerLeft().getX())
     j++;
 
   if (firstRelIn1) *firstRelIn1 = i;
@@ -1394,6 +1397,9 @@ inline std::tuple<bool, bool, bool, bool, bool> intersectsCovers(
   if (firstRelIn1) i = *firstRelIn1;
   if (firstRelIn2) j = *firstRelIn2;
 
+  if (i >= ls1.size()) return {0, 0, 0, 0, 0};
+  if (j >= ls2.size()) return {0, 0, 0, 0, 0};
+
   // skip irrelevant parts in ls1
   if (maxSegLenA < std::numeric_limits<T>::max() &&
       ls1[i].p.getX() < ls2[j].p.getX() - maxSegLenA) {
@@ -1412,10 +1418,10 @@ inline std::tuple<bool, bool, bool, bool, bool> intersectsCovers(
   }
 
   while (i < ls1.size() &&
-         ls1[i].seg().second.getX() < ls2[j].seg().first.getX())
+         ls1[i].seg().second.getX() < boxB.getLowerLeft().getX())
     i++;
   while (j < ls2.size() &&
-         ls2[j].seg().second.getX() < ls1[i].seg().first.getX())
+         ls2[j].seg().second.getX() < boxA.getLowerLeft().getX())
     j++;
 
   if (firstRelIn1) *firstRelIn1 = i;

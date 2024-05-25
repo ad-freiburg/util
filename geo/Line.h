@@ -151,8 +151,10 @@ struct XSortedTuple {
 
 template <typename T>
 bool operator<(const XSortedTuple<T>& a, const XSortedTuple<T>& b) {
-  return a.p.getX() < b.p.getX() ||
-         (a.p.getX() == b.p.getX() && !a.out() && b.out());
+  if (a.p.getX() < b.p.getX()) return true;
+  if (a.p.getX() == b.p.getX()) return {!a.out() && b.out()};
+
+  return false;
 }
 
 template <typename T>
@@ -338,6 +340,14 @@ class XSortedLine {
                   2 * M_PI,   true};
     }
     _maxSegLen = fabs(line.first.getX() - line.second.getX());
+  }
+
+  size_t size() const {
+    return _line.size();
+  }
+
+  bool empty() const {
+    return _line.size() == 0;
   }
 
   T getMaxSegLen() const { return _maxSegLen; }
