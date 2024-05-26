@@ -177,6 +177,13 @@ bool operator<(const LineSegment<T>& a, const LineSegment<T>& b) {
     return false;
   }
 
+  // special case: we touch a the end / beginning, always classify the same to
+  // avoid transitivity problems for this operator
+  if (as == bf && as.getX() != af.getX() && bs.getX() != bf.getX())
+    return false;
+  if (bs == af && as.getX() != af.getX() && bs.getX() != bf.getX())
+    return true;
+
   if (af.getX() < bf.getX() || bf.getX() == bs.getX()) {
     // a was first in active set
     if (af.getX() != as.getX()) {
@@ -342,13 +349,9 @@ class XSortedLine {
     _maxSegLen = fabs(line.first.getX() - line.second.getX());
   }
 
-  size_t size() const {
-    return _line.size();
-  }
+  size_t size() const { return _line.size(); }
 
-  bool empty() const {
-    return _line.size() == 0;
-  }
+  bool empty() const { return _line.size() == 0; }
 
   T getMaxSegLen() const { return _maxSegLen; }
   void setMaxSegLen(T l) { _maxSegLen = l; }

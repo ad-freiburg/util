@@ -843,7 +843,8 @@ inline std::pair<bool, bool> ringContains(const Point<T>& p,
 
   // skip irrelevant parts in poly
   if (ph.getMaxSegLen() < std::numeric_limits<double>::infinity() &&
-      i < ph.rawRing().size() && ph.rawRing()[i].p.getX() < p.getX() - ph.getMaxSegLen()) {
+      i < ph.rawRing().size() &&
+      ph.rawRing()[i].p.getX() < p.getX() - ph.getMaxSegLen()) {
     i = std::lower_bound(
             ph.rawRing().begin() + i, ph.rawRing().end(),
             XSortedTuple<T>{{p.getX() - ph.getMaxSegLen(), 0}, false}) -
@@ -875,7 +876,8 @@ inline std::tuple<bool, bool> intersectsContains(const Point<T>& p,
   // check if point p lies on line
 
   // skip irrelevant parts inline
-  if (line.getMaxSegLen() < std::numeric_limits<double>::infinity() && i < line.rawLine().size()) {
+  if (line.getMaxSegLen() < std::numeric_limits<double>::infinity() &&
+      i < line.rawLine().size()) {
     i = std::lower_bound(
             line.rawLine().begin() + i, line.rawLine().end(),
             XSortedTuple<T>{{p.getX() - line.getMaxSegLen(), 0}, false}) -

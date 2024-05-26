@@ -1257,6 +1257,28 @@ int main(int argc, char** argv) {
   }
 
   {
+    auto a = lineFromWKT<int>("LINESTRING(0 0, 1 1, 2 1, 2 2, 1 1)");
+    auto b = lineFromWKT<int>("LINESTRING(1 0, 1 1)");
+    XSortedLine<int> ax(a);
+    XSortedLine<int> bx(b);
+
+    TEST(std::get<0>(geo::intersectsCovers(ax, bx, util::geo::getBoundingBox(a), util::geo::getBoundingBox(b))));
+    TEST(!std::get<1>(geo::intersectsCovers(ax, bx, util::geo::getBoundingBox(a), util::geo::getBoundingBox(b))));
+    TEST(std::get<2>(geo::intersectsCovers(ax, bx, util::geo::getBoundingBox(a), util::geo::getBoundingBox(b))));
+  }
+
+  {
+    auto a = lineFromWKT<int>("LINESTRING(0 0, 1 1, 2 1, 2 2, 1 1, 1 2)");
+    auto b = lineFromWKT<int>("LINESTRING(1 0, 1 1)");
+    XSortedLine<int> ax(a);
+    XSortedLine<int> bx(b);
+
+    TEST(std::get<0>(geo::intersectsCovers(ax, bx, util::geo::getBoundingBox(a), util::geo::getBoundingBox(b))));
+    TEST(!std::get<1>(geo::intersectsCovers(ax, bx, util::geo::getBoundingBox(a), util::geo::getBoundingBox(b))));
+    TEST(std::get<2>(geo::intersectsCovers(ax, bx, util::geo::getBoundingBox(a), util::geo::getBoundingBox(b))));
+  }
+
+  {
     auto a = lineFromWKT<int>("LINESTRING(1 0, 0 0, 0 2, 10 2)");
     auto b = polygonFromWKT<int>("POLYGON((1 0, 1 3, 3 3, 3 0, 1 0))");
     XSortedLine<int> ax(a);
