@@ -1276,30 +1276,45 @@ inline uint8_t intersectsHelper(const std::vector<XSortedTuple<T>>& ls1,
           auto above = active2.lower_bound(ls1[i].origSegAng());
           auto a = toDel;
           if (above != active2.end() && a != active1.begin()) {
-            auto aa = above;
+            auto b = std::prev(a);
             do {
-              auto b = std::prev(a);
-              auto r = C<T>::check(aa->seg, aa->prevAng, aa->nextAng, b->seg,
-                                   b->prevAng, b->nextAng);
-              ret |= r;
+              bool found = false;
+              auto aa = above;
+              do {
+                auto r = C<T>::check(aa->seg, aa->prevAng, aa->nextAng, b->seg,
+                                     b->prevAng, b->nextAng);
+                ret |= r;
 
-              if (!r) break;
+                if (!r) break;
+                found = true;
 
-              aa = std::next(aa);
-            } while (aa != active2.end());
+                aa = std::next(aa);
+              } while (aa != active2.end());
+
+              if (!found || b == active1.begin()) break;
+              b = std::prev(b);
+            } while (1);
           }
 
           toDel++;
           if (toDel != active1.end() && above != active2.begin()) {
             auto aa = std::prev(above);
-            auto a = aa;
+            auto b = toDel;
             do {
-              auto r = C<T>::check(a->seg, a->prevAng, a->nextAng, toDel->seg,
-                                   toDel->prevAng, toDel->nextAng);
-              ret |= r;
-              if (!r || a == active2.begin()) break;
-              a = std::prev(a);
-            } while (1);
+              auto a = aa;
+              bool found = false;
+              do {
+                auto r = C<T>::check(a->seg, a->prevAng, a->nextAng, b->seg,
+                                     b->prevAng, b->nextAng);
+                ret |= r;
+                if (!r) break;
+                found = true;
+                if (a == active2.begin()) break;
+                a = std::prev(a);
+              } while (1);
+              if (!found) break;
+              b = std::next(b);
+            } while (b != active1.end());
           }
 
           active1.erase(std::prev(toDel));
@@ -1367,28 +1382,44 @@ inline uint8_t intersectsHelper(const std::vector<XSortedTuple<T>>& ls1,
           auto above = active1.lower_bound(ls2[j].origSegAng());
           auto a = toDel;
           if (above != active1.end() && a != active2.begin()) {
-            auto aa = above;
+            auto b = std::prev(a);
             do {
-              auto r = C<T>::check((std::prev(a))->seg, (std::prev(a))->prevAng,
-                                   (std::prev(a))->nextAng, aa->seg,
-                                   aa->prevAng, aa->nextAng);
-              ret |= r;
-              if (!r) break;
-              aa = std::next(aa);
-            } while (aa != active1.end());
+              auto aa = above;
+              bool found = false;
+              do {
+                auto r = C<T>::check(b->seg, b->prevAng, b->nextAng, aa->seg,
+                                     aa->prevAng, aa->nextAng);
+                ret |= r;
+                if (!r) break;
+                found = true;
+
+                aa = std::next(aa);
+              } while (aa != active1.end());
+
+              if (!found || b == active2.begin()) break;
+              b = std::prev(b);
+            } while (1);
           }
 
           toDel++;
           if (toDel != active2.end() && above != active1.begin()) {
             auto aa = std::prev(above);
-            auto a = aa;
+            auto b = toDel;
             do {
-              auto r = C<T>::check(toDel->seg, toDel->prevAng, toDel->nextAng,
-                                   a->seg, a->prevAng, a->nextAng);
-              ret |= r;
-              if (!r || a == active1.begin()) break;
-              a = std::prev(a);
-            } while (1);
+              auto a = aa;
+              bool found = false;
+              do {
+                auto r = C<T>::check(b->seg, b->prevAng, b->nextAng, a->seg,
+                                     a->prevAng, a->nextAng);
+                ret |= r;
+                if (!r) break;
+                found = true;
+                if (a == active1.begin()) break;
+                a = std::prev(a);
+              } while (1);
+              if (!found) break;
+              b = std::next(b);
+            } while (b != active2.end());
           }
 
           active2.erase(std::prev(toDel));
