@@ -23,6 +23,8 @@ class Polygon {
   Polygon() {}
 
   explicit Polygon(const Ring<T>& l) : _outer(l) {}
+  Polygon(const Ring<T>& l, const std::vector<Ring<T>>& inners)
+      : _outer(l), _inners(inners) {}
   explicit Polygon(const Box<T>& b)
       : _outer({b.getLowerLeft(),
                 Point<T>(b.getLowerLeft().getX(), b.getUpperRight().getY()),
