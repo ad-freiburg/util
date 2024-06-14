@@ -994,6 +994,32 @@ inline Point<T> pointFromWKT(std::string wkt) {
 
 // _____________________________________________________________________________
 template <typename T>
+inline MultiPoint<T> multiPointFromWKT(std::string wkt) {
+  wkt = util::normalizeWhiteSpace(util::trim(wkt));
+  for (size_t i = 0; i < 11;i++) wkt[i] = toupper(wkt[i]);
+  if (wkt.rfind("MULTIPOINT") == 0 || wkt.rfind("MMULTIPOINT") == 0) {
+    MultiPoint<T> ret;
+    size_t b = wkt.find("(") + 1;
+    size_t e = wkt.rfind(")", b);
+    if (b > e) throw std::runtime_error("Could not parse WKT");
+		std::string a = wkt.substr(b, e - b);
+		util::replaceAll(a, ")", "");
+		util::replaceAll(a, "(", "");
+    auto pairs = util::split(a, ',');
+    for (const auto& p : pairs) {
+      auto xy = util::split(util::trim(p), ' ');
+      if (xy.size() < 2) throw std::runtime_error("Could not parse WKT");
+      double x = atof(xy[0].c_str());
+      double y = atof(xy[1].c_str());
+      ret.push_back({x, y});
+    }
+    return ret;
+  }
+  throw std::runtime_error("Could not parse WKT");
+}
+
+// _____________________________________________________________________________
+template <typename T>
 inline Line<T> lineFromWKT(std::string wkt) {
   wkt = util::normalizeWhiteSpace(util::trim(wkt));
   for (size_t i = 0; i < 11;i++) wkt[i] = toupper(wkt[i]);
@@ -1010,6 +1036,38 @@ inline Line<T> lineFromWKT(std::string wkt) {
       double y = atof(xy[1].c_str());
       ret.push_back({x, y});
     }
+    return ret;
+  }
+  throw std::runtime_error("Could not parse WKT");
+}
+
+// _____________________________________________________________________________
+template <typename T>
+inline MultiLine<T> multiLineFromWKT(std::string wkt) {
+  wkt = util::normalizeWhiteSpace(util::trim(wkt));
+  for (size_t i = 0; i < 13;i++) wkt[i] = toupper(wkt[i]);
+  if (wkt.rfind("MULTILINESTRING") == 0 || wkt.rfind("MMULTILINESTRING") == 0) {
+    MultiLine<T> ret;
+    size_t b = wkt.find("(") + 1;
+    size_t e = wkt.rfind(")");
+    if (b > e) throw std::runtime_error("Could not parse WKT");
+
+    auto lines = util::split(wkt.substr(b, e - b), ')');
+
+    for (const auto& line : lines) {
+			size_t b = line.find("(") + 1;
+      auto pairs = util::split(line.substr(b), ',');
+      Line<T> cur;
+      for (const auto& p : pairs) {
+        auto xy = util::split(util::trim(p), ' ');
+        if (xy.size() < 2) throw std::runtime_error("Could not parse WKT");
+        double x = atof(xy[0].c_str());
+        double y = atof(xy[1].c_str());
+        cur.push_back({x, y});
+      }
+			ret.push_back(cur);
+    }
+
     return ret;
   }
   throw std::runtime_error("Could not parse WKT");

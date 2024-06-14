@@ -74,8 +74,31 @@ void GeoJsonOutput::print(const Line<T>& line, json::Val attrs) {
 
 // _____________________________________________________________________________
 template <typename T>
-void GeoJsonOutput::print(const MultiLine<T>& line, json::Val attrs) {
-  for (const auto& l : line) print(l, attrs);
+void GeoJsonOutput::print(const MultiLine<T>& lines, json::Val attrs) {
+  if (!lines.size()) return;
+  _wr.obj();
+  _wr.keyVal("type", "Feature");
+
+  _wr.key("geometry");
+  _wr.obj();
+  _wr.keyVal("type", "MultiLineString");
+  _wr.key("coordinates");
+  _wr.arr();
+  for (auto l : lines) {
+    _wr.arr();
+    for (auto p : l) {
+      _wr.arr();
+      _wr.val(p.getX());
+      _wr.val(p.getY());
+      _wr.close();
+    }
+    _wr.close();
+  }
+  _wr.close();
+  _wr.close();
+  _wr.key("properties");
+  _wr.val(attrs);
+  _wr.close();
 }
 
 // _____________________________________________________________________________
@@ -121,7 +144,43 @@ void GeoJsonOutput::print(const Polygon<T>& poly, json::Val attrs) {
 // _____________________________________________________________________________
 template <typename T>
 void GeoJsonOutput::print(const MultiPolygon<T>& mpoly, json::Val attrs) {
-  for (const auto& p : mpoly) print(p, attrs);
+  if (!mpoly.size()) return;
+  _wr.obj();
+  _wr.keyVal("type", "Feature");
+
+  _wr.key("geometry");
+  _wr.obj();
+  _wr.keyVal("type", "MultiPolygon");
+  _wr.key("coordinates");
+  _wr.arr();
+  for (auto poly : mpoly) {
+    _wr.arr();
+    _wr.arr();
+    for (auto p : poly.getOuter()) {
+      _wr.arr();
+      _wr.val(p.getX());
+      _wr.val(p.getY());
+      _wr.close();
+    }
+    _wr.close();
+
+    for (const auto& inner : poly.getInners()) {
+      _wr.arr();
+      for (auto p : inner) {
+        _wr.arr();
+        _wr.val(p.getX());
+        _wr.val(p.getY());
+        _wr.close();
+      }
+      _wr.close();
+    }
+    _wr.close();
+  }
+  _wr.close();
+  _wr.close();
+  _wr.key("properties");
+  _wr.val(attrs);
+  _wr.close();
 }
 
 // _____________________________________________________________________________
@@ -154,7 +213,17 @@ void GeoJsonOutput::printLatLng(const Line<T>& line, json::Val attrs) {
 // _____________________________________________________________________________
 template <typename T>
 void GeoJsonOutput::printLatLng(const MultiLine<T>& mline, json::Val attrs) {
-  for (const auto& l : mline) printLatLng(l, attrs);
+  MultiLine<T> projLs;
+  for (auto line : mline) {
+    Line<T> projL;
+    projL.reserve(line.size());
+    for (auto p : line) {
+      projL.push_back(util::geo::webMercToLatLng<T>(p.getX(), p.getY()));
+    }
+    projLs.push_back(projL);
+  }
+
+  print(projLs, attrs);
 }
 
 // _____________________________________________________________________________
@@ -162,7 +231,16 @@ template <typename T>
 void GeoJsonOutput::printLatLng(const Polygon<T>& poly, json::Val attrs) {
   Polygon<T> projP;
   for (auto p : poly.getOuter())
-    projP.getOuter().push_back(util::geo::webMercToLatLng<T>(p.getX(), p.getY()));
+    projP.getOuter().push_back(
+        util::geo::webMercToLatLng<T>(p.getX(), p.getY()));
+
+  for (auto pi : poly.getInners()) {
+    Line<T> inner;
+    for (auto p : pi) {
+      inner.push_back(util::geo::webMercToLatLng<T>(p.getX(), p.getY()));
+    }
+    projP.getInners().push_back(inner);
+  }
 
   print(projP, attrs);
 }
@@ -170,5 +248,22 @@ void GeoJsonOutput::printLatLng(const Polygon<T>& poly, json::Val attrs) {
 // _____________________________________________________________________________
 template <typename T>
 void GeoJsonOutput::printLatLng(const MultiPolygon<T>& mpoly, json::Val attrs) {
-  for (const auto& p : mpoly) printLatLng(p, attrs);
+  MultiPolygon<T> projPolys;
+  for (auto poly : mpoly) {
+    Polygon<T> projP;
+    for (auto p : poly.getOuter()) {
+      projP.getOuter().push_back(
+          util::geo::webMercToLatLng<T>(p.getX(), p.getY()));
+    }
+    for (auto pi : poly.getInners()) {
+      Line<T> inner;
+      for (auto p : pi) {
+        inner.push_back(util::geo::webMercToLatLng<T>(p.getX(), p.getY()));
+      }
+      projP.getInners().push_back(inner);
+    }
+    projPolys.push_back(projP);
+  }
+
+  print(projPolys, attrs);
 }

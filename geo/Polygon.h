@@ -20,6 +20,8 @@ class Polygon {
   Polygon() = default;
 
   explicit Polygon(const Line<T>& l) : _outer(l) {}
+  Polygon(const Line<T>& l, const std::vector<Line<T>>& inners)
+      : _outer(l), _inners(inners) {}
   explicit Polygon(const Box<T>& b)
       : _outer({b.getLowerLeft(),
                 Point<T>(b.getLowerLeft().getX(), b.getUpperRight().getY()),

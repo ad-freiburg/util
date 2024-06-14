@@ -17,6 +17,7 @@
 #include "util/graph/DirGraph.h"
 #include "util/graph/EDijkstra.h"
 #include "util/graph/UndirGraph.h"
+#include "util/geo/output/GeoJsonOutput.h"
 #include "util/json/Writer.h"
 
 using namespace util;
@@ -1917,6 +1918,79 @@ int main(int argc, char** argv) {
 
   TEST(geo::getWKT(geo::segment(DLine{{0, 0}, {0, 1}, {0, 2}}, 0, 0.5)), ==, "LINESTRING (0 0, 0 1)");
   TEST(geo::getWKT(geo::segment(DLine{{0, 0}, {0, 1}, {0, 2}}, 0.5, 1)), ==, "LINESTRING (0 1, 0 2)");
+}
+
+{
+  std::stringstream ss;
+  util::geo::output::GeoJsonOutput out(ss);
+
+  Polygon<int> poly{{{1, 1}, {3, 2}, {4, 3}, {6, 3}, {5, 1}, {1, 1}}};
+  Polygon<int> poly3{{{1, 3}, {3, 4}, {4, 5}, {6, 5}, {5, 3}, {1, 3}}};
+
+  out.print(poly, {});
+  out.flush();
+	std::string a = ss.str();
+	replaceAll(a, " ", "");
+	replaceAll(a, "\n", "");
+	TEST(a ,==,"{\"type\":\"FeatureCollection\",\"features\":[{\"type\":\"Feature\",\"geometry\":{\"type\":\"Polygon\",\"coordinates\":[[[1,1],[3,2],[4,3],[6,3],[5,1],[1,1]]]},\"properties\":{}}]}");
+
+  Polygon<int> poly2{{{1, 1}, {3, 2}, {4, 3}, {6, 3}, {5, 1}, {1, 1}}, {{{1, 1}, {1, 2}, {2, 2}, {1, 1}}}};
+
+	ss.str("");
+  out.print(poly2, {});
+  out.flush();
+	a = ss.str();
+	replaceAll(a, " ", "");
+	replaceAll(a, "\n", "");
+	TEST(a ,==,"{\"type\":\"Feature\",\"geometry\":{\"type\":\"Polygon\",\"coordinates\":[[[1,1],[3,2],[4,3],[6,3],[5,1],[1,1]],[[1,1],[1,2],[2,2],[1,1]]]},\"properties\":{}}");
+
+	ss.str("");
+  out.print(util::geo::MultiPolygon<int>{poly3, poly2}, {});
+  out.flush();
+	a = ss.str();
+	replaceAll(a, " ", "");
+	replaceAll(a, "\n", "");
+	TEST(a ,==,"{\"type\":\"Feature\",\"geometry\":{\"type\":\"MultiPolygon\",\"coordinates\":[[[[1,3],[3,4],[4,5],[6,5],[5,3],[1,3]]],[[[1,1],[3,2],[4,3],[6,3],[5,1],[1,1]],[[1,1],[1,2],[2,2],[1,1]]]]},\"properties\":{}}");
+
+	ss.str("");
+  out.print(geo::lineFromWKT<int>("LINESTRING(0 0, 1 1)"), {});
+  out.flush();
+	a = ss.str();
+	replaceAll(a, " ", "");
+	replaceAll(a, "\n", "");
+	TEST(a ,==,"{\"type\":\"Feature\",\"geometry\":{\"type\":\"LineString\",\"coordinates\":[[0,0],[1,1]]},\"properties\":{}}");
+
+	ss.str("");
+  out.print(util::geo::MultiLine<int>{geo::lineFromWKT<int>("LINESTRING(0 0, 1 1)"), geo::lineFromWKT<int>("LINESTRING(2 2, 3 3)")}, {});
+  out.flush();
+	a = ss.str();
+	replaceAll(a, " ", "");
+	replaceAll(a, "\n", "");
+	TEST(a ,==,"{\"type\":\"Feature\",\"geometry\":{\"type\":\"MultiLineString\",\"coordinates\":[[[0,0],[1,1]],[[2,2],[3,3]]]},\"properties\":{}}");
+
+	ss.str("");
+  out.print(geo::multiLineFromWKT<int>("MULTILINESTRING((0 0, 1 1), (2 2, 3 3))"), {});
+  out.flush();
+	a = ss.str();
+	replaceAll(a, " ", "");
+	replaceAll(a, "\n", "");
+	TEST(a ,==,"{\"type\":\"Feature\",\"geometry\":{\"type\":\"MultiLineString\",\"coordinates\":[[[0,0],[1,1]],[[2,2],[3,3]]]},\"properties\":{}}");
+
+	ss.str("");
+  out.print(geo::multiPointFromWKT<int>("MULTIPOINT(0 0, 1 1, 2 2, 3 3)"), {});
+  out.flush();
+	a = ss.str();
+	replaceAll(a, " ", "");
+	replaceAll(a, "\n", "");
+	TEST(a ,==,"{\"type\":\"Feature\",\"geometry\":{\"type\":\"MultiPoint\",\"coordinates\":[[0,0],[1,1],[2,2],[3,3]]},\"properties\":{}}");
+
+	ss.str("");
+  out.print(geo::multiPointFromWKT<int>("MULTIPOINT((0 0), (1 1), (2 2), (3 3))"), {});
+  out.flush();
+	a = ss.str();
+	replaceAll(a, " ", "");
+	replaceAll(a, "\n", "");
+	TEST(a ,==,"{\"type\":\"Feature\",\"geometry\":{\"type\":\"MultiPoint\",\"coordinates\":[[0,0],[1,1],[2,2],[3,3]]},\"properties\":{}}");
 }
 
   // inversion count
