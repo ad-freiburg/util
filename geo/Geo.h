@@ -1011,7 +1011,7 @@ inline MultiPoint<T> multiPointFromWKT(std::string wkt) {
       if (xy.size() < 2) throw std::runtime_error("Could not parse WKT");
       double x = atof(xy[0].c_str());
       double y = atof(xy[1].c_str());
-      ret.push_back({x, y});
+      ret.push_back({(T)x, (T)y});
     }
     return ret;
   }
@@ -1034,7 +1034,7 @@ inline Line<T> lineFromWKT(std::string wkt) {
       if (xy.size() < 2) throw std::runtime_error("Could not parse WKT");
       double x = atof(xy[0].c_str());
       double y = atof(xy[1].c_str());
-      ret.push_back({x, y});
+      ret.push_back({(T)x, (T)y});
     }
     return ret;
   }
@@ -1063,7 +1063,7 @@ inline MultiLine<T> multiLineFromWKT(std::string wkt) {
         if (xy.size() < 2) throw std::runtime_error("Could not parse WKT");
         double x = atof(xy[0].c_str());
         double y = atof(xy[1].c_str());
-        cur.push_back({x, y});
+        cur.push_back({(T)x, (T)y});
       }
 			ret.push_back(cur);
     }
