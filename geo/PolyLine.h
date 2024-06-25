@@ -108,7 +108,7 @@ class PolyLine {
                              const std::vector<double>& weights);
 
   void simplify(double d);
-  void empty();
+  void clear();
 
   void smoothenOutliers(double d);
 

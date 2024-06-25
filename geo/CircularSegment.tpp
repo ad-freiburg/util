@@ -33,7 +33,7 @@ const PolyLine<T>& CircularSegment<T>::render(double d) {
     return _rendered;
   }
 
-  _rendered.empty();
+  _rendered.clear();
   double n = _s / d, dt = 1 / n, t = 0;
 
   bool cancel = false;

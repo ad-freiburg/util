@@ -588,8 +588,8 @@ PolyLine<T> PolyLine<T>::getOrthoLineAtDist(double d, double length) const {
 
 // _____________________________________________________________________________
 template <typename T>
-void PolyLine<T>::empty() {
-  _line.empty();
+void PolyLine<T>::clear() {
+  _line.clear();
 }
 
 // _____________________________________________________________________________
