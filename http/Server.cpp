@@ -52,6 +52,7 @@ Socket::Socket(int port) {
   memset(&(addr.sin_zero), '\0', 8);
 
   setsockopt(_sock, SOL_SOCKET, SO_REUSEADDR, &y, sizeof(y));
+  setsockopt(_sock, SOL_SOCKET, SO_REUSEPORT, &y, sizeof(y));
 
   if (bind(_sock, reinterpret_cast<sockaddr*>(&addr), sizeof(addr)) < 0) {
     throw std::runtime_error(std::string("Could not bind to port ") +
