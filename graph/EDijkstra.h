@@ -88,7 +88,7 @@ class EDijkstra : public ShortestPath<EDijkstra> {
 
   template <typename N, typename E, typename C>
   struct CostFunc : public util::graph::CostFunc<N, E, C> {
-    C operator()(const Node<N, E>* from, const Edge<N, E>* e,
+    virtual C operator()(const Node<N, E>* from, const Edge<N, E>* e,
                  const Node<N, E>* to) const {
       UNUSED(from);
       UNUSED(e);
@@ -99,7 +99,7 @@ class EDijkstra : public ShortestPath<EDijkstra> {
 
   template <typename N, typename E, typename C>
   struct HeurFunc : public util::graph::HeurFunc<N, E, C> {
-    C operator()(const Node<N, E>* from,
+    virtual C operator()(const Node<N, E>* from,
                  const std::set<Node<N, E>*>& to) const {
       UNUSED(from);
       UNUSED(to);
