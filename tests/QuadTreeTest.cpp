@@ -1,7 +1,7 @@
 // Copyright 2016
 // Author: Patrick Brosi
 
-#include "util/Misc.h"
+#include "util/Test.h"
 #include "util/geo/QuadTree.h"
 #include "util/tests/QuadTreeTest.h"
 

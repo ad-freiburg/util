@@ -5,6 +5,7 @@
 #include <string>
 #include <clocale>
 #include "util/Misc.h"
+#include "util/Test.h"
 #include "util/Nullable.h"
 #include "util/String.h"
 #include "util/tests/QuadTreeTest.h"

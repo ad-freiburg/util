@@ -36,13 +36,6 @@ static const size_t SORT_BUFFER_S = 64 * 128 * 1024;
 #define T_START(n)  auto _tstart_##n = std::chrono::high_resolution_clock::now()
 #define T_STOP(n) (std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::high_resolution_clock::now() - _tstart_##n).count())
 
-#define _TEST3(s, o, e) {auto __ss = s; if (!(__ss o e)) {  std::cerr << "\n" << __FILE__ << ":" << __LINE__ << ": Test failed!\n  Expected " << #s << " " << #o " " << (e) << ", got " << (__ss) << std::endl;  exit(1);}}
-#define _TEST2(s, e) _TEST3(s, ==, o)
-#define _TEST1(s) _TEST3(static_cast<bool>(s), ==, true)
-
-#define _GET_TEST_MACRO(_1,_2,_3,NAME,...) NAME
-#define TEST(...) _GET_TEST_MACRO(__VA_ARGS__, _TEST3, _TEST2, _TEST1, UNUSED)(__VA_ARGS__)
-
 #define TODO(msg) std::cerr << "\n" __FILE__ << ":" << __LINE__ << ": TODO: " << #msg << std::endl;
 
 #if defined(_WIN32)
