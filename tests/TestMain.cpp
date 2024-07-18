@@ -4483,4 +4483,19 @@ int main(int argc, char** argv) {
 	TEST(formatFloat(0.0000, 10), ==, "0");
 	TEST(formatFloat(-1.0000, 10), ==, "-1");
 	TEST(formatFloat(-15.000001, 10), ==, "-15.000001");
+
+// geometrycollections
+{
+  util::geo::Collection<double> coll;
+
+  coll.push_back(util::geo::Point<double>{3, 2});
+  TEST(util::geo::getWKT(coll), ==, "GEOMETRYCOLLECTION (POINT (3 2))");
+
+  coll.push_back(util::geo::Line<double>{{3, 2}, {1, 1}});
+  TEST(util::geo::getWKT(coll), ==, "GEOMETRYCOLLECTION (POINT (3 2), LINESTRING (3 2, 1 1))");
+
+  TEST(util::geo::getWKT(util::geo::getBoundingBox(coll)), ==, "POLYGON ((1 1, 3 1, 3 2, 1 2, 1 1))");
+  TEST(util::geo::getWKT(util::geo::convexHull(coll)), ==, "POLYGON ((1 1, 3 2, 1 1))");
+  TEST(util::geo::getWKT(util::geo::convexHull(util::geo::getOrientedEnvelope(coll))), ==, "POLYGON ((3 2, 3 2, 1 1, 1 1, 3 2))");
+}
 }

@@ -41,6 +41,11 @@ class Polygon {
 };
 
 template <typename T>
+inline bool operator==(const Polygon<T>& a, const Polygon<T>& b) {
+  return a.getOuter() == b.getOuter() && a.getInners() == b.getInners();
+}
+
+template <typename T>
 using MultiPolygon = std::vector<Polygon<T>>;
 
 // _____________________________________________________________________________

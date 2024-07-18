@@ -20,6 +20,7 @@
 #include "util/Misc.h"
 #include "util/String.h"
 #include "util/geo/Box.h"
+#include "util/geo/Collection.h"
 #include "util/geo/Line.h"
 #include "util/geo/Point.h"
 #include "util/geo/Polygon.h"
@@ -92,6 +93,12 @@ typedef MultiPolygon<float> FMultiPolygon;
 typedef MultiPolygon<int> IMultiPolygon;
 typedef MultiPolygon<int32_t> I32MultiPolygon;
 typedef MultiPolygon<int64_t> I64MultiPolygon;
+
+typedef Collection<double> DCollection;
+typedef Collection<float> FCollection;
+typedef Collection<int> ICollection;
+typedef Collection<int32_t> I32Collection;
+typedef Collection<int64_t> I64Collection;
 
 typedef XSortedMultiPolygon<double> DXSortedMultiPolygon;
 typedef XSortedMultiPolygon<float> FXSortedMultiPolygon;
@@ -188,15 +195,13 @@ inline Point<T> centroid(std::vector<Geometry<T>> multigeo) {
 
 // _____________________________________________________________________________
 template <typename T>
-inline Point<T> rotate(const Point<T>& p, double deg) {
-  UNUSED(deg);
+inline Point<T> rotate(const Point<T>& p, double) {
   return p;
 }
 
 // _____________________________________________________________________________
 template <typename T>
-inline Point<T> rotateRAD(const Point<T>& p, double deg) {
-  UNUSED(deg);
+inline Point<T> rotateRAD(const Point<T>& p, double) {
   return p;
 }
 
@@ -553,19 +558,25 @@ inline Polygon<T> polygonFromWKT(std::string wkt) {
 
 // _____________________________________________________________________________
 template <typename T>
-inline std::string getWKT(const Point<T>& p) {
-  return std::string("POINT (") + formatFloat(p.getX(), 6) + " " +
-         formatFloat(p.getY(), 6) + ")";
+inline std::string getWKT(const Point<T>& p, uint16_t prec) {
+  return std::string("POINT (") + formatFloat(p.getX(), prec) + " " +
+         formatFloat(p.getY(), prec) + ")";
 }
 
 // _____________________________________________________________________________
 template <typename T>
-inline std::string getWKT(const std::vector<Point<T>>& p) {
+inline std::string getWKT(const Point<T>& p) {
+  return getWKT(p, 6);
+}
+
+// _____________________________________________________________________________
+template <typename T>
+inline std::string getWKT(const std::vector<Point<T>>& p, uint16_t prec) {
   std::stringstream ss;
   ss << "MULTIPOINT (";
   for (size_t i = 0; i < p.size(); i++) {
     if (i) ss << ", ";
-    ss << "(" << formatFloat(p.getX(), 6) << " " << formatFloat(p.getY(), 6)
+    ss << "(" << formatFloat(p.getX(), prec) << " " << formatFloat(p.getY(), prec)
        << ")";
   }
   ss << ")";
@@ -574,12 +585,18 @@ inline std::string getWKT(const std::vector<Point<T>>& p) {
 
 // _____________________________________________________________________________
 template <typename T>
-inline std::string getWKT(const Line<T>& l) {
+inline std::string getWKT(const std::vector<Point<T>>& p) {
+  return getWKT(p, 6);
+}
+
+// _____________________________________________________________________________
+template <typename T>
+inline std::string getWKT(const Line<T>& l, uint16_t prec) {
   std::stringstream ss;
   ss << "LINESTRING (";
   for (size_t i = 0; i < l.size(); i++) {
     if (i) ss << ", ";
-    ss << formatFloat(l[i].getX(), 6) << " " << formatFloat(l[i].getY(), 6);
+    ss << formatFloat(l[i].getX(), prec) << " " << formatFloat(l[i].getY(), prec);
   }
   ss << ")";
   return ss.str();
@@ -587,7 +604,13 @@ inline std::string getWKT(const Line<T>& l) {
 
 // _____________________________________________________________________________
 template <typename T>
-inline std::string getWKT(const std::vector<Line<T>>& ls) {
+inline std::string getWKT(const Line<T>& l) {
+  return getWKT(l, 6);
+}
+
+// _____________________________________________________________________________
+template <typename T>
+inline std::string getWKT(const std::vector<Line<T>>& ls, uint16_t prec) {
   std::stringstream ss;
   ss << "MULTILINESTRING (";
 
@@ -596,9 +619,43 @@ inline std::string getWKT(const std::vector<Line<T>>& ls) {
     ss << "(";
     for (size_t i = 0; i < ls[j].size(); i++) {
       if (i) ss << ", ";
-      ss << formatFloat(ls[j][i].getX(), 6) << " "
-         << formatFloat(ls[j][i].getY(), 6);
+      ss << formatFloat(ls[j][i].getX(), prec) << " "
+         << formatFloat(ls[j][i].getY(), prec);
     }
+    ss << ")";
+  }
+
+  ss << ")";
+  return ss.str();
+}
+
+// _____________________________________________________________________________
+template <typename T>
+inline std::string getWKT(const std::vector<Line<T>>& ls) {
+  return getWKT(ls, 6);
+}
+
+// _____________________________________________________________________________
+template <typename T>
+inline std::string getWKT(const XSortedPolygon<T>& ls, uint16_t prec) {
+  std::stringstream ss;
+  ss << "MULTILINESTRING (";
+
+  for (size_t j = 0; j < ls.getOuter().rawRing().size(); j++) {
+    if (ls.getOuter().rawRing()[j].out()) continue;
+    if (j) ss << ", ";
+    ss << "(";
+    ss << formatFloat(ls.getOuter().rawRing()[j].seg().first.getX() * 1.0 / 10,
+                      prec)
+       << " "
+       << formatFloat(ls.getOuter().rawRing()[j].seg().first.getY() * 1.0 / 10,
+                      prec)
+       << ",";
+    ss << formatFloat(ls.getOuter().rawRing()[j].seg().second.getX() * 1.0 / 10,
+                      prec)
+       << " "
+       << formatFloat(ls.getOuter().rawRing()[j].seg().second.getY() * 1.0 / 10,
+                      prec);
     ss << ")";
   }
 
@@ -609,77 +666,67 @@ inline std::string getWKT(const std::vector<Line<T>>& ls) {
 // _____________________________________________________________________________
 template <typename T>
 inline std::string getWKT(const XSortedPolygon<T>& ls) {
-  std::stringstream ss;
-  ss << "MULTILINESTRING (";
+  return getWKT(ls, 6);
+}
 
-  for (size_t j = 0; j < ls.getOuter().rawRing().size(); j++) {
-    if (ls.getOuter().rawRing()[j].out()) continue;
-    if (j) ss << ", ";
-    ss << "(";
-    ss << formatFloat(ls.getOuter().rawRing()[j].seg().first.getX() * 1.0 / 10,
-                      6)
-       << " "
-       << formatFloat(ls.getOuter().rawRing()[j].seg().first.getY() * 1.0 / 10,
-                      6)
-       << ",";
-    ss << formatFloat(ls.getOuter().rawRing()[j].seg().second.getX() * 1.0 / 10,
-                      6)
-       << " "
-       << formatFloat(ls.getOuter().rawRing()[j].seg().second.getY() * 1.0 / 10,
-                      6);
-    ss << ")";
-  }
-
-  ss << ")";
-  return ss.str();
+// _____________________________________________________________________________
+template <typename T>
+inline std::string getWKT(const LineSegment<T>& l, uint16_t prec) {
+  return getWKT(Line<T>{l.first, l.second}, prec);
 }
 
 // _____________________________________________________________________________
 template <typename T>
 inline std::string getWKT(const LineSegment<T>& l) {
-  return getWKT(Line<T>{l.first, l.second});
+  return getWKT(l, 6);
 }
 
 // _____________________________________________________________________________
 template <typename T>
-inline std::string getWKT(const Box<T>& l) {
+inline std::string getWKT(const Box<T>& l, uint16_t prec) {
   std::stringstream ss;
   ss << "POLYGON ((";
-  ss << formatFloat(l.getLowerLeft().getX(), 6) << " "
-     << formatFloat(l.getLowerLeft().getY(), 6);
-  ss << ", " << formatFloat(l.getUpperRight().getX(), 6) << " "
-     << formatFloat(l.getLowerLeft().getY(), 6);
-  ss << ", " << formatFloat(l.getUpperRight().getX(), 6) << " "
-     << formatFloat(l.getUpperRight().getY(), 6);
-  ss << ", " << formatFloat(l.getLowerLeft().getX(), 6) << " "
-     << formatFloat(l.getUpperRight().getY(), 6);
-  ss << ", " << formatFloat(l.getLowerLeft().getX(), 6) << " "
-     << formatFloat(l.getLowerLeft().getY(), 6);
+  ss << formatFloat(l.getLowerLeft().getX(), prec) << " "
+     << formatFloat(l.getLowerLeft().getY(), prec);
+  ss << ", " << formatFloat(l.getUpperRight().getX(), prec) << " "
+     << formatFloat(l.getLowerLeft().getY(), prec);
+  ss << ", " << formatFloat(l.getUpperRight().getX(), prec) << " "
+     << formatFloat(l.getUpperRight().getY(), prec);
+  ss << ", " << formatFloat(l.getLowerLeft().getX(), prec) << " "
+     << formatFloat(l.getUpperRight().getY(), prec);
+  ss << ", " << formatFloat(l.getLowerLeft().getX(), prec) << " "
+     << formatFloat(l.getLowerLeft().getY(), prec);
   ss << "))";
   return ss.str();
 }
 
 // _____________________________________________________________________________
 template <typename T>
-inline std::string getWKT(const Polygon<T>& p) {
+inline std::string getWKT(const Box<T>& l) {
+  return getWKT(l, 6);
+}
+
+// _____________________________________________________________________________
+template <typename T>
+inline std::string getWKT(const Polygon<T>& p, uint16_t prec) {
   std::stringstream ss;
   ss << "POLYGON ((";
   for (size_t i = 0; i < p.getOuter().size(); i++) {
-    ss << formatFloat(p.getOuter()[i].getX(), 6) << " "
-       << formatFloat(p.getOuter()[i].getY(), 6) << ", ";
+    ss << formatFloat(p.getOuter()[i].getX(), prec) << " "
+       << formatFloat(p.getOuter()[i].getY(), prec) << ", ";
   }
-  ss << formatFloat(p.getOuter().front().getX(), 6) << " "
-     << formatFloat(p.getOuter().front().getY(), 6);
+  ss << formatFloat(p.getOuter().front().getX(), prec) << " "
+     << formatFloat(p.getOuter().front().getY(), prec);
   ss << ")";
 
   for (const auto& inner : p.getInners()) {
     ss << ", (";
     for (size_t i = 0; i < inner.size(); i++) {
-      ss << formatFloat(inner[i].getX(), 6) << " "
-         << formatFloat(inner[i].getY(), 6) << ", ";
+      ss << formatFloat(inner[i].getX(), prec) << " "
+         << formatFloat(inner[i].getY(), prec) << ", ";
     }
-    ss << formatFloat(inner.front().getX(), 6) << " "
-       << formatFloat(inner.front().getY(), 6);
+    ss << formatFloat(inner.front().getX(), prec) << " "
+       << formatFloat(inner.front().getY(), prec);
     ss << ")";
   }
   ss << ")";
@@ -688,7 +735,13 @@ inline std::string getWKT(const Polygon<T>& p) {
 
 // _____________________________________________________________________________
 template <typename T>
-inline std::string getWKT(const std::vector<Polygon<T>>& ls) {
+inline std::string getWKT(const Polygon<T>& p) {
+  return getWKT(p, 6);
+}
+
+// _____________________________________________________________________________
+template <typename T>
+inline std::string getWKT(const std::vector<Polygon<T>>& ls, uint16_t prec) {
   std::stringstream ss;
   ss << "MULTIPOLYGON (";
 
@@ -696,21 +749,21 @@ inline std::string getWKT(const std::vector<Polygon<T>>& ls) {
     if (j) ss << ", ";
     ss << "((";
     for (size_t i = 0; i < ls[j].getOuter().size(); i++) {
-      ss << formatFloat(ls[j].getOuter()[i].getX(), 6) << " "
-         << formatFloat(ls[j].getOuter()[i].getY(), 6) << ", ";
+      ss << formatFloat(ls[j].getOuter()[i].getX(), prec) << " "
+         << formatFloat(ls[j].getOuter()[i].getY(), prec) << ", ";
     }
-    ss << formatFloat(ls[j].getOuter().front().getX(), 6) << " "
-       << formatFloat(ls[j].getOuter().front().getY(), 6);
+    ss << formatFloat(ls[j].getOuter().front().getX(), prec) << " "
+       << formatFloat(ls[j].getOuter().front().getY(), prec);
     ss << ")";
 
     for (const auto& inner : ls[j].getInners()) {
       ss << ", (";
       for (size_t i = 0; i < inner.size(); i++) {
-        ss << formatFloat(inner[i].getX(), 6) << " "
-           << formatFloat(inner[i].getY(), 6) << ", ";
+        ss << formatFloat(inner[i].getX(), prec) << " "
+           << formatFloat(inner[i].getY(), prec) << ", ";
       }
-      ss << formatFloat(inner.front().getX(), 6) << " "
-         << formatFloat(inner.front().getY(), 6);
+      ss << formatFloat(inner.front().getX(), prec) << " "
+         << formatFloat(inner.front().getY(), prec);
       ss << ")";
     }
     ss << ")";
@@ -718,6 +771,39 @@ inline std::string getWKT(const std::vector<Polygon<T>>& ls) {
 
   ss << ")";
   return ss.str();
+}
+
+// _____________________________________________________________________________
+template <typename T>
+inline std::string getWKT(const std::vector<Polygon<T>>& ls) {
+  return getWKT(ls, 6);
+}
+
+// _____________________________________________________________________________
+template <typename T>
+inline std::string getWKT(const Collection<T>& coll, uint16_t prec) {
+  std::string ret = "GEOMETRYCOLLECTION (";
+
+  std::string delim = "";
+
+  for (const auto& g : coll) {
+    ret += delim;
+    delim = ", ";
+    if (g.getType() == 0) ret += util::geo::getWKT(g.getPoint(), prec);
+    if (g.getType() == 1) ret += util::geo::getWKT(g.getLine(), prec);
+    if (g.getType() == 2) ret += util::geo::getWKT(g.getPolygon(), prec);
+    if (g.getType() == 3) ret += util::geo::getWKT(g.getMultiLine(), prec);
+    if (g.getType() == 4) ret += util::geo::getWKT(g.getMultiPolygon(), prec);
+    if (g.getType() == 5) ret += util::geo::getWKT(g.getCollection(), prec);
+  }
+
+  return ret + ")";
+}
+
+// _____________________________________________________________________________
+template <typename T>
+inline std::string getWKT(const Collection<T>& coll) {
+  return getWKT(coll, 6);
 }
 
 // _____________________________________________________________________________
@@ -2781,8 +2867,84 @@ inline double dist(const Point<T>& p1, const Point<T>& p2) {
 
 // _____________________________________________________________________________
 template <typename T>
-inline double len(const Point<T>& g) {
-  UNUSED(g);
+inline size_t numPoints(const Point<T>&) {
+  return 1;
+}
+
+// _____________________________________________________________________________
+template <typename T>
+inline size_t numPoints(const Line<T>& l) {
+  return l.size();
+}
+
+// _____________________________________________________________________________
+template <typename T>
+inline size_t numPoints(const Polygon<T>& p) {
+  return 0;
+  size_t ret = p.getOuter().size();
+  for (const auto& i : p.getInners()) ret += i.size();
+  return ret;
+}
+
+// _____________________________________________________________________________
+template <template <typename> class Geometry, typename T>
+inline size_t numPoints(const std::vector<Geometry<T>>& pol) {
+  size_t ret = 0;
+  for (const auto& g : pol) ret += numPoints(g);
+  return ret;
+}
+
+// _____________________________________________________________________________
+template <typename T>
+inline size_t numPoints(const Collection<T>& collection) {
+  size_t ret = 0;
+  for (const auto& g : collection) {
+    if (g.getType() == 0) ret += numPoints(g.getPoint());
+    if (g.getType() == 1) ret += numPoints(g.getLine());
+    if (g.getType() == 2) ret += numPoints(g.getPolygon());
+    if (g.getType() == 3) ret += numPoints(g.getMultiLine());
+    if (g.getType() == 4) ret += numPoints(g.getMultiPolygon());
+    if (g.getType() == 5) ret += numPoints(g.getCollection());
+  }
+  return ret;
+}
+
+// _____________________________________________________________________________
+template <typename T>
+inline bool empty(const Point<T>&) {
+  return false;
+}
+
+// _____________________________________________________________________________
+template <typename T>
+inline bool empty(const Line<T>& g) {
+  return g.empty();
+}
+
+// _____________________________________________________________________________
+template <typename T>
+inline bool empty(const Polygon<T>& g) {
+  return g.getOuter().empty() && g.getInners().empty();
+}
+
+// _____________________________________________________________________________
+template <template <typename> class Geometry, typename T>
+inline size_t empty(const std::vector<Geometry<T>>& pol) {
+  for (const auto& g : pol) {
+    if (!empty(g)) return false;
+  }
+  return true;
+}
+
+// _____________________________________________________________________________
+template <typename T>
+inline bool empty(const Collection<T>& g) {
+  return g.empty();
+}
+
+// _____________________________________________________________________________
+template <typename T>
+inline double len(const Point<T>&) {
   return 0;
 }
 
@@ -2791,6 +2953,19 @@ template <typename T>
 inline double len(const Line<T>& g) {
   double ret = 0;
   for (size_t i = 1; i < g.size(); i++) ret += dist(g[i - 1], g[i]);
+  return ret;
+}
+
+// _____________________________________________________________________________
+template <typename T>
+inline double len(const Polygon<T>& g) {
+  double ret = 0;
+  for (size_t i = 1; i < g.getOuter().size(); i++)
+    ret += dist(g.getOuter()[i - 1], g.getOuter()[i]);
+  for (const auto& inner : g.getInners()) {
+    for (size_t i = 1; i < inner.size(); i++)
+      ret += dist(inner[i - 1], inner[i]);
+  }
   return ret;
 }
 
@@ -2812,6 +2987,29 @@ inline double len(const XSortedLine<T>& g) {
 template <typename T>
 inline double len(const LineSegment<T>& g) {
   return dist(g.first, g.second);
+}
+
+// _____________________________________________________________________________
+template <template <typename> class Geometry, typename T>
+inline size_t len(const std::vector<Geometry<T>>& pol) {
+  double ret = 0;
+  for (const auto& g : pol) ret += len(g);
+  return ret;
+}
+
+// _____________________________________________________________________________
+template <typename T>
+inline double len(const Collection<T>& collection) {
+  double ret = 0;
+  for (const auto& g : collection) {
+    if (g.getType() == 0) ret += len(g.getPoint());
+    if (g.getType() == 1) ret += len(g.getLine());
+    if (g.getType() == 2) ret += len(g.getPolygon());
+    if (g.getType() == 3) ret += len(g.getMultiLine());
+    if (g.getType() == 4) ret += len(g.getMultiPolygon());
+    if (g.getType() == 5) ret += len(g.getCollection());
+  }
+  return ret;
 }
 
 // _____________________________________________________________________________
@@ -2853,29 +3051,25 @@ inline bool longerThan(const Line<T>& a, const Line<T>& b, double d) {
 
 // _____________________________________________________________________________
 template <typename T>
-inline Point<T> simplify(const Point<T>& g, double d) {
-  UNUSED(d);
+inline Point<T> simplify(const Point<T>& g, double) {
   return g;
 }
 
 // _____________________________________________________________________________
 template <typename T>
-inline LineSegment<T> simplify(const LineSegment<T>& g, double d) {
-  UNUSED(d);
+inline LineSegment<T> simplify(const LineSegment<T>& g, double) {
   return g;
 }
 
 // _____________________________________________________________________________
 template <typename T>
-inline Box<T> simplify(const Box<T>& g, double d) {
-  UNUSED(d);
+inline Box<T> simplify(const Box<T>& g, double) {
   return g;
 }
 
 // _____________________________________________________________________________
 template <typename T>
-inline RotatedBox<T> simplify(const RotatedBox<T>& g, double d) {
-  UNUSED(d);
+inline RotatedBox<T> simplify(const RotatedBox<T>& g, double) {
   return g;
 }
 
@@ -2907,10 +3101,46 @@ inline Line<T> simplify(const Line<T>& g, double d) {
 // _____________________________________________________________________________
 template <typename T>
 inline Polygon<T> simplify(const Polygon<T>& g, double d) {
-  auto simple = simplify(g, d);
+  auto simple = simplify(g.getOuter(), d);
   std::rotate(simple.begin(), simple.begin() + simple.size() / 2, simple.end());
   simple = simplify(simple, d);
-  return Polygon<T>(simple);
+  Polygon<T> ret(simple);
+
+  for (const auto& inner : g.getInners()) {
+    auto simple = simplify(inner, d);
+    std::rotate(simple.begin(), simple.begin() + simple.size() / 2,
+                simple.end());
+    simple = simplify(simple, d);
+    ret.getInners().push_back(simple);
+  }
+
+  return ret;
+}
+
+// _____________________________________________________________________________
+template <template <typename> class Geometry, typename T>
+inline std::vector<Geometry<T>> simplify(const std::vector<Geometry<T>>& pol,
+                                         double d) {
+  std::vector<Geometry<T>> ret;
+  ret.reserve(pol.size());
+  for (const auto& g : pol) ret.push_back(simplify(g, d));
+  return ret;
+}
+
+// _____________________________________________________________________________
+template <typename T>
+inline Collection<T> simplify(const Collection<T>& collection, double d) {
+  Collection<T> ret;
+  for (const auto& g : collection) {
+    if (g.getType() == 0) ret.push_back(simplify(g.getPoint(), d));
+    if (g.getType() == 1) ret.push_back(simplify(g.getLine(), d));
+    if (g.getType() == 2) ret.push_back(simplify(g.getPolygon(), d));
+    if (g.getType() == 3) ret.push_back(simplify(g.getMultiLine(), d));
+    if (g.getType() == 4) ret.push_back(simplify(g.getMultiPolygon(), d));
+    if (g.getType() == 5) ret.push_back(simplify(g.getCollection(), d));
+  }
+
+  return ret;
 }
 
 // _____________________________________________________________________________
@@ -3031,7 +3261,7 @@ inline RotatedBox<T> getOrientedEnvelope(const std::vector<Geometry<T>>& pol) {
   double rotateAngle = 0;
 
   std::vector<double> angles;
-  ;
+
   angles.reserve(hull.size());
 
   for (size_t i = 1; i < hull.size(); i++) {
@@ -3075,6 +3305,21 @@ inline RotatedBox<T> getOrientedEnvelope(const std::vector<Geometry<T>>& pol) {
 template <template <typename> class Geometry, typename T>
 inline RotatedBox<T> getOrientedEnvelope(const Geometry<T>& pol) {
   return getOrientedEnvelope(std::vector<Geometry<T>>{pol});
+}
+
+// _____________________________________________________________________________
+template <typename T>
+inline RotatedBox<T> getOrientedEnvelope(const Collection<T>& collection) {
+  MultiPolygon<T> p;
+  for (const auto& g : collection) {
+    if (g.getType() == 0) p.push_back(convexHull(g.getPoint()));
+    if (g.getType() == 1) p.push_back(convexHull(g.getLine()));
+    if (g.getType() == 2) p.push_back(convexHull(g.getPolygon()));
+    if (g.getType() == 3) p.push_back(convexHull(g.getMultiLine()));
+    if (g.getType() == 4) p.push_back(convexHull(g.getMultiPolygon()));
+    if (g.getType() == 5) p.push_back(convexHull(g.getCollection()));
+  }
+  return getOrientedEnvelope(p);
 }
 
 // _____________________________________________________________________________
@@ -3143,6 +3388,14 @@ template <template <typename> class Geometry, typename T>
 inline Box<T> getBoundingBox(const std::vector<Geometry<T>>& multigeo) {
   Box<T> b;
   b = extendBox(multigeo, b);
+  return b;
+}
+
+// _____________________________________________________________________________
+template <typename T>
+inline Box<T> getBoundingBox(const Collection<T>& coll) {
+  Box<T> b;
+  b = extendBox(coll, b);
   return b;
 }
 
@@ -3302,6 +3555,22 @@ inline Polygon<T> convexHull(const MultiLine<T>& ls) {
 
 // _____________________________________________________________________________
 template <typename T>
+inline Polygon<T> convexHull(const Collection<T>& collection) {
+  MultiPolygon<T> p;
+  for (const auto& g : collection) {
+    if (g.getType() == 0) p.push_back(convexHull(g.getPoint()));
+    if (g.getType() == 1) p.push_back(convexHull(g.getLine()));
+    if (g.getType() == 2) p.push_back(convexHull(g.getPolygon()));
+    if (g.getType() == 3) p.push_back(convexHull(g.getMultiLine()));
+    if (g.getType() == 4) p.push_back(convexHull(g.getMultiPolygon()));
+    if (g.getType() == 5) p.push_back(convexHull(g.getCollection()));
+  }
+
+  return convexHull(p);
+}
+
+// _____________________________________________________________________________
+template <typename T>
 inline Box<T> extendBox(const Line<T>& l, Box<T> b) {
   for (const auto& p : l) b = extendBox(p, b);
   return b;
@@ -3325,6 +3594,20 @@ inline Box<T> extendBox(const Polygon<T>& ls, Box<T> b) {
 template <template <typename> class Geometry, typename T>
 inline Box<T> extendBox(const std::vector<Geometry<T>>& multigeom, Box<T> b) {
   for (const auto& g : multigeom) b = extendBox(g, b);
+  return b;
+}
+
+// _____________________________________________________________________________
+template <typename T>
+inline Box<T> extendBox(const Collection<T>& collection, Box<T> b) {
+  for (const auto& g : collection) {
+    if (g.getType() == 0) b = extendBox(g.getPoint(), b);
+    if (g.getType() == 1) b = extendBox(g.getLine(), b);
+    if (g.getType() == 2) b = extendBox(g.getPolygon(), b);
+    if (g.getType() == 3) b = extendBox(g.getMultiLine(), b);
+    if (g.getType() == 4) b = extendBox(g.getMultiPolygon(), b);
+    if (g.getType() == 5) b = extendBox(g.getCollection(), b);
+  }
   return b;
 }
 
@@ -3505,22 +3788,19 @@ Line<T> average(const std::vector<const Line<T>*>& lines,
 
 // _____________________________________________________________________________
 template <typename T>
-inline double area(const Point<T>& b) {
-  UNUSED(b);
+inline double area(const Point<T>&) {
   return 0;
 }
 
 // _____________________________________________________________________________
 template <typename T>
-inline double area(const LineSegment<T>& b) {
-  UNUSED(b);
+inline double area(const LineSegment<T>&) {
   return 0;
 }
 
 // _____________________________________________________________________________
 template <typename T>
-inline double area(const Line<T>& b) {
-  UNUSED(b);
+inline double area(const Line<T>&) {
   return 0;
 }
 
