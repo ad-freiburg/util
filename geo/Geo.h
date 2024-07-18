@@ -559,7 +559,7 @@ inline Polygon<T> polygonFromWKT(std::string wkt) {
 // _____________________________________________________________________________
 template <typename T>
 inline std::string getWKT(const Point<T>& p, uint16_t prec) {
-  return std::string("POINT (") + formatFloat(p.getX(), prec) + " " +
+  return std::string("POINT(") + formatFloat(p.getX(), prec) + " " +
          formatFloat(p.getY(), prec) + ")";
 }
 
@@ -573,7 +573,7 @@ inline std::string getWKT(const Point<T>& p) {
 template <typename T>
 inline std::string getWKT(const std::vector<Point<T>>& p, uint16_t prec) {
   std::stringstream ss;
-  ss << "MULTIPOINT (";
+  ss << "MULTIPOINT(";
   for (size_t i = 0; i < p.size(); i++) {
     if (i) ss << ", ";
     ss << "(" << formatFloat(p.getX(), prec) << " " << formatFloat(p.getY(), prec)
@@ -593,7 +593,7 @@ inline std::string getWKT(const std::vector<Point<T>>& p) {
 template <typename T>
 inline std::string getWKT(const Line<T>& l, uint16_t prec) {
   std::stringstream ss;
-  ss << "LINESTRING (";
+  ss << "LINESTRING(";
   for (size_t i = 0; i < l.size(); i++) {
     if (i) ss << ", ";
     ss << formatFloat(l[i].getX(), prec) << " " << formatFloat(l[i].getY(), prec);
@@ -612,7 +612,7 @@ inline std::string getWKT(const Line<T>& l) {
 template <typename T>
 inline std::string getWKT(const std::vector<Line<T>>& ls, uint16_t prec) {
   std::stringstream ss;
-  ss << "MULTILINESTRING (";
+  ss << "MULTILINESTRING(";
 
   for (size_t j = 0; j < ls.size(); j++) {
     if (j) ss << ", ";
@@ -639,7 +639,7 @@ inline std::string getWKT(const std::vector<Line<T>>& ls) {
 template <typename T>
 inline std::string getWKT(const XSortedPolygon<T>& ls, uint16_t prec) {
   std::stringstream ss;
-  ss << "MULTILINESTRING (";
+  ss << "MULTILINESTRING(";
 
   for (size_t j = 0; j < ls.getOuter().rawRing().size(); j++) {
     if (ls.getOuter().rawRing()[j].out()) continue;
@@ -685,7 +685,7 @@ inline std::string getWKT(const LineSegment<T>& l) {
 template <typename T>
 inline std::string getWKT(const Box<T>& l, uint16_t prec) {
   std::stringstream ss;
-  ss << "POLYGON ((";
+  ss << "POLYGON((";
   ss << formatFloat(l.getLowerLeft().getX(), prec) << " "
      << formatFloat(l.getLowerLeft().getY(), prec);
   ss << ", " << formatFloat(l.getUpperRight().getX(), prec) << " "
@@ -710,7 +710,7 @@ inline std::string getWKT(const Box<T>& l) {
 template <typename T>
 inline std::string getWKT(const Polygon<T>& p, uint16_t prec) {
   std::stringstream ss;
-  ss << "POLYGON ((";
+  ss << "POLYGON((";
   for (size_t i = 0; i < p.getOuter().size(); i++) {
     ss << formatFloat(p.getOuter()[i].getX(), prec) << " "
        << formatFloat(p.getOuter()[i].getY(), prec) << ", ";
@@ -743,7 +743,7 @@ inline std::string getWKT(const Polygon<T>& p) {
 template <typename T>
 inline std::string getWKT(const std::vector<Polygon<T>>& ls, uint16_t prec) {
   std::stringstream ss;
-  ss << "MULTIPOLYGON (";
+  ss << "MULTIPOLYGON(";
 
   for (size_t j = 0; j < ls.size(); j++) {
     if (j) ss << ", ";
@@ -782,7 +782,7 @@ inline std::string getWKT(const std::vector<Polygon<T>>& ls) {
 // _____________________________________________________________________________
 template <typename T>
 inline std::string getWKT(const Collection<T>& coll, uint16_t prec) {
-  std::string ret = "GEOMETRYCOLLECTION (";
+  std::string ret = "GEOMETRYCOLLECTION(";
 
   std::string delim = "";
 
