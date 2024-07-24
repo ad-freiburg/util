@@ -23,23 +23,29 @@ class JobQueue {
     return _jobs.size();
   }
 
-  void add(const T& job) {
+  void add(const T &job) {
     std::unique_lock<std::mutex> lockWait(_mutWait);
-    _notFull.wait(lockWait, [this] { return _jobs.size() < _maxSize; });
+    _notFull.wait(lockWait, [this] {
+      std::unique_lock<std::mutex> lock(_mut);
+      return _jobs.size() < _maxSize;
+    });
     {
-    std::unique_lock<std::mutex> lock(_mut);
-    _jobs.push(job);
+      std::unique_lock<std::mutex> lock(_mut);
+      _jobs.push(job);
     }
     _hasNew.notify_one();
   }
 
-  void add(T&& job) {
+  void add(T &&job) {
     std::unique_lock<std::mutex> lockWait(_mutWait);
-    _notFull.wait(lockWait, [this] { return _jobs.size() < _maxSize; });
+    _notFull.wait(lockWait, [this] {
+      std::unique_lock<std::mutex> lock(_mut);
+      return _jobs.size() < _maxSize;
+    });
 
     {
-    std::unique_lock<std::mutex> lock(_mut);
-    _jobs.push(std::move(job));
+      std::unique_lock<std::mutex> lock(_mut);
+      _jobs.push(std::move(job));
     }
     _hasNew.notify_one();
   }
@@ -49,8 +55,10 @@ class JobQueue {
     {
       std::unique_lock<std::mutex> lockWaitHave(_mutWaitHave);
       // wait until a job arrives, but only block iff we do not have job
-      _hasNew.wait(lockWaitHave, [this] { return !_jobs.empty(); });
-
+      _hasNew.wait(lockWaitHave, [this] {
+        std::unique_lock<std::mutex> lock(_mut);
+        return !_jobs.empty();
+      });
 
       std::unique_lock<std::mutex> lock(_mut);
       next = _jobs.front();
@@ -59,8 +67,10 @@ class JobQueue {
 
     // notify that we are not full anymore, but only if this is not the
     // DONE element
-    if (next != T()) _notFull.notify_one();
-    else _hasNew.notify_one();
+    if (next != T())
+      _notFull.notify_one();
+    else
+      _hasNew.notify_one();
     return next;
   }
 
@@ -80,4 +90,4 @@ class JobQueue {
   size_t _maxSize;
 };
 }  // namespace util
- #endif
+#endif
