@@ -24,29 +24,37 @@ class JobQueue {
   }
 
   void add(const T &job) {
+    std::cerr << "wait 1" << std::endl;
     std::unique_lock<std::mutex> lockWait(_mutWait);
     _notFull.wait(lockWait, [this] {
+      std::cerr << "wait 2" << std::endl;
       std::unique_lock<std::mutex> lock(_mut);
       return _jobs.size() < _maxSize;
     });
     {
+      std::cerr << "wait 3" << std::endl;
       std::unique_lock<std::mutex> lock(_mut);
       _jobs.push(job);
     }
+    std::cerr << "notify" << std::endl;
     _hasNew.notify_one();
   }
 
   void add(T &&job) {
+    std::cerr << "wait 1" << std::endl;
     std::unique_lock<std::mutex> lockWait(_mutWait);
     _notFull.wait(lockWait, [this] {
+      std::cerr << "wait 2" << std::endl;
       std::unique_lock<std::mutex> lock(_mut);
       return _jobs.size() < _maxSize;
     });
 
     {
+      std::cerr << "wait 3" << std::endl;
       std::unique_lock<std::mutex> lock(_mut);
       _jobs.push(std::move(job));
     }
+    std::cerr << "notify" << std::endl;
     _hasNew.notify_one();
   }
 
