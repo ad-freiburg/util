@@ -30,12 +30,14 @@ class AnyGeometry {
   AnyGeometry(const MultiLine<T>& ml) : _multiline(ml), _type(3){};
   AnyGeometry(const MultiPolygon<T>& mp) : _multipolygon(mp), _type(4){};
   AnyGeometry(const Collection<T>& c) : _collection(c), _type(5){};
+  AnyGeometry(const MultiPoint<T>& p) : _multipoint(p), _type(6){};
 
   const Point<T>& getPoint() const { return _point; }
   const Line<T>& getLine() const { return _line; }
   const Polygon<T>& getPolygon() const { return _polygon; }
   const MultiLine<T>& getMultiLine() const { return _multiline; }
   const MultiPolygon<T>& getMultiPolygon() const { return _multipolygon; }
+  const MultiPoint<T>& getMultiPoint() const { return _multipoint; }
   const Collection<T>& getCollection() const { return _collection; }
 
   uint8_t getType() const { return _type; }
@@ -47,6 +49,7 @@ class AnyGeometry {
   MultiLine<T> _multiline;
   MultiPolygon<T> _multipolygon;
   Collection<T> _collection;
+  MultiPoint<T> _multipoint;
   uint8_t _type;
 };
 
@@ -60,6 +63,7 @@ inline bool operator==(const AnyGeometry<T>& a, const AnyGeometry<T>& b) {
   if (a.getType() == 3) return a.getMultiLine() == b.getMultiLine();
   if (a.getType() == 4) return a.getMultiPolygon() == b.getMultiPolygon();
   if (a.getType() == 5) return a.getCollection() == b.getCollection();
+  if (a.getType() == 6) return a.getMultiPoint() == b.getMultiPoint();
 }
 
 }  // namespace geo
