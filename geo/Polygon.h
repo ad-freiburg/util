@@ -309,6 +309,21 @@ class XSortedRing {
     std::sort(_ring.begin(), _ring.end());
   }
 
+  bool operator==(const XSortedRing<T>& other) const {
+    if (_ring.size() != other._ring.size()) return false;
+    if (_maxSegLen != other._maxSegLen) return false;
+
+    for (size_t i = 0; i < _ring.size(); i++) {
+      if (_ring[i] != other._ring[i]) return false;
+    }
+
+    return true;
+  }
+
+  bool operator!=(const XSortedRing<T>& other) const {
+    return !((*this) == other);
+  }
+
   T getMaxSegLen() const { return _maxSegLen; }
   void setMaxSegLen(T l) { _maxSegLen = l; }
 
@@ -364,6 +379,20 @@ class XSortedPolygon {
     }
 
     std::sort(_boxIdx.begin(), _boxIdx.end());
+  }
+
+  bool operator==(const XSortedPolygon<T>& other) const {
+    if (_outer.rawRing().size() != other._outer.rawRing().size()) return false;
+    if (_inners.size() != other._inners.size()) return false;
+    if (_innerBoxes != other._innerBoxes) return false;
+
+    if (_outer != other._outer) return false;
+
+    for (size_t i = 0; i < _inners.size(); i++) {
+      if (_inners[i] != other._inners[i]) return false;
+    }
+
+    return true;
   }
 
   bool empty() const { return _outer.rawRing().size() == 0; };

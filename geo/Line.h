@@ -150,6 +150,17 @@ struct XSortedTuple {
 };
 
 template <typename T>
+bool operator==(const XSortedTuple<T>& a, const XSortedTuple<T>& b) {
+  return a.p == b.p && a.other == b.other && a.outAngle == b.outAngle &&
+         a.inAngle == b.inAngle && a.vals == b.vals;
+}
+
+template <typename T>
+bool operator!=(const XSortedTuple<T>& a, const XSortedTuple<T>& b) {
+  return !(a == b);
+}
+
+template <typename T>
 bool operator<(const XSortedTuple<T>& a, const XSortedTuple<T>& b) {
   if (a.p.getX() < b.p.getX()) return true;
   if (a.p.getX() == b.p.getX()) return {!a.out() && b.out()};
@@ -181,8 +192,7 @@ bool operator<(const LineSegment<T>& a, const LineSegment<T>& b) {
   // avoid transitivity problems for this operator
   if (as == bf && as.getX() != af.getX() && bs.getX() != bf.getX())
     return false;
-  if (bs == af && as.getX() != af.getX() && bs.getX() != bf.getX())
-    return true;
+  if (bs == af && as.getX() != af.getX() && bs.getX() != bf.getX()) return true;
 
   if (af.getX() < bf.getX() || bf.getX() == bs.getX()) {
     // a was first in active set
@@ -347,6 +357,10 @@ class XSortedLine {
                   2 * M_PI,   true};
     }
     _maxSegLen = fabs(line.first.getX() - line.second.getX());
+  }
+
+  bool operator==(const XSortedLine<T>& other) const {
+    return _maxSegLen == other._maxSegLen && _line == other._line;
   }
 
   size_t size() const { return _line.size(); }
