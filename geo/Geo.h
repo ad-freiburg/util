@@ -165,18 +165,74 @@ inline Point<T> centroid(const LineSegment<T> ls) {
 // _____________________________________________________________________________
 template <typename T>
 inline Point<T> centroid(const Line<T> ls) {
-  double x = 0, y = 0;
-  for (const auto& p : ls) {
-    x += p.getX();
-    y += p.getY();
+  if (ls.size() == 0) return {NAN, NAN};
+  if (ls.size() == 1) return ls[0];
+
+  double x = 0, y = 0, sum = 0;
+  for (size_t i = 1; i < ls.size(); i++) {
+    double l = len(LineSegment<T>{ls[i - 1], ls[i]});
+    sum += l;
+    x += l * ((ls[i - 1].getX() + ls[i].getX()) / 2);
+    y += l * ((ls[i - 1].getY() + ls[i].getY()) / 2);
   }
-  return Point<T>(x / T(ls.size()), y / T(ls.size()));
+
+  if (sum == 0) return ls[0];
+
+  return Point<T>(x / sum, y / sum);
 }
 
 // _____________________________________________________________________________
 template <typename T>
-inline Point<T> centroid(const Polygon<T> ls) {
-  return centroid(ls.getOuter());
+inline Point<T> ringCentroid(const Line<T> ls) {
+  if (ls.size() == 0) return {NAN, NAN};
+  if (ls.size() == 1) return ls[0];
+
+  double x = 0, y = 0, ta = 0;
+
+  size_t j = ls.size() - 1;
+  for (size_t i = 0; i < ls.size(); i++) {
+    double a =
+        1.0 * ls[j].getX() * ls[i].getY() - 1.0 * ls[i].getX() * ls[j].getY();
+    ta += a;
+    x += a * (ls[j].getX() + ls[i].getX());
+    y += a * (ls[j].getY() + ls[i].getY());
+    j = i;
+  }
+
+  if (ta == 0) return centroid(ls);
+
+  return Point<T>(x / (3.0 * ta), y / (3.0 * ta));
+}
+
+// _____________________________________________________________________________
+template <typename T>
+inline Point<T> centroid(const Polygon<T> o) {
+  if (o.getOuter().size() == 0) return {NAN, NAN};
+  double sumA = 0, x = 0, y = 0;
+
+  double outerArea = ringArea(o.getOuter());
+  if (outerArea == 0) outerArea = len(o.getOuter());  // fallback for lower dim
+
+  // if len and area are 0, return single point
+  if (outerArea == 0) return o.getOuter().front();
+
+  Point<T> outerCentroid = ringCentroid(o.getOuter());
+
+  sumA += outerArea;
+  x += outerCentroid.getX() * outerArea;
+  y += outerCentroid.getY() * outerArea;
+
+  for (const auto& inner : o.getInners()) {
+    double area = -ringArea(inner);
+    if (area == 0) continue;
+    Point<T> c = ringCentroid(inner);
+    sumA += area;
+
+    x += c.getX() * area;
+    y += c.getY() * area;
+  }
+
+  return Point<T>(x / sumA, y / sumA);
 }
 
 // _____________________________________________________________________________
@@ -186,11 +242,141 @@ inline Point<T> centroid(const Box<T> box) {
 }
 
 // _____________________________________________________________________________
-template <typename T, template <typename> class Geometry>
-inline Point<T> centroid(std::vector<Geometry<T>> multigeo) {
-  Line<T> a;
-  for (const auto& g : multigeo) a.push_back(centroid(g));
-  return centroid(a);
+template <typename T>
+inline Point<T> centroid(const std::vector<Point<T>>& multigeo) {
+  double sumA = 0, x = 0, y = 0;
+
+  for (const auto& g : multigeo) {
+    Point<T> c = centroid(g);
+    sumA += 1;
+    x += c.getX();
+    y += c.getY();
+  }
+
+  return Point<T>(x / sumA, y / sumA);
+}
+
+// _____________________________________________________________________________
+template <typename T>
+inline Point<T> centroid(const std::vector<Line<T>>& multigeo) {
+  double sumA = 0, x = 0, y = 0;
+
+  for (const auto& g : multigeo) {
+    double w = len(g);
+    Point<T> c = centroid(g);
+    sumA += w;
+    x += c.getX() * w;
+    y += c.getY() * w;
+  }
+
+  return Point<T>(x / sumA, y / sumA);
+}
+
+// _____________________________________________________________________________
+template <typename T>
+inline Point<T> centroid(const std::vector<LineSegment<T>>& multigeo) {
+  double sumA = 0, x = 0, y = 0;
+
+  for (const auto& g : multigeo) {
+    double w = len(g);
+    Point<T> c = centroid(g);
+    sumA += w;
+    x += c.getX() * w;
+    y += c.getY() * w;
+  }
+
+  return Point<T>(x / sumA, y / sumA);
+}
+
+// _____________________________________________________________________________
+template <typename T>
+inline Point<T> centroid(const std::vector<Polygon<T>>& multigeo) {
+  double sumA = 0, x = 0, y = 0;
+
+  if (area(multigeo) > 0) {
+    // dim 3
+    for (const auto& g : multigeo) {
+      double w = area(g);
+      Point<T> c = centroid(g);
+      sumA += w;
+      x += c.getX() * w;
+      y += c.getY() * w;
+    }
+  } else {
+    // dim 2
+    for (const auto& g : multigeo) {
+      double w = len(g);
+      Point<T> c = centroid(g);
+      sumA += w;
+      x += c.getX() * w;
+      y += c.getY() * w;
+    }
+  }
+
+  if (sumA == 0) return centroid(multigeo[0]);
+
+  return Point<T>(x / sumA, y / sumA);
+}
+
+// _____________________________________________________________________________
+template <typename T>
+inline int8_t dimension(const Collection<T>& col) {
+  int8_t dim = 0;
+  for (const auto& g : col) {
+    if (g.getType() == 0 && dim < 1) dim = 1;
+    if (g.getType() == 1 && dim < 2) dim = 2;
+    if (g.getType() == 2 && dim < 3) dim = 3;
+    if (g.getType() == 3 && dim < 2) dim = 2;
+    if (g.getType() == 4 && dim < 3) dim = 3;
+    if (g.getType() == 5) {
+      int8_t ldim = dimension(g.getCollection());
+      if (dim < ldim) dim = ldim;
+    }
+  }
+  return dim;
+}
+
+// _____________________________________________________________________________
+template <typename T>
+inline Point<T> centroid(const Collection<T>& col) {
+  int8_t dim = dimension(col);
+  double sum = 0, x = 0, y = 0;
+
+  if (dim == 0) return Point<T>{NAN, NAN};
+
+  for (const auto& g : col) {
+    double w = 1;
+    if (dim == 2) {
+      if (g.getType() == 0) w = len(g.getPoint());
+      if (g.getType() == 1) w = len(g.getLine());
+      if (g.getType() == 2) w = len(g.getPolygon());
+      if (g.getType() == 3) w = len(g.getMultiLine());
+      if (g.getType() == 4) w = len(g.getMultiPolygon());
+      if (g.getType() == 5) w = len(g.getCollection());
+    }
+    if (dim == 3) {
+      if (g.getType() == 0) w = area(g.getPoint());
+      if (g.getType() == 1) w = area(g.getLine());
+      if (g.getType() == 2) w = area(g.getPolygon());
+      if (g.getType() == 3) w = area(g.getMultiLine());
+      if (g.getType() == 4) w = area(g.getMultiPolygon());
+      if (g.getType() == 5) w = area(g.getCollection());
+    }
+
+    sum += w;
+    Point<T> cen;
+    if (g.getType() == 0) cen = centroid(g.getPoint());
+    if (g.getType() == 1) cen = centroid(g.getLine());
+    if (g.getType() == 2) cen = centroid(g.getPolygon());
+    if (g.getType() == 3) cen = centroid(g.getMultiLine());
+    if (g.getType() == 4) cen = centroid(g.getMultiPolygon());
+    if (g.getType() == 5) cen = centroid(g.getCollection());
+
+    x += cen.getX() * w;
+    y += cen.getY() * w;
+  }
+
+  return Point<T>{x / sum, y / sum};
 }
 
 // _____________________________________________________________________________
@@ -576,8 +762,8 @@ inline std::string getWKT(const std::vector<Point<T>>& p, uint16_t prec) {
   ss << "MULTIPOINT(";
   for (size_t i = 0; i < p.size(); i++) {
     if (i) ss << ", ";
-    ss << "(" << formatFloat(p.getX(), prec) << " " << formatFloat(p.getY(), prec)
-       << ")";
+    ss << "(" << formatFloat(p.getX(), prec) << " "
+       << formatFloat(p.getY(), prec) << ")";
   }
   ss << ")";
   return ss.str();
@@ -596,7 +782,8 @@ inline std::string getWKT(const Line<T>& l, uint16_t prec) {
   ss << "LINESTRING(";
   for (size_t i = 0; i < l.size(); i++) {
     if (i) ss << ", ";
-    ss << formatFloat(l[i].getX(), prec) << " " << formatFloat(l[i].getY(), prec);
+    ss << formatFloat(l[i].getX(), prec) << " "
+       << formatFloat(l[i].getY(), prec);
   }
   ss << ")";
   return ss.str();
@@ -3809,6 +3996,33 @@ template <typename T>
 inline double area(const Box<T>& b) {
   return (1.0 * b.getUpperRight().getX() - 1.0 * b.getLowerLeft().getX()) *
          (1.0 * b.getUpperRight().getY() - 1.0 * b.getLowerLeft().getY());
+}
+
+// _____________________________________________________________________________
+template <typename T>
+inline double area(const Collection<T>& col) {
+  double ret = 0;
+  for (const auto& g : col) {
+    if (g.getType() == 0) ret += area(g.getPoint());
+    if (g.getType() == 1) ret += area(g.getLine());
+    if (g.getType() == 2) ret += area(g.getPolygon());
+    if (g.getType() == 3) ret += area(g.getMultiLine());
+    if (g.getType() == 4) ret += area(g.getMultiPolygon());
+    if (g.getType() == 5) ret += area(g.getCollection());
+  }
+
+  return ret;
+}
+
+// _____________________________________________________________________________
+template <template <typename> class Geometry, typename T>
+inline double area(const std::vector<Geometry<T>>& gs) {
+  double ret = 0;
+  for (const auto& g : gs) {
+    ret += area(g);
+  }
+
+  return ret;
 }
 
 // _____________________________________________________________________________
