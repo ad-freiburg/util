@@ -23,41 +23,59 @@ class GeoJsonOutput {
   GeoJsonOutput(std::ostream& str, json::Val attrs);
   ~GeoJsonOutput();
 
-  template <typename T>
-  void print(const Point<T>& p, json::Val attrs);
+  template <template <typename> class Geometry, typename T>
+  void print(const Geometry<T>& g, json::Val attrs);
+
+  template <template <typename> class Geometry, typename T>
+  void print(const std::vector<Geometry<T>>& g, json::Val attrs);
 
   template <typename T>
-  void print(const MultiPoint<T>& ps, json::Val attrs);
+  void printGeom(const Point<T>& p);
 
   template <typename T>
-  void print(const Line<T>& l, json::Val attrs);
+  void printGeom(const MultiPoint<T>& ps);
 
   template <typename T>
-  void print(const MultiLine<T>& l, json::Val attrs);
+  void printGeom(const Line<T>& l);
 
   template <typename T>
-  void print(const Polygon<T>& l, json::Val attrs);
+  void printGeom(const MultiLine<T>& l);
 
   template <typename T>
-  void print(const MultiPolygon<T>& l, json::Val attrs);
+  void printGeom(const Polygon<T>& l);
 
   template <typename T>
-  void printLatLng(const Point<T>& p, json::Val attrs);
+  void printGeom(const MultiPolygon<T>& l);
 
   template <typename T>
-  void printLatLng(const MultiPoint<T>& ps, json::Val attrs);
+  void printGeom(const Collection<T>& l);
+
+  template <template <typename> class Geometry, typename T>
+  void printLatLng(const Geometry<T>& g, json::Val attrs);
+
+  template <template <typename> class Geometry, typename T>
+  void printLatLng(const std::vector<Geometry<T>>& g, json::Val attrs);
 
   template <typename T>
-  void printLatLng(const Line<T>& l, json::Val attrs);
+  void printGeomLatLng(const Point<T>& p);
 
   template <typename T>
-  void printLatLng(const MultiLine<T>& l, json::Val attrs);
+  void printGeomLatLng(const MultiPoint<T>& ps);
 
   template <typename T>
-  void printLatLng(const Polygon<T>& l, json::Val attrs);
+  void printGeomLatLng(const Line<T>& l);
 
   template <typename T>
-  void printLatLng(const MultiPolygon<T>& l, json::Val attrs);
+  void printGeomLatLng(const MultiLine<T>& l);
+
+  template <typename T>
+  void printGeomLatLng(const Polygon<T>& l);
+
+  template <typename T>
+  void printGeomLatLng(const MultiPolygon<T>& l);
+
+  template <typename T>
+  void printGeomLatLng(const Collection<T>& l);
 
   void flush();
 
