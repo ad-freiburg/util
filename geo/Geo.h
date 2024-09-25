@@ -3062,15 +3062,15 @@ inline bool empty(const Collection<T>& g) {
 template <typename T>
 inline MultiPoint<T> multiPointFromWKT(std::string wkt) {
   wkt = util::normalizeWhiteSpace(util::trim(wkt));
-  for (size_t i = 0; i < 11;i++) wkt[i] = toupper(wkt[i]);
+  for (size_t i = 0; i < 11; i++) wkt[i] = toupper(wkt[i]);
   if (wkt.rfind("MULTIPOINT") == 0 || wkt.rfind("MMULTIPOINT") == 0) {
     MultiPoint<T> ret;
     size_t b = wkt.find("(") + 1;
     size_t e = wkt.rfind(")", b);
     if (b > e) throw std::runtime_error("Could not parse WKT");
-		std::string a = wkt.substr(b, e - b);
-		util::replaceAll(a, ")", "");
-		util::replaceAll(a, "(", "");
+    std::string a = wkt.substr(b, e - b);
+    util::replaceAll(a, ")", "");
+    util::replaceAll(a, "(", "");
     auto pairs = util::split(a, ',');
     for (const auto& p : pairs) {
       auto xy = util::split(util::trim(p), ' ');
@@ -3088,7 +3088,7 @@ inline MultiPoint<T> multiPointFromWKT(std::string wkt) {
 template <typename T>
 inline Line<T> lineFromWKT(std::string wkt) {
   wkt = util::normalizeWhiteSpace(util::trim(wkt));
-  for (size_t i = 0; i < 11;i++) wkt[i] = toupper(wkt[i]);
+  for (size_t i = 0; i < 11; i++) wkt[i] = toupper(wkt[i]);
   if (wkt.rfind("LINESTRING") == 0 || wkt.rfind("MLINESTRING") == 0) {
     Line<T> ret;
     size_t b = wkt.find("(") + 1;
@@ -3111,7 +3111,7 @@ inline Line<T> lineFromWKT(std::string wkt) {
 template <typename T>
 inline MultiLine<T> multiLineFromWKT(std::string wkt) {
   wkt = util::normalizeWhiteSpace(util::trim(wkt));
-  for (size_t i = 0; i < 13;i++) wkt[i] = toupper(wkt[i]);
+  for (size_t i = 0; i < 13; i++) wkt[i] = toupper(wkt[i]);
   if (wkt.rfind("MULTILINESTRING") == 0 || wkt.rfind("MMULTILINESTRING") == 0) {
     MultiLine<T> ret;
     size_t b = wkt.find("(") + 1;
@@ -3121,7 +3121,7 @@ inline MultiLine<T> multiLineFromWKT(std::string wkt) {
     auto lines = util::split(wkt.substr(b, e - b), ')');
 
     for (const auto& line : lines) {
-			size_t b = line.find("(") + 1;
+      size_t b = line.find("(") + 1;
       auto pairs = util::split(line.substr(b), ',');
       Line<T> cur;
       for (const auto& p : pairs) {
@@ -3131,7 +3131,7 @@ inline MultiLine<T> multiLineFromWKT(std::string wkt) {
         double y = atof(xy[1].c_str());
         cur.push_back({(T)x, (T)y});
       }
-			ret.push_back(cur);
+      ret.push_back(cur);
     }
 
     return ret;
@@ -3143,7 +3143,7 @@ inline MultiLine<T> multiLineFromWKT(std::string wkt) {
 template <typename T>
 inline MultiPolygon<T> multiPolygonFromWKT(std::string wkt) {
   wkt = util::normalizeWhiteSpace(util::trim(wkt));
-  for (size_t i = 0; i < 13;i++) wkt[i] = toupper(wkt[i]);
+  for (size_t i = 0; i < 13; i++) wkt[i] = toupper(wkt[i]);
   util::replaceAll(wkt, "))", ")!");
   util::replaceAll(wkt, ") )", ")!");
   if (wkt.rfind("MULTIPOLYGON") == 0 || wkt.rfind("MMULTIPOLYGON") == 0) {
@@ -3184,6 +3184,123 @@ inline MultiPolygon<T> multiPolygonFromWKT(std::string wkt) {
         }
       }
     }
+    return ret;
+  }
+  throw std::runtime_error("Could not parse WKT");
+}
+
+// _____________________________________________________________________________
+inline std::vector<size_t> getGeomStarts(const std::string& str) {
+  std::vector<size_t> starts;
+
+  size_t a = 0;
+  while (1) {
+    a = str.find("POINT (", a);
+    if (a == std::string::npos) break;
+    starts.push_back(a);
+    a++;
+  }
+
+  a = 0;
+  while (1) {
+    a = str.find("MULTIPOINT (", a);
+    if (a == std::string::npos) break;
+    starts.push_back(a);
+    a++;
+  }
+
+  a = 0;
+  while (1) {
+    a = str.find("LINESTRING (", a);
+    if (a == std::string::npos) break;
+    starts.push_back(a);
+    a++;
+  }
+
+  a = 0;
+  while (1) {
+    a = str.find("POLYGON (", a);
+    if (a == std::string::npos) break;
+    starts.push_back(a);
+    a++;
+  }
+
+  a = 0;
+  while (1) {
+    a = str.find("MULTIPOLYGON (", a);
+    if (a == std::string::npos) break;
+    starts.push_back(a);
+    a++;
+  }
+
+  a = 0;
+  while (1) {
+    a = str.find("MULTILINESTRING (", a);
+    if (a == std::string::npos) break;
+    starts.push_back(a);
+    a++;
+  }
+
+  starts.push_back(std::string::npos);
+
+  std::sort(starts.begin(), starts.end());
+
+  return starts;
+}
+
+// _____________________________________________________________________________
+template <typename T>
+inline Collection<T> collectionFromWKT(std::string wkt) {
+  // TODO: not very efficient, but does the job for now
+
+  wkt = util::normalizeWhiteSpace(util::trim(wkt));
+  util::replaceAll(wkt, "G(", "G (");
+  util::replaceAll(wkt, "N(", "N (");
+  util::replaceAll(wkt, "T(", "T (");
+  for (size_t i = 0; i < wkt.size(); i++) wkt[i] = toupper(wkt[i]);
+  if (wkt.rfind("GEOMETRYCOLLECTION") == 0 ||
+      wkt.rfind("MGEOMETRYCOLLECTION") == 0) {
+    Collection<T> ret;
+    const auto& starts = getGeomStarts(wkt);
+
+    for (size_t i = 0; i < starts.size() - 1; i++) {
+      try {
+        auto a = wkt.substr(starts[i], starts[i + 1] - starts[i]);
+        ret.push_back(util::geo::pointFromWKT<T>(a));
+      } catch (std::runtime_error& e) {
+      }
+
+      try {
+        auto a = wkt.substr(starts[i], starts[i + 1] - starts[i]);
+        ret.push_back(util::geo::lineFromWKT<T>(a));
+      } catch (std::runtime_error& e) {
+      }
+
+      try {
+        auto a = wkt.substr(starts[i], starts[i + 1] - starts[i]);
+        ret.push_back(util::geo::polygonFromWKT<T>(a));
+      } catch (std::runtime_error& e) {
+      }
+
+      try {
+        auto a = wkt.substr(starts[i], starts[i + 1] - starts[i]);
+        ret.push_back(util::geo::multiPointFromWKT<T>(a));
+      } catch (std::runtime_error& e) {
+      }
+
+      try {
+        auto a = wkt.substr(starts[i], starts[i + 1] - starts[i]);
+        ret.push_back(util::geo::multiLineFromWKT<T>(a));
+      } catch (std::runtime_error& e) {
+      }
+
+      try {
+        auto a = wkt.substr(starts[i], starts[i + 1] - starts[i]);
+        ret.push_back(util::geo::multiPolygonFromWKT<T>(a));
+      } catch (std::runtime_error& e) {
+      }
+    }
+
     return ret;
   }
   throw std::runtime_error("Could not parse WKT");
