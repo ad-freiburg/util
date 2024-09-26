@@ -165,7 +165,7 @@ inline Point<T> centroid(const LineSegment<T> ls) {
 // _____________________________________________________________________________
 template <typename T>
 inline Point<T> centroid(const Line<T> ls) {
-  if (ls.size() == 0) return {NAN, NAN};
+  if (ls.size() == 0) return {0, 0};  // undefined behavior
   if (ls.size() == 1) return ls[0];
 
   double x = 0, y = 0, sum = 0;
@@ -184,7 +184,7 @@ inline Point<T> centroid(const Line<T> ls) {
 // _____________________________________________________________________________
 template <typename T>
 inline Point<T> ringCentroid(const Line<T> ls) {
-  if (ls.size() == 0) return {NAN, NAN};
+  if (ls.size() == 0) return {0, 0};  // undefined behavior
   if (ls.size() == 1) return ls[0];
 
   double x = 0, y = 0, ta = 0;
@@ -207,7 +207,7 @@ inline Point<T> ringCentroid(const Line<T> ls) {
 // _____________________________________________________________________________
 template <typename T>
 inline Point<T> centroid(const Polygon<T> o) {
-  if (o.getOuter().size() == 0) return {NAN, NAN};
+  if (o.getOuter().size() == 0) return {0, 0};  // undefined behavior
   double sumA = 0, x = 0, y = 0;
 
   double outerArea = ringArea(o.getOuter());
@@ -342,7 +342,7 @@ inline Point<T> centroid(const Collection<T>& col) {
   int8_t dim = dimension(col);
   double sum = 0, x = 0, y = 0;
 
-  if (dim == 0) return Point<T>{NAN, NAN};
+  if (dim == 0) return Point<T>{0, 0};  // undefined behavior
 
   for (const auto& g : col) {
     double w = 1;
