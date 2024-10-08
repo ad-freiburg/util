@@ -2186,9 +2186,9 @@ int main(int argc, char** argv) {
     auto a = polygonFromWKT<int>("POLYGON((0 0, 10 0, 10 10, 0 10, 0 0), (4 4, 5 4, 5 5, 4 5, 4 4))");
     auto b = polygonFromWKT<int>("POLYGON((1 1, 9 1, 9 9, 1 9, 1 1), (3 3, 6 3, 6 6, 3 6, 3 3))");
 
-    TEST(geo::getWKT(a), ==, "POLYGON((0 0, 10 0, 10 10, 0 10, 0 0), (4 4, 5 4, 5 5, 4 5, 4 4))");
+    TEST(geo::getWKT(a), ==, "POLYGON((0 0,10 0,10 10,0 10,0 0),(4 4,5 4,5 5,4 5,4 4))");
     TEST(geo::getWKT(b.getOuter().front()), ==, "POINT(1 1)");
-    TEST(geo::getWKT(a.getInners().front()), ==, "LINESTRING(4 4, 5 4, 5 5, 4 5)");
+    TEST(geo::getWKT(a.getInners().front()), ==, "LINESTRING(4 4,5 4,5 5,4 5)");
 
     TEST(geo::contains(b, a));
     TEST(!geo::contains(a, b));
@@ -2209,9 +2209,9 @@ int main(int argc, char** argv) {
     auto a = polygonFromWKT<int>("POLYGON((0 0, 10 0, 10 10, 0 10, 0 0), (4 4, 5 4, 5 5, 4 5, 4 4))");
     auto b = polygonFromWKT<int>("POLYGON((1 1, 9 1, 9 9, 1 9, 1 1), (3 3, 6 3, 6 6, 3 6, 3 3))");
 
-    TEST(geo::getWKT(a), ==, "POLYGON((0 0, 10 0, 10 10, 0 10, 0 0), (4 4, 5 4, 5 5, 4 5, 4 4))");
+    TEST(geo::getWKT(a), ==, "POLYGON((0 0,10 0,10 10,0 10,0 0),(4 4,5 4,5 5,4 5,4 4))");
     TEST(geo::getWKT(b.getOuter().front()), ==, "POINT(1 1)");
-    TEST(geo::getWKT(a.getInners().front()), ==, "LINESTRING(4 4, 5 4, 5 5, 4 5)");
+    TEST(geo::getWKT(a.getInners().front()), ==, "LINESTRING(4 4,5 4,5 5,4 5)");
 
     TEST(geo::contains(b, a));
     TEST(!geo::contains(a, b));
@@ -3924,7 +3924,7 @@ int main(int argc, char** argv) {
   Polygon<double> poly({Point<double>(1, 1), Point<double>(3, 2),
                         Point<double>(4, 3), Point<double>(6, 3),
                         Point<double>(5, 1)});
-  TEST(geo::getWKT(poly), ==, "POLYGON((1 1, 3 2, 4 3, 6 3, 5 1, 1 1))");
+  TEST(geo::getWKT(poly), ==, "POLYGON((1 1,3 2,4 3,6 3,5 1,1 1))");
   TEST(geo::contains(Point<double>(4, 2), poly));
   TEST(!geo::contains(Point<double>(3, 3), poly));
   TEST(geo::contains(Point<double>(1, 1), poly));
@@ -3982,7 +3982,7 @@ int main(int argc, char** argv) {
          approx(1));
 
   TEST(geo::getWKT(multiRotLine) ==
-         "MULTILINESTRING((1 1, 3 3), (1 3, 3 1))");
+         "MULTILINESTRING((1 1,3 3),(1 3,3 1))");
 
   TEST(geo::contains(
       multiRotLine[0],
@@ -4007,9 +4007,9 @@ int main(int argc, char** argv) {
   auto polyy = Polygon<double>({{0, 0}, {3, 4}, {4, 3}});
   MultiPolygon<double> mpoly{polyy, polyy};
 
-  TEST(geo::getWKT(polyy), ==, "POLYGON((0 0, 3 4, 4 3, 0 0))");
+  TEST(geo::getWKT(polyy), ==, "POLYGON((0 0,3 4,4 3,0 0))");
   TEST(geo::getWKT(mpoly) ==
-         "MULTIPOLYGON(((0 0, 3 4, 4 3, 0 0)), ((0 0, 3 4, 4 3, 0 0)))");
+         "MULTIPOLYGON(((0 0,3 4,4 3,0 0)),((0 0,3 4,4 3,0 0)))");
 
   TEST(geo::getWKT(geo::centroid(mpoly)) == geo::getWKT(geo::centroid(polyy)));
 
@@ -4435,10 +4435,83 @@ int main(int argc, char** argv) {
   TEST(geo::dist(geo::pointAtDist(DLine{{0, 0}, {0, 1}, {0, 2}}, 2), DPoint{0, 2}), ==, approx(0));
   TEST(geo::dist(geo::pointAtDist(DLine{{0, 0}, {0, 1}, {0, 2}}, 0), DPoint{0, 0}), ==, approx(0));
 
-  TEST(geo::getWKT(geo::orthoLineAtDist(DLine{{0, 0}, {0, 1}, {0, 2}}, 1, 1)), ==, "LINESTRING(-0.5 1, 0.5 1)");
+  TEST(geo::getWKT(geo::orthoLineAtDist(DLine{{0, 0}, {0, 1}, {0, 2}}, 1, 1)), ==, "LINESTRING(-0.5 1,0.5 1)");
 
-  TEST(geo::getWKT(geo::segment(DLine{{0, 0}, {0, 1}, {0, 2}}, 0, 0.5)), ==, "LINESTRING(0 0, 0 1)");
-  TEST(geo::getWKT(geo::segment(DLine{{0, 0}, {0, 1}, {0, 2}}, 0.5, 1)), ==, "LINESTRING(0 1, 0 2)");
+  TEST(geo::getWKT(geo::segment(DLine{{0, 0}, {0, 1}, {0, 2}}, 0, 0.5)), ==, "LINESTRING(0 0,0 1)");
+  TEST(geo::getWKT(geo::segment(DLine{{0, 0}, {0, 1}, {0, 2}}, 0.5, 1)), ==, "LINESTRING(0 1,0 2)");
+}
+
+{
+  std::stringstream ss;
+  util::geo::output::GeoJsonOutput out(ss);
+
+  Polygon<int> poly{{{1, 1}, {3, 2}, {4, 3}, {6, 3}, {5, 1}, {1, 1}}};
+  Polygon<int> poly3{{{1, 3}, {3, 4}, {4, 5}, {6, 5}, {5, 3}, {1, 3}}};
+
+  out.print(poly, {});
+  out.flush();
+	std::string a = ss.str();
+	replaceAll(a, " ", "");
+	replaceAll(a, "\n", "");
+	TEST(a ,==,"{\"type\":\"FeatureCollection\",\"features\":[{\"type\":\"Feature\",\"geometry\":{\"type\":\"Polygon\",\"coordinates\":[[[1,1],[3,2],[4,3],[6,3],[5,1],[1,1]]]},\"properties\":{}}]}");
+
+  Polygon<int> poly2{{{1, 1}, {3, 2}, {4, 3}, {6, 3}, {5, 1}, {1, 1}}, {{{1, 1}, {1, 2}, {2, 2}, {1, 1}}}};
+
+	ss.str("");
+  out.print(poly2, {});
+  out.flush();
+	a = ss.str();
+	replaceAll(a, " ", "");
+	replaceAll(a, "\n", "");
+	TEST(a ,==,"{\"type\":\"Feature\",\"geometry\":{\"type\":\"Polygon\",\"coordinates\":[[[1,1],[3,2],[4,3],[6,3],[5,1],[1,1]],[[1,1],[1,2],[2,2],[1,1]]]},\"properties\":{}}");
+
+	ss.str("");
+  out.print(util::geo::MultiPolygon<int>{poly3, poly2}, {});
+  out.flush();
+	a = ss.str();
+	replaceAll(a, " ", "");
+	replaceAll(a, "\n", "");
+	TEST(a ,==,"{\"type\":\"Feature\",\"geometry\":{\"type\":\"MultiPolygon\",\"coordinates\":[[[[1,3],[3,4],[4,5],[6,5],[5,3],[1,3]]],[[[1,1],[3,2],[4,3],[6,3],[5,1],[1,1]],[[1,1],[1,2],[2,2],[1,1]]]]},\"properties\":{}}");
+
+	ss.str("");
+  out.print(geo::lineFromWKT<int>("LINESTRING(0 0,1 1)"), {});
+  out.flush();
+	a = ss.str();
+	replaceAll(a, " ", "");
+	replaceAll(a, "\n", "");
+	TEST(a ,==,"{\"type\":\"Feature\",\"geometry\":{\"type\":\"LineString\",\"coordinates\":[[0,0],[1,1]]},\"properties\":{}}");
+
+	ss.str("");
+  out.print(util::geo::MultiLine<int>{geo::lineFromWKT<int>("LINESTRING(0 0,1 1)"), geo::lineFromWKT<int>("LINESTRING(2 2,3 3)")}, {});
+  out.flush();
+	a = ss.str();
+	replaceAll(a, " ", "");
+	replaceAll(a, "\n", "");
+	TEST(a ,==,"{\"type\":\"Feature\",\"geometry\":{\"type\":\"MultiLineString\",\"coordinates\":[[[0,0],[1,1]],[[2,2],[3,3]]]},\"properties\":{}}");
+
+	ss.str("");
+  out.print(geo::multiLineFromWKT<int>("MULTILINESTRING((0 0, 1 1), (2 2, 3 3))"), {});
+  out.flush();
+	a = ss.str();
+	replaceAll(a, " ", "");
+	replaceAll(a, "\n", "");
+	TEST(a ,==,"{\"type\":\"Feature\",\"geometry\":{\"type\":\"MultiLineString\",\"coordinates\":[[[0,0],[1,1]],[[2,2],[3,3]]]},\"properties\":{}}");
+
+	ss.str("");
+  out.print(geo::multiPointFromWKT<int>("MULTIPOINT(0 0,1 1,2 2,3 3)"), {});
+  out.flush();
+	a = ss.str();
+	replaceAll(a, " ", "");
+	replaceAll(a, "\n", "");
+	TEST(a ,==,"{\"type\":\"Feature\",\"geometry\":{\"type\":\"MultiPoint\",\"coordinates\":[[0,0],[1,1],[2,2],[3,3]]},\"properties\":{}}");
+
+	ss.str("");
+  out.print(geo::multiPointFromWKT<int>("MULTIPOINT((0 0),(1 1),(2 2),(3 3))"), {});
+  out.flush();
+	a = ss.str();
+	replaceAll(a, " ", "");
+	replaceAll(a, "\n", "");
+	TEST(a ,==,"{\"type\":\"Feature\",\"geometry\":{\"type\":\"MultiPoint\",\"coordinates\":[[0,0],[1,1],[2,2],[3,3]]},\"properties\":{}}");
 }
 
 {
@@ -4571,7 +4644,7 @@ int main(int argc, char** argv) {
   TEST(util::geo::getWKT(coll), ==, "GEOMETRYCOLLECTION(POINT(3 2))");
 
   coll.push_back(util::geo::Line<double>{{3, 2}, {1, 1}});
-  TEST(util::geo::getWKT(coll), ==, "GEOMETRYCOLLECTION(POINT(3 2), LINESTRING(3 2, 1 1))");
+  TEST(util::geo::getWKT(coll), ==, "GEOMETRYCOLLECTION(POINT(3 2),LINESTRING(3 2,1 1))");
 
   coll2.push_back(util::geo::Point<double>{3, 2});
 
@@ -4580,11 +4653,11 @@ int main(int argc, char** argv) {
   coll4.push_back(util::geo::Point<double>{3, 2});
   coll4.push_back(util::geo::Point<double>{5, 4});
 
-  TEST(util::geo::getWKT(util::geo::getBoundingBox(coll)), ==, "POLYGON((1 1, 3 1, 3 2, 1 2, 1 1))");
-  TEST(util::geo::getWKT(util::geo::convexHull(coll)), ==, "POLYGON((1 1, 3 2, 1 1))");
+  TEST(util::geo::getWKT(util::geo::getBoundingBox(coll)), ==, "POLYGON((1 1,3 1,3 2,1 2,1 1))");
+  TEST(util::geo::getWKT(util::geo::convexHull(coll)), ==, "POLYGON((1 1,3 2,1 1))");
   TEST(util::geo::dimension(coll), ==, 2);
   TEST(util::geo::getWKT(util::geo::centroid(coll)), ==, "POINT(2 1.5)");
-  TEST(util::geo::getWKT(util::geo::convexHull(util::geo::getOrientedEnvelope(coll))), ==, "POLYGON((3 2, 3 2, 1 1, 1 1, 3 2))");
+  TEST(util::geo::getWKT(util::geo::convexHull(util::geo::getOrientedEnvelope(coll))), ==, "POLYGON((3 2,3 2,1 1,1 1,3 2))");
 
   TEST(util::geo::getWKT(util::geo::centroid(coll2)), ==, "POINT(3 2)");
   TEST(util::geo::getWKT(util::geo::centroid(coll3)), ==, "POINT(2 1.5)");
@@ -4596,16 +4669,16 @@ int main(int argc, char** argv) {
   TEST(util::geo::getWKT(util::geo::centroid(util::geo::pointFromWKT<double>("POINT(3.4 4.6)"))), ==, "POINT(3.4 4.6)");
   TEST(util::geo::getWKT(util::geo::centroid(util::geo::lineFromWKT<double>("LINESTRING(0 0, 1 1)"))), ==, "POINT(0.5 0.5)");
   TEST(util::geo::getWKT(util::geo::centroid(util::geo::polygonFromWKT<double>("POLYGON((0 0, 1 0, 1 1, 0 1, 0 0))"))), ==, "POINT(0.5 0.5)");
-  TEST(util::geo::getWKT(util::geo::centroid(util::geo::multiPolygonFromWKT<double>("MULTIPOLYGON(POLYGON((0 0, 1 0, 1 1, 0 1, 0 0)), POLYGON((0 0, 1 0, 1 1, 0 1, 0 0)))"))), ==, "POINT(0.5 0.5)");
+  TEST(util::geo::getWKT(util::geo::centroid(util::geo::multiPolygonFromWKT<double>("MULTIPOLYGON(POLYGON((0 0,1 0,1 1,0 1,0 0)),POLYGON((0 0,1 0,1 1,0 1,0 0)))"))), ==, "POINT(0.5 0.5)");
 
-  TEST(util::geo::getWKT(util::geo::ringCentroid(util::geo::polygonFromWKT<double>("POLYGON((5 5, 5 10, 10 10, 10 5, 5 5))").getOuter())), ==, "POINT(7.5 7.5)");
+  TEST(util::geo::getWKT(util::geo::ringCentroid(util::geo::polygonFromWKT<double>("POLYGON((5 5,5 10,10 10,10 5,5 5))").getOuter())), ==, "POINT(7.5 7.5)");
 
-  TEST(util::geo::getWKT(util::geo::ringCentroid(util::geo::polygonFromWKT<double>("POLYGON((0.5 0.5, 0.5 1, 1 1, 1 0.5, 0.5 0.5))").getOuter())), ==, "POINT(0.75 0.75)");
-  TEST(util::geo::getWKT(util::geo::centroid(util::geo::polygonFromWKT<double>("POLYGON((0.5 0.5, 0.5 1, 1 1, 1 0.5, 0.5 0.5))"))), ==, "POINT(0.75 0.75)");
-  TEST(util::geo::getWKT(util::geo::ringCentroid(util::geo::polygonFromWKT<double>("POLYGON((0.5 0.5, 1 0.5, 1 1, 0.5 1, 0.5 0.5))").getOuter())), ==, "POINT(0.75 0.75)");
-  TEST(util::geo::getWKT(util::geo::centroid(util::geo::polygonFromWKT<double>("POLYGON((0.5 0.5, 1 0.5, 1 1, 0.5 1, 0.5 0.5))"))), ==, "POINT(0.75 0.75)");
+  TEST(util::geo::getWKT(util::geo::ringCentroid(util::geo::polygonFromWKT<double>("POLYGON((0.5 0.5,0.5 1,1 1,1 0.5,0.5 0.5))").getOuter())), ==, "POINT(0.75 0.75)");
+  TEST(util::geo::getWKT(util::geo::centroid(util::geo::polygonFromWKT<double>("POLYGON((0.5 0.5,0.5 1,1 1,1 0.5,0.5 0.5))"))), ==, "POINT(0.75 0.75)");
+  TEST(util::geo::getWKT(util::geo::ringCentroid(util::geo::polygonFromWKT<double>("POLYGON((0.5 0.5,1 0.5,1 1,0.5 1,0.5 0.5))").getOuter())), ==, "POINT(0.75 0.75)");
+  TEST(util::geo::getWKT(util::geo::centroid(util::geo::polygonFromWKT<double>("POLYGON((0.5 0.5,1 0.5,1 1,0.5 1,0.5 0.5))"))), ==, "POINT(0.75 0.75)");
 
-  TEST(util::geo::getWKT(util::geo::centroid(util::geo::polygonFromWKT<double>("POLYGON((0 0, 1 0, 1 1, 0 1, 0 0), (0.5 0.5, 1 0.5, 1 1, 0.5 1, 0.5 0.5), (0.5 0.5, 0.5 0, 1 0, 1 0.5, 0.5 0.5), (0 0.5, 0.5 0.5, 0.5 1, 0 1, 0 0.5))"))), ==, "POINT(0.25 0.25)");
-  TEST(util::geo::getWKT(util::geo::centroid(util::geo::polygonFromWKT<double>("POLYGON((0 0, 1 1, 0 0)"))), ==, "POINT(0.5 0.5)");
+  TEST(util::geo::getWKT(util::geo::centroid(util::geo::polygonFromWKT<double>("POLYGON((0 0,1 0,1 1,0 1,0 0),(0.5 0.5,1 0.5,1 1,0.5 1,0.5 0.5),(0.5 0.5,0.5 0,1 0,1 0.5,0.5 0.5),(0 0.5,0.5 0.5,0.5 1, 0 1,0 0.5))"))), ==, "POINT(0.25 0.25)");
+  TEST(util::geo::getWKT(util::geo::centroid(util::geo::polygonFromWKT<double>("POLYGON((0 0,1 1,0 0)"))), ==, "POINT(0.5 0.5)");
 }
 }

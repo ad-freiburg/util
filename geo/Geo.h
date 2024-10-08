@@ -690,7 +690,7 @@ inline std::string getWKT(const std::vector<Point<T>>& p, uint16_t prec) {
   std::stringstream ss;
   ss << "MULTIPOINT(";
   for (size_t i = 0; i < p.size(); i++) {
-    if (i) ss << ", ";
+    if (i) ss << ",";
     ss << "(" << formatFloat(p.getX(), prec) << " "
        << formatFloat(p.getY(), prec) << ")";
   }
@@ -710,7 +710,7 @@ inline std::string getWKT(const Line<T>& l, uint16_t prec) {
   std::stringstream ss;
   ss << "LINESTRING(";
   for (size_t i = 0; i < l.size(); i++) {
-    if (i) ss << ", ";
+    if (i) ss << ",";
     ss << formatFloat(l[i].getX(), prec) << " "
        << formatFloat(l[i].getY(), prec);
   }
@@ -731,10 +731,10 @@ inline std::string getWKT(const std::vector<Line<T>>& ls, uint16_t prec) {
   ss << "MULTILINESTRING(";
 
   for (size_t j = 0; j < ls.size(); j++) {
-    if (j) ss << ", ";
+    if (j) ss << ",";
     ss << "(";
     for (size_t i = 0; i < ls[j].size(); i++) {
-      if (i) ss << ", ";
+      if (i) ss << ",";
       ss << formatFloat(ls[j][i].getX(), prec) << " "
          << formatFloat(ls[j][i].getY(), prec);
     }
@@ -759,7 +759,7 @@ inline std::string getWKT(const XSortedPolygon<T>& ls, uint16_t prec) {
 
   for (size_t j = 0; j < ls.getOuter().rawRing().size(); j++) {
     if (ls.getOuter().rawRing()[j].out()) continue;
-    if (j) ss << ", ";
+    if (j) ss << ",";
     ss << "(";
     ss << formatFloat(ls.getOuter().rawRing()[j].seg().first.getX() * 1.0 / 10,
                       prec)
@@ -804,13 +804,13 @@ inline std::string getWKT(const Box<T>& l, uint16_t prec) {
   ss << "POLYGON((";
   ss << formatFloat(l.getLowerLeft().getX(), prec) << " "
      << formatFloat(l.getLowerLeft().getY(), prec);
-  ss << ", " << formatFloat(l.getUpperRight().getX(), prec) << " "
+  ss << "," << formatFloat(l.getUpperRight().getX(), prec) << " "
      << formatFloat(l.getLowerLeft().getY(), prec);
-  ss << ", " << formatFloat(l.getUpperRight().getX(), prec) << " "
+  ss << "," << formatFloat(l.getUpperRight().getX(), prec) << " "
      << formatFloat(l.getUpperRight().getY(), prec);
-  ss << ", " << formatFloat(l.getLowerLeft().getX(), prec) << " "
+  ss << "," << formatFloat(l.getLowerLeft().getX(), prec) << " "
      << formatFloat(l.getUpperRight().getY(), prec);
-  ss << ", " << formatFloat(l.getLowerLeft().getX(), prec) << " "
+  ss << "," << formatFloat(l.getLowerLeft().getX(), prec) << " "
      << formatFloat(l.getLowerLeft().getY(), prec);
   ss << "))";
   return ss.str();
@@ -828,21 +828,29 @@ inline std::string getWKT(const Polygon<T>& p, uint16_t prec) {
   std::stringstream ss;
   ss << "POLYGON((";
   for (size_t i = 0; i < p.getOuter().size(); i++) {
+    if (i > 0) ss << ",";
     ss << formatFloat(p.getOuter()[i].getX(), prec) << " "
-       << formatFloat(p.getOuter()[i].getY(), prec) << ", ";
+       << formatFloat(p.getOuter()[i].getY(), prec);
   }
-  ss << formatFloat(p.getOuter().front().getX(), prec) << " "
-     << formatFloat(p.getOuter().front().getY(), prec);
+
+  if (p.getOuter().front() != p.getOuter().back()) {
+    ss << "," << formatFloat(p.getOuter().front().getX(), prec) << " "
+       << formatFloat(p.getOuter().front().getY(), prec);
+  }
   ss << ")";
 
   for (const auto& inner : p.getInners()) {
-    ss << ", (";
+    ss << ",(";
     for (size_t i = 0; i < inner.size(); i++) {
+      if (i > 0) ss << ",";
       ss << formatFloat(inner[i].getX(), prec) << " "
-         << formatFloat(inner[i].getY(), prec) << ", ";
+         << formatFloat(inner[i].getY(), prec);
     }
-    ss << formatFloat(inner.front().getX(), prec) << " "
-       << formatFloat(inner.front().getY(), prec);
+
+    if (inner.front() != inner.back()) {
+      ss << "," << formatFloat(inner.front().getX(), prec) << " "
+         << formatFloat(inner.front().getY(), prec);
+    }
     ss << ")";
   }
   ss << ")";
@@ -862,24 +870,31 @@ inline std::string getWKT(const std::vector<Polygon<T>>& ls, uint16_t prec) {
   ss << "MULTIPOLYGON(";
 
   for (size_t j = 0; j < ls.size(); j++) {
-    if (j) ss << ", ";
+    if (j) ss << ",";
     ss << "((";
     for (size_t i = 0; i < ls[j].getOuter().size(); i++) {
+      if (i > 0) ss << ",";
       ss << formatFloat(ls[j].getOuter()[i].getX(), prec) << " "
-         << formatFloat(ls[j].getOuter()[i].getY(), prec) << ", ";
+         << formatFloat(ls[j].getOuter()[i].getY(), prec);
     }
-    ss << formatFloat(ls[j].getOuter().front().getX(), prec) << " "
-       << formatFloat(ls[j].getOuter().front().getY(), prec);
+
+    if (ls[j].getOuter().front() != ls[j].getOuter().back()) {
+      ss << "," << formatFloat(ls[j].getOuter().front().getX(), prec) << " "
+         << formatFloat(ls[j].getOuter().front().getY(), prec);
+    }
     ss << ")";
 
     for (const auto& inner : ls[j].getInners()) {
-      ss << ", (";
+      ss << ",(";
       for (size_t i = 0; i < inner.size(); i++) {
+        if (i > 0) ss << ",";
         ss << formatFloat(inner[i].getX(), prec) << " "
-           << formatFloat(inner[i].getY(), prec) << ", ";
+           << formatFloat(inner[i].getY(), prec);
       }
-      ss << formatFloat(inner.front().getX(), prec) << " "
-         << formatFloat(inner.front().getY(), prec);
+      if (inner.front() != inner.back()) {
+        ss << "," << formatFloat(inner.front().getX(), prec) << " "
+           << formatFloat(inner.front().getY(), prec);
+      }
       ss << ")";
     }
     ss << ")";
@@ -904,7 +919,7 @@ inline std::string getWKT(const Collection<T>& coll, uint16_t prec) {
 
   for (const auto& g : coll) {
     ret += delim;
-    delim = ", ";
+    delim = ",";
     if (g.getType() == 0) ret += util::geo::getWKT(g.getPoint(), prec);
     if (g.getType() == 1) ret += util::geo::getWKT(g.getLine(), prec);
     if (g.getType() == 2) ret += util::geo::getWKT(g.getPolygon(), prec);
