@@ -64,6 +64,8 @@ inline bool operator==(const AnyGeometry<T>& a, const AnyGeometry<T>& b) {
   if (a.getType() == 4) return a.getMultiPolygon() == b.getMultiPolygon();
   if (a.getType() == 5) return a.getCollection() == b.getCollection();
   if (a.getType() == 6) return a.getMultiPoint() == b.getMultiPoint();
+
+  return false;
 }
 
 }  // namespace geo

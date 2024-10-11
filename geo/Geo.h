@@ -1374,7 +1374,7 @@ inline bool intersectsNaive(const std::vector<XSortedTuple<T>>& ls1,
 template <typename T, template <typename> class C>
 inline uint8_t intersectsHelper(const std::vector<XSortedTuple<T>>& ls1,
                                 const std::vector<XSortedTuple<T>>& ls2,
-                                double maxSegLenA, double maxSegLenB,
+                                T maxSegLenA, T maxSegLenB,
                                 const Box<T>& boxA, const Box<T>& boxB,
                                 size_t* firstRelIn1, size_t* firstRelIn2) {
   // returns {intersects, strict intersects, inside}
@@ -1400,7 +1400,7 @@ inline uint8_t intersectsHelper(const std::vector<XSortedTuple<T>>& ls1,
       ls1[i].p.getX() < ls2[j].p.getX() - maxSegLenA) {
     i = std::lower_bound(
             ls1.begin() + i, ls1.end(),
-            XSortedTuple<T>{{ls2[j].p.getX() - maxSegLenA, 0}, false}) -
+            XSortedTuple<T>{{static_cast<T>(ls2[j].p.getX() - maxSegLenA), 0}, false}) -
         ls1.begin();
   }
 
@@ -1409,7 +1409,7 @@ inline uint8_t intersectsHelper(const std::vector<XSortedTuple<T>>& ls1,
       ls2[j].p.getX() < ls1[i].p.getX() - maxSegLenB) {
     j = std::lower_bound(
             ls2.begin() + j, ls2.end(),
-            XSortedTuple<T>{{ls1[i].p.getX() - maxSegLenB, 0}, false}) -
+            XSortedTuple<T>{{static_cast<T>(ls1[i].p.getX() - maxSegLenB), 0}, false}) -
         ls2.begin();
   }
 
@@ -1654,8 +1654,8 @@ inline uint8_t intersectsHelper(const std::vector<XSortedTuple<T>>& ls1,
 template <typename T>
 inline std::tuple<bool, bool, bool> intersectsPoly(
     const std::vector<XSortedTuple<T>>& ls1,
-    const std::vector<XSortedTuple<T>>& ls2, double maxSegLenA,
-    double maxSegLenB, const Box<T>& boxA, const Box<T>& boxB,
+    const std::vector<XSortedTuple<T>>& ls2, T maxSegLenA,
+    T maxSegLenB, const Box<T>& boxA, const Box<T>& boxB,
     size_t* firstRelIn1, size_t* firstRelIn2) {
   uint8_t ret = intersectsHelper<T, IntersectorPoly>(
       ls1, ls2, maxSegLenA, maxSegLenB, boxA, boxB, firstRelIn1, firstRelIn2);
@@ -1667,8 +1667,8 @@ inline std::tuple<bool, bool, bool> intersectsPoly(
 template <typename T>
 inline std::tuple<bool, bool, bool, bool, bool> intersectsCovers(
     const std::vector<XSortedTuple<T>>& ls1,
-    const std::vector<XSortedTuple<T>>& ls2, double maxSegLenA,
-    double maxSegLenB, const Box<T>& boxA, const Box<T>& boxB,
+    const std::vector<XSortedTuple<T>>& ls2, T maxSegLenA,
+    T maxSegLenB, const Box<T>& boxA, const Box<T>& boxB,
     size_t* firstRelIn1, size_t* firstRelIn2) {
   uint8_t ret = intersectsHelper<T, IntersectorLine>(
       ls1, ls2, maxSegLenA, maxSegLenB, boxA, boxB, firstRelIn1, firstRelIn2);
@@ -1694,8 +1694,8 @@ inline std::tuple<bool, bool, bool, bool, bool> intersectsCovers(
 template <typename T>
 inline std::tuple<bool, bool, bool, bool, bool> intersectsCovers(
     const std::vector<XSortedTuple<T>>& ls1,
-    const std::vector<XSortedTuple<T>>& ls2, double maxSegLenA,
-    double maxSegLenB) {
+    const std::vector<XSortedTuple<T>>& ls2, T maxSegLenA,
+    T maxSegLenB) {
   return intersectsCovers(
       ls1, ls2, maxSegLenA, maxSegLenB,
       util::geo::Box<T>(
@@ -1712,15 +1712,15 @@ template <typename T>
 inline std::tuple<bool, bool, bool, bool, bool> intersectsCovers(
     const std::vector<XSortedTuple<T>>& ls1,
     const std::vector<XSortedTuple<T>>& ls2) {
-  return intersectsCovers(ls1, ls2, std::numeric_limits<double>::infinity(),
-                          std::numeric_limits<double>::infinity());
+  return intersectsCovers(ls1, ls2, std::numeric_limits<T>::max(),
+                          std::numeric_limits<T>::max());
 }
 
 // _____________________________________________________________________________
 template <typename T>
 inline std::tuple<bool, bool, bool> intersectsPoly(
-    const XSortedRing<T>& ls1, const XSortedRing<T>& ls2, double maxSegLenA,
-    double maxSegLenB, const Box<T>& boxA, const Box<T>& boxB,
+    const XSortedRing<T>& ls1, const XSortedRing<T>& ls2, T maxSegLenA,
+    T maxSegLenB, const Box<T>& boxA, const Box<T>& boxB,
     size_t* firstRelIn1, size_t* firstRelIn2) {
   return intersectsPoly(ls1.rawRing(), ls2.rawRing(), maxSegLenA, maxSegLenB,
                         boxA, boxB, firstRelIn1, firstRelIn2);
