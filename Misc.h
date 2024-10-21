@@ -5,6 +5,8 @@
 #ifndef UTIL_MISC_H_
 #define UTIL_MISC_H_
 
+#define FMT_HEADER_ONLY
+
 #include <cmath>
 #include <cstring>
 #include <chrono>
@@ -25,7 +27,7 @@
 #include <map>
 #include <thread>
 #include "String.h"
-#include "3rdparty/dtoa_milo.h"
+#include "3rdparty/fmt/core.h"
 
 static const size_t SORT_BUFFER_S = 64 * 128 * 1024;
 
@@ -269,16 +271,21 @@ inline bool isFloatingPoint(const std::string& str) {
 }
 
 // _____________________________________________________________________________
-inline std::string formatFloat(double f, size_t digits) {
-  std::stringstream ss;
-  ss << std::fixed << std::setprecision(digits) << f;
-	std::string ret = ss.str();
+inline std::string formatFloat(double f, int DIGITS) {
+	const std::string fStr = "{:." + std::to_string(DIGITS) + "f}";
 
-  if (ret.find('.') != std::string::npos) {
-		auto p = ret.find_last_not_of('0');
-    if (ret[p] == '.') return ret.substr(0, p);
-    return ret.substr(0, p + 1);
-  }
+	fmt::memory_buffer buf;
+	fmt::format_to(std::back_inserter(buf), fStr.c_str(), f);
+
+	auto ret = fmt::to_string(buf);
+
+  if (ret.back() == '0') {
+		if (ret.find('.') != std::string::npos) {
+			auto p = ret.find_last_not_of('0');
+			if (ret[p] == '.') return ret.substr(0, p);
+			return ret.substr(0, p + 1);
+		}
+	}
 
   return ret;
 }
