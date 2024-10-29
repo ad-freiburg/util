@@ -674,8 +674,13 @@ inline Polygon<T> polygonFromWKT(std::string wkt) {
 // _____________________________________________________________________________
 template <typename T>
 inline std::string getWKT(const Point<T>& p, uint16_t prec) {
-  return std::string("POINT(") + formatFloat(p.getX(), prec) + " " +
-         formatFloat(p.getY(), prec) + ")";
+  std::string ret = "POINT(";
+  ret.reserve(6 + prec + 3 + prec + 3 + 1);
+  ret.append(formatFloat(p.getX(), prec));
+  ret.push_back(' ');
+  ret.append(formatFloat(p.getY(), prec));
+  ret.push_back(')');
+  return ret;
 }
 
 // _____________________________________________________________________________
@@ -687,15 +692,16 @@ inline std::string getWKT(const Point<T>& p) {
 // _____________________________________________________________________________
 template <typename T>
 inline std::string getWKT(const std::vector<Point<T>>& p, uint16_t prec) {
-  std::stringstream ss;
-  ss << "MULTIPOINT(";
+  std::string ret="MULTIPOINT(";
+  ret.reserve(10 + 1 + p.size() * (prec + 3) * 2 + 1);
   for (size_t i = 0; i < p.size(); i++) {
-    if (i) ss << ",";
-    ss << "(" << formatFloat(p.getX(), prec) << " "
-       << formatFloat(p.getY(), prec) << ")";
+    if (i) ret.push_back(',');
+    ret.append(formatFloat(p[i].getX(), prec));
+    ret.push_back(' ');
+    ret.append(formatFloat(p[i].getY(), prec));
   }
-  ss << ")";
-  return ss.str();
+  ret.push_back(')');
+  return ret;
 }
 
 // _____________________________________________________________________________
@@ -707,15 +713,16 @@ inline std::string getWKT(const std::vector<Point<T>>& p) {
 // _____________________________________________________________________________
 template <typename T>
 inline std::string getWKT(const Line<T>& l, uint16_t prec) {
-  std::stringstream ss;
-  ss << "LINESTRING(";
+  std::string ret="LINESTRING(";
+  ret.reserve(10 + 1 + l.size() * (prec + 3) * 2 + 1);
   for (size_t i = 0; i < l.size(); i++) {
-    if (i) ss << ",";
-    ss << formatFloat(l[i].getX(), prec) << " "
-       << formatFloat(l[i].getY(), prec);
+    if (i) ret.push_back(',');
+    ret.append(formatFloat(l[i].getX(), prec));
+    ret.push_back(' ');
+    ret.append(formatFloat(l[i].getY(), prec));
   }
-  ss << ")";
-  return ss.str();
+  ret.push_back(')');
+  return ret;
 }
 
 // _____________________________________________________________________________
@@ -727,22 +734,24 @@ inline std::string getWKT(const Line<T>& l) {
 // _____________________________________________________________________________
 template <typename T>
 inline std::string getWKT(const std::vector<Line<T>>& ls, uint16_t prec) {
-  std::stringstream ss;
-  ss << "MULTILINESTRING(";
+  std::string ret ="MULTILINESTRING(";
+
+  if (ls.size()) ret.reserve(15 + 2 + ls[0].size() * (prec + 3) * 2 + 2);
 
   for (size_t j = 0; j < ls.size(); j++) {
-    if (j) ss << ",";
-    ss << "(";
+    if (j) ret.push_back(',');
+    ret.push_back('(');
     for (size_t i = 0; i < ls[j].size(); i++) {
-      if (i) ss << ",";
-      ss << formatFloat(ls[j][i].getX(), prec) << " "
-         << formatFloat(ls[j][i].getY(), prec);
+      if (i) ret.push_back(',');
+      ret.append(formatFloat(ls[j][i].getX(), prec));
+      ret.push_back(' ');
+      ret.append(formatFloat(ls[j][i].getY(), prec));
     }
-    ss << ")";
+    ret.push_back(')');
   }
 
-  ss << ")";
-  return ss.str();
+  ret.push_back(')');
+  return ret;
 }
 
 // _____________________________________________________________________________
@@ -800,20 +809,30 @@ inline std::string getWKT(const LineSegment<T>& l) {
 // _____________________________________________________________________________
 template <typename T>
 inline std::string getWKT(const Box<T>& l, uint16_t prec) {
-  std::stringstream ss;
-  ss << "POLYGON((";
-  ss << formatFloat(l.getLowerLeft().getX(), prec) << " "
-     << formatFloat(l.getLowerLeft().getY(), prec);
-  ss << "," << formatFloat(l.getUpperRight().getX(), prec) << " "
-     << formatFloat(l.getLowerLeft().getY(), prec);
-  ss << "," << formatFloat(l.getUpperRight().getX(), prec) << " "
-     << formatFloat(l.getUpperRight().getY(), prec);
-  ss << "," << formatFloat(l.getLowerLeft().getX(), prec) << " "
-     << formatFloat(l.getUpperRight().getY(), prec);
-  ss << "," << formatFloat(l.getLowerLeft().getX(), prec) << " "
-     << formatFloat(l.getLowerLeft().getY(), prec);
-  ss << "))";
-  return ss.str();
+  std::string ret = "POLYGON((";
+  ret.reserve(7 + 2 + 4 * (prec + 3) * 2 + 2);
+
+  ret.append(formatFloat(l.getLowerLeft().getX(), prec));
+  ret.push_back(' ');
+  ret.append(formatFloat(l.getLowerLeft().getY(), prec));
+  ret.push_back(',');
+  ret.append(formatFloat(l.getUpperRight().getX(), prec));
+  ret.push_back(' ');
+  ret.append(formatFloat(l.getLowerLeft().getY(), prec));
+  ret.push_back(',');
+  ret.append(formatFloat(l.getUpperRight().getX(), prec));
+  ret.push_back(' ');
+  ret.append(formatFloat(l.getUpperRight().getY(), prec));
+  ret.push_back(',');
+  ret.append(formatFloat(l.getLowerLeft().getX(), prec));
+  ret.push_back(' ');
+  ret.append(formatFloat(l.getUpperRight().getY(), prec));
+  ret.push_back(',');
+  ret.append(formatFloat(l.getLowerLeft().getX(), prec));
+  ret.push_back(' ');
+  ret.append(formatFloat(l.getLowerLeft().getY(), prec));
+  ret.append("))");
+  return ret;
 }
 
 // _____________________________________________________________________________
@@ -825,36 +844,43 @@ inline std::string getWKT(const Box<T>& l) {
 // _____________________________________________________________________________
 template <typename T>
 inline std::string getWKT(const Polygon<T>& p, uint16_t prec) {
-  std::stringstream ss;
-  ss << "POLYGON((";
+  std::string ret = "POLYGON((";
+  ret.reserve(7 + 2 + p.getOuter().size() * (prec + 3) * 2 + 2);
+
   for (size_t i = 0; i < p.getOuter().size(); i++) {
-    if (i > 0) ss << ",";
-    ss << formatFloat(p.getOuter()[i].getX(), prec) << " "
-       << formatFloat(p.getOuter()[i].getY(), prec);
+    if (i > 0) ret.push_back(',');
+    ret.append(formatFloat(p.getOuter()[i].getX(), prec));
+    ret.push_back(' ');
+    ret.append(formatFloat(p.getOuter()[i].getY(), prec));
   }
 
   if (p.getOuter().front() != p.getOuter().back()) {
-    ss << "," << formatFloat(p.getOuter().front().getX(), prec) << " "
-       << formatFloat(p.getOuter().front().getY(), prec);
+    ret.push_back(',');
+    ret.append(formatFloat(p.getOuter().front().getX(), prec));
+    ret.push_back(' ');
+    ret.append(formatFloat(p.getOuter().front().getY(), prec));
   }
-  ss << ")";
+  ret.push_back(')');
 
   for (const auto& inner : p.getInners()) {
-    ss << ",(";
+    ret.append(",(");
     for (size_t i = 0; i < inner.size(); i++) {
-      if (i > 0) ss << ",";
-      ss << formatFloat(inner[i].getX(), prec) << " "
-         << formatFloat(inner[i].getY(), prec);
+      if (i > 0) ret.push_back(',');
+      ret.append(formatFloat(inner[i].getX(), prec));
+      ret.push_back(' ');
+      ret.append(formatFloat(inner[i].getY(), prec));
     }
 
     if (inner.front() != inner.back()) {
-      ss << "," << formatFloat(inner.front().getX(), prec) << " "
-         << formatFloat(inner.front().getY(), prec);
+      ret.push_back(',');
+      ret.append(formatFloat(inner.front().getX(), prec));
+      ret.push_back(' ');
+      ret.append(formatFloat(inner.front().getY(), prec));
     }
-    ss << ")";
+    ret.push_back(')');
   }
-  ss << ")";
-  return ss.str();
+  ret.push_back(')');
+  return ret;
 }
 
 // _____________________________________________________________________________
@@ -866,42 +892,50 @@ inline std::string getWKT(const Polygon<T>& p) {
 // _____________________________________________________________________________
 template <typename T>
 inline std::string getWKT(const std::vector<Polygon<T>>& ls, uint16_t prec) {
-  std::stringstream ss;
-  ss << "MULTIPOLYGON(";
+  std::string ret = "MULTIPOLYGON(";
+  if (ls.size()) ret.reserve(12 + 2 + ls[0].getOuter().size() * (prec + 3) * 2 + 2);
 
   for (size_t j = 0; j < ls.size(); j++) {
-    if (j) ss << ",";
-    ss << "((";
+    if (j) ret.push_back(',');
+    ret.push_back('(');
+    ret.push_back('(');
     for (size_t i = 0; i < ls[j].getOuter().size(); i++) {
-      if (i > 0) ss << ",";
-      ss << formatFloat(ls[j].getOuter()[i].getX(), prec) << " "
-         << formatFloat(ls[j].getOuter()[i].getY(), prec);
+      if (i > 0) ret.push_back(',');
+      ret.append(formatFloat(ls[j].getOuter()[i].getX(), prec));
+      ret.push_back(' ');
+      ret.append(formatFloat(ls[j].getOuter()[i].getY(), prec));
     }
 
     if (ls[j].getOuter().front() != ls[j].getOuter().back()) {
-      ss << "," << formatFloat(ls[j].getOuter().front().getX(), prec) << " "
-         << formatFloat(ls[j].getOuter().front().getY(), prec);
+      ret.push_back(',');
+      ret.append(formatFloat(ls[j].getOuter().front().getX(), prec));
+      ret.push_back(' ');
+      ret.append(formatFloat(ls[j].getOuter().front().getY(), prec));
     }
-    ss << ")";
+    ret.push_back(')');
 
     for (const auto& inner : ls[j].getInners()) {
-      ss << ",(";
+      ret.push_back(',');
+      ret.push_back('(');
       for (size_t i = 0; i < inner.size(); i++) {
-        if (i > 0) ss << ",";
-        ss << formatFloat(inner[i].getX(), prec) << " "
-           << formatFloat(inner[i].getY(), prec);
+        if (i > 0) ret.push_back(',');
+        ret.append(formatFloat(inner[i].getX(), prec));
+        ret.push_back(' ');
+        ret.append(formatFloat(inner[i].getY(), prec));
       }
       if (inner.front() != inner.back()) {
-        ss << "," << formatFloat(inner.front().getX(), prec) << " "
-           << formatFloat(inner.front().getY(), prec);
+        ret.push_back(',');
+        ret.append(formatFloat(inner.front().getX(), prec));
+        ret.push_back(' ');
+        ret.append(formatFloat(inner.front().getY(), prec));
       }
-      ss << ")";
+      ret.push_back(')');
     }
-    ss << ")";
+  ret.push_back(')');
   }
 
-  ss << ")";
-  return ss.str();
+  ret.push_back(')');
+  return ret;
 }
 
 // _____________________________________________________________________________
