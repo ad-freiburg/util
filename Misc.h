@@ -773,9 +773,12 @@ inline ssize_t externalSort(int file, int newFile, size_t size, size_t numobjs,
   // cleanup
   for (size_t j = 0; j < parts; j++) {
     delete[] partbufs[j];
+  }
+  for (size_t j = 0; j < numThreads; j++) {
     delete[] bufs[j];
   }
   delete[] partbufs;
+  delete[] bufs;
   delete[] partpos;
   delete[] partsize;
 
