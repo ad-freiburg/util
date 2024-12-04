@@ -346,9 +346,11 @@ inline double atof(const char* p, uint8_t mn) {
 inline ssize_t preadAll(int file, unsigned char* buf, size_t count, size_t offset) {
   ssize_t r;
   ssize_t rem = count;
+
   while ((r = pread(file, buf + (count - rem), rem, offset))) {
     if (r < 0) return -1;
     rem -= r;
+    offset += r;
   }
 
   return count - rem;
@@ -358,6 +360,7 @@ inline ssize_t preadAll(int file, unsigned char* buf, size_t count, size_t offse
 inline ssize_t readAll(int file, unsigned char* buf, size_t count ) {
   ssize_t r;
   ssize_t rem = count;
+
   while ((r = read(file, buf + (count - rem), rem))) {
     if (r < 0) return -1;
     rem -= r;
@@ -370,9 +373,11 @@ inline ssize_t readAll(int file, unsigned char* buf, size_t count ) {
 inline ssize_t pwriteAll(int file, const unsigned char* buf, size_t count, size_t offset ) {
   ssize_t r;
   ssize_t rem = count;
+
   while ((r = pwrite(file, buf + (count - rem), rem, offset))) {
     if (r < 0) return -1;
     rem -= r;
+    offset += r;
   }
 
   return count - rem;
@@ -636,14 +641,20 @@ inline std::string readableSize(double size) {
 inline void sortPart(int file, size_t objSize, size_t part, unsigned char* buf, unsigned char* partbuf, size_t bufferSize, size_t partsBufSize, size_t* partsize, int (*cmpf)(const void*, const void*)) {
   // read entire part to buf
   ssize_t n = preadAll(file, buf, bufferSize, bufferSize * part);
-  if (n < 0) return;
+  if (n < 0) {
+    std::cerr << strerror(errno) << std::endl;
+    return;
+  }
 
   // sort entire part in memory
   qsort(buf, n / objSize, objSize, cmpf);
 
   // write entire part, now sorted, back to file, to the same position
   ssize_t r = pwriteAll(file, buf, n, bufferSize * part);
-  if (r < 0) return;
+  if (r < 0) {
+    std::cerr << strerror(errno) << std::endl;
+    return;
+  }
 
   // already copy the beginning of the read part to the parts buffer
   memcpy(partbuf, buf, std::min<size_t>(n, partsBufSize));
@@ -670,7 +681,8 @@ inline void processSortQueue(util::JobQueue<SortJob>* jobs, int file,
 inline ssize_t externalSort(int file, int newFile, size_t size, size_t numobjs,
                             size_t numThreads,
                             int (*cmpf)(const void*, const void*)) {
-  // sort a file via an external sort
+  // sort a file via an external sort. Sorting is parallel (with numThreads
+  // parallel threads), merging of the sorted parts is sequential
 
   size_t fsize = size * numobjs;
 
