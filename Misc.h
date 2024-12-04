@@ -18,6 +18,7 @@
 #include <iomanip>
 #include <iostream>
 #include <sstream>
+#include <thread>
 #include <vector>
 #include <queue>
 #include <unistd.h>
@@ -27,6 +28,7 @@
 #include <map>
 #include <thread>
 #include "String.h"
+#include "JobQueue.h"
 #include "3rdparty/fmt/core.h"
 
 static const size_t SORT_BUFFER_S = 64 * 128 * 1024;
@@ -59,6 +61,19 @@ static const size_t SORT_BUFFER_S = 64 * 128 * 1024;
 #endif
 
 namespace util {
+
+struct SortJob {
+  size_t part = 0;
+  unsigned char* partbuf = 0;
+};
+
+inline bool operator==(const SortJob& a, const SortJob& b) {
+  return a.part == b.part && a.partbuf == b.partbuf;
+}
+
+inline bool operator!=(const SortJob& a, const SortJob& b) {
+  return !(a == b);
+}
 
 const static std::map<std::string, std::string> HTML_COLOR_NAMES = {
 	{"aliceblue","F0F8FF"},
@@ -328,10 +343,34 @@ inline double atof(const char* p, uint8_t mn) {
 }
 
 // _____________________________________________________________________________
+inline ssize_t preadAll(int file, unsigned char* buf, size_t count, size_t offset) {
+  ssize_t r;
+  ssize_t rem = count;
+  while ((r = pread(file, buf + (count - rem), rem, offset))) {
+    if (r < 0) return -1;
+    rem -= r;
+  }
+
+  return count - rem;
+}
+
+// _____________________________________________________________________________
 inline ssize_t readAll(int file, unsigned char* buf, size_t count ) {
   ssize_t r;
   ssize_t rem = count;
   while ((r = read(file, buf + (count - rem), rem))) {
+    if (r < 0) return -1;
+    rem -= r;
+  }
+
+  return count - rem;
+}
+
+// _____________________________________________________________________________
+inline ssize_t pwriteAll(int file, const unsigned char* buf, size_t count, size_t offset ) {
+  ssize_t r;
+  ssize_t rem = count;
+  while ((r = pwrite(file, buf + (count - rem), rem, offset))) {
     if (r < 0) return -1;
     rem -= r;
   }
@@ -594,8 +633,43 @@ inline std::string readableSize(double size) {
 }
 
 // _____________________________________________________________________________
+inline void sortPart(int file, size_t objSize, size_t part, unsigned char* buf, unsigned char* partbuf, size_t bufferSize, size_t partsBufSize, size_t* partsize, int (*cmpf)(const void*, const void*)) {
+  // read entire part to buf
+  ssize_t n = preadAll(file, buf, bufferSize, bufferSize * part);
+  if (n < 0) return;
+
+  // sort entire part in memory
+  qsort(buf, n / objSize, objSize, cmpf);
+
+  // write entire part, now sorted, back to file, to the same position
+  ssize_t r = pwriteAll(file, buf, n, bufferSize * part);
+  if (r < 0) return;
+
+  // already copy the beginning of the read part to the parts buffer
+  memcpy(partbuf, buf, std::min<size_t>(n, partsBufSize));
+
+  // save size of this part (which might be different than bufferSize for the
+  // last part (might be even 0)
+  partsize[part] = n;
+}
+
+// _____________________________________________________________________________
+inline void processSortQueue(util::JobQueue<SortJob>* jobs, int file,
+                             size_t objSize, unsigned char* buf,
+                             size_t bufferSize, size_t partsBufSize,
+                             size_t* partsize,
+                             int (*cmpf)(const void*, const void*)) {
+  SortJob job;
+  while ((job = jobs->get()).partbuf != 0) {
+    sortPart(file, objSize, job.part, buf, job.partbuf, bufferSize,
+             partsBufSize, partsize, cmpf);
+  }
+}
+
+// _____________________________________________________________________________
 inline ssize_t externalSort(int file, int newFile, size_t size, size_t numobjs,
-                        int (*cmpf)(const void*, const void*)) {
+                            size_t numThreads,
+                            int (*cmpf)(const void*, const void*)) {
   // sort a file via an external sort
 
   size_t fsize = size * numobjs;
@@ -604,10 +678,13 @@ inline ssize_t externalSort(int file, int newFile, size_t size, size_t numobjs,
 
   size_t parts = fsize / bufferSize + 1;
   size_t partsBufSize = ((bufferSize / size) / parts + 1) * size;
-  unsigned char* buf = new unsigned char[bufferSize];
+  unsigned char** bufs = new unsigned char*[numThreads];
   unsigned char** partbufs = new unsigned char*[parts];
   size_t* partpos = new size_t[parts];
   size_t* partsize = new size_t[parts];
+
+  // fire up worker threads for geometry checking
+  std::vector<std::thread> thrds(numThreads);
 
   auto pqComp = [cmpf](const std::pair<const void*, size_t>& a,
                        const std::pair<const void*, size_t>& b) {
@@ -618,36 +695,27 @@ inline ssize_t externalSort(int file, int newFile, size_t size, size_t numobjs,
                       decltype(pqComp)>
       pq(pqComp);
 
+  util::JobQueue<SortJob> jobQ;
+
   // sort the 'parts' number of file parts independently
   for (size_t i = 0; i < parts; i++) {
     partbufs[i] = new unsigned char[partsBufSize];
     partpos[i] = 0;
     partsize[i] = 0;
 
-    // seek to begin of part in file
-    lseek(file, bufferSize * i, SEEK_SET);
-
-    // read entire part to buf
-    ssize_t n = readAll(file, buf, bufferSize);
-    if (n < 0) return -1;
-
-    // sort entire part in memory
-    qsort(buf, n / size, size, cmpf);
-
-    // seek back to begin of part in file
-    lseek(file, bufferSize * i, SEEK_SET);
-
-    // write entire part, now sorted, back to file
-    ssize_t r = writeAll(file, buf, n);
-    if (r < 0) return -1;
-
-    // already copy to beginning of the read part to the parts buffer
-    memcpy(partbufs[i], buf, std::min<size_t>(n, partsBufSize));
-
-    // save size of this part (which might be different than bufferSize for the
-    // last part (might be even 0)
-    partsize[i] = n;
+    jobQ.add({i, partbufs[i]});
   }
+
+  // the DONE element on the job queue to signal all threads to shut down
+  jobQ.add({});
+
+  for (size_t t = 0; t < numThreads; t++) {
+    bufs[t] = new unsigned char[bufferSize];
+    thrds[t] = std::thread(&processSortQueue, &jobQ, file, size, bufs[t],
+                           bufferSize, partsBufSize, partsize, cmpf);
+  }
+
+  for (auto& th : thrds) th.join();
 
   // init priority queue, push all parts to it
   for (size_t j = 0; j < parts; j++) {
@@ -663,12 +731,12 @@ inline ssize_t externalSort(int file, int newFile, size_t size, size_t numobjs,
     ssize_t smallestP = top.second;
 
     // write the smallest element to the current buffer position
-    memcpy(buf + (i % bufferSize), smallest, size);
+    memcpy(bufs[0] + (i % bufferSize), smallest, size);
 
     // if buffer is full (or if we are at the end of the file), flush
     if ((i % bufferSize) + size == bufferSize || i + size == fsize) {
       // write to output file
-      ssize_t r = writeAll(newFile, buf, i % bufferSize + size);
+      ssize_t r = writeAll(newFile, bufs[0], i % bufferSize + size);
       if (r < 0) return -1;
     }
 
@@ -691,8 +759,10 @@ inline ssize_t externalSort(int file, int newFile, size_t size, size_t numobjs,
   }
 
   // cleanup
-  delete[] buf;
-  for (size_t j = 0; j < parts; j++) delete[] partbufs[j];
+  for (size_t j = 0; j < parts; j++) {
+    delete[] partbufs[j];
+    delete[] bufs[j];
+  }
   delete[] partbufs;
   delete[] partpos;
   delete[] partsize;
