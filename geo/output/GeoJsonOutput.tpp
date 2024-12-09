@@ -113,6 +113,14 @@ void GeoJsonOutput::printGeom(const Polygon<T>& poly) {
     _wr.val(p.getY());
     _wr.close();
   }
+
+  // ensure ring is closed
+  if (poly.getOuter().back() != poly.getOuter().front()) {
+    _wr.arr();
+    _wr.val(poly.getOuter().front().getX());
+    _wr.val(poly.getOuter().front().getY());
+    _wr.close();
+  }
   _wr.close();
 
   for (const auto& inner : poly.getInners()) {
@@ -121,6 +129,14 @@ void GeoJsonOutput::printGeom(const Polygon<T>& poly) {
       _wr.arr();
       _wr.val(p.getX());
       _wr.val(p.getY());
+      _wr.close();
+    }
+
+    // ensure ring is closed
+    if (inner.back() != inner.front()) {
+      _wr.arr();
+      _wr.val(inner.front().getX());
+      _wr.val(inner.front().getY());
       _wr.close();
     }
     _wr.close();
@@ -147,6 +163,13 @@ void GeoJsonOutput::printGeom(const MultiPolygon<T>& mpoly) {
       _wr.val(p.getY());
       _wr.close();
     }
+    // ensure ring is closed
+    if (poly.getOuter().back() != poly.getOuter().front()) {
+      _wr.arr();
+      _wr.val(poly.getOuter().front().getX());
+      _wr.val(poly.getOuter().front().getY());
+      _wr.close();
+    }
     _wr.close();
 
     for (const auto& inner : poly.getInners()) {
@@ -155,6 +178,13 @@ void GeoJsonOutput::printGeom(const MultiPolygon<T>& mpoly) {
         _wr.arr();
         _wr.val(p.getX());
         _wr.val(p.getY());
+        _wr.close();
+      }
+      // ensure ring is closed
+      if (inner.back() != inner.front()) {
+        _wr.arr();
+        _wr.val(inner.front().getX());
+        _wr.val(inner.front().getY());
         _wr.close();
       }
       _wr.close();
