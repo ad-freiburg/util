@@ -287,10 +287,10 @@ inline bool isFloatingPoint(const std::string& str) {
 
 // _____________________________________________________________________________
 inline std::string formatFloat(double f, int DIGITS) {
-	const std::string fStr = "{:." + std::to_string(DIGITS) + "f}";
+  std::string fStr = "{:." + std::to_string(DIGITS) + "f}";
 
 	fmt::memory_buffer buf;
-	fmt::format_to(std::back_inserter(buf), fStr.c_str(), f);
+	fmt::vformat_to(std::back_inserter(buf), fStr, fmt::make_format_args(f));
 
 	auto ret = fmt::to_string(buf);
 
