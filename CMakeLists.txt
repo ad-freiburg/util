@@ -2,6 +2,10 @@ file(GLOB_RECURSE util_SRC *.cpp)
 list(REMOVE_ITEM util_SRC TestMain.cpp)
 add_library(pb_util ${util_SRC})
 
+target_include_directories(pb_util PUBLIC
+	$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../>
+)
+
 if (!BZIP2_FOUND)
     find_package(BZip2)
     if (ZLIB_FOUND)
@@ -10,7 +14,7 @@ if (!BZIP2_FOUND)
 endif()
 
 if (BZIP2_FOUND)
-	include_directories( ${BZIP2_INCLUDE_DIR} )
+	target_include_directories(pb_util INTERFACE ${BZIP2_INCLUDE_DIR} )
 	target_link_libraries( pb_util ${BZIP2_LIBRARIES} )
 endif(BZIP2_FOUND)
 
@@ -22,7 +26,7 @@ if (!ZLIB_FOUND)
 endif()
 
 if (ZLIB_FOUND)
-	include_directories( ${ZLIB_INCLUDE_DIRS} )
+	target_include_directories(pb_util INTERFACE ${ZLIB_INCLUDE_DIRS} )
 	target_link_libraries( pb_util ${ZLIB_LIBRARIES} )
 endif(ZLIB_FOUND)
 
