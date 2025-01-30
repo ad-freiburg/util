@@ -10,19 +10,13 @@
 #include <iostream>
 #include <sstream>
 
-#define VDEBUG 4
-#define DEBUG 3
-#define INFO 2
-#define WARN 1
-#define ERROR 0
-
-#ifndef LOGLEVEL
-#define LOGLEVEL 2
+#ifndef UTIL_LOGLVL
+#define UTIL_LOGLVL 2
 #endif
 
-// compiler will optimize statement away if x > LOGLEVEL
-#define LOG(x) if (x <= LOGLEVEL) util::Log<x>().log()
-#define LOGTO(x, os) if (x <= LOGLEVEL) util::Log<x>(&os).log()
+// compiler will optimize statement away if x > UTIL_LOGLVL
+#define LOG(x) if (x <= UTIL_LOGLVL) util::Log<x>().log()
+#define LOGTO(x, os) if (x <= UTIL_LOGLVL) util::Log<x>(&os).log()
 
 using std::setfill;
 using std::setw;
@@ -34,12 +28,20 @@ using std::chrono::time_point_cast;
 
 namespace util {
 
+enum LogLevel {
+  VDEBUG = 4,
+  DEBUG = 3,
+  INFO = 2,
+  WARN = 1,
+  ERROR = 0
+};
+
 const static char* LOGS[] = {"ERROR", "WARN ", "INFO ", "DEBUG", "DEBUG"};
 
 template <char LVL>
 class Log {
  public:
-  Log() { if (LVL < INFO) os = &std::cerr; else os = &std::cout; }
+  Log() { if (LVL < LogLevel::INFO) os = &std::cerr; else os = &std::cout; }
   explicit Log(std::ostream* s) { os = s; }
   ~Log() { buf << std::endl; (*os) << buf.str(); }
   std::ostream& log() { return ts() << LOGS[(size_t)LVL] << ": "; }
