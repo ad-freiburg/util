@@ -438,6 +438,7 @@ class XSortedPolygon {
 template <typename T>
 using XSortedMultiPolygon = std::vector<XSortedPolygon<T>>;
 
+
 }  // namespace geo
 }  // namespace util
 

@@ -12,6 +12,7 @@
 #include <algorithm>
 #include <array>
 #include <cassert>
+#include <functional>
 #include <iomanip>
 #include <iostream>
 #include <sstream>
@@ -692,7 +693,7 @@ inline std::string getWKT(const Point<T>& p) {
 // _____________________________________________________________________________
 template <typename T>
 inline std::string getWKT(const std::vector<Point<T>>& p, uint16_t prec) {
-  std::string ret="MULTIPOINT(";
+  std::string ret = "MULTIPOINT(";
   ret.reserve(10 + 1 + p.size() * (prec + 3) * 2 + 1);
   for (size_t i = 0; i < p.size(); i++) {
     if (i) ret.push_back(',');
@@ -713,7 +714,7 @@ inline std::string getWKT(const std::vector<Point<T>>& p) {
 // _____________________________________________________________________________
 template <typename T>
 inline std::string getWKT(const Line<T>& l, uint16_t prec) {
-  std::string ret="LINESTRING(";
+  std::string ret = "LINESTRING(";
   ret.reserve(10 + 1 + l.size() * (prec + 3) * 2 + 1);
   for (size_t i = 0; i < l.size(); i++) {
     if (i) ret.push_back(',');
@@ -734,7 +735,7 @@ inline std::string getWKT(const Line<T>& l) {
 // _____________________________________________________________________________
 template <typename T>
 inline std::string getWKT(const std::vector<Line<T>>& ls, uint16_t prec) {
-  std::string ret ="MULTILINESTRING(";
+  std::string ret = "MULTILINESTRING(";
 
   if (ls.size()) ret.reserve(15 + 2 + ls[0].size() * (prec + 3) * 2 + 2);
 
@@ -893,7 +894,8 @@ inline std::string getWKT(const Polygon<T>& p) {
 template <typename T>
 inline std::string getWKT(const std::vector<Polygon<T>>& ls, uint16_t prec) {
   std::string ret = "MULTIPOLYGON(";
-  if (ls.size()) ret.reserve(12 + 2 + ls[0].getOuter().size() * (prec + 3) * 2 + 2);
+  if (ls.size())
+    ret.reserve(12 + 2 + ls[0].getOuter().size() * (prec + 3) * 2 + 2);
 
   for (size_t j = 0; j < ls.size(); j++) {
     if (j) ret.push_back(',');
@@ -931,7 +933,7 @@ inline std::string getWKT(const std::vector<Polygon<T>>& ls, uint16_t prec) {
       }
       ret.push_back(')');
     }
-  ret.push_back(')');
+    ret.push_back(')');
   }
 
   ret.push_back(')');
@@ -1098,6 +1100,107 @@ inline bool contains(const Point<T>& p, const Polygon<T>& poly) {
 
 // _____________________________________________________________________________
 template <typename T>
+inline std::pair<double, bool> withinDist(
+    const Point<T>& p, const XSortedRing<T>& ph, double maxEuclideanDist,
+    double maxDist,
+    std::function<double(const Point<T>& p1, const Point<T>& p2)> distFunc) {
+  // check if point p is within distance "maxDist" to ring, while also only
+  // checking elements that are within the euclidean distance "maxEuclideanDist"
+  //
+  // returns {distance, contained}
+
+  int8_t c = -1;
+  double minDist = std::numeric_limits<double>::max();
+
+  size_t i = 0;
+
+  // skip irrelevant parts in poly
+  if (ph.getMaxSegLen() < std::numeric_limits<double>::infinity() &&
+      i < ph.rawRing().size() &&
+      ph.rawRing()[i].p.getX() <
+          p.getX() - ph.getMaxSegLen() - maxEuclideanDist) {
+    i = std::lower_bound(
+            ph.rawRing().begin() + i, ph.rawRing().end(),
+            XSortedTuple<T>{
+                {p.getX() - ph.getMaxSegLen() - maxEuclideanDist, 0}, false}) -
+        ph.rawRing().begin();
+  }
+
+  while (i < ph.rawRing().size() &&
+         ph.rawRing()[i].seg().second.getX() < p.getX() - maxEuclideanDist)
+    i++;
+
+  for (; i < ph.rawRing().size(); i++) {
+    if (ph.rawRing()[i].out()) continue;
+    // there won't be coming any more lines intersecting a straight north/south
+    // line through p
+    if (ph.rawRing()[i].seg().first.getX() - maxEuclideanDist > p.getX()) break;
+    c *= polyContCheck(p, ph.rawRing()[i].seg().first,
+                       ph.rawRing()[i].seg().second);
+    if (c == 0) return {0, false};
+
+    double euclideanDist = dist(ph.rawRing()[i].seg(), p);
+    if (euclideanDist <= maxEuclideanDist) {
+      auto p2 = projectOn(ph.rawRing()[i].seg().first, p,
+                          ph.rawRing()[i].seg().second);
+
+      double dist = distFunc(p, p2);
+      if (dist < maxDist && dist < minDist) minDist = dist;
+      if (minDist == 0) return {0, false};
+    }
+  }
+
+  return {minDist, c >= 0};
+}
+
+// _____________________________________________________________________________
+template <typename T>
+inline double withinDist(const Point<T>& p,
+                                            const XSortedPolygon<T>& poly,
+                                            double maxEuclideanDist,
+    double maxDist,
+    std::function<double(const Point<T>& p1, const Point<T>& p2)> distFunc) {
+
+  // first do the check in the outer boundary
+  auto r = withinDist(p, poly.getOuter(), maxEuclideanDist, maxDist, distFunc);
+
+  // if we are not included in the outer ring, *and* if the max computed
+  // distance to the border is greate than the maxDist, we can abort here
+  if (r.first > maxDist && !r.second) return std::numeric_limits<double>::max();
+
+  // if we are included in the outer ring, we have to check the inner rings too
+  if (r.second && poly.getInners().size()) {
+    size_t i = 0;
+
+    // skip irrelevant inner rings by their bounding box
+    // NOTE: we are only interested in inner polygons which contain
+    // the point, so no need to add the maxEuclideanDist here to anything
+    if (poly.getInnerMaxSegLen() < std::numeric_limits<double>::infinity()) {
+      i = std::lower_bound(
+              poly.getInnerBoxIdx().begin(), poly.getInnerBoxIdx().end(),
+              std::pair<T, size_t>{p.getX() - poly.getInnerMaxSegLen(), 0}) -
+          poly.getInnerBoxIdx().begin();
+    }
+
+    for (; i < poly.getInners().size(); i++) {
+      // again skip any inner rings if p is not contained in their boxes
+      if (poly.getInnerBoxes()[i].getLowerLeft().getX() > p.getX()) break;
+      if (!util::geo::contains(p, poly.getInnerBoxes()[i])) continue;
+
+      auto r = ringContains(p, poly.getInners()[i], 0);
+
+      // if we are contained in the inner ring, directly return the distance to
+      // its border. We can safely abort has as we assume that inner rings never
+      // intersect
+      if (r.second) return r.first;
+    }
+  }
+
+  return r.second ? 0 : r.first;
+}
+
+// _____________________________________________________________________________
+template <typename T>
 inline std::pair<bool, bool> ringContains(const Point<T>& p,
                                           const XSortedRing<T>& ph, size_t i) {
   // returns {contains, covers}
@@ -1131,6 +1234,50 @@ inline std::pair<bool, bool> ringContains(const Point<T>& p,
   }
 
   return {c >= 0, c >= 0};
+}
+
+// _____________________________________________________________________________
+template <typename T>
+inline double withinDist(const Point<T>& p,
+                                                 const XSortedLine<T>& line,
+                                                 double maxEuclideanDist,
+    double maxDist,
+    std::function<double(const Point<T>& p1, const Point<T>& p2)> distFunc) {
+  // check if point p lies on line
+
+  size_t i = 0;
+  double minDist = std::numeric_limits<double>::max();
+
+  // skip irrelevant parts inline
+  if (line.getMaxSegLen() < std::numeric_limits<double>::infinity() &&
+      i < line.rawLine().size()) {
+    i = std::lower_bound(
+            line.rawLine().begin() + i, line.rawLine().end(),
+            XSortedTuple<T>{{p.getX() - line.getMaxSegLen() - maxEuclideanDist, 0}, false}) -
+        line.rawLine().begin();
+  }
+
+  while (i < line.rawLine().size() &&
+         line.rawLine()[i].seg().second.getX() < p.getX() - maxEuclideanDist)
+    i++;
+
+  for (; i < line.rawLine().size(); i++) {
+    const auto& cur = line.rawLine()[i];
+    if (cur.out()) continue;
+    if (cur.seg().first.getX() - maxEuclideanDist > p.getX()) break;
+
+    double euclideanDist = dist(cur.seg(), p);
+    if (euclideanDist <= maxEuclideanDist) {
+      auto p2 = projectOn(cur.seg().first, p,
+                          cur.seg().second);
+
+      double dist = distFunc(p, p2);
+      if (dist < maxDist && dist < minDist) minDist = dist;
+      if (minDist == 0) return 0;
+    }
+  }
+
+  return minDist;
 }
 
 // _____________________________________________________________________________
@@ -1408,9 +1555,9 @@ inline bool intersectsNaive(const std::vector<XSortedTuple<T>>& ls1,
 template <typename T, template <typename> class C>
 inline uint8_t intersectsHelper(const std::vector<XSortedTuple<T>>& ls1,
                                 const std::vector<XSortedTuple<T>>& ls2,
-                                T maxSegLenA, T maxSegLenB,
-                                const Box<T>& boxA, const Box<T>& boxB,
-                                size_t* firstRelIn1, size_t* firstRelIn2) {
+                                T maxSegLenA, T maxSegLenB, const Box<T>& boxA,
+                                const Box<T>& boxB, size_t* firstRelIn1,
+                                size_t* firstRelIn2) {
   // returns {intersects, strict intersects, inside}
 
   // ls2 is assumed to be a polygon ring
@@ -1434,7 +1581,8 @@ inline uint8_t intersectsHelper(const std::vector<XSortedTuple<T>>& ls1,
       ls1[i].p.getX() < ls2[j].p.getX() - maxSegLenA) {
     i = std::lower_bound(
             ls1.begin() + i, ls1.end(),
-            XSortedTuple<T>{{static_cast<T>(ls2[j].p.getX() - maxSegLenA), 0}, false}) -
+            XSortedTuple<T>{{static_cast<T>(ls2[j].p.getX() - maxSegLenA), 0},
+                            false}) -
         ls1.begin();
   }
 
@@ -1443,7 +1591,8 @@ inline uint8_t intersectsHelper(const std::vector<XSortedTuple<T>>& ls1,
       ls2[j].p.getX() < ls1[i].p.getX() - maxSegLenB) {
     j = std::lower_bound(
             ls2.begin() + j, ls2.end(),
-            XSortedTuple<T>{{static_cast<T>(ls1[i].p.getX() - maxSegLenB), 0}, false}) -
+            XSortedTuple<T>{{static_cast<T>(ls1[i].p.getX() - maxSegLenB), 0},
+                            false}) -
         ls2.begin();
   }
 
@@ -1688,9 +1837,9 @@ inline uint8_t intersectsHelper(const std::vector<XSortedTuple<T>>& ls1,
 template <typename T>
 inline std::tuple<bool, bool, bool> intersectsPoly(
     const std::vector<XSortedTuple<T>>& ls1,
-    const std::vector<XSortedTuple<T>>& ls2, T maxSegLenA,
-    T maxSegLenB, const Box<T>& boxA, const Box<T>& boxB,
-    size_t* firstRelIn1, size_t* firstRelIn2) {
+    const std::vector<XSortedTuple<T>>& ls2, T maxSegLenA, T maxSegLenB,
+    const Box<T>& boxA, const Box<T>& boxB, size_t* firstRelIn1,
+    size_t* firstRelIn2) {
   uint8_t ret = intersectsHelper<T, IntersectorPoly>(
       ls1, ls2, maxSegLenA, maxSegLenB, boxA, boxB, firstRelIn1, firstRelIn2);
 
@@ -1701,9 +1850,9 @@ inline std::tuple<bool, bool, bool> intersectsPoly(
 template <typename T>
 inline std::tuple<bool, bool, bool, bool, bool> intersectsCovers(
     const std::vector<XSortedTuple<T>>& ls1,
-    const std::vector<XSortedTuple<T>>& ls2, T maxSegLenA,
-    T maxSegLenB, const Box<T>& boxA, const Box<T>& boxB,
-    size_t* firstRelIn1, size_t* firstRelIn2) {
+    const std::vector<XSortedTuple<T>>& ls2, T maxSegLenA, T maxSegLenB,
+    const Box<T>& boxA, const Box<T>& boxB, size_t* firstRelIn1,
+    size_t* firstRelIn2) {
   uint8_t ret = intersectsHelper<T, IntersectorLine>(
       ls1, ls2, maxSegLenA, maxSegLenB, boxA, boxB, firstRelIn1, firstRelIn2);
 
@@ -1728,8 +1877,7 @@ inline std::tuple<bool, bool, bool, bool, bool> intersectsCovers(
 template <typename T>
 inline std::tuple<bool, bool, bool, bool, bool> intersectsCovers(
     const std::vector<XSortedTuple<T>>& ls1,
-    const std::vector<XSortedTuple<T>>& ls2, T maxSegLenA,
-    T maxSegLenB) {
+    const std::vector<XSortedTuple<T>>& ls2, T maxSegLenA, T maxSegLenB) {
   return intersectsCovers(
       ls1, ls2, maxSegLenA, maxSegLenB,
       util::geo::Box<T>(
@@ -1754,8 +1902,8 @@ inline std::tuple<bool, bool, bool, bool, bool> intersectsCovers(
 template <typename T>
 inline std::tuple<bool, bool, bool> intersectsPoly(
     const XSortedRing<T>& ls1, const XSortedRing<T>& ls2, T maxSegLenA,
-    T maxSegLenB, const Box<T>& boxA, const Box<T>& boxB,
-    size_t* firstRelIn1, size_t* firstRelIn2) {
+    T maxSegLenB, const Box<T>& boxA, const Box<T>& boxB, size_t* firstRelIn1,
+    size_t* firstRelIn2) {
   return intersectsPoly(ls1.rawRing(), ls2.rawRing(), maxSegLenA, maxSegLenB,
                         boxA, boxB, firstRelIn1, firstRelIn2);
 }
