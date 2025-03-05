@@ -5012,45 +5012,80 @@ inline double withinDist(
 
 // _____________________________________________________________________________
 template <typename T>
-inline double withinDist(
+inline std::pair<double, bool> withinDist(
     const XSortedLine<T>& ls1, const XSortedRing<T>& p2, const Box<T>& boxA,
     const Box<T>& boxB, double maxEuclideanDistX, double maxEuclideanDistY,
     double maxDist,
     std::function<double(const Point<T>& p1, const Point<T>& p2)> distFunc) {
-  // TODO
   if (ls1.rawLine().size() == 1) {
-    auto d = withinDist(ls1.rawLine().front().p, p2, maxEuclideanDistX, maxDist,
-                        distFunc);
-    return d.second ? 0 : d.first;
-  }
-  if (p2.rawRing().size() == 1) {
-    return withinDist(p2.rawRing().front().p, ls1, maxEuclideanDistX, maxDist,
+    return withinDist(ls1.rawLine().front().p, p2, maxEuclideanDistX, maxDist,
                       distFunc);
   }
 
-  if (ls1.rawLine().size() == 0) return std::numeric_limits<double>::max();
-  if (p2.rawRing().size() == 0) return std::numeric_limits<double>::max();
+  if (p2.rawRing().size() == 1) {
+    return {withinDist(p2.rawRing().front().p, ls1, maxEuclideanDistX, maxDist,
+                       distFunc),
+            false};
+  }
 
-  double outerRingDist = util::geo::withinDist(
+  if (ls1.rawLine().size() == 0)
+    return {std::numeric_limits<double>::max(), false};
+  if (p2.rawRing().size() == 0)
+    return {std::numeric_limits<double>::max(), false};
+
+  double ringDist = util::geo::withinDist(
       ls1.rawLine(), p2.rawRing(), ls1.getMaxSegLen(), p2.getMaxSegLen(), boxA,
       boxB, maxEuclideanDistX, maxEuclideanDistY, maxDist, distFunc);
 
-  if (outerRingDist == 0) return 0;
+  if (ringDist == 0) return {ringDist, false};
   if (util::geo::ringContains(ls1.rawLine().front().seg().second, p2, 0).second)
-    return 0;
+    return {ringDist, true};
 
-  return outerRingDist;
+  return {ringDist, false};
 }
 
 // _____________________________________________________________________________
 template <typename T>
 inline double withinDist(
-    const XSortedLine<T>& l1, const XSortedPolygon<T>& p2, const Box<T>& boxA,
+    const XSortedLine<T>& a, const XSortedPolygon<T>& b, const Box<T>& boxA,
     const Box<T>& boxB, double maxEuclideanDistX, double maxEuclideanDistY,
     double maxDist,
     std::function<double(const Point<T>& p1, const Point<T>& p2)> distFunc) {
-  return withinDist(l1, p2.getOuter(), boxA, boxB, maxEuclideanDistX,
-                    maxEuclideanDistY, maxDist, distFunc);
+  auto r = withinDist(a, b.getOuter(), boxA, boxB, maxEuclideanDistX,
+                      maxEuclideanDistY, maxDist, distFunc);
+  if (!r.second) return r.first;
+
+  // also check inner rings
+  if (r.second && b.getInners().size()) {
+    size_t i = 0;
+
+    if (b.getInnerMaxSegLen() < std::numeric_limits<T>::max()) {
+      i = std::lower_bound(
+              b.getInnerBoxIdx().begin(), b.getInnerBoxIdx().end(),
+              std::pair<T, size_t>{a.rawLine().front().seg().first.getX() -
+                                       b.getInnerMaxSegLen(),
+                                   0}) -
+          b.getInnerBoxIdx().begin();
+    }
+
+    for (; i < b.getInners().size(); i++) {
+      if (b.getInners()[i].rawRing().size() < 2) continue;
+      if (b.getInnerBoxes()[i].getLowerLeft().getX() >
+          a.rawLine().back().seg().second.getX())
+        break;
+      if (!util::geo::intersects(boxA, b.getInnerBoxes()[i])) continue;
+
+      auto r2 =
+          withinDist(a, b.getInners()[i], boxA, b.getInnerBoxes()[i],
+                     maxEuclideanDistX, maxEuclideanDistY, maxDist, distFunc);
+
+      // if we are contained in the inner ring, directly return the distance to
+      // it
+      if (r2.second) return r2.first;
+    }
+  }
+
+  return r.second ? 0 : r.first;
 }
 
 // _____________________________________________________________________________
