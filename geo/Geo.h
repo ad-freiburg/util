@@ -4913,13 +4913,13 @@ inline double withinDist(
       if (ls1[i].seg().first.getY() <
               boxB.getLowerLeft().getY() - maxEuclideanDistY &&
           ls1[i].seg().second.getY() <
-              boxB.getLowerLeft().getY() + maxEuclideanDistY) {
+              boxB.getLowerLeft().getY() - maxEuclideanDistY) {
         i++;
         continue;
       }
 
       if (ls1[i].seg().first.getY() >
-              boxB.getUpperRight().getY() - maxEuclideanDistY &&
+              boxB.getUpperRight().getY() + maxEuclideanDistY &&
           ls1[i].seg().second.getY() >
               boxB.getUpperRight().getY() + maxEuclideanDistY) {
         i++;
