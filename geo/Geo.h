@@ -1169,9 +1169,8 @@ inline double withinDist(
   // first do the check in the outer boundary
   auto r = withinDist(p, poly.getOuter(), maxEuclideanDist, maxDist, distFunc);
 
-  // if we are not included in the outer ring, *and* if the max computed
-  // distance to the border is greate than the maxDist, we can abort here
-  if (r.first > maxDist && !r.second) return std::numeric_limits<double>::max();
+  // if we are not included in the outer ring,  we can abort here
+  if (!r.second) return r.first;
 
   // if we are included in the outer ring, we have to check the inner rings too
   if (r.second && poly.getInners().size()) {
