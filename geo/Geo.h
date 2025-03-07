@@ -3059,11 +3059,11 @@ inline double dist(
 
   if (d3 <= d1 && d3 <= d2 && d3 <= d4) {
     auto p2 = projectOn(ls1.first, ls2.first, ls1.second);
-    return distFunc(ls1.first, p2);
+    return distFunc(ls2.first, p2);
   }
 
   auto p2 = projectOn(ls1.first, ls2.second, ls1.second);
-  return distFunc(ls1.second, p2);
+  return distFunc(ls2.second, p2);
 }
 
 // _____________________________________________________________________________
@@ -4865,8 +4865,9 @@ inline double withinDist(
 
   std::queue<XSortedTuple<T>> deferredOutLs2;
 
-  while (i < ls1.size() && j < ls2.size()) {
-    if (ls1[i].p.getX() < ls2[j].p.getX() - maxEuclideanDistX ||
+  while (i < ls1.size()) {
+    if (j >= ls2.size() ||
+        ls1[i].p.getX() < ls2[j].p.getX() - maxEuclideanDistX ||
         (ls1[i].p.getX() == ls2[j].p.getX() - maxEuclideanDistX &&
          (!ls1[i].out() || ls2[j].out()))) {
       // advance ls1
@@ -4898,6 +4899,33 @@ inline double withinDist(
         deferredOutLs2.pop();
       }
 
+      // we are past ls2
+      if (ls1[i].p.getX() > ls2.back().p.getX() + maxEuclideanDistX) break;
+
+      // ignore segments out of the X range
+      if (ls1[i].seg().second.getX() <
+          boxB.getLowerLeft().getX() - maxEuclideanDistX) {
+        i++;
+        continue;
+      }
+
+      // ignore segments out of the Y range
+      if (ls1[i].seg().first.getY() <
+              boxB.getLowerLeft().getY() - maxEuclideanDistY &&
+          ls1[i].seg().second.getY() <
+              boxB.getLowerLeft().getY() + maxEuclideanDistY) {
+        i++;
+        continue;
+      }
+
+      if (ls1[i].seg().first.getY() >
+              boxB.getUpperRight().getY() - maxEuclideanDistY &&
+          ls1[i].seg().second.getY() >
+              boxB.getUpperRight().getY() + maxEuclideanDistY) {
+        i++;
+        continue;
+      }
+
       const auto& box = getBoundingBox(ls1[i].seg());
 
       if (!ls1[i].out()) {
@@ -4923,42 +4951,70 @@ inline double withinDist(
       }
 
       i++;
-    } else if (ls2[j].p.getX() - maxEuclideanDistX < ls1[i].p.getX() ||
-               (ls2[j].p.getX() - maxEuclideanDistX == ls1[i].p.getX() &&
-                !ls2[j].out())) {
+    } else if (j < ls2.size() &&
+               (ls2[j].p.getX() - maxEuclideanDistX < ls1[i].p.getX() ||
+                (ls2[j].p.getX() - maxEuclideanDistX == ls1[i].p.getX() &&
+                 !ls2[j].out()))) {
       // advance ls2
-
-      // check the deferred OUT events of ls2 first
-      while (deferredOutLs2.size() &&
-             deferredOutLs2.front().p.getX() + maxEuclideanDistX <
-                 ls2[j].p.getX() - maxEuclideanDistX) {
-        // OUT event LS2
-
-        const auto& box = pad(getBoundingBox(deferredOutLs2.front().seg()),
-                              maxEuclideanDistX, maxEuclideanDistY);
-
-        activesB.erase({box.getLowerLeft().getY(), box.getUpperRight().getY()},
-                       deferredOutLs2.front().seg());
-
-        const auto& overlaps = activesA.overlap_find_all(
-            {box.getLowerLeft().getY(), box.getUpperRight().getY()});
-
-        for (const auto& seg : overlaps) {
-          if (dist(deferredOutLs2.front().seg(), seg.v) <= maxEuclideanDistX) {
-            double dist =
-                util::geo::dist(deferredOutLs2.front().seg(), seg.v, distFunc);
-            if (dist <= maxDist && dist < minDist) minDist = dist;
-            if (minDist == 0) return 0;
-          }
-        }
-
-        deferredOutLs2.pop();
-      }
-
       const auto& box = pad(getBoundingBox(ls2[j].seg()), maxEuclideanDistX,
                             maxEuclideanDistY);
 
       if (!ls2[j].out()) {
+        // check the deferred OUT events of ls2 first
+        while (deferredOutLs2.size() &&
+               deferredOutLs2.front().p.getX() + maxEuclideanDistX <
+                   ls2[j].p.getX() - maxEuclideanDistX) {
+          // OUT event LS2
+
+          const auto& box = pad(getBoundingBox(deferredOutLs2.front().seg()),
+                                maxEuclideanDistX, maxEuclideanDistY);
+
+          activesB.erase(
+              {box.getLowerLeft().getY(), box.getUpperRight().getY()},
+              deferredOutLs2.front().seg());
+
+          const auto& overlaps = activesA.overlap_find_all(
+              {box.getLowerLeft().getY(), box.getUpperRight().getY()});
+
+          for (const auto& seg : overlaps) {
+            if (dist(deferredOutLs2.front().seg(), seg.v) <=
+                maxEuclideanDistX) {
+              double dist = util::geo::dist(deferredOutLs2.front().seg(), seg.v,
+                                            distFunc);
+              if (dist <= maxDist && dist < minDist) minDist = dist;
+              if (minDist == 0) return 0;
+            }
+          }
+
+          deferredOutLs2.pop();
+        }
+
+        // we are past ls1, so simply return
+        if (ls2[j].p.getX() - maxEuclideanDistX > ls1.back().p.getX()) break;
+
+        // ignore segments out of the X range
+        if (ls2[j].seg().second.getX() + maxEuclideanDistX <
+            boxA.getLowerLeft().getX()) {
+          j++;
+          continue;
+        }
+
+        // ignore segments out of the Y range
+        if (ls2[j].seg().first.getY() - maxEuclideanDistY <
+                boxA.getLowerLeft().getY() &&
+            ls2[j].seg().second.getY() + maxEuclideanDistY <
+                boxA.getLowerLeft().getY()) {
+          j++;
+          continue;
+        }
+        if (ls2[j].seg().first.getY() - maxEuclideanDistY >
+                boxA.getUpperRight().getY() &&
+            ls2[j].seg().second.getY() + maxEuclideanDistY >
+                boxA.getUpperRight().getY()) {
+          j++;
+          continue;
+        }
+
         // IN event
         activesB.insert({box.getLowerLeft().getY(), box.getUpperRight().getY()},
                         ls2[j].seg());
