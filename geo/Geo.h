@@ -4983,12 +4983,14 @@ inline double withinDist(
     std::function<double(const Point<T>& p1, const Point<T>& p2)> distFunc) {
   // TODO
   if (p1.rawRing().size() == 1) {
-    auto d = withinDist(p1.rawRing().front().p, p2, maxEuclideanDistX, maxDist,
+    auto d = withinDist(p1.rawRing().front().p, p2,
+                        std::max(maxEuclideanDistX, maxEuclideanDistY), maxDist,
                         distFunc);
     return d.second ? 0 : d.first;
   }
   if (p2.rawRing().size() == 1) {
-    auto d = withinDist(p2.rawRing().front().p, p1, maxEuclideanDistX, maxDist,
+    auto d = withinDist(p2.rawRing().front().p, p1,
+                        std::max(maxEuclideanDistX, maxEuclideanDistY), maxDist,
                         distFunc);
     return d.second ? 0 : d.first;
   }
@@ -5017,12 +5019,14 @@ inline std::pair<double, bool> withinDist(
     double maxDist,
     std::function<double(const Point<T>& p1, const Point<T>& p2)> distFunc) {
   if (ls1.rawLine().size() == 1) {
-    return withinDist(ls1.rawLine().front().p, p2, maxEuclideanDistX, maxDist,
+    return withinDist(ls1.rawLine().front().p, p2,
+                      std::max(maxEuclideanDistX, maxEuclideanDistY), maxDist,
                       distFunc);
   }
 
   if (p2.rawRing().size() == 1) {
-    return {withinDist(p2.rawRing().front().p, ls1, maxEuclideanDistX, maxDist,
+    return {withinDist(p2.rawRing().front().p, ls1,
+                       std::max(maxEuclideanDistX, maxEuclideanDistY), maxDist,
                        distFunc),
             false};
   }
