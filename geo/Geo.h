@@ -5223,6 +5223,8 @@ inline double withinDist(
       if (r2.second) return r2.first;
     }
   }
+
+  return outerR.second ? 0 : outerR.first;
 }
 
 // _____________________________________________________________________________
