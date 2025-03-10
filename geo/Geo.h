@@ -5053,17 +5053,17 @@ inline std::pair<double, bool> withinDist(
   if (p2.rawRing().size() == 0)
     return {std::numeric_limits<double>::max(), false};
 
-  double outerRingDist = util::geo::withinDist(
+  double ringDist = util::geo::withinDist(
       p1.rawRing(), p2.rawRing(), p1.getMaxSegLen(), p2.getMaxSegLen(), boxA,
       boxB, maxEuclideanDistX, maxEuclideanDistY, maxDist, distFunc);
 
-  if (outerRingDist == 0) return {0, false};
+  if (ringDist == 0) return {0, false};
   if (util::geo::ringContains(p1.rawRing().front().seg().second, p2, 0)
           .second ||
       util::geo::ringContains(p2.rawRing().front().seg().second, p1, 0).second)
-    return {0, true};
+    return {ringDist, true};
 
-  return {outerRingDist, false};
+  return {ringDist, false};
 }
 
 // _____________________________________________________________________________
