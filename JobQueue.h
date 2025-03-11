@@ -23,6 +23,10 @@ class JobQueue {
     return _jobs.size();
   }
 
+  void reset() {
+    _jobs = {};
+  }
+
   void add(const T &job) {
     std::unique_lock<std::mutex> lockWait(_mut);
     _notFull.wait(lockWait, [this] { return _jobs.size() < _maxSize; });
