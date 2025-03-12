@@ -30,7 +30,7 @@ class Box {
   void setLowerLeft(const Point<T>& ll) { _ll = ll; }
   void setUpperRight(const Point<T>& ur) { _ur = ur; }
 
-  void isNull() { return _ll.getX() > _ur.getX(); }
+  bool isNull() { return _ll.getX() > _ur.getX(); }
 
   bool operator==(const Box<T>& b) const {
     return getLowerLeft() == b.getLowerLeft() &&
