@@ -4680,5 +4680,7 @@ int main(int argc, char** argv) {
 
   TEST(util::geo::getWKT(util::geo::centroid(util::geo::polygonFromWKT<double>("POLYGON((0 0,1 0,1 1,0 1,0 0),(0.5 0.5,1 0.5,1 1,0.5 1,0.5 0.5),(0.5 0.5,0.5 0,1 0,1 0.5,0.5 0.5),(0 0.5,0.5 0.5,0.5 1, 0 1,0 0.5))"))), ==, "POINT(0.25 0.25)");
   TEST(util::geo::getWKT(util::geo::centroid(util::geo::polygonFromWKT<double>("POLYGON((0 0,1 1,0 0)"))), ==, "POINT(0.5 0.5)");
+
+  TEST(util::geo::getWKT(util::geo::ringCentroid(util::geo::polygonFromWKT<double>("POLYGON((7.8386229 48.0081521,7.8386718 48.0081234,7.8387136 48.0081553,7.8386647 48.008184,7.8386229 48.0081521))").getOuter())), ==, "POINT(7.838668 48.008154)");
 }
 }

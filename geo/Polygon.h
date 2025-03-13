@@ -53,15 +53,7 @@ using MultiPolygon = std::vector<Polygon<T>>;
 // _____________________________________________________________________________
 template <typename T>
 inline double ringArea(const Ring<T>& b) {
-  double ret = 0;
-  size_t j = b.size() - 1;
-  for (size_t i = 0; i < b.size(); i++) {
-    ret += (1.0 * b[j].getX() + 1.0 * b[i].getX()) *
-           (1.0 * b[j].getY() - 1.0 * b[i].getY());
-    j = i;
-  }
-
-  return fabs(ret / 2.0);
+  return fabs(signedRingArea(b));
 }
 
 // _____________________________________________________________________________
@@ -92,11 +84,17 @@ inline double area(const MultiPolygon<T>& b) {
 // _____________________________________________________________________________
 template <typename T>
 inline double signedRingArea(const Ring<T>& b) {
+  if (b.size() < 3) return 0;
+
   double ret = 0;
   size_t j = b.size() - 1;
+
+  double xOff = b[0].getX();
+  double yOff = b[0].getY();
+
   for (size_t i = 0; i < b.size(); i++) {
-    ret += (1.0 * b[j].getX() + 1.0 * b[i].getX()) *
-           (1.0 * b[j].getY() - 1.0 * b[i].getY());
+    ret += (1.0 * (b[j].getX() - xOff) + 1.0 * (b[i].getX() - xOff)) *
+           (1.0 * (b[j].getY() - yOff) - 1.0 * (b[i].getY() - yOff));
     j = i;
   }
 

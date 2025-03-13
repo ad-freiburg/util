@@ -165,14 +165,14 @@ inline Point<T> centroid(const Point<T> p) {
 
 // _____________________________________________________________________________
 template <typename T>
-inline Point<T> centroid(const LineSegment<T> ls) {
+inline Point<T> centroid(const LineSegment<T>& ls) {
   return Point<T>((1.0 * ls.first.getX() + ls.second.getX()) / T(2),
                   (1.0 * ls.first.getY() + ls.second.getY()) / T(2));
 }
 
 // _____________________________________________________________________________
 template <typename T>
-inline Point<T> centroid(const Line<T> ls) {
+inline Point<T> centroid(const Line<T>& ls) {
   if (ls.size() == 0) return {0, 0};  // undefined behavior
   if (ls.size() == 1) return ls[0];
 
@@ -191,30 +191,33 @@ inline Point<T> centroid(const Line<T> ls) {
 
 // _____________________________________________________________________________
 template <typename T>
-inline Point<T> ringCentroid(const Line<T> ls) {
+inline Point<T> ringCentroid(const Line<T>& ls) {
   if (ls.size() == 0) return {0, 0};  // undefined behavior
   if (ls.size() == 1) return ls[0];
+
+  double xOff = ls[0].getX();
+  double yOff = ls[0].getY();
 
   double x = 0, y = 0, ta = 0;
 
   size_t j = ls.size() - 1;
   for (size_t i = 0; i < ls.size(); i++) {
-    double a =
-        1.0 * ls[j].getX() * ls[i].getY() - 1.0 * ls[i].getX() * ls[j].getY();
+    double a = 1.0 * (ls[j].getX() - xOff) * (ls[i].getY() - yOff) -
+               1.0 * (ls[i].getX() - xOff) * (ls[j].getY() - yOff);
     ta += a;
-    x += a * (ls[j].getX() + ls[i].getX());
-    y += a * (ls[j].getY() + ls[i].getY());
+    x += a * ((ls[j].getX() - xOff) + (ls[i].getX() - xOff));
+    y += a * ((ls[j].getY() - yOff) + (ls[i].getY() - yOff));
     j = i;
   }
 
   if (ta == 0) return centroid(ls);
 
-  return Point<T>(x / (3.0 * ta), y / (3.0 * ta));
+  return Point<T>((x / (3.0 * ta)) + xOff, (y / (3.0 * ta)) + yOff);
 }
 
 // _____________________________________________________________________________
 template <typename T>
-inline Point<T> centroid(const Polygon<T> o) {
+inline Point<T> centroid(const Polygon<T>& o) {
   if (o.getOuter().size() == 0) return {0, 0};  // undefined behavior
   double sumA = 0, x = 0, y = 0;
 
@@ -245,7 +248,7 @@ inline Point<T> centroid(const Polygon<T> o) {
 
 // _____________________________________________________________________________
 template <typename T>
-inline Point<T> centroid(const Box<T> box) {
+inline Point<T> centroid(const Box<T>& box) {
   return centroid(LineSegment<T>(box.getLowerLeft(), box.getUpperRight()));
 }
 
