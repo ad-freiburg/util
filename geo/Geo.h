@@ -866,6 +866,7 @@ inline std::string getWKT(const Box<T>& l) {
 // _____________________________________________________________________________
 template <typename T>
 inline std::string getWKT(const Polygon<T>& p, uint16_t prec) {
+  if (p.getOuter().size() == 0) return "POLYGON()";
   std::string ret = "POLYGON((";
   ret.reserve(7 + 2 + p.getOuter().size() * (prec + 3) * 2 + 2);
 
