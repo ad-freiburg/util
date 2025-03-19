@@ -14,13 +14,11 @@ PolyLine<T>::PolyLine(const Point<T>& from, const Point<T>& to) {
 
 // _____________________________________________________________________________
 template <typename T>
-PolyLine<T>::PolyLine(const PolyLine<T>& l) : _line(l._line) {
-}
+PolyLine<T>::PolyLine(const PolyLine<T>& l) : _line(l._line) {}
 
 // _____________________________________________________________________________
 template <typename T>
-PolyLine<T>::PolyLine(PolyLine<T>&& l) : _line(std::move(l._line)) {
-}
+PolyLine<T>::PolyLine(PolyLine<T>&& l) : _line(std::move(l._line)) {}
 
 // _____________________________________________________________________________
 template <typename T>

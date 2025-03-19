@@ -5,34 +5,40 @@
 #ifndef UTIL_MISC_H_
 #define UTIL_MISC_H_
 
+#define FMT_HEADER_ONLY
+
 #include <cmath>
 #include <cstring>
 #include <chrono>
 #include <sstream>
+#include <stdio.h>
+#include <cstdio>
+#include <unistd.h>
+#include <cstdlib>
 #include <iomanip>
 #include <iostream>
 #include <sstream>
+#include <thread>
 #include <vector>
+#include <queue>
 #include <unistd.h>
 #include <sys/types.h>
+#include <fcntl.h>
 #include <pwd.h>
 #include <map>
 #include <thread>
-#include "3rdparty/dtoa_milo.h"
-#include "util/String.h"
+#include "String.h"
+#include "JobQueue.h"
+#include "3rdparty/fmt/core.h"
+
+static const size_t SORT_BUFFER_S = 64 * 128 * 1024;
 
 #define UNUSED(expr) do { (void)(expr); } while (0)
 #define TIME() std::chrono::high_resolution_clock::now()
-#define TOOK(t1, t2) (std::chrono::duration_cast<std::chrono::microseconds>(t2 - t1).count() / 1000.0)
+#define TOOK_UNTIL(t1, t2) (std::chrono::duration_cast<std::chrono::nanoseconds>(t2 - t1).count())
+#define TOOK(t1) (std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::high_resolution_clock::now() - t1).count())
 #define T_START(n)  auto _tstart_##n = std::chrono::high_resolution_clock::now()
-#define T_STOP(n) (std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now() - _tstart_##n).count() / 1000.0)
-
-#define _TEST3(s, o, e) if (!(s o e)) {  std::cerr << "\n" << __FILE__ << ":" << __LINE__ << ": Test failed!\n  Expected " << #s << " " << #o " " << (e) << ", got " << (s) << std::endl;  exit(1);}
-#define _TEST2(s, e) _TEST3(s, ==, e)
-#define _TEST1(s) _TEST3(static_cast<bool>(s), ==, true)
-
-#define _GET_TEST_MACRO(_1,_2,_3,NAME,...) NAME
-#define TEST(...) _GET_TEST_MACRO(__VA_ARGS__, _TEST3, _TEST2, _TEST1, UNUSED)(__VA_ARGS__)
+#define T_STOP(n) (std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::high_resolution_clock::now() - _tstart_##n).count())
 
 #define TODO(msg) std::cerr << "\n" __FILE__ << ":" << __LINE__ << ": TODO: " << #msg << std::endl;
 
@@ -55,6 +61,19 @@
 #endif
 
 namespace util {
+
+struct SortJob {
+  size_t part = 0;
+  unsigned char* partbuf = 0;
+};
+
+inline bool operator==(const SortJob& a, const SortJob& b) {
+  return a.part == b.part && a.partbuf == b.partbuf;
+}
+
+inline bool operator!=(const SortJob& a, const SortJob& b) {
+  return !(a == b);
+}
 
 const static std::map<std::string, std::string> HTML_COLOR_NAMES = {
 	{"aliceblue","F0F8FF"},
@@ -267,16 +286,21 @@ inline bool isFloatingPoint(const std::string& str) {
 }
 
 // _____________________________________________________________________________
-inline std::string formatFloat(double f, size_t digits) {
-  std::stringstream ss;
-  ss << std::fixed << std::setprecision(digits) << f;
-	std::string ret = ss.str();
+inline std::string formatFloat(double f, int DIGITS) {
+  std::string fStr = "{:." + std::to_string(DIGITS) + "f}";
 
-  if (ret.find('.') != std::string::npos) {
-		auto p = ret.find_last_not_of('0');
-    if (ret[p] == '.') return ret.substr(0, p);
-    return ret.substr(0, p + 1);
-  }
+	fmt::memory_buffer buf;
+	fmt::vformat_to(std::back_inserter(buf), fStr, fmt::make_format_args(f));
+
+	auto ret = fmt::to_string(buf);
+
+  if (ret.back() == '0') {
+		if (ret.find('.') != std::string::npos) {
+			auto p = ret.find_last_not_of('0');
+			if (ret[p] == '.') return ret.substr(0, p);
+			return ret.substr(0, p + 1);
+		}
+	}
 
   return ret;
 }
@@ -285,6 +309,8 @@ inline std::string formatFloat(double f, size_t digits) {
 inline double atof(const char* p, uint8_t mn) {
   // this atof implementation works only on "normal" float strings like
   // 56.445 or -345.00, but should be faster than std::atof
+  while (*p && isspace(*p)) p++;
+
   double ret = 0.0;
   bool neg = false;
   if (*p == '-') {
@@ -314,6 +340,59 @@ inline double atof(const char* p, uint8_t mn) {
 
   if (neg) return -ret;
   return ret;
+}
+
+// _____________________________________________________________________________
+inline ssize_t preadAll(int file, unsigned char* buf, size_t count, size_t offset) {
+  ssize_t r;
+  ssize_t rem = count;
+
+  while ((r = pread(file, buf + (count - rem), rem, offset))) {
+    if (r < 0) return -1;
+    rem -= r;
+    offset += r;
+  }
+
+  return count - rem;
+}
+
+// _____________________________________________________________________________
+inline ssize_t readAll(int file, unsigned char* buf, size_t count ) {
+  ssize_t r;
+  ssize_t rem = count;
+
+  while ((r = read(file, buf + (count - rem), rem))) {
+    if (r < 0) return -1;
+    rem -= r;
+  }
+
+  return count - rem;
+}
+
+// _____________________________________________________________________________
+inline ssize_t pwriteAll(int file, const unsigned char* buf, size_t count, size_t offset ) {
+  ssize_t r;
+  ssize_t rem = count;
+
+  while ((r = pwrite(file, buf + (count - rem), rem, offset))) {
+    if (r < 0) return -1;
+    rem -= r;
+    offset += r;
+  }
+
+  return count - rem;
+}
+
+// _____________________________________________________________________________
+inline ssize_t writeAll(int file, const unsigned char* buf, size_t count ) {
+  ssize_t r;
+  ssize_t rem = count;
+  while ((r = write(file, buf + (count - rem), rem))) {
+    if (r < 0) return -1;
+    rem -= r;
+  }
+
+  return count - rem;
 }
 
 // _____________________________________________________________________________
@@ -439,12 +518,12 @@ inline std::string getTmpDir() {
 
 // _____________________________________________________________________________
 inline std::string getTmpFName(std::string dir, std::string name,
-    std::string postf) {
+                               std::string postf) {
   if (postf.size()) postf = "-" + postf;
   if (dir == "<tmp>") dir = util::getTmpDir();
   if (dir.size() && dir.back() != '/') dir = dir + "/";
 
-  std::string f = dir + name + postf;
+  std::string f = dir + name + postf + "-" + std::to_string(getpid());
 
   size_t c = 0;
 
@@ -456,7 +535,8 @@ inline std::string getTmpFName(std::string dir, std::string name,
       exit(1);
     }
     std::stringstream ss;
-    ss << dir << name << postf << "-" << std::rand();
+    ss << dir << name << postf << "-" << std::to_string(getpid()) << "-"
+       << std::rand();
     f = ss.str().c_str();
   }
 
@@ -555,6 +635,154 @@ inline char* readableSize(double size, size_t n, char* buf) {
 inline std::string readableSize(double size) {
   char buffer[30];
   return readableSize(size, 30, buffer);
+}
+
+// _____________________________________________________________________________
+inline void sortPart(int file, size_t objSize, size_t part, unsigned char* buf, unsigned char* partbuf, size_t bufferSize, size_t partsBufSize, size_t* partsize, int (*cmpf)(const void*, const void*)) {
+  // read entire part to buf
+  ssize_t n = preadAll(file, buf, bufferSize, bufferSize * part);
+  if (n < 0) {
+    std::cerr << strerror(errno) << std::endl;
+    return;
+  }
+
+  // sort entire part in memory
+  qsort(buf, n / objSize, objSize, cmpf);
+
+  // write entire part, now sorted, back to file, to the same position
+  ssize_t r = pwriteAll(file, buf, n, bufferSize * part);
+  if (r < 0) {
+    std::cerr << strerror(errno) << std::endl;
+    return;
+  }
+
+  // already copy the beginning of the read part to the parts buffer
+  memcpy(partbuf, buf, std::min<size_t>(n, partsBufSize));
+
+  // save size of this part (which might be different than bufferSize for the
+  // last part (might be even 0)
+  partsize[part] = n;
+}
+
+// _____________________________________________________________________________
+inline void processSortQueue(util::JobQueue<SortJob>* jobs, int file,
+                             size_t objSize, unsigned char* buf,
+                             size_t bufferSize, size_t partsBufSize,
+                             size_t* partsize,
+                             int (*cmpf)(const void*, const void*)) {
+  SortJob job;
+  while ((job = jobs->get()).partbuf != 0) {
+    sortPart(file, objSize, job.part, buf, job.partbuf, bufferSize,
+             partsBufSize, partsize, cmpf);
+  }
+}
+
+// _____________________________________________________________________________
+inline ssize_t externalSort(int file, int newFile, size_t size, size_t numobjs,
+                            size_t numThreads,
+                            int (*cmpf)(const void*, const void*)) {
+  // sort a file via an external sort. Sorting is parallel (with numThreads
+  // parallel threads), merging of the sorted parts is sequential
+
+  size_t fsize = size * numobjs;
+
+  size_t bufferSize = SORT_BUFFER_S * size;
+
+  size_t parts = fsize / bufferSize + 1;
+  size_t partsBufSize = ((bufferSize / size) / parts + 1) * size;
+  unsigned char** bufs = new unsigned char*[numThreads];
+  unsigned char** partbufs = new unsigned char*[parts];
+  size_t* partpos = new size_t[parts];
+  size_t* partsize = new size_t[parts];
+
+  // fire up worker threads for geometry checking
+  std::vector<std::thread> thrds(numThreads);
+
+  auto pqComp = [cmpf](const std::pair<const void*, size_t>& a,
+                       const std::pair<const void*, size_t>& b) {
+    return cmpf(a.first, b.first) != -1;
+  };
+  std::priority_queue<std::pair<const void*, size_t>,
+                      std::vector<std::pair<const void*, size_t>>,
+                      decltype(pqComp)>
+      pq(pqComp);
+
+  util::JobQueue<SortJob> jobQ;
+
+  // sort the 'parts' number of file parts independently
+  for (size_t i = 0; i < parts; i++) {
+    partbufs[i] = new unsigned char[partsBufSize];
+    partpos[i] = 0;
+    partsize[i] = 0;
+
+    jobQ.add({i, partbufs[i]});
+  }
+
+  // the DONE element on the job queue to signal all threads to shut down
+  jobQ.add({});
+
+  for (size_t t = 0; t < numThreads; t++) {
+    bufs[t] = new unsigned char[bufferSize];
+    thrds[t] = std::thread(&processSortQueue, &jobQ, file, size, bufs[t],
+                           bufferSize, partsBufSize, partsize, cmpf);
+  }
+
+  for (auto& th : thrds) th.join();
+
+  // init priority queue, push all parts to it
+  for (size_t j = 0; j < parts; j++) {
+    if (partpos[j] == partsize[j]) continue;  // bucket already empty
+    pq.push({&partbufs[j][partpos[j] % partsBufSize], j});
+  }
+
+  for (size_t i = 0; i < fsize; i += size) {
+    auto top = pq.top();
+    pq.pop();
+
+    const void* smallest = top.first;
+    ssize_t smallestP = top.second;
+
+    // write the smallest element to the current buffer position
+    memcpy(bufs[0] + (i % bufferSize), smallest, size);
+
+    // if buffer is full (or if we are at the end of the file), flush
+    if ((i % bufferSize) + size == bufferSize || i + size == fsize) {
+      // write to output file
+      ssize_t r = writeAll(newFile, bufs[0], i % bufferSize + size);
+      if (r < 0) return -1;
+    }
+
+    // increment the position in the current smallest part by 1
+    partpos[smallestP] += size;
+
+    // we have reached the end of this part, do not re-add again
+    if (partpos[smallestP] == partsize[smallestP]) continue;
+
+    // we have reached the end of the parts buffer, re-fill
+    if (partpos[smallestP] % partsBufSize == 0) {
+      lseek(file, bufferSize * smallestP + partpos[smallestP], SEEK_SET);
+      ssize_t r = readAll(file, partbufs[smallestP], partsBufSize);
+      if (r < 0) return -1;
+    }
+
+    // re-add part with new smallest element to PQ
+    pq.push(
+        {&partbufs[smallestP][partpos[smallestP] % partsBufSize], smallestP});
+  }
+
+  // cleanup
+  for (size_t j = 0; j < parts; j++) {
+    delete[] partbufs[j];
+  }
+  for (size_t j = 0; j < numThreads; j++) {
+    delete[] bufs[j];
+  }
+  delete[] partbufs;
+  delete[] bufs;
+  delete[] partpos;
+  delete[] partsize;
+
+  return 1;
 }
 
 // _____________________________________________________________________________
