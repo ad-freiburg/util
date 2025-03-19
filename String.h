@@ -25,6 +25,34 @@
 namespace util {
 
 // _____________________________________________________________________________
+inline int strcicmp(char const* left, char const* right) {
+  // case insensitive strcmp, returns 0 if equal, > 0 otherwise
+  while (true) {
+    int d = tolower(static_cast<unsigned char>(*left)) -
+            tolower(static_cast<unsigned char>(*right));
+    if (d || !*left) return d;  // if !*left, both strings are at their end
+    left++;
+    right++;
+  }
+}
+
+// _____________________________________________________________________________
+inline int strncicmp(char const* left, char const* right, size_t n) {
+  // case insensitive strcmp, returns 0 if equal, > 0 otherwise
+  size_t i = 0;
+  while (i < n) {
+    int d = tolower(static_cast<unsigned char>(*left)) -
+            tolower(static_cast<unsigned char>(*right));
+    if (d || !*left) return d;  // if !*left, both strings are at their end
+    left++;
+    right++;
+    i++;
+  }
+
+  return 0;
+}
+
+// _____________________________________________________________________________
 inline bool endsWith(const std::string& a, const std::string& suff) {
   if (suff.size() > a.size()) return false;
   return a.compare(a.length() - suff.length(), suff.length(), suff) == 0;

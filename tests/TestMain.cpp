@@ -33,6 +33,217 @@ int main(int argc, char** argv) {
 	UNUSED(argv);
 
   std::setlocale(LC_ALL, "en_US.utf8");
+  TEST(strncicmp("LINESTRING", "LINESTRING(0 0, 1 1))", 10), ==, 0);
+
+  // WKT PARSING
+{
+  TEST(util::geo::getWKTType("LINESTRING(0 0, 1 1)", 0), ==, WKTType::LINESTRING);
+  TEST(util::geo::getWKTType("MLINESTRING(0 0, 1 1)", 0), ==, WKTType::LINESTRING);
+  TEST(util::geo::getWKTType("  MLINESTRING (0 0, 1 1)", 0), ==, WKTType::LINESTRING);
+  TEST(util::geo::getWKTType("  MLINESTRING Z(0 0, 1 1)", 0), ==, WKTType::LINESTRING);
+  TEST(util::geo::getWKTType("  LINESTRING Z(0 0, 1 1)", 0), ==, WKTType::LINESTRING);
+  TEST(util::geo::getWKTType("  LINESTRING M(0 0, 1 1)", 0), ==, WKTType::LINESTRING);
+  TEST(util::geo::getWKTType("  LINESTRING ZM(0 0, 1 1)", 0), ==, WKTType::LINESTRING);
+  TEST(util::geo::getWKTType("  LINESTRING (0 0, 1 1)", 0), ==, WKTType::LINESTRING);
+  TEST(util::geo::getWKTType("  LINESTRIN (0 0, 1 1)", 0), ==, WKTType::NONE);
+  TEST(util::geo::getWKTType("  INESTRING (0 0, 1 1)", 0), ==, WKTType::NONE);
+
+  TEST(util::geo::getWKTType("linestring(0 0, 1 1)", 0), ==, WKTType::LINESTRING);
+  TEST(util::geo::getWKTType("mlinestring(0 0, 1 1)", 0), ==, WKTType::LINESTRING);
+  TEST(util::geo::getWKTType("  mlinestring (0 0, 1 1)", 0), ==, WKTType::LINESTRING);
+  TEST(util::geo::getWKTType("  mlinestring z(0 0, 1 1)", 0), ==, WKTType::LINESTRING);
+  TEST(util::geo::getWKTType("  linestring z(0 0, 1 1)", 0), ==, WKTType::LINESTRING);
+  TEST(util::geo::getWKTType("  linestring (0 0, 1 1)", 0), ==, WKTType::LINESTRING);
+
+  TEST(util::geo::getWKTType("liNestRing(0 0, 1 1)", 0), ==, WKTType::LINESTRING);
+  TEST(util::geo::getWKTType("mlinestrIng(0 0, 1 1)", 0), ==, WKTType::LINESTRING);
+  TEST(util::geo::getWKTType("  mliNestring (0 0, 1 1)", 0), ==, WKTType::LINESTRING);
+  TEST(util::geo::getWKTType("  MlInestring z(0 0, 1 1)", 0), ==, WKTType::LINESTRING);
+  TEST(util::geo::getWKTType("  Linestring z(0 0, 1 1)", 0), ==, WKTType::LINESTRING);
+  TEST(util::geo::getWKTType("  Linestring ZM(0 0, 1 1)", 0), ==, WKTType::LINESTRING);
+  TEST(util::geo::getWKTType("  linestrinG (0 0, 1 1)", 0), ==, WKTType::LINESTRING);
+
+  TEST(util::geo::getWKT(lineFromWKT<int>("LINESTRING(0 0, 1 1)", 0)), ==, "LINESTRING(0 0,1 1)");
+  TEST(util::geo::getWKT(lineFromWKT<int>("LINESTRING (0 0, 1 1)", 0)), ==, "LINESTRING(0 0,1 1)");
+  TEST(util::geo::getWKT(lineFromWKT<int>("LINESTRING   (0 0, 1 1)", 0)), ==, "LINESTRING(0 0,1 1)");
+  TEST(util::geo::getWKT(lineFromWKT<int>("   LINESTRING   (  0    0  , 1  1   )", 0)), ==, "LINESTRING(0 0,1 1)");
+
+  TEST(util::geo::getWKT(lineFromWKT<int>("(0 0, 1 1)", 0)), ==, "LINESTRING(0 0,1 1)");
+  TEST(util::geo::getWKT(lineFromWKT<int>(" (0 0, 1 1)", 0)), ==, "LINESTRING(0 0,1 1)");
+  TEST(util::geo::getWKT(lineFromWKT<int>("   (0 0, 1 1)", 0)), ==, "LINESTRING(0 0,1 1)");
+  TEST(util::geo::getWKT(lineFromWKT<int>("      (  0    0  , 1  1   )", 0)), ==, "LINESTRING(0 0,1 1)");
+
+  TEST(util::geo::getWKT(lineFromWKT<int>("LINESTRING Z(0 0, 1 1)", 0)), ==, "LINESTRING(0 0,1 1)");
+  TEST(util::geo::getWKT(lineFromWKT<int>("LINESTRING Z (0 0, 1 1)", 0)), ==, "LINESTRING(0 0,1 1)");
+  TEST(util::geo::getWKT(lineFromWKT<int>("LINESTRING Z  (0 0, 1 1)", 0)), ==, "LINESTRING(0 0,1 1)");
+  TEST(util::geo::getWKT(lineFromWKT<int>("   LINESTRING Z   (  0    0  , 1  1   )", 0)), ==, "LINESTRING(0 0,1 1)");
+  TEST(util::geo::getWKT(lineFromWKT<int>("MLINESTRING (0 0, 1 1)", 0)), ==, "LINESTRING(0 0,1 1)");
+  TEST(util::geo::getWKT(lineFromWKT<int>("MLINESTRING  (0 0, 1 1)", 0)), ==, "LINESTRING(0 0,1 1)");
+  TEST(util::geo::getWKT(lineFromWKT<int>("MLINESTRING   (0 0, 1 1)", 0)), ==, "LINESTRING(0 0,1 1)");
+  TEST(util::geo::getWKT(lineFromWKT<int>("   MLINESTRING    (  0    0  0.5 , 1  1 100  )", 0)), ==, "LINESTRING(0 0,1 1)");
+}
+
+{
+  TEST(util::geo::getWKTType("MULTIPOINT(0 0, 1 1)", 0), ==, WKTType::MULTIPOINT);
+  TEST(util::geo::getWKTType("MMULTIPOINT(0 0, 1 1)", 0), ==, WKTType::MULTIPOINT);
+  TEST(util::geo::getWKTType("  MMULTIPOINT (0 0, 1 1)", 0), ==, WKTType::MULTIPOINT);
+  TEST(util::geo::getWKTType("  MMULTIPOINT Z(0 0, 1 1)", 0), ==, WKTType::MULTIPOINT);
+  TEST(util::geo::getWKTType("  MULTIPOINT Z(0 0, 1 1)", 0), ==, WKTType::MULTIPOINT);
+  TEST(util::geo::getWKTType("  MULTIPOINT M(0 0, 1 1)", 0), ==, WKTType::MULTIPOINT);
+  TEST(util::geo::getWKTType("  MULTIPOINT ZM(0 0, 1 1)", 0), ==, WKTType::MULTIPOINT);
+  TEST(util::geo::getWKTType("  MULTIPOINT (0 0, 1 1)", 0), ==, WKTType::MULTIPOINT);
+  TEST(util::geo::getWKTType("  MULTIPOIN (0 0, 1 1)", 0), ==, WKTType::NONE);
+  TEST(util::geo::getWKTType("  ULTIPOINT (0 0, 1 1)", 0), ==, WKTType::NONE);
+
+  TEST(util::geo::getWKTType("multipoint(0 0, 1 1)", 0), ==, WKTType::MULTIPOINT);
+  TEST(util::geo::getWKTType("mmultipoint(0 0, 1 1)", 0), ==, WKTType::MULTIPOINT);
+  TEST(util::geo::getWKTType("  mmultipoint (0 0, 1 1)", 0), ==, WKTType::MULTIPOINT);
+  TEST(util::geo::getWKTType("  mmultipoint z(0 0, 1 1)", 0), ==, WKTType::MULTIPOINT);
+  TEST(util::geo::getWKTType("  mmultipoint z(0 0, 1 1)", 0), ==, WKTType::MULTIPOINT);
+  TEST(util::geo::getWKTType("  mmultipoint (0 0, 1 1)", 0), ==, WKTType::MULTIPOINT);
+
+  TEST(util::geo::getWKTType("mUltIpOint(0 0, 1 1)", 0), ==, WKTType::MULTIPOINT);
+  TEST(util::geo::getWKTType("mMultiPoint(0 0, 1 1)", 0), ==, WKTType::MULTIPOINT);
+  TEST(util::geo::getWKTType("  Multipoint z(0 0, 1 1)", 0), ==, WKTType::MULTIPOINT);
+  TEST(util::geo::getWKTType("  Multipoint ZM(0 0, 1 1)", 0), ==, WKTType::MULTIPOINT);
+  TEST(util::geo::getWKTType("  MultipoinT (0 0, 1 1)", 0), ==, WKTType::MULTIPOINT);
+
+  TEST(util::geo::getWKT(multiPointFromWKT<int>("MULTIPOINT(0 0, 1 1)", 0)), ==, "MULTIPOINT(0 0,1 1)");
+  TEST(util::geo::getWKT(multiPointFromWKT<int>("MULTIPOINT((0 0), (1 1))", 0)), ==, "MULTIPOINT(0 0,1 1)");
+  TEST(util::geo::getWKT(multiPointFromWKT<int>("MULTIPOINT (0 0, 1 1)", 0)), ==, "MULTIPOINT(0 0,1 1)");
+  TEST(util::geo::getWKT(multiPointFromWKT<int>("MULTIPOINT   (0 0, 1 1)", 0)), ==, "MULTIPOINT(0 0,1 1)");
+  TEST(util::geo::getWKT(multiPointFromWKT<int>("   MULTIPOINT   (  0    0  , 1  1   )", 0)), ==, "MULTIPOINT(0 0,1 1)");
+
+  TEST(util::geo::getWKT(multiPointFromWKT<int>("(0 0, 1 1)", 0)), ==, "MULTIPOINT(0 0,1 1)");
+  TEST(util::geo::getWKT(multiPointFromWKT<int>(" (0 0, 1 1)", 0)), ==, "MULTIPOINT(0 0,1 1)");
+  TEST(util::geo::getWKT(multiPointFromWKT<int>("   (0 0, 1 1)", 0)), ==, "MULTIPOINT(0 0,1 1)");
+  TEST(util::geo::getWKT(multiPointFromWKT<int>("      (  0    0  , 1  1   )", 0)), ==, "MULTIPOINT(0 0,1 1)");
+
+  TEST(util::geo::getWKT(multiPointFromWKT<int>("MULTIPOINT Z(0 0, 1 1)", 0)), ==, "MULTIPOINT(0 0,1 1)");
+  TEST(util::geo::getWKT(multiPointFromWKT<int>("MULTIPOINT Z (0 0, 1 1)", 0)), ==, "MULTIPOINT(0 0,1 1)");
+  TEST(util::geo::getWKT(multiPointFromWKT<int>("MULTIPOINT Z  (0 0, 1 1)", 0)), ==, "MULTIPOINT(0 0,1 1)");
+  TEST(util::geo::getWKT(multiPointFromWKT<int>("   MULTIPOINT Z   (  0    0  , 1  1   )", 0)), ==, "MULTIPOINT(0 0,1 1)");
+  TEST(util::geo::getWKT(multiPointFromWKT<int>("MMULTIPOINT (0 0, 1 1)", 0)), ==, "MULTIPOINT(0 0,1 1)");
+  TEST(util::geo::getWKT(multiPointFromWKT<int>("MMULTIPOINT  Z  ( (0 0 ),  ( 1 1 ) )", 0)), ==, "MULTIPOINT(0 0,1 1)");
+  TEST(util::geo::getWKT(multiPointFromWKT<int>("MMULTIPOINT  (0 0, 1 1)", 0)), ==, "MULTIPOINT(0 0,1 1)");
+  TEST(util::geo::getWKT(multiPointFromWKT<int>("MMULTIPOINT   (0 0, 1 1)", 0)), ==, "MULTIPOINT(0 0,1 1)");
+  TEST(util::geo::getWKT(multiPointFromWKT<int>("   MMULTIPOINT    (  0    0  0.5 , 1  1 100  )", 0)), ==, "MULTIPOINT(0 0,1 1)");
+}
+
+{
+  TEST(util::geo::getWKTType("POINT(1 1)", 0), ==, WKTType::POINT);
+  TEST(util::geo::getWKTType("POIN (1 1)", 0), ==, WKTType::NONE);
+  TEST(util::geo::getWKTType(" POINT (1 1)", 0), ==, WKTType::POINT);
+  TEST(util::geo::getWKTType(" Point (1 1)", 0), ==, WKTType::POINT);
+  TEST(util::geo::getWKTType("POINT Z(1 1)", 0), ==, WKTType::POINT);
+  TEST(util::geo::getWKTType("   POINT Z (1 1)", 0), ==, WKTType::POINT);
+  TEST(util::geo::getWKTType(" POINT ZM(1 1)", 0), ==, WKTType::POINT);
+  TEST(util::geo::getWKTType(" Point MZ (1 1)", 0), ==, WKTType::POINT);
+  TEST(util::geo::getWKTType("mPoint MZ (1 1)", 0), ==, WKTType::POINT);
+  TEST(util::geo::getWKTType(" oint MZ (1 1)", 0), ==, WKTType::NONE);
+
+  TEST(util::geo::getWKT(pointFromWKT<int>("POINT(1 1)", 0)), ==, "POINT(1 1)");
+  TEST(util::geo::getWKT(pointFromWKT<int>("POINT (1 1)", 0)), ==, "POINT(1 1)");
+  TEST(util::geo::getWKT(pointFromWKT<int>("POINT   ( 1 1)", 0)), ==, "POINT(1 1)");
+  TEST(util::geo::getWKT(pointFromWKT<int>("   POINT   (   1  1   )", 0)), ==, "POINT(1 1)");
+
+  TEST(util::geo::getWKT(pointFromWKT<int>("( 1 1)", 0)), ==, "POINT(1 1)");
+  TEST(util::geo::getWKT(pointFromWKT<int>(" ( 1 1)", 0)), ==, "POINT(1 1)");
+  TEST(util::geo::getWKT(pointFromWKT<int>("   ( 1 1)", 0)), ==, "POINT(1 1)");
+  TEST(util::geo::getWKT(pointFromWKT<int>("      (   1  1   )", 0)), ==, "POINT(1 1)");
+
+  TEST(util::geo::getWKT(pointFromWKT<int>("POINT Z( 1 1)", 0)), ==, "POINT(1 1)");
+  TEST(util::geo::getWKT(pointFromWKT<int>("POINT Z ( 1 1)", 0)), ==, "POINT(1 1)");
+  TEST(util::geo::getWKT(pointFromWKT<int>("POINT Z  ( 1 1)", 0)), ==, "POINT(1 1)");
+  TEST(util::geo::getWKT(pointFromWKT<int>("   POINT Z   (   1  1   )", 0)), ==, "POINT(1 1)");
+  TEST(util::geo::getWKT(pointFromWKT<int>("MPOINT ( 1 1 50)", 0)), ==, "POINT(1 1)");
+  TEST(util::geo::getWKT(pointFromWKT<int>("MPOINT  ( 1 1)", 0)), ==, "POINT(1 1)");
+  TEST(util::geo::getWKT(pointFromWKT<int>("MPOINT   ( 1 1)", 0)), ==, "POINT(1 1)");
+  TEST(util::geo::getWKT(pointFromWKT<int>("   MPOINT    (   1  1 0.5  )", 0)), ==, "POINT(1 1)");
+}
+
+{
+  TEST(util::geo::getWKTType("POLYGON(0 0, 1 1)", 0), ==, WKTType::POLYGON);
+  TEST(util::geo::getWKTType("POLYGO(0 0, 1 1)", 0), ==, WKTType::NONE);
+  TEST(util::geo::getWKTType("  Polygon (0 0, 1 1)", 0), ==, WKTType::POLYGON);
+  TEST(util::geo::getWKTType("  PolygonZ (0 0, 1 1)", 0), ==, WKTType::POLYGON);
+  TEST(util::geo::getWKTType("  PolygonM (0 0, 1 1)", 0), ==, WKTType::POLYGON);
+  TEST(util::geo::getWKTType("  Polygon ZM (0 0, 1 1)", 0), ==, WKTType::POLYGON);
+  TEST(util::geo::getWKTType("  polygon ZM (0 0, 1 1)", 0), ==, WKTType::POLYGON);
+  TEST(util::geo::getWKTType("  mpolygon ZM (0 0, 1 1)", 0), ==, WKTType::POLYGON);
+
+  TEST(util::geo::getWKT(polygonFromWKT<int>("POLYGON((0 0, 1 1))", 0)), ==, "POLYGON((0 0,1 1,0 0))");
+  TEST(util::geo::getWKT(polygonFromWKT<int>("POLYGON ((0 0, 1 1))", 0)), ==, "POLYGON((0 0,1 1,0 0))");
+  TEST(util::geo::getWKT(polygonFromWKT<int>("POLYGON (  (0 0, 1 1) )", 0)), ==, "POLYGON((0 0,1 1,0 0))");
+  TEST(util::geo::getWKT(polygonFromWKT<int>("   POLYGON   (  (0    0  , 1  1   )  ) ", 0)), ==, "POLYGON((0 0,1 1,0 0))");
+
+  TEST(util::geo::getWKT(polygonFromWKT<int>("((0 0, 1 1))", 0)), ==, "POLYGON((0 0,1 1,0 0))");
+  TEST(util::geo::getWKT(polygonFromWKT<int>("( (0 0, 1 1))", 0)), ==, "POLYGON((0 0,1 1,0 0))");
+  TEST(util::geo::getWKT(polygonFromWKT<int>(" (  (0 0, 1 1))", 0)), ==, "POLYGON((0 0,1 1,0 0))");
+  TEST(util::geo::getWKT(polygonFromWKT<int>(" (     (  0    0  , 1  1   ))", 0)), ==, "POLYGON((0 0,1 1,0 0))");
+
+  TEST(util::geo::getWKT(polygonFromWKT<int>("POLYGON Z((0 0, 1 1))", 0)), ==, "POLYGON((0 0,1 1,0 0))");
+  TEST(util::geo::getWKT(polygonFromWKT<int>("POLYGON Z( (0 0, 1 1))", 0)), ==, "POLYGON((0 0,1 1,0 0))");
+  TEST(util::geo::getWKT(polygonFromWKT<int>("POLYGON Z(  (0 0, 1 1) )", 0)), ==, "POLYGON((0 0,1 1,0 0))");
+  TEST(util::geo::getWKT(polygonFromWKT<int>("   POLYGON Z   (  (0    0  , 1  1 (  )", 0)), ==, "POLYGON((0 0,1 1,0 0))");
+  TEST(util::geo::getWKT(polygonFromWKT<int>("MPOLYGON ((0 0, 1 1))", 0)), ==, "POLYGON((0 0,1 1,0 0))");
+  TEST(util::geo::getWKT(polygonFromWKT<int>("MPOLYGON ( (0 0, 1 1))", 0)), ==, "POLYGON((0 0,1 1,0 0))");
+  TEST(util::geo::getWKT(polygonFromWKT<int>("MPOLYGON (  (0 0, 1 1))", 0)), ==, "POLYGON((0 0,1 1,0 0))");
+  TEST(util::geo::getWKT(polygonFromWKT<int>("   MPOLYGON  (  (  0    0  0.5 , 1  1 100  ))", 0)), ==, "POLYGON((0 0,1 1,0 0))");
+}
+
+{
+  TEST(util::geo::getWKTType("MULTILINESTRIN((1 1,3 3),(1 3,3 1))", 0), ==, WKTType::NONE);
+  TEST(util::geo::getWKTType("MULTILINESTRING((1 1,3 3),(1 3,3 1))", 0), ==, WKTType::MULTILINESTRING);
+  TEST(util::geo::getWKTType(" MULTILINESTRING  ((1 1,3 3),(1 3,3 1))", 0), ==, WKTType::MULTILINESTRING);
+  TEST(util::geo::getWKTType("  MMULTILINESTRING  ((1 1,3 3),(1 3,3 1))", 0), ==, WKTType::MULTILINESTRING);
+  TEST(util::geo::getWKTType(" MultiLineString  ((1 1,3 3),(1 3,3 1))", 0), ==, WKTType::MULTILINESTRING);
+  TEST(util::geo::getWKTType("  MultiLineString\tM((1 1,3 3),(1 3,3 1))", 0), ==, WKTType::MULTILINESTRING);
+  TEST(util::geo::getWKTType("  MMultiLineString Z((1 1,3 3),(1 3,3 1))", 0), ==, WKTType::MULTILINESTRING);
+  TEST(util::geo::getWKTType("\t\tMMultiLineString Z((1 1,3 3),(1 3,3 1))", 0), ==, WKTType::MULTILINESTRING);
+
+  TEST(util::geo::getWKT(multiLineFromWKT<int>("MULTILINESTRING((1 1,3 3),(1 3,3 1))", 0)), ==, "MULTILINESTRING((1 1,3 3),(1 3,3 1))");
+  TEST(util::geo::getWKT(multiLineFromWKT<int>(" MULTILINESTRING  ( (1 1,3 3) ,(1 3,3 1))", 0)), ==, "MULTILINESTRING((1 1,3 3),(1 3,3 1))");
+  TEST(util::geo::getWKT(multiLineFromWKT<int>(" MULTILINESTRING Z  ( (1 1,3 3) ,(1 3,3 1 ) )", 0)), ==, "MULTILINESTRING((1 1,3 3),(1 3,3 1))");
+  TEST(util::geo::getWKT(multiLineFromWKT<int>(" MULTILINESTRING Z  ( (1 1  ,3 3) ,(1   3 ,  3 1 ) )", 0)), ==, "MULTILINESTRING((1 1,3 3),(1 3,3 1))");
+}
+
+{
+  TEST(util::geo::getWKTType("MULTIPOLYGON(((1 1,3 3,1 1), (0 0,1 1,0 0)),((1 3,3 1, 1 3)))"), ==, WKTType::MULTIPOLYGON);
+  TEST(util::geo::getWKTType("MULTIPOLYGO (((1 1,3 3,1 1), (0 0,1 1,0 0)),((1 3,3 1, 1 3)))"), ==, WKTType::NONE);
+  TEST(util::geo::getWKTType(" MULTIPOLYGON (((1 1,3 3,1 1), (0 0,1 1,0 0)),((1 3,3 1, 1 3)))"), ==, WKTType::MULTIPOLYGON);
+  TEST(util::geo::getWKTType(" MMULTIPOLYGON (((1 1,3 3,1 1), (0 0,1 1,0 0)),((1 3,3 1, 1 3)))"), ==, WKTType::MULTIPOLYGON);
+  TEST(util::geo::getWKTType(" MULTIPOLYGON Z (((1 1,3 3,1 1), (0 0,1 1,0 0)),((1 3,3 1, 1 3)))"), ==, WKTType::MULTIPOLYGON);
+  TEST(util::geo::getWKTType(" MULTIPOLYGON ZM (((1 1,3 3,1 1), (0 0,1 1,0 0)),((1 3,3 1, 1 3)))"), ==, WKTType::MULTIPOLYGON);
+  TEST(util::geo::getWKTType("  MultiPolygon ZM (((1 1,3 3,1 1), (0 0,1 1,0 0)),((1 3,3 1, 1 3)))"), ==, WKTType::MULTIPOLYGON);
+  TEST(util::geo::getWKTType("M MultiPolygon ZM (((1 1,3 3,1 1), (0 0,1 1,0 0)),((1 3,3 1, 1 3)))"), ==, WKTType::MULTIPOLYGON);
+  TEST(util::geo::getWKTType("\tM\tMultiPolygon ZM\t(((1 1,3 3,1 1), (0 0,1 1,0 0)),((1 3,3 1, 1 3)))"), ==, WKTType::MULTIPOLYGON);
+
+  TEST(util::geo::getWKT(multiPolygonFromWKT<int>("MULTIPOLYGON(((1 1,3 3,1 1), (0 0,1 1,0 0)),((1 3,3 1, 1 3)))", 0)), ==, "MULTIPOLYGON(((1 1,3 3,1 1),(0 0,1 1,0 0)),((1 3,3 1,1 3)))");
+  TEST(util::geo::getWKT(multiPolygonFromWKT<int>("MULTIPOLYGON(((1 1 ,3  3, 1 1 ), (0 0,1 1,0 0)),((1 3,3 1, 1 3)))", 0)), ==, "MULTIPOLYGON(((1 1,3 3,1 1),(0 0,1 1,0 0)),((1 3,3 1,1 3)))");
+  TEST(util::geo::getWKT(multiPolygonFromWKT<int>("MULTIPOLYGON Z (  (   ( 1    1 ,3  3, 1 1 ), (0 0,1 1,0 0)),((1 3,3 1, 1 3)))", 0)), ==, "MULTIPOLYGON(((1 1,3 3,1 1),(0 0,1 1,0 0)),((1 3,3 1,1 3)))");
+  TEST(util::geo::getWKT(multiPolygonFromWKT<int>(" (  (   ( 1    1 ,3  3, 1 1 ), (0 0,1 1,0 0)),((1 3,3 1, 1 3)))", 0)), ==, "MULTIPOLYGON(((1 1,3 3,1 1),(0 0,1 1,0 0)),((1 3,3 1,1 3)))");
+}
+
+{
+  TEST(util::geo::getWKTType("GEOMETRYCOLLECTION(MULTIPOLYGON(((1 1,3 3,1 1),(0 0,1 1,0 0)),((1 3,3 1,1 3))))"), ==, WKTType::COLLECTION);
+  TEST(util::geo::getWKTType("GEOMETRYCOLLECTIO (MULTIPOLYGON(((1 1,3 3,1 1),(0 0,1 1,0 0)),((1 3,3 1,1 3))))"), ==, WKTType::NONE);
+  TEST(util::geo::getWKTType(" GEOMETRYCOLLECTION (MULTIPOLYGON(((1 1,3 3,1 1),(0 0,1 1,0 0)),((1 3,3 1,1 3))))"), ==, WKTType::COLLECTION);
+  TEST(util::geo::getWKTType(" GeometryCollection (MULTIPOLYGON(((1 1,3 3,1 1),(0 0,1 1,0 0)),((1 3,3 1,1 3))))"), ==, WKTType::COLLECTION);
+  TEST(util::geo::getWKTType("\t\tGeometryCollection (MULTIPOLYGON(((1 1,3 3,1 1),(0 0,1 1,0 0)),((1 3,3 1,1 3))))"), ==, WKTType::COLLECTION);
+  TEST(util::geo::getWKTType("\t\tmGeometryCollection (MULTIPOLYGON(((1 1,3 3,1 1),(0 0,1 1,0 0)),((1 3,3 1,1 3))))"), ==, WKTType::COLLECTION);
+  TEST(util::geo::getWKTType("\t\tmGeometryCollection M(MULTIPOLYGON(((1 1,3 3,1 1),(0 0,1 1,0 0)),((1 3,3 1,1 3))))"), ==, WKTType::COLLECTION);
+  TEST(util::geo::getWKTType("\t\tmGeometryCollection ZM(MULTIPOLYGON(((1 1,3 3,1 1),(0 0,1 1,0 0)),((1 3,3 1,1 3))))"), ==, WKTType::COLLECTION);
+
+  TEST(util::geo::getWKT(collectionFromWKT<int>("GEOMETRYCOLLECTION(MULTIPOLYGON(((1 1,3 3,1 1), (0 0,1 1,0 0)),((1 3,3 1, 1 3))))", 0)), ==, "GEOMETRYCOLLECTION(MULTIPOLYGON(((1 1,3 3,1 1),(0 0,1 1,0 0)),((1 3,3 1,1 3))))");
+
+  TEST(util::geo::getWKT(collectionFromWKT<int>("GEOMETRYCOLLECTION (MULTIPOLYGON (((1 1,3 3,1 1), (0 0,1 1,0 0)),((1 3,3 1, 1 3))))", 0)), ==, "GEOMETRYCOLLECTION(MULTIPOLYGON(((1 1,3 3,1 1),(0 0,1 1,0 0)),((1 3,3 1,1 3))))");
+
+  TEST(util::geo::getWKT(collectionFromWKT<int>("GEOMETRYCOLLECTION (  MULTIPOLYGON Z (((1 1,3 3,1 1), (0 0,1 1,0 0)),((1 3,3 1, 1 3))))", 0)), ==, "GEOMETRYCOLLECTION(MULTIPOLYGON(((1 1,3 3,1 1),(0 0,1 1,0 0)),((1 3,3 1,1 3))))");
+
+  TEST(util::geo::getWKT(collectionFromWKT<int>("GEOMETRYCOLLECTION (  MMULTIPOLYGON Z (((1 1,3 3,1 1), (0 0,1 1,0 0)),((1 3,3 1, 1 3))))", 0)), ==, "GEOMETRYCOLLECTION(MULTIPOLYGON(((1 1,3 3,1 1),(0 0,1 1,0 0)),((1 3,3 1,1 3))))");
+}
+
 
   QuadTreeTest quadTreeTest;
   quadTreeTest.run();

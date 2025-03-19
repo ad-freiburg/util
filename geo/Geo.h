@@ -129,6 +129,17 @@ const static double AVERAGING_STEP = 20;
 
 const static double M_PER_DEG = 111319.4;
 
+enum WKTType : uint8_t {
+  NONE = 0,
+  POINT = 1,
+  LINESTRING = 2,
+  POLYGON = 3,
+  MULTIPOINT = 4,
+  MULTILINESTRING = 5,
+  MULTIPOLYGON = 6,
+  COLLECTION = 7
+};
+
 // _____________________________________________________________________________
 inline uint8_t boolArrToInt8(const std::array<bool, 6> arr) {
   uint8_t ret = 0;
@@ -3294,250 +3305,444 @@ inline bool empty(const Collection<T>& g) {
 
 // _____________________________________________________________________________
 template <typename T>
-inline MultiPoint<T> multiPointFromWKT(std::string wkt) {
-  wkt = util::normalizeWhiteSpace(util::trim(wkt));
-  for (size_t i = 0; i < 11; i++) wkt[i] = toupper(wkt[i]);
-  if (wkt.rfind("MULTIPOINT") == 0 || wkt.rfind("MMULTIPOINT") == 0) {
-    MultiPoint<T> ret;
-    size_t b = wkt.find("(") + 1;
-    size_t e = wkt.rfind(")", b);
-    if (b > e) throw std::runtime_error("Could not parse WKT");
-    std::string a = wkt.substr(b, e - b);
-    util::replaceAll(a, ")", "");
-    util::replaceAll(a, "(", "");
-    auto pairs = util::split(a, ',');
-    for (const auto& p : pairs) {
-      auto xy = util::split(util::trim(p), ' ');
-      if (xy.size() < 2) throw std::runtime_error("Could not parse WKT");
-      double x = atof(xy[0].c_str());
-      double y = atof(xy[1].c_str());
-      ret.push_back({(T)x, (T)y});
-    }
-    return ret;
+inline Line<T> lineFromWKT(
+    const char* c, const char** endr,
+    std::function<Point<T>(const Point<double>& p1)> projFunc) {
+  Line<T> line;
+
+  c = strchr(c, '(');
+  if (!c) {
+    if (endr) (*endr) = 0;
+    return line;  // parse error
   }
-  throw std::runtime_error("Could not parse WKT");
+  c++;
+
+  auto end = strchr(c, ')');
+  if (endr) (*endr) = end;
+  if (!end) {
+    if (endr) (*endr) = 0;
+    return line;  // parse error
+  }
+
+  line.reserve((end - c) / 20);
+
+  while (true) {
+    while (*c && *c != ')' && isspace(*c)) c++;
+
+    double x = util::atof(c, 10);
+
+    const char* next = strchr(c, ' ');
+
+    if (!next || next >= end) return {};  // parse error
+
+    while (*next && *next != ')' && isspace(*next)) next++;
+
+    double y = util::atof(next, 10);
+
+    // auto projPoint = latLngToWebMerc(util::geo::DPoint(x, y));
+
+    line.push_back(projFunc(util::geo::DPoint(x, y)));
+
+    // line.push_back({static_cast<int>(projPoint.getX() * PREC),
+    // static_cast<int>(projPoint.getY() * PREC)});
+
+    auto n = strchr(next, ',');
+    if (!n || n > end) break;
+    c = n + 1;
+  }
+
+  return line;
 }
 
 // _____________________________________________________________________________
 template <typename T>
-inline Line<T> lineFromWKT(std::string wkt) {
-  wkt = util::normalizeWhiteSpace(util::trim(wkt));
-  for (size_t i = 0; i < 11; i++) wkt[i] = toupper(wkt[i]);
-  if (wkt.rfind("LINESTRING") == 0 || wkt.rfind("MLINESTRING") == 0) {
-    Line<T> ret;
-    size_t b = wkt.find("(") + 1;
-    size_t e = wkt.find(")", b);
-    if (b > e) throw std::runtime_error("Could not parse WKT");
-    auto pairs = util::split(wkt.substr(b, e - b), ',');
-    for (const auto& p : pairs) {
-      auto xy = util::split(util::trim(p), ' ');
-      if (xy.size() < 2) throw std::runtime_error("Could not parse WKT");
-      double x = atof(xy[0].c_str());
-      double y = atof(xy[1].c_str());
-      ret.push_back({(T)x, (T)y});
-    }
-    return ret;
-  }
-  throw std::runtime_error("Could not parse WKT");
+inline Line<T> lineFromWKT(const char* c, const char** endr) {
+  return lineFromWKT<T>(c, endr, [](const Point<double>& p) {
+    return Point<T>{static_cast<T>(p.getX()), static_cast<T>(p.getY())};
+  });
 }
 
 // _____________________________________________________________________________
 template <typename T>
-inline MultiLine<T> multiLineFromWKT(std::string wkt) {
-  wkt = util::normalizeWhiteSpace(util::trim(wkt));
-  for (size_t i = 0; i < 13; i++) wkt[i] = toupper(wkt[i]);
-  if (wkt.rfind("MULTILINESTRING") == 0 || wkt.rfind("MMULTILINESTRING") == 0) {
-    MultiLine<T> ret;
-    size_t b = wkt.find("(") + 1;
-    size_t e = wkt.rfind(")");
-    if (b > e) throw std::runtime_error("Could not parse WKT");
+inline MultiPoint<T> multiPointFromWKT(
+    const char* c, const char** endr,
+    std::function<Point<T>(const Point<double>& p1)> projFunc) {
 
-    auto lines = util::split(wkt.substr(b, e - b), ')');
+  // try MULTIPOINT((1 1), (2 2)) syntax
+  const auto& mline = multiLineFromWKT(c, endr, projFunc);
 
-    for (const auto& line : lines) {
-      size_t b = line.find("(") + 1;
-      auto pairs = util::split(line.substr(b), ',');
-      Line<T> cur;
-      for (const auto& p : pairs) {
-        auto xy = util::split(util::trim(p), ' ');
-        if (xy.size() < 2) throw std::runtime_error("Could not parse WKT");
-        double x = atof(xy[0].c_str());
-        double y = atof(xy[1].c_str());
-        cur.push_back({(T)x, (T)y});
-      }
-      ret.push_back(cur);
-    }
-
-    return ret;
+  MultiPoint<T> ret;
+  for (const auto& l : mline) {
+    if (l.size() == 1) ret.push_back(l[0]);
   }
-  throw std::runtime_error("Could not parse WKT");
+
+  if (ret.size()) return ret;
+
+  // try MULTIPOINT(1 1, 2 2) syntax
+  const auto& line = lineFromWKT(c, endr, projFunc);
+  if (line.size() > 0) return MultiPoint<T>(std::move(line));
+
+  return ret;
 }
 
 // _____________________________________________________________________________
 template <typename T>
-inline MultiPolygon<T> multiPolygonFromWKT(std::string wkt) {
-  wkt = util::normalizeWhiteSpace(util::trim(wkt));
-  for (size_t i = 0; i < 13; i++) wkt[i] = toupper(wkt[i]);
-  util::replaceAll(wkt, "))", ")!");
-  util::replaceAll(wkt, ") )", ")!");
-  if (wkt.rfind("MULTIPOLYGON") == 0 || wkt.rfind("MMULTIPOLYGON") == 0) {
-    MultiPolygon<T> ret;
-    size_t b = wkt.find("(") + 1;
-    size_t e = wkt.rfind(")");
-    if (b > e) throw std::runtime_error("Could not parse WKT");
-
-    auto polyPairs = util::split(wkt.substr(b, e - b), '!');
-
-    for (const auto& polyPair : polyPairs) {
-      size_t b = polyPair.find("(") + 1;
-      size_t e = polyPair.rfind(")");
-      auto pairs = util::split(polyPair.substr(b, e - b), ')');
-
-      ret.push_back({});
-
-      for (size_t i = 0; i < pairs.size(); i++) {
-        size_t b = pairs[i].find("(") + 1;
-        size_t e = pairs[i].rfind(")", b);
-        auto pairsLoc = util::split(pairs[i].substr(b, e - b), ',');
-
-        if (i > 0) {
-          ret.back().getInners().push_back({});
-        }
-
-        for (const auto& p : pairsLoc) {
-          auto xy = util::split(util::trim(p), ' ');
-          if (xy.size() < 2) throw std::runtime_error("Could not parse WKT");
-          double x = atof(xy[0].c_str());
-          double y = atof(xy[1].c_str());
-
-          if (i == 0) {
-            ret.back().getOuter().push_back({x, y});
-          } else {
-            ret.back().getInners().back().push_back({x, y});
-          }
-        }
-      }
-    }
-    return ret;
-  }
-  throw std::runtime_error("Could not parse WKT");
-}
-
-// _____________________________________________________________________________
-inline std::vector<size_t> getGeomStarts(const std::string& str) {
-  std::vector<size_t> starts;
-
-  size_t a = 0;
-  while (1) {
-    a = str.find("POINT (", a);
-    if (a == std::string::npos) break;
-    starts.push_back(a);
-    a++;
-  }
-
-  a = 0;
-  while (1) {
-    a = str.find("MULTIPOINT (", a);
-    if (a == std::string::npos) break;
-    starts.push_back(a);
-    a++;
-  }
-
-  a = 0;
-  while (1) {
-    a = str.find("LINESTRING (", a);
-    if (a == std::string::npos) break;
-    starts.push_back(a);
-    a++;
-  }
-
-  a = 0;
-  while (1) {
-    a = str.find("POLYGON (", a);
-    if (a == std::string::npos) break;
-    starts.push_back(a);
-    a++;
-  }
-
-  a = 0;
-  while (1) {
-    a = str.find("MULTIPOLYGON (", a);
-    if (a == std::string::npos) break;
-    starts.push_back(a);
-    a++;
-  }
-
-  a = 0;
-  while (1) {
-    a = str.find("MULTILINESTRING (", a);
-    if (a == std::string::npos) break;
-    starts.push_back(a);
-    a++;
-  }
-
-  starts.push_back(std::string::npos);
-
-  std::sort(starts.begin(), starts.end());
-
-  return starts;
+inline MultiPoint<T> multiPointFromWKT(const char* c, const char** endr) {
+  return multiPointFromWKT<T>(c, endr, [](const Point<double>& p) {
+    return Point<T>{static_cast<T>(p.getX()), static_cast<T>(p.getY())};
+  });
 }
 
 // _____________________________________________________________________________
 template <typename T>
-inline Collection<T> collectionFromWKT(std::string wkt) {
-  // TODO: not very efficient, but does the job for now
+inline MultiPoint<T> multiPointFromWKT(const std::string& wkt) {
+  return multiPointFromWKT<T>(wkt.c_str(), 0);
+}
 
-  wkt = util::normalizeWhiteSpace(util::trim(wkt));
-  util::replaceAll(wkt, "G(", "G (");
-  util::replaceAll(wkt, "N(", "N (");
-  util::replaceAll(wkt, "T(", "T (");
-  for (size_t i = 0; i < wkt.size(); i++) wkt[i] = toupper(wkt[i]);
-  if (wkt.rfind("GEOMETRYCOLLECTION") == 0 ||
-      wkt.rfind("MGEOMETRYCOLLECTION") == 0) {
-    Collection<T> ret;
-    const auto& starts = getGeomStarts(wkt);
+// _____________________________________________________________________________
+template <typename T>
+inline Point<T> pointFromWKT(
+    const char* c, const char** endr,
+    std::function<Point<T>(const Point<double>& p1)> projFunc) {
+  c = strchr(c, '(');
+  if (!c) {
+    if (endr) (*endr) = 0;
+    return {0, 0};
+  }
 
-    for (size_t i = 0; i < starts.size() - 1; i++) {
-      try {
-        auto a = wkt.substr(starts[i], starts[i + 1] - starts[i]);
-        ret.push_back(util::geo::pointFromWKT<T>(a));
-      } catch (std::runtime_error& e) {
-      }
+  c += 1;
+  while (*c && *c != ')' && isspace(*c)) c++;
 
-      try {
-        auto a = wkt.substr(starts[i], starts[i + 1] - starts[i]);
-        ret.push_back(util::geo::lineFromWKT<T>(a));
-      } catch (std::runtime_error& e) {
-      }
+  double x = util::atof(c, 10);
+  const char* next = strchr(c, ' ');
+  if (!next) return {0, 0};  // TODO!
+  while (*next && *next != ')' && isspace(*next)) next++;
+  double y = util::atof(next, 10);
 
-      try {
-        auto a = wkt.substr(starts[i], starts[i + 1] - starts[i]);
-        ret.push_back(util::geo::polygonFromWKT<T>(a));
-      } catch (std::runtime_error& e) {
-      }
+  if (endr) (*endr) = strchr(next, ')');
 
-      try {
-        auto a = wkt.substr(starts[i], starts[i + 1] - starts[i]);
-        ret.push_back(util::geo::multiPointFromWKT<T>(a));
-      } catch (std::runtime_error& e) {
-      }
+  return projFunc(util::geo::DPoint(x, y));
+}
 
-      try {
-        auto a = wkt.substr(starts[i], starts[i + 1] - starts[i]);
-        ret.push_back(util::geo::multiLineFromWKT<T>(a));
-      } catch (std::runtime_error& e) {
-      }
+// _____________________________________________________________________________
+template <typename T>
+inline Point<T> pointFromWKT(const char* c, const char** endr) {
+  return pointFromWKT<T>(c, endr, [](const Point<double>& p) {
+    return Point<T>{static_cast<T>(p.getX()), static_cast<T>(p.getY())};
+  });
+}
 
-      try {
-        auto a = wkt.substr(starts[i], starts[i + 1] - starts[i]);
-        ret.push_back(util::geo::multiPolygonFromWKT<T>(a));
-      } catch (std::runtime_error& e) {
-      }
+// _____________________________________________________________________________
+template <typename T>
+Polygon<T> polygonFromWKT(
+    const char* c, const char** endr,
+    std::function<Point<T>(const Point<double>& p1)> projFunc) {
+  c = strchr(c, '(');
+  if (!c) {
+    if (endr) (*endr) = 0;
+    return {};  // parse error
+  }
+  c += 1;
+
+  size_t i = 0;
+  Polygon<T> poly;
+  while ((c = strchr(c, '('))) {
+    const char* end = 0;
+    const auto& line = lineFromWKT(c, &end, projFunc);
+
+    if (!end) {
+      if (endr) (*endr) = 0;
+      return {};  // parse error
     }
 
-    return ret;
+    c = end;
+
+    if (i == 0)
+      poly.getOuter() = line;
+    else
+      poly.getInners().push_back(std::move(line));
+    i++;
+
+    auto q = strchr(c + 1, ')');
+    auto cc = strchr(c + 1, '(');
+
+    if ((!cc && q) || (q && cc && q < cc)) {
+      // polygon closes at q
+      if (endr) (*endr) = q;
+      return poly;
+    }
+
+    if (cc) c = cc;
   }
-  throw std::runtime_error("Could not parse WKT");
+
+  return poly;
+}
+
+// _____________________________________________________________________________
+template <typename T>
+inline Polygon<T> polygonFromWKT(const char* c, const char** endr) {
+  return polygonFromWKT<T>(c, endr, [](const Point<double>& p) {
+    return Point<T>{static_cast<T>(p.getX()), static_cast<T>(p.getY())};
+  });
+}
+
+// _____________________________________________________________________________
+template <typename T>
+MultiLine<T> multiLineFromWKT(
+    const char* c, const char** endr,
+    std::function<Point<T>(const Point<double>& p1)> projFunc) {
+  c = strchr(c, '(');
+  if (!c) {
+    if (endr) (*endr) = 0;
+    return {};  // parse error
+  }
+  c += 1;
+
+  MultiLine<T> ml;
+  while ((c = strchr(c, '('))) {
+    const char* end = 0;
+    const auto& line = lineFromWKT(c, &end, projFunc);
+    if (!end) break;
+    if (line.size() != 0) ml.push_back(std::move(line));
+
+    auto nextComma = strchr(end + 1, ',');
+    auto nextCloseBracket = strchr(end + 1, ')');
+
+    if (!nextComma ||
+        (nextComma && nextCloseBracket && nextComma > nextCloseBracket)) {
+      if (endr) (*endr) = nextCloseBracket;
+      return ml;
+    }
+
+    c = nextComma;
+  }
+
+  return ml;
+}
+
+// _____________________________________________________________________________
+template <typename T>
+inline MultiLine<T> multiLineFromWKT(const char* c, const char** endr) {
+  return multiLineFromWKT<T>(c, endr, [](const Point<double>& p) {
+    return Point<T>{static_cast<T>(p.getX()), static_cast<T>(p.getY())};
+  });
+}
+
+// _____________________________________________________________________________
+template <typename T>
+MultiPolygon<T> multiPolygonFromWKT(
+    const char* c, const char** endr,
+    std::function<Point<T>(const Point<double>& p1)> projFunc) {
+  c = strchr(c, '(');
+  if (!c) {
+    if (endr) (*endr) = 0;
+    return {};  // parse error
+  }
+  c += 1;
+
+  MultiPolygon<T> mp;
+  do {
+    c = strchr(c, '(');
+    if (!c) break;
+    const char* end = 0;
+    const auto& poly = polygonFromWKT(c, &end, projFunc);
+
+    if (!end) break;
+
+    if (poly.getOuter().size() > 1) mp.push_back(std::move(poly));
+
+    auto nextComma = strchr(end + 1, ',');
+    auto nextCloseBracket = strchr(end + 1, ')');
+
+    if (!nextComma ||
+        (nextComma && nextCloseBracket && nextComma > nextCloseBracket)) {
+      if (endr) (*endr) = nextCloseBracket;
+      return mp;
+    }
+
+    c = nextComma;
+  } while (c);
+
+  return mp;
+}
+
+// _____________________________________________________________________________
+template <typename T>
+inline MultiPolygon<T> multiPolygonFromWKT(const char* c, const char** endr) {
+  return multiPolygonFromWKT<T>(c, endr, [](const Point<double>& p) {
+    return Point<T>{static_cast<T>(p.getX()), static_cast<T>(p.getY())};
+  });
+}
+
+// _____________________________________________________________________________
+inline WKTType getWKTType(const char* c, const char** endr) {
+  while (isspace(*c) ||
+         (tolower(*c) == 'm' && (isspace(*c + 1) || tolower(*(c + 1)) != 'u')))
+    c++;  // skip possible whitespace and/or measurement M
+  if (strncicmp("POINT", c, 5) == 0) {
+    if (endr) (*endr) = c + 5;
+    return POINT;
+  }
+  if (strncicmp("LINESTRING", c, 10) == 0) {
+    if (endr) (*endr) = c + 10;
+    return LINESTRING;
+  }
+  if (strncicmp("POLYGON", c, 7) == 0) {
+    if (endr) (*endr) = c + 7;
+    return POLYGON;
+  }
+  if (strncicmp("MULTIPOINT", c, 10) == 0) {
+    if (endr) (*endr) = c + 10;
+    return MULTIPOINT;
+  }
+  if (strncicmp("MULTILINESTRING", c, 15) == 0) {
+    if (endr) (*endr) = c + 15;
+    return MULTILINESTRING;
+  }
+  if (strncicmp("MULTIPOLYGON", c, 12) == 0) {
+    if (endr) (*endr) = c + 12;
+    return MULTIPOLYGON;
+  }
+  if (strncicmp("GEOMETRYCOLLECTION", c, 18) == 0) {
+    if (endr) (*endr) = c + 18;
+    return COLLECTION;
+  }
+
+  if (endr) (*endr) = 0;
+  return NONE;
+}
+
+// _____________________________________________________________________________
+inline WKTType getWKTType(const char* c) { return getWKTType(c, 0); }
+
+// _____________________________________________________________________________
+inline WKTType getWKTType(const std::string& str) {
+  return getWKTType(str.c_str(), 0);
+}
+
+// _____________________________________________________________________________
+template <typename T>
+Collection<T> collectionFromWKT(
+    const char* c, const char** endr,
+    std::function<Point<T>(const Point<double>& p1)> projFunc) {
+  Collection<T> col;
+
+  c = strchr(c, '(');
+  if (!c) {
+    if (endr) (*endr) = 0;
+    return col;
+  }
+  do {
+    c++;
+    while (isspace(*c)) c++;  // skip possible whitespace
+
+    auto wktType = getWKTType(c, &c);
+
+    if (wktType == NONE) {
+      if (endr) (*endr) = 0;
+      return {};
+    }
+
+    // TODO: getWKTType()
+    if (wktType == POINT) {
+      const char* end = 0;
+      const auto& point = pointFromWKT(c, &end, projFunc);
+
+      if (!end) {
+        if (endr) (*endr) = 0;
+        return {};
+      }
+
+      col.push_back(point);
+      c = const_cast<char*>(strchr(end, ','));
+    } else if (wktType == POLYGON) {
+      const char* end = 0;
+      const auto& poly = polygonFromWKT(c, &end, projFunc);
+
+      if (!end) {
+        if (endr) (*endr) = 0;
+        return {};
+      }
+      if (poly.getOuter().size() > 1) col.push_back(poly);
+      c = const_cast<char*>(strchr(end, ','));
+    } else if (wktType == LINESTRING) {
+      const char* end = 0;
+      const auto& line = lineFromWKT(c, &end, projFunc);
+
+      if (!end) {
+        if (endr) (*endr) = 0;
+        return {};
+      }
+      if (line.size() > 1) col.push_back(line);
+      c = const_cast<char*>(strchr(end, ','));
+    } else if (wktType == MULTIPOINT) {
+      const char* end = 0;
+      const auto& line = lineFromWKT(c, &end, projFunc);
+
+      if (!end) {
+        if (endr) (*endr) = 0;
+        return {};
+      }
+      if (line.size() > 0) col.push_back(MultiPoint<T>(std::move(line)));
+      c = const_cast<char*>(strchr(end, ','));
+    } else if (wktType == MULTIPOLYGON) {
+      const char* end = 0;
+      const auto& mp = multiPolygonFromWKT(c, &end, projFunc);
+
+      if (!end) {
+        if (endr) (*endr) = 0;
+        return {};
+      }
+      if (mp.size()) col.push_back(mp);
+      c = const_cast<char*>(strchr(end, ','));
+    } else if (wktType == MULTILINESTRING) {
+      const char* end = 0;
+      const auto& ml = multiLineFromWKT(c, &end, projFunc);
+
+      if (!end) {
+        if (endr) (*endr) = 0;
+        return {};
+      }
+      if (ml.size()) col.push_back(ml);
+      c = const_cast<char*>(strchr(end, ','));
+    }
+  } while (c && *c);
+
+  if (endr) (*endr) = strchr(c, ')');
+
+  return col;
+}
+
+// _____________________________________________________________________________
+template <typename T>
+inline Collection<T> collectionFromWKT(const char* c, const char** endr) {
+  return collectionFromWKT<T>(c, endr, [](const Point<double>& p) {
+    return Point<T>{static_cast<T>(p.getX()), static_cast<T>(p.getY())};
+  });
+}
+
+// _____________________________________________________________________________
+template <typename T>
+inline Line<T> lineFromWKT(const std::string& wkt) {
+  return lineFromWKT<T>(wkt.c_str(), 0);
+}
+
+// _____________________________________________________________________________
+template <typename T>
+inline MultiLine<T> multiLineFromWKT(const std::string& wkt) {
+  return multiLineFromWKT<T>(wkt.c_str(), 0);
+}
+
+// _____________________________________________________________________________
+template <typename T>
+inline MultiPolygon<T> multiPolygonFromWKT(const std::string& wkt) {
+  return multiPolygonFromWKT<T>(wkt.c_str(), 0);
+}
+
+// _____________________________________________________________________________
+template <typename T>
+inline Collection<T> collectionFromWKT(const std::string& wkt) {
+  return collectionFromWKT<T>(wkt.c_str(), 0);
 }
 
 // _____________________________________________________________________________
