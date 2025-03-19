@@ -3576,7 +3576,7 @@ inline MultiPolygon<T> multiPolygonFromWKT(const char* c, const char** endr) {
 
 // _____________________________________________________________________________
 inline WKTType getWKTType(const char* c, const char** endr) {
-  while (isspace(*c) ||
+  while (isspace(*c) || (*c == "\"") || (*c == "'") ||
          (tolower(*c) == 'm' && (isspace(*c + 1) || tolower(*(c + 1)) != 'u')))
     c++;  // skip possible whitespace and/or measurement M
   if (strncicmp("POINT", c, 5) == 0) {
