@@ -8,8 +8,8 @@ target_include_directories(pb_util PUBLIC
 
 if (!BZIP2_FOUND)
     find_package(BZip2)
-    if (ZLIB_FOUND)
-		add_definitions( -DBZLIB_FOUND=${BZIP2_FOUND} )
+    if (BZIP2_FOUND)
+		add_definitions( -DBZIP2_FOUND=${BZIP2_FOUND} )
 	endif()
 endif()
 
