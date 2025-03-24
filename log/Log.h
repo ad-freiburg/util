@@ -15,8 +15,13 @@
 #endif
 
 // compiler will optimize statement away if x > UTIL_LOGLVL
+#ifndef LOG
 #define LOG(x) if (x <= UTIL_LOGLVL) util::Log<x>().log()
 #define LOGTO(x, os) if (x <= UTIL_LOGLVL) util::Log<x>(&os).log()
+#else
+#define PB_LOG(x) if (x <= UTIL_LOGLVL) util::Log<x>().log()
+#define PB_LOGTO(x, os) if (x <= UTIL_LOGLVL) util::Log<x>(&os).log()
+#endif
 
 using std::setfill;
 using std::setw;
