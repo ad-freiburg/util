@@ -523,8 +523,8 @@ inline std::string getTmpFName(std::string dir, std::string name,
   if (dir == "<tmp>") dir = util::getTmpDir();
   if (dir.size() && dir.back() != '/') dir = dir + "/";
 
-  std::string f = dir + name + postf + "." + std::to_string(getpid())
-                  << "." << randomString(15);
+  std::string f = dir + name + postf + "." + std::to_string(getpid()) + "." +
+                  randomString(15);
 
   size_t c = 0;
 
@@ -535,10 +535,8 @@ inline std::string getTmpFName(std::string dir, std::string name,
       std::cerr << "Could not create temporary file!" << std::endl;
       exit(1);
     }
-    std::stringstream ss;
-    ss << dir << name << postf << "." << std::to_string(getpid()) << "."
-       << randomString(15);
-    f = ss.str().c_str();
+    f = dir + name + postf + "." + std::to_string(getpid()) + "." +
+        randomString(15);
   }
 
   return f;
