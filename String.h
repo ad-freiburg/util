@@ -494,6 +494,23 @@ inline double btsSimi(std::string a, std::string b) {
 
   return btsSimiInner(toksB, a, best);
 }
+
+// _____________________________________________________________________________
+std::string randomString(size_t n) {
+  const char* chars =
+      "abcdefghipqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+  std::random_device random_device;
+  std::mt19937 generator(random_device());
+  std::uniform_int_distribution<> distr(0, chars.size() - 1);
+
+  std::string ret;
+  for (size_t i = 0; i < n; i++) {
+    ret += chars[distr(generator)];
+  }
+
+  return ret;
+}
+
 }  // namespace util
 
 #endif  // UTIL_STRING_H_
