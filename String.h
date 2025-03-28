@@ -6,6 +6,7 @@
 #define UTIL_STRING_H_
 
 #include <stdint.h>
+#include <unistd.h>
 
 #include <algorithm>
 #include <bitset>
@@ -497,16 +498,10 @@ inline double btsSimi(std::string a, std::string b) {
 
 // _____________________________________________________________________________
 std::string randomString(size_t n) {
-  const char* chars =
-      "abcdefghipqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
-  std::random_device random_device;
-  std::mt19937 generator(random_device());
-  std::uniform_int_distribution<> distr(0, chars.size() - 1);
+  const char* chars = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghipqrstuvwxyz";
+  std::string ret(n);
 
-  std::string ret;
-  for (size_t i = 0; i < n; i++) {
-    ret += chars[distr(generator)];
-  }
+  for (int i = 0; i < n; i++) ret[i] = chars[rand() % (sizeof(chars) - 1)];
 
   return ret;
 }
