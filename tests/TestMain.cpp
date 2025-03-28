@@ -3395,6 +3395,8 @@ int main(int argc, char** argv) {
     UNUSED(eEB);
 
     struct CostFunc : public EDijkstra::CostFunc<std::string, int, int> {
+      using EDijkstra::CostFunc<std::string, int, int>::operator();
+
       int operator()(const Edge<std::string, int>* from,
                      const Node<std::string, int>* n,
                      const Edge<std::string, int>* to) const {
@@ -3450,6 +3452,8 @@ int main(int argc, char** argv) {
     UNUSED(eEB);
 
     struct CostFunc : public EDijkstra::CostFunc<std::string, int, int> {
+      using EDijkstra::CostFunc<std::string, int, int>::operator();
+
       int operator()(const Edge<std::string, int>* from,
                      const Node<std::string, int>* n,
                      const Edge<std::string, int>* to) const {
@@ -3508,6 +3512,8 @@ int main(int argc, char** argv) {
     UNUSED(eEB);
 
     struct CostFunc : public EDijkstra::CostFunc<std::string, int, int> {
+      using EDijkstra::CostFunc<std::string, int, int>::operator();
+
       int operator()(const Edge<std::string, int>* from,
                      const Node<std::string, int>* n,
                      const Edge<std::string, int>* to) const {
@@ -3551,6 +3557,8 @@ int main(int argc, char** argv) {
     g.addEdg(e, b, 1);
 
     struct CostFunc : public EDijkstra::CostFunc<std::string, int, int> {
+      using EDijkstra::CostFunc<std::string, int, int>::operator();
+
       int operator()(const Edge<std::string, int>* from,
                      const Node<std::string, int>* n,
                      const Edge<std::string, int>* to) const {
@@ -3611,6 +3619,8 @@ int main(int argc, char** argv) {
     g.addEdg(e, b, 1);
 
     struct CostFunc : public EDijkstra::CostFunc<std::string, int, int> {
+      using EDijkstra::CostFunc<std::string, int, int>::operator();
+
       int operator()(const Edge<std::string, int>* fr,
                      const Node<std::string, int>* n,
                      const Edge<std::string, int>* to) const {
@@ -3685,6 +3695,8 @@ int main(int argc, char** argv) {
     g.addEdg(b, d, 1);
 
     struct CostFunc : public EDijkstra::CostFunc<int, int, int> {
+      using EDijkstra::CostFunc<int, int, int>::operator();
+
       int operator()(const Edge<int, int>* fr, const Node<int, int>* n,
                      const Edge<int, int>* to) const {
         UNUSED(fr);
@@ -3728,6 +3740,8 @@ int main(int argc, char** argv) {
     g.addEdg(b, target, 1);
 
     struct CostFunc : public BiDijkstra::CostFunc<int, int, int> {
+      using BiDijkstra::CostFunc<int, int, int>::operator();
+
       int operator()(const Node<int, int>* fr, const Edge<int, int>* e,
                      const Node<int, int>* to) const {
         UNUSED(fr);
@@ -3764,6 +3778,8 @@ int main(int argc, char** argv) {
     g.addEdg(b, d, 1);
 
     struct CostFunc : public BiDijkstra::CostFunc<int, int, int> {
+      using BiDijkstra::CostFunc<int, int, int>::operator();
+
       int operator()(const Node<int, int>* fr, const Edge<int, int>* e,
                      const Node<int, int>* to) const {
         UNUSED(fr);
@@ -3828,6 +3844,8 @@ int main(int argc, char** argv) {
     g.addEdg(b, d, 1);
 
     struct CostFunc : public Dijkstra::CostFunc<int, int, int> {
+      using Dijkstra::CostFunc<int, int, int>::operator();
+
       int operator()(const Node<int, int>* fr, const Edge<int, int>* e,
                      const Node<int, int>* to) const {
         UNUSED(fr);

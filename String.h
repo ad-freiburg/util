@@ -498,11 +498,11 @@ inline double btsSimi(std::string a, std::string b) {
 
 // _____________________________________________________________________________
 inline std::string randomString(size_t n) {
-  const char* chars =
+  const std::string chars =
       "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghipqrstuvwxyz";
   std::string ret(n, ' ');
 
-  for (size_t i = 0; i < n; i++) ret[i] = chars[rand() % (sizeof(chars) - 1)];
+  for (size_t i = 0; i < n; i++) ret[i] = chars[rand() % (chars.size() - 1)];
 
   return ret;
 }
