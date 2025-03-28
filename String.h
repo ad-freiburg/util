@@ -501,7 +501,7 @@ std::string randomString(size_t n) {
   const char* chars = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghipqrstuvwxyz";
   std::string ret(n, ' ');
 
-  for (int i = 0; i < n; i++) ret[i] = chars[rand() % (sizeof(chars) - 1)];
+  for (size_t i = 0; i < n; i++) ret[i] = chars[rand() % (sizeof(chars) - 1)];
 
   return ret;
 }
