@@ -1136,6 +1136,14 @@ int main(int argc, char** argv) {
 
     TEST(!std::get<1>(geo::intersectsContainsCovers(bx, util::geo::getBoundingBox(b), util::geo::outerArea(b), bx, util::geo::getBoundingBox(a), util::geo::outerArea(a))));
     TEST(!std::get<2>(geo::intersectsContainsCovers(bx, util::geo::getBoundingBox(b), util::geo::outerArea(b), ax, util::geo::getBoundingBox(a), util::geo::outerArea(a))));
+    TEST(std::get<3>(geo::intersectsContainsCovers(bx, util::geo::getBoundingBox(b), util::geo::outerArea(b), ax, util::geo::getBoundingBox(a), util::geo::outerArea(a))));
+    TEST(!std::get<4>(geo::intersectsContainsCovers(bx, util::geo::getBoundingBox(b), util::geo::outerArea(b), ax, util::geo::getBoundingBox(a), util::geo::outerArea(a))));
+
+    auto de9im = geo::DE9IM(bx, util::geo::getBoundingBox(b), util::geo::outerArea(b), ax, util::geo::getBoundingBox(a), util::geo::outerArea(a));
+    TEST(de9im, ==, "FF2F11212");
+
+    de9im = geo::DE9IM(ax, util::geo::getBoundingBox(a), util::geo::outerArea(a), bx, util::geo::getBoundingBox(b), util::geo::outerArea(b));
+    TEST(de9im, ==, "FF2F11212");
   }
 
   {
