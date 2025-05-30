@@ -1112,6 +1112,12 @@ int main(int argc, char** argv) {
 
     TEST(!std::get<1>(geo::intersectsContainsCovers(bx, util::geo::getBoundingBox(b), util::geo::outerArea(b), ax, util::geo::getBoundingBox(a), util::geo::outerArea(a))));
     TEST(std::get<2>(geo::intersectsContainsCovers(bx, util::geo::getBoundingBox(b), util::geo::outerArea(b), ax, util::geo::getBoundingBox(a), util::geo::outerArea(a))));
+
+    auto de9im = geo::DE9IM(ax, util::geo::getBoundingBox(a), util::geo::outerArea(a), bx, util::geo::getBoundingBox(b), util::geo::outerArea(b));
+    TEST(de9im, ==, "212F11FF2");
+
+    de9im = geo::DE9IM(bx, util::geo::getBoundingBox(b), util::geo::outerArea(b), ax, util::geo::getBoundingBox(a), util::geo::outerArea(a));
+    TEST(de9im, ==, "2FF11F212");
   }
 
   {
@@ -1164,6 +1170,12 @@ int main(int argc, char** argv) {
 
     TEST(!std::get<1>(geo::intersectsContainsCovers(bx, util::geo::getBoundingBox(b), util::geo::outerArea(b), bx, util::geo::getBoundingBox(a), util::geo::outerArea(a))));
     TEST(!std::get<2>(geo::intersectsContainsCovers(bx, util::geo::getBoundingBox(b), util::geo::outerArea(b), ax, util::geo::getBoundingBox(a), util::geo::outerArea(a))));
+
+    auto de9im = geo::DE9IM(bx, util::geo::getBoundingBox(b), util::geo::outerArea(b), ax, util::geo::getBoundingBox(a), util::geo::outerArea(a));
+    TEST(de9im, ==, "FF2F01212");
+
+    de9im = geo::DE9IM(ax, util::geo::getBoundingBox(a), util::geo::outerArea(a), bx, util::geo::getBoundingBox(b), util::geo::outerArea(b));
+    TEST(de9im, ==, "FF2F01212");
   }
 
   {
@@ -1184,6 +1196,12 @@ int main(int argc, char** argv) {
 
     TEST(!std::get<1>(geo::intersectsContainsCovers(bx, util::geo::getBoundingBox(b), util::geo::outerArea(b), bx, util::geo::getBoundingBox(a), util::geo::outerArea(a))));
     TEST(!std::get<2>(geo::intersectsContainsCovers(bx, util::geo::getBoundingBox(b), util::geo::outerArea(b), ax, util::geo::getBoundingBox(a), util::geo::outerArea(a))));
+
+    auto de9im = geo::DE9IM(bx, util::geo::getBoundingBox(b), util::geo::outerArea(b), ax, util::geo::getBoundingBox(a), util::geo::outerArea(a));
+    TEST(de9im, ==, "FF2F01212");
+
+    de9im = geo::DE9IM(ax, util::geo::getBoundingBox(a), util::geo::outerArea(a), bx, util::geo::getBoundingBox(b), util::geo::outerArea(b));
+    TEST(de9im, ==, "FF2F01212");
   }
 
   {
@@ -1204,6 +1222,12 @@ int main(int argc, char** argv) {
 
     TEST(!std::get<1>(geo::intersectsContainsCovers(bx, util::geo::getBoundingBox(b), util::geo::outerArea(b), bx, util::geo::getBoundingBox(a), util::geo::outerArea(a))));
     TEST(std::get<2>(geo::intersectsContainsCovers(bx, util::geo::getBoundingBox(b), util::geo::outerArea(b), ax, util::geo::getBoundingBox(a), util::geo::outerArea(a))));
+
+    auto de9im = geo::DE9IM(ax, util::geo::getBoundingBox(a), util::geo::outerArea(a), bx, util::geo::getBoundingBox(b), util::geo::outerArea(b));
+    TEST(de9im, ==, "212F01FF2");
+
+    de9im = geo::DE9IM(bx, util::geo::getBoundingBox(b), util::geo::outerArea(b), ax, util::geo::getBoundingBox(a), util::geo::outerArea(a));
+    TEST(de9im, ==, "2FF10F212");
   }
 
   {
@@ -1224,6 +1248,12 @@ int main(int argc, char** argv) {
 
     TEST(!std::get<1>(geo::intersectsContainsCovers(bx, util::geo::getBoundingBox(b), util::geo::outerArea(b), bx, util::geo::getBoundingBox(a), util::geo::outerArea(a))));
     TEST(!std::get<2>(geo::intersectsContainsCovers(bx, util::geo::getBoundingBox(b), util::geo::outerArea(b), ax, util::geo::getBoundingBox(a), util::geo::outerArea(a))));
+
+    auto de9im = geo::DE9IM(ax, util::geo::getBoundingBox(a), util::geo::outerArea(a), bx, util::geo::getBoundingBox(b), util::geo::outerArea(b));
+    TEST(de9im, ==, "FF2F01212");
+
+    de9im = geo::DE9IM(bx, util::geo::getBoundingBox(b), util::geo::outerArea(b), ax, util::geo::getBoundingBox(a), util::geo::outerArea(a));
+    TEST(de9im, ==, "FF2F01212");
   }
 
   {
@@ -1244,6 +1274,12 @@ int main(int argc, char** argv) {
 
     TEST(!std::get<1>(geo::intersectsContainsCovers(bx, util::geo::getBoundingBox(b), util::geo::outerArea(b), bx, util::geo::getBoundingBox(a), util::geo::outerArea(a))));
     TEST(std::get<2>(geo::intersectsContainsCovers(bx, util::geo::getBoundingBox(b), util::geo::outerArea(b), ax, util::geo::getBoundingBox(a), util::geo::outerArea(a))));
+
+    auto de9im = geo::DE9IM(ax, util::geo::getBoundingBox(a), util::geo::outerArea(a), bx, util::geo::getBoundingBox(b), util::geo::outerArea(b));
+    TEST(de9im, ==, "2FFF1FFF2");
+
+    de9im = geo::DE9IM(bx, util::geo::getBoundingBox(b), util::geo::outerArea(b), ax, util::geo::getBoundingBox(a), util::geo::outerArea(a));
+    TEST(de9im, ==, "2FFF1FFF2");
   }
 
   {
@@ -1264,6 +1300,12 @@ int main(int argc, char** argv) {
 
     TEST(!std::get<1>(geo::intersectsContainsCovers(bx, util::geo::getBoundingBox(b), util::geo::outerArea(b), bx, util::geo::getBoundingBox(a), util::geo::outerArea(a))));
     TEST(std::get<2>(geo::intersectsContainsCovers(bx, util::geo::getBoundingBox(b), util::geo::outerArea(b), ax, util::geo::getBoundingBox(a), util::geo::outerArea(a))));
+
+    auto de9im = geo::DE9IM(ax, util::geo::getBoundingBox(a), util::geo::outerArea(a), bx, util::geo::getBoundingBox(b), util::geo::outerArea(b));
+    TEST(de9im, ==, "212F11FF2");
+
+    de9im = geo::DE9IM(bx, util::geo::getBoundingBox(b), util::geo::outerArea(b), ax, util::geo::getBoundingBox(a), util::geo::outerArea(a));
+    TEST(de9im, ==, "2FF11F212");
   }
 
   {
@@ -1284,6 +1326,12 @@ int main(int argc, char** argv) {
 
     TEST(!std::get<1>(geo::intersectsContainsCovers(bx, util::geo::getBoundingBox(b), util::geo::outerArea(b), ax, util::geo::getBoundingBox(a), util::geo::outerArea(a))));
     TEST(std::get<2>(geo::intersectsContainsCovers(bx, util::geo::getBoundingBox(b), util::geo::outerArea(b), ax, util::geo::getBoundingBox(a), util::geo::outerArea(a))));
+
+    auto de9im = geo::DE9IM(ax, util::geo::getBoundingBox(a), util::geo::outerArea(a), bx, util::geo::getBoundingBox(b), util::geo::outerArea(b));
+    TEST(de9im, ==, "2FFF1FFF2");
+
+    de9im = geo::DE9IM(bx, util::geo::getBoundingBox(b), util::geo::outerArea(b), ax, util::geo::getBoundingBox(a), util::geo::outerArea(a));
+    TEST(de9im, ==, "2FFF1FFF2");
   }
 
   {
@@ -1299,6 +1347,12 @@ int main(int argc, char** argv) {
     TEST(std::get<3>(geo::intersectsContainsCovers(bx, util::geo::getBoundingBox(b), util::geo::outerArea(b), ax, util::geo::getBoundingBox(a), util::geo::outerArea(a))));
     TEST(!std::get<4>(geo::intersectsContainsCovers(ax, util::geo::getBoundingBox(a), util::geo::outerArea(a), bx, util::geo::getBoundingBox(b), util::geo::outerArea(b))));
     TEST(!std::get<4>(geo::intersectsContainsCovers(bx, util::geo::getBoundingBox(b), util::geo::outerArea(b), ax, util::geo::getBoundingBox(a), util::geo::outerArea(a))));
+
+    auto de9im = geo::DE9IM(ax, util::geo::getBoundingBox(a), util::geo::outerArea(a), bx, util::geo::getBoundingBox(b), util::geo::outerArea(b));
+    TEST(de9im, ==, "FF2F11212");
+
+    de9im = geo::DE9IM(bx, util::geo::getBoundingBox(b), util::geo::outerArea(b), ax, util::geo::getBoundingBox(a), util::geo::outerArea(a));
+    TEST(de9im, ==, "FF2F11212");
   }
 
   {
@@ -1313,6 +1367,12 @@ int main(int argc, char** argv) {
     TEST(!std::get<3>(geo::intersectsContainsCovers(ax, util::geo::getBoundingBox(a), util::geo::outerArea(a), bx, util::geo::getBoundingBox(b), util::geo::outerArea(b))));
     TEST(!std::get<4>(geo::intersectsContainsCovers(ax, util::geo::getBoundingBox(a), util::geo::outerArea(a), bx, util::geo::getBoundingBox(b), util::geo::outerArea(b))));
     TEST(!std::get<4>(geo::intersectsContainsCovers(bx, util::geo::getBoundingBox(b), util::geo::outerArea(b), ax, util::geo::getBoundingBox(a), util::geo::outerArea(a))));
+
+    auto de9im = geo::DE9IM(ax, util::geo::getBoundingBox(a), util::geo::outerArea(a), bx, util::geo::getBoundingBox(b), util::geo::outerArea(b));
+    TEST(de9im, ==, "2FF1FF212");
+
+    de9im = geo::DE9IM(bx, util::geo::getBoundingBox(b), util::geo::outerArea(b), ax, util::geo::getBoundingBox(a), util::geo::outerArea(a));
+    TEST(de9im, ==, "212FF1FF2");
   }
 
   {
@@ -1328,6 +1388,33 @@ int main(int argc, char** argv) {
     TEST(!std::get<3>(geo::intersectsContainsCovers(bx, util::geo::getBoundingBox(b), util::geo::outerArea(b), ax, util::geo::getBoundingBox(a), util::geo::outerArea(a))));
     TEST(std::get<4>(geo::intersectsContainsCovers(ax, util::geo::getBoundingBox(a), util::geo::outerArea(a), bx, util::geo::getBoundingBox(b), util::geo::outerArea(b))));
     TEST(std::get<4>(geo::intersectsContainsCovers(bx, util::geo::getBoundingBox(b), util::geo::outerArea(b), ax, util::geo::getBoundingBox(a), util::geo::outerArea(a))));
+
+    auto de9im = geo::DE9IM(ax, util::geo::getBoundingBox(a), util::geo::outerArea(a), bx, util::geo::getBoundingBox(b), util::geo::outerArea(b));
+    TEST(de9im, ==, "2121FF212");
+
+    de9im = geo::DE9IM(bx, util::geo::getBoundingBox(b), util::geo::outerArea(b), ax, util::geo::getBoundingBox(a), util::geo::outerArea(a));
+    TEST(de9im, ==, "2121F12F2");
+  }
+
+  {
+    auto a = polygonFromWKT<int>("POLYGON((1 1, 6 1, 6 6, 1 6, 1 1))");
+    auto b = polygonFromWKT<int>("POLYGON((0 0, 7 0, 7 7, 0 7, 0 0), (1 1, 1 4, 4 4, 4 3, 3 3))");
+    XSortedPolygon<int> ax(a);
+    XSortedPolygon<int> bx(b);
+
+    TEST(std::get<0>(geo::intersectsContainsCovers(ax, util::geo::getBoundingBox(a), util::geo::outerArea(a), bx, util::geo::getBoundingBox(b), util::geo::outerArea(b))));
+    TEST(!std::get<1>(geo::intersectsContainsCovers(ax, util::geo::getBoundingBox(a), util::geo::outerArea(a), bx, util::geo::getBoundingBox(b), util::geo::outerArea(b))));
+    TEST(!std::get<2>(geo::intersectsContainsCovers(ax, util::geo::getBoundingBox(a), util::geo::outerArea(a), bx, util::geo::getBoundingBox(b), util::geo::outerArea(b))));
+    TEST(!std::get<3>(geo::intersectsContainsCovers(ax, util::geo::getBoundingBox(a), util::geo::outerArea(a), bx, util::geo::getBoundingBox(b), util::geo::outerArea(b))));
+    TEST(!std::get<3>(geo::intersectsContainsCovers(bx, util::geo::getBoundingBox(b), util::geo::outerArea(b), ax, util::geo::getBoundingBox(a), util::geo::outerArea(a))));
+    TEST(std::get<4>(geo::intersectsContainsCovers(ax, util::geo::getBoundingBox(a), util::geo::outerArea(a), bx, util::geo::getBoundingBox(b), util::geo::outerArea(b))));
+    TEST(std::get<4>(geo::intersectsContainsCovers(bx, util::geo::getBoundingBox(b), util::geo::outerArea(b), ax, util::geo::getBoundingBox(a), util::geo::outerArea(a))));
+
+    auto de9im = geo::DE9IM(ax, util::geo::getBoundingBox(a), util::geo::outerArea(a), bx, util::geo::getBoundingBox(b), util::geo::outerArea(b));
+    TEST(de9im, ==, "21211F212");
+
+    de9im = geo::DE9IM(bx, util::geo::getBoundingBox(b), util::geo::outerArea(b), ax, util::geo::getBoundingBox(a), util::geo::outerArea(a));
+    TEST(de9im, ==, "2121112F2");
   }
 
   {
@@ -1343,6 +1430,12 @@ int main(int argc, char** argv) {
     TEST(std::get<3>(geo::intersectsContainsCovers(bx, util::geo::getBoundingBox(b), util::geo::outerArea(b), ax, util::geo::getBoundingBox(a), util::geo::outerArea(a))));
     TEST(!std::get<4>(geo::intersectsContainsCovers(ax, util::geo::getBoundingBox(a), util::geo::outerArea(a), bx, util::geo::getBoundingBox(b), util::geo::outerArea(b))));
     TEST(!std::get<4>(geo::intersectsContainsCovers(bx, util::geo::getBoundingBox(b), util::geo::outerArea(b), ax, util::geo::getBoundingBox(a), util::geo::outerArea(a))));
+
+    auto de9im = geo::DE9IM(ax, util::geo::getBoundingBox(a), util::geo::outerArea(a), bx, util::geo::getBoundingBox(b), util::geo::outerArea(b));
+    TEST(de9im, ==, "FF2F1F212");
+
+    de9im = geo::DE9IM(bx, util::geo::getBoundingBox(b), util::geo::outerArea(b), ax, util::geo::getBoundingBox(a), util::geo::outerArea(a));
+    TEST(de9im, ==, "FF2F112F2");
   }
 
   {
@@ -1350,6 +1443,7 @@ int main(int argc, char** argv) {
     auto b = polygonFromWKT<int>("POLYGON((0 0, 7 0, 7 7, 0 7, 0 0), (1 1, 6 1, 6 6, 1 6, 1 1))");
     XSortedPolygon<int> ax(a);
     XSortedPolygon<int> bx(b);
+    TEST(bx.getInnerAreas()[0], >, 0)
 
     TEST(std::get<0>(geo::intersectsContainsCovers(ax, util::geo::getBoundingBox(a), util::geo::outerArea(a), bx, util::geo::getBoundingBox(b), util::geo::outerArea(b))));
     TEST(!std::get<1>(geo::intersectsContainsCovers(ax, util::geo::getBoundingBox(a), util::geo::outerArea(a), bx, util::geo::getBoundingBox(b), util::geo::outerArea(b))));
@@ -1358,6 +1452,12 @@ int main(int argc, char** argv) {
     TEST(std::get<3>(geo::intersectsContainsCovers(bx, util::geo::getBoundingBox(b), util::geo::outerArea(b), ax, util::geo::getBoundingBox(a), util::geo::outerArea(a))));
     TEST(!std::get<4>(geo::intersectsContainsCovers(ax, util::geo::getBoundingBox(a), util::geo::outerArea(a), bx, util::geo::getBoundingBox(b), util::geo::outerArea(b))));
     TEST(!std::get<4>(geo::intersectsContainsCovers(bx, util::geo::getBoundingBox(b), util::geo::outerArea(b), ax, util::geo::getBoundingBox(a), util::geo::outerArea(a))));
+
+    auto de9im = geo::DE9IM(ax, util::geo::getBoundingBox(a), util::geo::outerArea(a), bx, util::geo::getBoundingBox(b), util::geo::outerArea(b));
+    TEST(de9im, ==, "FF2F11212");
+
+    de9im = geo::DE9IM(bx, util::geo::getBoundingBox(b), util::geo::outerArea(b), ax, util::geo::getBoundingBox(a), util::geo::outerArea(a));
+    TEST(de9im, ==, "FF2F11212");
   }
 
   {
@@ -1553,6 +1653,12 @@ int main(int argc, char** argv) {
     TEST(std::get<3>(geo::intersectsContainsCovers(bx, util::geo::getBoundingBox(b), util::geo::outerArea(b), ax, util::geo::getBoundingBox(a), util::geo::outerArea(a))));
     TEST(!std::get<4>(geo::intersectsContainsCovers(ax, util::geo::getBoundingBox(a), util::geo::outerArea(a), bx, util::geo::getBoundingBox(b), util::geo::outerArea(b))));
     TEST(!std::get<4>(geo::intersectsContainsCovers(bx, util::geo::getBoundingBox(b), util::geo::outerArea(b), ax, util::geo::getBoundingBox(a), util::geo::outerArea(a))));
+
+    auto de9im = geo::DE9IM(ax, util::geo::getBoundingBox(a), util::geo::outerArea(a), bx, util::geo::getBoundingBox(b), util::geo::outerArea(b));
+    TEST(de9im, ==, "FF2F1F212");
+
+    de9im = geo::DE9IM(bx, util::geo::getBoundingBox(b), util::geo::outerArea(b), ax, util::geo::getBoundingBox(a), util::geo::outerArea(a));
+    TEST(de9im, ==, "FF2F112F2");
   }
 
   {
@@ -1568,6 +1674,12 @@ int main(int argc, char** argv) {
     TEST(std::get<3>(geo::intersectsContainsCovers(bx, util::geo::getBoundingBox(b), util::geo::outerArea(b), ax, util::geo::getBoundingBox(a), util::geo::outerArea(a))));
     TEST(!std::get<4>(geo::intersectsContainsCovers(ax, util::geo::getBoundingBox(a), util::geo::outerArea(a), bx, util::geo::getBoundingBox(b), util::geo::outerArea(b))));
     TEST(!std::get<4>(geo::intersectsContainsCovers(bx, util::geo::getBoundingBox(b), util::geo::outerArea(b), ax, util::geo::getBoundingBox(a), util::geo::outerArea(a))));
+
+    auto de9im = geo::DE9IM(ax, util::geo::getBoundingBox(a), util::geo::outerArea(a), bx, util::geo::getBoundingBox(b), util::geo::outerArea(b));
+    TEST(de9im, ==, "FF2F1F212");
+
+    de9im = geo::DE9IM(bx, util::geo::getBoundingBox(b), util::geo::outerArea(b), ax, util::geo::getBoundingBox(a), util::geo::outerArea(a));
+    TEST(de9im, ==, "FF2F112F2");
   }
 
   {
@@ -1583,6 +1695,116 @@ int main(int argc, char** argv) {
     TEST(std::get<3>(geo::intersectsContainsCovers(bx, util::geo::getBoundingBox(b), util::geo::outerArea(b), ax, util::geo::getBoundingBox(a), util::geo::outerArea(a))));
     TEST(!std::get<4>(geo::intersectsContainsCovers(ax, util::geo::getBoundingBox(a), util::geo::outerArea(a), bx, util::geo::getBoundingBox(b), util::geo::outerArea(b))));
     TEST(!std::get<4>(geo::intersectsContainsCovers(bx, util::geo::getBoundingBox(b), util::geo::outerArea(b), ax, util::geo::getBoundingBox(a), util::geo::outerArea(a))));
+
+    auto de9im = geo::DE9IM(ax, util::geo::getBoundingBox(a), util::geo::outerArea(a), bx, util::geo::getBoundingBox(b), util::geo::outerArea(b));
+    TEST(de9im, ==, "FF2F11212");
+
+    de9im = geo::DE9IM(bx, util::geo::getBoundingBox(b), util::geo::outerArea(b), ax, util::geo::getBoundingBox(a), util::geo::outerArea(a));
+    TEST(de9im, ==, "FF2F11212");
+  }
+
+  {
+    auto a = polygonFromWKT<int>("POLYGON((1 3, 3 4, 4 3, 3 3))");
+    auto b = polygonFromWKT<int>("POLYGON((0 0, 7 0, 7 7, 0 7, 0 0), (2 2, 2 5, 5 5, 5 2, 2 2)))");
+    XSortedPolygon<int> ax(a);
+    XSortedPolygon<int> bx(b);
+
+    auto de9im = geo::DE9IM(ax, util::geo::getBoundingBox(a), util::geo::outerArea(a), bx, util::geo::getBoundingBox(b), util::geo::outerArea(b));
+    TEST(de9im, ==, "212101212");
+
+    de9im = geo::DE9IM(bx, util::geo::getBoundingBox(b), util::geo::outerArea(b), ax, util::geo::getBoundingBox(a), util::geo::outerArea(a));
+    TEST(de9im, ==, "212101212");
+  }
+
+  {
+    auto a = polygonFromWKT<int>("POLYGON((-1 3, 3 4, 4 3, 3 3))");
+    auto b = polygonFromWKT<int>("POLYGON((0 0, 7 0, 7 7, 0 7, 0 0), (2 2, 2 5, 5 5, 5 2, 2 2)))");
+    XSortedPolygon<int> ax(a);
+    XSortedPolygon<int> bx(b);
+
+    auto de9im = geo::DE9IM(ax, util::geo::getBoundingBox(a), util::geo::outerArea(a), bx, util::geo::getBoundingBox(b), util::geo::outerArea(b));
+    TEST(de9im, ==, "212101212");
+
+    de9im = geo::DE9IM(bx, util::geo::getBoundingBox(b), util::geo::outerArea(b), ax, util::geo::getBoundingBox(a), util::geo::outerArea(a));
+    TEST(de9im, ==, "212101212");
+  }
+
+  {
+    auto a = polygonFromWKT<int>("POLYGON((2 3, 3 4, 4 3, 3 3))");
+    auto b = polygonFromWKT<int>("POLYGON((0 0, 7 0, 7 7, 0 7, 0 0), (2 2, 2 5, 5 5, 5 2, 2 2)))");
+    XSortedPolygon<int> ax(a);
+    XSortedPolygon<int> bx(b);
+
+    auto de9im = geo::DE9IM(ax, util::geo::getBoundingBox(a), util::geo::outerArea(a), bx, util::geo::getBoundingBox(b), util::geo::outerArea(b));
+    TEST(de9im, ==, "FF2F01212");
+
+    de9im = geo::DE9IM(bx, util::geo::getBoundingBox(b), util::geo::outerArea(b), ax, util::geo::getBoundingBox(a), util::geo::outerArea(a));
+    TEST(de9im, ==, "FF2F01212");
+  }
+
+  {
+    auto a = polygonFromWKT<int>("POLYGON((2 3, 2 4, 4 3, 3 3))");
+    auto b = polygonFromWKT<int>("POLYGON((0 0, 7 0, 7 7, 0 7, 0 0), (2 2, 2 5, 5 5, 5 2, 2 2)))");
+    XSortedPolygon<int> ax(a);
+    XSortedPolygon<int> bx(b);
+
+    auto de9im = geo::DE9IM(ax, util::geo::getBoundingBox(a), util::geo::outerArea(a), bx, util::geo::getBoundingBox(b), util::geo::outerArea(b));
+    TEST(de9im, ==, "FF2F11212");
+
+    de9im = geo::DE9IM(bx, util::geo::getBoundingBox(b), util::geo::outerArea(b), ax, util::geo::getBoundingBox(a), util::geo::outerArea(a));
+    TEST(de9im, ==, "FF2F11212");
+  }
+
+  {
+    auto a = polygonFromWKT<int>("POLYGON((0 3, 0 4, 4 3, 3 3))");
+    auto b = polygonFromWKT<int>("POLYGON((0 0, 7 0, 7 7, 0 7, 0 0), (2 2, 2 5, 5 5, 5 2, 2 2)))");
+    XSortedPolygon<int> ax(a);
+    XSortedPolygon<int> bx(b);
+
+    auto de9im = geo::DE9IM(ax, util::geo::getBoundingBox(a), util::geo::outerArea(a), bx, util::geo::getBoundingBox(b), util::geo::outerArea(b));
+    TEST(de9im, ==, "212111212");
+
+    de9im = geo::DE9IM(bx, util::geo::getBoundingBox(b), util::geo::outerArea(b), ax, util::geo::getBoundingBox(a), util::geo::outerArea(a));
+    TEST(de9im, ==, "212111212");
+  }
+
+  {
+    auto a = polygonFromWKT<int>("POLYGON((0 3, 2 4, 2 3))");
+    auto b = polygonFromWKT<int>("POLYGON((0 0, 7 0, 7 7, 0 7, 0 0), (2 2, 2 5, 5 5, 5 2, 2 2)))");
+    XSortedPolygon<int> ax(a);
+    XSortedPolygon<int> bx(b);
+
+    auto de9im = geo::DE9IM(ax, util::geo::getBoundingBox(a), util::geo::outerArea(a), bx, util::geo::getBoundingBox(b), util::geo::outerArea(b));
+    TEST(de9im, ==, "2FF11F212");
+
+    de9im = geo::DE9IM(bx, util::geo::getBoundingBox(b), util::geo::outerArea(b), ax, util::geo::getBoundingBox(a), util::geo::outerArea(a));
+    TEST(de9im, ==, "212F11FF2");
+  }
+
+  {
+    auto a = polygonFromWKT<int>("POLYGON((0 3, 2 4, 2 3))");
+    auto b = polygonFromWKT<int>("POLYGON((0 0, 7 0, 7 7, 0 7, 0 0), (2 2, 2 5, 5 5, 5 2, 2 2), (1 5, 2 1, 2 1, 1 1)))");
+    XSortedPolygon<int> ax(a);
+    XSortedPolygon<int> bx(b);
+
+    auto de9im = geo::DE9IM(ax, util::geo::getBoundingBox(a), util::geo::outerArea(a), bx, util::geo::getBoundingBox(b), util::geo::outerArea(b));
+    TEST(de9im, ==, "212111212");
+
+    de9im = geo::DE9IM(bx, util::geo::getBoundingBox(b), util::geo::outerArea(b), ax, util::geo::getBoundingBox(a), util::geo::outerArea(a));
+    TEST(de9im, ==, "212111212");
+  }
+
+  {
+    auto a = polygonFromWKT<int>("POLYGON((-1 3, 2 4, 2 3))");
+    auto b = polygonFromWKT<int>("POLYGON((0 0, 7 0, 7 7, 0 7, 0 0), (2 2, 2 5, 5 5, 5 2, 2 2)))");
+    XSortedPolygon<int> ax(a);
+    XSortedPolygon<int> bx(b);
+
+    auto de9im = geo::DE9IM(ax, util::geo::getBoundingBox(a), util::geo::outerArea(a), bx, util::geo::getBoundingBox(b), util::geo::outerArea(b));
+    TEST(de9im, ==, "212111212");
+
+    de9im = geo::DE9IM(bx, util::geo::getBoundingBox(b), util::geo::outerArea(b), ax, util::geo::getBoundingBox(a), util::geo::outerArea(a));
+    TEST(de9im, ==, "212111212");
   }
 
   {
@@ -1598,6 +1820,12 @@ int main(int argc, char** argv) {
     TEST(!std::get<3>(geo::intersectsContainsCovers(bx, util::geo::getBoundingBox(b), util::geo::outerArea(b), ax, util::geo::getBoundingBox(a), util::geo::outerArea(a))));
     TEST(!std::get<4>(geo::intersectsContainsCovers(ax, util::geo::getBoundingBox(a), util::geo::outerArea(a), bx, util::geo::getBoundingBox(b), util::geo::outerArea(b))));
     TEST(!std::get<4>(geo::intersectsContainsCovers(bx, util::geo::getBoundingBox(b), util::geo::outerArea(b), ax, util::geo::getBoundingBox(a), util::geo::outerArea(a))));
+
+    auto de9im = geo::DE9IM(ax, util::geo::getBoundingBox(a), util::geo::outerArea(a), bx, util::geo::getBoundingBox(b), util::geo::outerArea(b));
+    TEST(de9im, ==, "2FF1FF212");
+
+    de9im = geo::DE9IM(bx, util::geo::getBoundingBox(b), util::geo::outerArea(b), ax, util::geo::getBoundingBox(a), util::geo::outerArea(a));
+    TEST(de9im, ==, "212FF1FF2");
   }
 
   {
@@ -1613,6 +1841,12 @@ int main(int argc, char** argv) {
     TEST(!std::get<3>(geo::intersectsContainsCovers(bx, util::geo::getBoundingBox(b), util::geo::outerArea(b), ax, util::geo::getBoundingBox(a), util::geo::outerArea(a))));
     TEST(!std::get<4>(geo::intersectsContainsCovers(ax, util::geo::getBoundingBox(a), util::geo::outerArea(a), bx, util::geo::getBoundingBox(b), util::geo::outerArea(b))));
     TEST(!std::get<4>(geo::intersectsContainsCovers(bx, util::geo::getBoundingBox(b), util::geo::outerArea(b), ax, util::geo::getBoundingBox(a), util::geo::outerArea(a))));
+
+    auto de9im = geo::DE9IM(ax, util::geo::getBoundingBox(a), util::geo::outerArea(a), bx, util::geo::getBoundingBox(b), util::geo::outerArea(b));
+    TEST(de9im, ==, "2FF10F212");
+
+    de9im = geo::DE9IM(bx, util::geo::getBoundingBox(b), util::geo::outerArea(b), ax, util::geo::getBoundingBox(a), util::geo::outerArea(a));
+    TEST(de9im, ==, "212F01FF2");
   }
 
   {
@@ -1628,6 +1862,12 @@ int main(int argc, char** argv) {
     TEST(!std::get<3>(geo::intersectsContainsCovers(bx, util::geo::getBoundingBox(b), util::geo::outerArea(b), ax, util::geo::getBoundingBox(a), util::geo::outerArea(a))));
     TEST(!std::get<4>(geo::intersectsContainsCovers(ax, util::geo::getBoundingBox(a), util::geo::outerArea(a), bx, util::geo::getBoundingBox(b), util::geo::outerArea(b))));
     TEST(!std::get<4>(geo::intersectsContainsCovers(bx, util::geo::getBoundingBox(b), util::geo::outerArea(b), ax, util::geo::getBoundingBox(a), util::geo::outerArea(a))));
+
+    auto de9im = geo::DE9IM(ax, util::geo::getBoundingBox(a), util::geo::outerArea(a), bx, util::geo::getBoundingBox(b), util::geo::outerArea(b));
+    TEST(de9im, ==, "2FF11F212");
+
+    de9im = geo::DE9IM(bx, util::geo::getBoundingBox(b), util::geo::outerArea(b), ax, util::geo::getBoundingBox(a), util::geo::outerArea(a));
+    TEST(de9im, ==, "212F11FF2");
   }
 
   {
@@ -1643,6 +1883,12 @@ int main(int argc, char** argv) {
     TEST(!std::get<3>(geo::intersectsContainsCovers(bx, util::geo::getBoundingBox(b), util::geo::outerArea(b), ax, util::geo::getBoundingBox(a), util::geo::outerArea(a))));
     TEST(std::get<4>(geo::intersectsContainsCovers(ax, util::geo::getBoundingBox(a), util::geo::outerArea(a), bx, util::geo::getBoundingBox(b), util::geo::outerArea(b))));
     TEST(std::get<4>(geo::intersectsContainsCovers(bx, util::geo::getBoundingBox(b), util::geo::outerArea(b), ax, util::geo::getBoundingBox(a), util::geo::outerArea(a))));
+
+    auto de9im = geo::DE9IM(ax, util::geo::getBoundingBox(a), util::geo::outerArea(a), bx, util::geo::getBoundingBox(b), util::geo::outerArea(b));
+    TEST(de9im, ==, "21211F212");
+
+    de9im = geo::DE9IM(bx, util::geo::getBoundingBox(b), util::geo::outerArea(b), ax, util::geo::getBoundingBox(a), util::geo::outerArea(a));
+    TEST(de9im, ==, "2121112F2");
   }
 
   {
@@ -1658,6 +1904,46 @@ int main(int argc, char** argv) {
     TEST(!std::get<3>(geo::intersectsContainsCovers(bx, util::geo::getBoundingBox(b), util::geo::outerArea(b), ax, util::geo::getBoundingBox(a), util::geo::outerArea(a))));
     TEST(std::get<4>(geo::intersectsContainsCovers(ax, util::geo::getBoundingBox(a), util::geo::outerArea(a), bx, util::geo::getBoundingBox(b), util::geo::outerArea(b))));
     TEST(std::get<4>(geo::intersectsContainsCovers(bx, util::geo::getBoundingBox(b), util::geo::outerArea(b), ax, util::geo::getBoundingBox(a), util::geo::outerArea(a))));
+
+    auto de9im = geo::DE9IM(bx, util::geo::getBoundingBox(b), util::geo::outerArea(b), ax, util::geo::getBoundingBox(a), util::geo::outerArea(a));
+    TEST(de9im, ==, "212101212");
+
+    de9im = geo::DE9IM(ax, util::geo::getBoundingBox(a), util::geo::outerArea(a), bx, util::geo::getBoundingBox(b), util::geo::outerArea(b));
+    TEST(de9im, ==, "212101212");
+  }
+
+  {
+    auto a = polygonFromWKT<int>("POLYGON((0 0, 0 1, 1 1, 1 0, 0 0))");
+    auto b = polygonFromWKT<int>("POLYGON((2 2, 2 3, 3 3, 3 2, 2 2))");
+    XSortedPolygon<int> ax(a);
+    XSortedPolygon<int> bx(b);
+
+    TEST(!std::get<0>(geo::intersectsContainsCovers(ax, util::geo::getBoundingBox(a), util::geo::outerArea(a), bx, util::geo::getBoundingBox(b), util::geo::outerArea(b))));
+    TEST(!std::get<1>(geo::intersectsContainsCovers(ax, util::geo::getBoundingBox(a), util::geo::outerArea(a), bx, util::geo::getBoundingBox(b), util::geo::outerArea(b))));
+    TEST(!std::get<2>(geo::intersectsContainsCovers(ax, util::geo::getBoundingBox(a), util::geo::outerArea(a), bx, util::geo::getBoundingBox(b), util::geo::outerArea(b))));
+    TEST(!std::get<3>(geo::intersectsContainsCovers(ax, util::geo::getBoundingBox(a), util::geo::outerArea(a), bx, util::geo::getBoundingBox(b), util::geo::outerArea(b))));
+    TEST(!std::get<3>(geo::intersectsContainsCovers(bx, util::geo::getBoundingBox(b), util::geo::outerArea(b), ax, util::geo::getBoundingBox(a), util::geo::outerArea(a))));
+    TEST(!std::get<4>(geo::intersectsContainsCovers(ax, util::geo::getBoundingBox(a), util::geo::outerArea(a), bx, util::geo::getBoundingBox(b), util::geo::outerArea(b))));
+    TEST(!std::get<4>(geo::intersectsContainsCovers(bx, util::geo::getBoundingBox(b), util::geo::outerArea(b), ax, util::geo::getBoundingBox(a), util::geo::outerArea(a))));
+
+    auto de9im = geo::DE9IM(bx, util::geo::getBoundingBox(b), util::geo::outerArea(b), ax, util::geo::getBoundingBox(a), util::geo::outerArea(a));
+    TEST(de9im, ==, "FF2FF1212");
+
+    de9im = geo::DE9IM(ax, util::geo::getBoundingBox(a), util::geo::outerArea(a), bx, util::geo::getBoundingBox(b), util::geo::outerArea(b));
+    TEST(de9im, ==, "FF2FF1212");
+  }
+
+  {
+    auto a = polygonFromWKT<int>("POLYGON((0 0, 0 2, 2 2, 2 0, 0 0))");
+    auto b = polygonFromWKT<int>("POLYGON((2 2, 2 3, 3 3, 3 2, 2 2))");
+    XSortedPolygon<int> ax(a);
+    XSortedPolygon<int> bx(b);
+
+    auto de9im = geo::DE9IM(bx, util::geo::getBoundingBox(b), util::geo::outerArea(b), ax, util::geo::getBoundingBox(a), util::geo::outerArea(a));
+    TEST(de9im, ==, "FF2F01212");
+
+    de9im = geo::DE9IM(ax, util::geo::getBoundingBox(a), util::geo::outerArea(a), bx, util::geo::getBoundingBox(b), util::geo::outerArea(b));
+    TEST(de9im, ==, "FF2F01212");
   }
 
   // just to test that it does not crash

@@ -370,7 +370,7 @@ class XSortedPolygon {
       Box<T> box;
       for (const auto& p : inner) box = extendBox(p, box);
       _innerBoxes.push_back(box);
-      _innerAreas.push_back(area(inner));
+      _innerAreas.push_back(ringArea(inner));
       _boxIdx.push_back({box.getLowerLeft().getX(), _innerAreas.size() - 1});
       if (box.getUpperRight().getX() - box.getLowerLeft().getX() >
           _innerMaxSegLen)
@@ -408,6 +408,34 @@ class XSortedPolygon {
   const std::vector<XSortedRing<T>>& getInners() const { return _inners; }
   std::vector<XSortedRing<T>>& getInners() { return _inners; }
 
+  size_t getFirstInner(const util::geo::XSortedPolygon<T>& p) const {
+    return getFirstInner(p.getOuter());
+  }
+
+  size_t getFirstInner(const util::geo::Box<T>& b) const {
+    return getFirstInner(b.getLowerLeft());
+  }
+
+  size_t getFirstInner(const util::geo::XSortedRing<T>& b) const {
+    return getFirstInner(b.rawRing().front().seg().first);
+  }
+
+  size_t getFirstInner(const util::geo::Point<T>& p) const {
+    if (_inners.size() == 0) return 0;
+    size_t i = 0;
+
+    if (getInnerMaxSegLen() < std::numeric_limits<T>::max()) {
+      i = std::lower_bound(
+              getInnerBoxIdx().begin(), getInnerBoxIdx().end(),
+              std::pair<T, size_t>{
+                  p.getX() -
+                      getInnerMaxSegLen(),
+                  0}) -
+          getInnerBoxIdx().begin();
+    }
+    return i;
+  }
+
   const std::vector<util::geo::Box<T>>& getInnerBoxes() const {
     return _innerBoxes;
   }
@@ -435,7 +463,6 @@ class XSortedPolygon {
 
 template <typename T>
 using XSortedMultiPolygon = std::vector<XSortedPolygon<T>>;
-
 
 }  // namespace geo
 }  // namespace util
