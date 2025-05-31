@@ -278,6 +278,8 @@ class XSortedLine {
 
   XSortedLine(const Line<T>& line) {
     if (line.size() < 2) return;
+    _first = line.front();
+    _last = line.back();
 
     _line.reserve(2 * line.size());
     for (size_t i = 1; i < line.size(); i++) {
@@ -357,6 +359,8 @@ class XSortedLine {
                   2 * M_PI,   true};
     }
     _maxSegLen = fabs(line.first.getX() - line.second.getX());
+    _first = line.first;
+    _last = line.second;
   }
 
   bool operator==(const XSortedLine<T>& other) const {
@@ -370,11 +374,16 @@ class XSortedLine {
   T getMaxSegLen() const { return _maxSegLen; }
   void setMaxSegLen(T l) { _maxSegLen = l; }
 
+  Point<T> firstPoint() const { return _first; }
+  Point<T> lastPoint() const { return _last; }
+
   const std::vector<XSortedTuple<T>>& rawLine() const { return _line; }
   std::vector<XSortedTuple<T>>& rawLine() { return _line; }
 
  private:
   std::vector<XSortedTuple<T>> _line;
+  Point<T> _first;
+  Point<T> _last;
   T _maxSegLen = -1;
 };
 

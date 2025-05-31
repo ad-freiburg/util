@@ -109,6 +109,13 @@ typedef XSortedMultiPolygon<int32_t> I32XSortedMultiPolygon;
 typedef XSortedMultiPolygon<int64_t> I64XSortedMultiPolygon;
 
 template <typename T>
+struct IntersectorLinePoly {
+  static uint8_t check(const LineSegment<T>& ls1, int16_t prevLs1Ang,
+                       int16_t nextLs1Ang, const LineSegment<T>& ls2, int16_t prevLs2Ang,
+                       int16_t nextLs2Ang);
+};
+
+template <typename T>
 struct IntersectorPoly {
   static uint8_t check(const LineSegment<T>& ls1, int16_t prevLs1Ang,
                        int16_t nextLs1Ang, const LineSegment<T>& ls2, int16_t,
@@ -1870,6 +1877,20 @@ intersectsPoly(const std::vector<XSortedTuple<T>>& ls1,
 
 // _____________________________________________________________________________
 template <typename T>
+inline std::tuple<bool, bool, bool, bool, bool>
+intersectsLinePoly(const std::vector<XSortedTuple<T>>& ls1,
+               const std::vector<XSortedTuple<T>>& ls2, T maxSegLenA,
+               T maxSegLenB, const Box<T>& boxA, const Box<T>& boxB,
+               size_t* firstRelIn1, size_t* firstRelIn2) {
+  uint8_t ret = intersectsHelper<T, IntersectorLinePoly>(
+      ls1, ls2, maxSegLenA, maxSegLenB, boxA, boxB, firstRelIn1, firstRelIn2);
+
+  return {(ret >> 0) & 1, (ret >> 1) & 1, (ret >> 2) & 1, (ret >> 3) & 1,
+          (ret >> 4) & 1};
+}
+
+// _____________________________________________________________________________
+template <typename T>
 inline std::tuple<bool, bool, bool, bool, bool> intersectsCovers(
     const std::vector<XSortedTuple<T>>& ls1,
     const std::vector<XSortedTuple<T>>& ls2, T maxSegLenA, T maxSegLenB,
@@ -1918,6 +1939,16 @@ inline std::tuple<bool, bool, bool, bool, bool> intersectsCovers(
     const std::vector<XSortedTuple<T>>& ls2) {
   return intersectsCovers(ls1, ls2, std::numeric_limits<T>::max(),
                           std::numeric_limits<T>::max());
+}
+
+// _____________________________________________________________________________
+template <typename T>
+inline std::tuple<bool, bool, bool, bool, bool>
+intersectsLinePoly(const XSortedRing<T>& ls1, const XSortedRing<T>& ls2,
+               T maxSegLenA, T maxSegLenB, const Box<T>& boxA,
+               const Box<T>& boxB, size_t* firstRelIn1, size_t* firstRelIn2) {
+  return intersectsLinePoly(ls1.rawRing(), ls2.rawRing(), maxSegLenA, maxSegLenB,
+                        boxA, boxB, firstRelIn1, firstRelIn2);
 }
 
 // _____________________________________________________________________________
@@ -2083,6 +2114,22 @@ uint8_t IntersectorLine<T>::check(const LineSegment<T>& ls1, int16_t prevLs1Ang,
   }
 
   return 0;
+}
+
+// _____________________________________________________________________________
+template <typename T>
+uint8_t IntersectorLinePoly<T>::check(const LineSegment<T>& ls1,
+                                        int16_t prevLs1Ang, int16_t nextLs1Ang,
+                                        const LineSegment<T>& ls2, int16_t prevLs2Ang, int16_t nextLs2Ang) {
+  // trivial case: no intersect
+  if (!intersects(getBoundingBox(ls1), getBoundingBox(ls2))) return 0;
+
+  int8_t ret = IntersectorPoly<T>::checkOneDir(ls1, prevLs1Ang, nextLs1Ang, ls2);
+
+  if (prevLs2Ang == 32767 && contains(ls2.first, ls1)) ret |= 0b10000;
+  if (nextLs2Ang == 32767 && contains(ls2.second, ls1)) ret |= 0b10000;
+
+  return ret;
 }
 
 // _____________________________________________________________________________
@@ -2573,6 +2620,114 @@ inline std::tuple<bool, bool, bool, bool, bool, bool, bool> intersectsContainsIn
   // disjoint
   return {std::get<0>(borderInt), false, false, std::get<0>(borderInt),
           std::get<1>(borderInt), false, std::get<5>(borderInt)};
+}
+
+// _____________________________________________________________________________
+template <typename T>
+inline std::string DE9IM(
+    const util::geo::XSortedLine<T>& a, const util::geo::Box<T>& boxA,
+    const util::geo::XSortedPolygon<T>& b, const util::geo::Box<T>& boxB,
+    size_t* firstRel1, size_t* firstRel2) {
+  if (a.rawLine().size() == 0) return "FF1FF0102";
+  if (b.getOuter().rawRing().size() < 2) return "FF1FF0102";
+
+  auto res = util::geo::intersectsLinePoly(
+      a.rawLine(), b.getOuter().rawRing(), a.getMaxSegLen(),
+      b.getOuter().getMaxSegLen(), boxA, boxB, firstRel1, firstRel2);
+
+  if (std::get<1>(res)) {
+    char ii = std::get<2>(res) ? '1' : 'F';
+    char ib = std::get<3>(res) ? '1' : (std::get<2>(res) ? '0' : 'F');
+    char ie = '1';
+
+    char bi = 'F';
+    char bb = 'F';
+
+    if (std::get<4>(res)) {
+      bi = 'F';
+      bb = '0';
+    } else {
+      auto cc1 = containsCovers(a.firstPoint(), b);
+      auto cc2 = containsCovers(a.lastPoint(), b);
+      bi = std::get<0>(cc1) || std::get<0>(cc2) ? '0' : 'F';
+      bb = (!std::get<0>(cc1) && std::get<1>(cc1)) || (!std::get<0>(cc2) && std::get<1>(cc2)) ? '0' : 'F';
+    }
+
+    char be = '0';
+    char ei = '2';
+    char eb = '1';
+
+    return {ii, ib, ie, bi, bb, be, ei, eb, '2'};
+  }
+
+  if (util::geo::contains(boxA, boxB) &&
+      (std::get<0>(res) ||
+       util::geo::ringContains(a.rawLine().front().seg().second, b.getOuter(),
+                               *firstRel2)
+           .second)) {
+
+
+  }
+
+  return "FF1FF0102";
+}
+
+// _____________________________________________________________________________
+template <typename T>
+inline std::string DE9IM(
+    const util::geo::XSortedPolygon<T>& a, const util::geo::Box<T>& boxA,
+    const util::geo::XSortedLine<T>& b, const util::geo::Box<T>& boxB,
+    size_t* firstRel1, size_t* firstRel2) {
+  auto de9im = DE9IM(b, boxB, a, boxA,  firstRel2, firstRel1);
+  return {de9im[0], de9im[3], de9im[6], de9im[1], de9im[4], de9im[7], de9im[2], de9im[5], de9im[8]};
+}
+
+// _____________________________________________________________________________
+template <typename T>
+inline std::string DE9IM(
+    const util::geo::XSortedLine<T>& a, const util::geo::Box<T>& boxA,
+    const util::geo::XSortedPolygon<T>& b, const util::geo::Box<T>& boxB) {
+  size_t firstRel1 = 0;
+  size_t firstRel2 = 0;
+  return DE9IM(a, boxA, b, boxB, &firstRel1, &firstRel2);
+}
+// _____________________________________________________________________________
+template <typename T>
+inline std::string DE9IM(
+    const util::geo::XSortedLine<T>& a, const util::geo::XSortedPolygon<T>& b) {
+  return DE9IM(
+      a,
+      util::geo::Box<T>(
+          {std::numeric_limits<T>::lowest(), std::numeric_limits<T>::lowest()},
+          {std::numeric_limits<T>::max(), std::numeric_limits<T>::max()}),
+      b,
+      util::geo::Box<T>(
+          {std::numeric_limits<T>::lowest(), std::numeric_limits<T>::lowest()},
+          {std::numeric_limits<T>::max(), std::numeric_limits<T>::max()}));
+}
+
+// _____________________________________________________________________________
+template <typename T>
+inline std::string DE9IM(
+    const util::geo::XSortedPolygon<T>& a, const util::geo::Box<T>& boxA,
+    const util::geo::XSortedLine<T>& b, const util::geo::Box<T>& boxB) {
+  size_t firstRel1 = 0;
+  size_t firstRel2 = 0;
+  return DE9IM(a, boxA, b, boxB, &firstRel1, &firstRel2);
+}
+// _____________________________________________________________________________
+template <typename T>
+inline std::string DE9IM(
+    const util::geo::XSortedPolygon<T>& a, const util::geo::XSortedLine<T>& b) {
+   return DE9IM(
+      a,
+      util::geo::Box<T>(
+          {std::numeric_limits<T>::lowest(), std::numeric_limits<T>::lowest()},
+          {std::numeric_limits<T>::max(), std::numeric_limits<T>::max()}),
+      b,
+      util::geo::Box<T>(
+          {std::numeric_limits<T>::lowest(), std::numeric_limits<T>::lowest()},
+          {std::numeric_limits<T>::max(), std::numeric_limits<T>::max()}));
 }
 
 // _____________________________________________________________________________
