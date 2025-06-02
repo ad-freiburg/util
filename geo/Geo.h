@@ -2691,9 +2691,10 @@ inline std::string DE9IM(
       a.rawLine(), b.getOuter().rawRing(), a.getMaxSegLen(),
       b.getOuter().getMaxSegLen(), boxA, boxB, firstRel1, firstRel2);
 
+  char ib = std::get<3>(res) ? '1' : (std::get<2>(res) ? '0' : 'F');
+
   if (std::get<1>(res)) {
     char ii = std::get<2>(res) ? '1' : 'F';
-    char ib = std::get<3>(res) ? '1' : (std::get<2>(res) ? '0' : 'F');
     char ie = '1';
 
     char bi = 'F';
@@ -2721,8 +2722,19 @@ inline std::string DE9IM(
        util::geo::ringContains(a.rawLine().front().seg().second, b.getOuter(),
                                *firstRel2)
            .second)) {
+    // a is contained or cover in the outer of B
+    char ii = !std::get<0>(res) || std::get<2>(res) ? '1' : 'F';
+    char ie = 'F';
 
+    auto cc1 = containsCovers(a.firstPoint(), b);
+    auto cc2 = containsCovers(a.lastPoint(), b);
+    char bi = std::get<0>(cc1) || std::get<0>(cc2) ? '0' : 'F';
+    char bb = (!std::get<0>(cc1) && std::get<1>(cc1)) || (!std::get<0>(cc2) && std::get<1>(cc2)) ? '0' : 'F';
+    char be = 'F';
+    char ei = '2';
+    char eb = '1';
 
+    return {ii, ib, ie, bi, bb, be, ei, eb, '2'};
   }
 
   return "FF1FF0102";
