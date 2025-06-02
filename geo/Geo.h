@@ -150,9 +150,9 @@ enum WKTType : uint8_t {
 };
 
 // _____________________________________________________________________________
-inline uint8_t boolArrToInt8(const std::array<bool, 6> arr) {
+inline uint8_t boolArrToInt8(const std::array<bool, 8> arr) {
   uint8_t ret = 0;
-  for (size_t i = 0; i < 6; i++) ret |= (uint8_t)arr[i] << i;
+  for (size_t i = 0; i < 8; i++) ret |= (uint8_t)arr[i] << i;
   return ret;
 }
 
@@ -1899,12 +1899,16 @@ inline std::tuple<bool, bool, bool, bool, bool> intersectsCovers(
   uint8_t ret = intersectsHelper<T, IntersectorLine>(
       ls1, ls2, maxSegLenA, maxSegLenB, boxA, boxB, firstRelIn1, firstRelIn2);
 
-  const bool weakIntersect = (ret >> 0) & 1;
-  const bool strictIntersect = (ret >> 1) & 1;
-  const bool overlaps = (ret >> 2) & 1;
-  const bool touches = (ret >> 3) & 1;
+  const bool weakIntersect = ret;
+  const bool strictIntersect = (ret >> 0) & 1;
+  const bool overlaps = (ret >> 1) & 1;
+  const bool bFirstInA = (ret >> 2) & 1;
+  const bool bSecondInA = (ret >> 3) & 1;
+  const bool aFirstInB = (ret >> 6) & 1;
+  const bool aSecondInB = (ret >> 7) & 1;
   const bool crosses = (ret >> 4) & 1;
   const bool strictIntersect2 = (ret >> 5) & 1;
+  const bool touches = aFirstInB || aSecondInB || bFirstInA || bSecondInA;
 
   const bool aInB = !crosses && !strictIntersect && weakIntersect;
   const bool bInA = !crosses && !strictIntersect2 && weakIntersect;
@@ -1912,8 +1916,9 @@ inline std::tuple<bool, bool, bool, bool, bool> intersectsCovers(
   return {weakIntersect,                                       // intersects
           !crosses && !strictIntersect && weakIntersect,       // covers
           !crosses && touches && !overlaps,                    // touches
-          !crosses && overlaps && !touches && !aInB && !bInA,  // overlaps
-          crosses && !overlaps};                               // crosses
+          overlaps && !aInB && !bInA,                          // overlaps
+          crosses && !overlaps // is this OGC conform?         // crosses
+                               };
 }
 
 // _____________________________________________________________________________
@@ -1943,6 +1948,57 @@ inline std::tuple<bool, bool, bool, bool, bool> intersectsCovers(
 
 // _____________________________________________________________________________
 template <typename T>
+inline std::string DE9IM(
+    const util::geo::XSortedLine<T>& a, const util::geo::XSortedLine<T>& b,
+    const Box<T>& boxA, const Box<T>& boxB, size_t* firstRelIn1,
+    size_t* firstRelIn2) {
+  uint8_t ret = intersectsHelper<T, IntersectorLine>(
+      a.rawLine(), b.rawLine(), a.getMaxSegLen(), b.getMaxSegLen(), boxA, boxB, firstRelIn1, firstRelIn2);
+
+  const bool weakIntersect = ret;
+
+  const bool strictIntersect = (ret >> 0) & 1;
+  const bool overlaps = (ret >> 1) & 1;
+  const bool aFirstInB = (ret >> 6) & 1;
+  const bool aSecondInB = (ret >> 7) & 1;
+  const bool crosses = (ret >> 4) & 1;
+  const bool strictIntersect2 = (ret >> 5) & 1;
+  const bool bFirstInA = (ret >> 2) & 1;
+  const bool bSecondInA = (ret >> 3) & 1;
+
+  const bool aInB = !crosses && !strictIntersect && weakIntersect;
+  const bool bInA = !crosses && !strictIntersect2 && weakIntersect;
+
+  char ii = overlaps ? '1' : (crosses ? '0' : 'F');
+  char ib = ((bFirstInA && b.firstPoint() != a.firstPoint() && b.firstPoint() != a.lastPoint()) || (bSecondInA && b.lastPoint() != a.firstPoint() && b.lastPoint() != a.lastPoint())) ? '0' : 'F';
+  char ie = aInB ? 'F' : '1';
+  char bi = ((aFirstInB && a.firstPoint() != b.firstPoint() && a.firstPoint() != b.lastPoint()) || (aSecondInB && a.lastPoint() != b.firstPoint() && a.lastPoint() != b.lastPoint())) ? '0' : 'F';
+  char bb = (a.firstPoint() == b.firstPoint() || a.lastPoint() == b.firstPoint()
+  || a.lastPoint() == b.lastPoint() || a.firstPoint() == b.lastPoint()) ? '0' : 'F';
+  char be = !(aFirstInB && aSecondInB) ? '0' : 'F';
+  char ei = bInA ? 'F' : '1';
+  char eb = !(bFirstInA && bSecondInA) ? '0' : 'F';
+  char ee = '2';
+
+  return {ii, ib, ie, bi, bb, be, ei, eb, ee};
+
+  // return {weakIntersect,                                       // intersects
+          // !crosses && !strictIntersect && weakIntersect,       // covers
+          // !crosses && touches && !overlaps,                    // touches
+          // !crosses && overlaps && !touches && !aInB && !bInA,  // overlaps
+          // crosses && !overlaps};                               // crosses
+}
+
+// _____________________________________________________________________________
+template <typename T>
+inline std::string DE9IM(
+    const util::geo::XSortedLine<T>& a, const util::geo::XSortedLine<T>& b,
+    const Box<T>& boxA, const Box<T>& boxB) {
+  return util::geo::DE9IM(a, b, boxA, boxB, 0, 0);
+}
+
+// _____________________________________________________________________________
+template <typename T>
 inline std::tuple<bool, bool, bool, bool, bool>
 intersectsLinePoly(const XSortedRing<T>& ls1, const XSortedRing<T>& ls2,
                T maxSegLenA, T maxSegLenB, const Box<T>& boxA,
@@ -1966,8 +2022,8 @@ template <typename T>
 uint8_t IntersectorLine<T>::check(const LineSegment<T>& ls1, int16_t prevLs1Ang,
                                   int16_t nextLs1Ang, const LineSegment<T>& ls2,
                                   int16_t prevLs2Ang, int16_t nextLs2Ang) {
-  // {intersects, strictly intersects, overlaps, touches, crosses, strictly
-  // intersects ls2/ls1}
+  // {strictly intersects, overlaps, ls1.first inside ls2, ls1.last inside ls2, crosses, strictly
+  // intersects ls2/ls1, ls2.first inside ls1, ls2.last inside ls1}
 
   // trivial case: no intersect
   if (!intersects(getBoundingBox(ls1), getBoundingBox(ls2))) return 0;
@@ -1979,23 +2035,23 @@ uint8_t IntersectorLine<T>::check(const LineSegment<T>& ls1, int16_t prevLs1Ang,
 
   // ls1 and ls2 are equivalent
   if (ls2FirstInLs1 && ls2SecondInLs1 && ls1FirstInLs2 && ls1SecondInLs2) {
-    return 0b000101;
+    return boolArrToInt8({0, 1, prevLs1Ang == 32767, nextLs1Ang == 32767, 0, 0, prevLs2Ang == 32767, nextLs2Ang == 32767});
   }
 
   // ls2 is completely in ls1
   if (ls2FirstInLs1 && ls2SecondInLs1) {
     int32_t ang1 = ((angBetween(ls2.first, ls2.second) / M_PI) * 32766);
     int32_t ang2 = ((angBetween(ls2.second, ls2.first) / M_PI) * 32766);
-    if (prevLs2Ang == ang2 && nextLs2Ang == ang1) return 0b000101;
-    return 0b100101;
+    if (prevLs2Ang == ang2 && nextLs2Ang == ang1) return boolArrToInt8({0, 1, 0, 0, 0, 0, prevLs2Ang == 32767, nextLs2Ang == 32767});
+    return boolArrToInt8({0, 1, 0, 0, 0, 1, prevLs2Ang == 32767, nextLs2Ang == 32767});
   }
 
   // ls1 is completely in ls2
   if (ls1FirstInLs2 && ls1SecondInLs2) {
     int32_t ang1 = ((angBetween(ls1.first, ls1.second) / M_PI) * 32766);
     int32_t ang2 = ((angBetween(ls1.second, ls1.first) / M_PI) * 32766);
-    if (prevLs1Ang == ang2 && nextLs1Ang == ang1) return 0b000101;
-    return 0b000111;
+    if (prevLs1Ang == ang2 && nextLs1Ang == ang1) return boolArrToInt8({0, 1, prevLs1Ang == 32767, nextLs1Ang == 32767, 0, 0, 0, 0});
+    return boolArrToInt8({1, 1, prevLs1Ang == 32767, nextLs1Ang == 32767, 0, 0, 0, 0});
   }
 
   if (ls1.first == ls2.first && !ls1SecondInLs2 && !ls2SecondInLs1) {
@@ -2003,11 +2059,11 @@ uint8_t IntersectorLine<T>::check(const LineSegment<T>& ls1, int16_t prevLs1Ang,
     int32_t ang2 = ((angBetween(ls1.first, ls1.second) / M_PI) * 32766);
 
     return boolArrToInt8(
-        {1, prevLs1Ang != ang1, prevLs1Ang == ang1 || prevLs2Ang == ang2,
-         prevLs1Ang == 32767 || prevLs2Ang == 32767,
+        {prevLs1Ang != ang1, prevLs1Ang == ang1 || prevLs2Ang == ang2,
+         prevLs1Ang == 32767, 0,
          prevLs2Ang != ang2 && prevLs1Ang != ang1 && prevLs1Ang != 32767 &&
              prevLs2Ang != 32767 && prevLs2Ang != prevLs1Ang,
-         prevLs2Ang != ang2});
+         prevLs2Ang != ang2, prevLs2Ang == 32767, 0});
   }
 
   if (ls1.first == ls2.second && !ls1SecondInLs2 && !ls2FirstInLs1) {
@@ -2015,11 +2071,11 @@ uint8_t IntersectorLine<T>::check(const LineSegment<T>& ls1, int16_t prevLs1Ang,
     int32_t ang2 = ((angBetween(ls1.first, ls1.second) / M_PI) * 32766);
 
     return boolArrToInt8(
-        {1, prevLs1Ang != ang1, prevLs1Ang == ang1 || nextLs2Ang == ang2,
-         prevLs1Ang == 32767 || nextLs2Ang == 32767,
+        {prevLs1Ang != ang1, prevLs1Ang == ang1 || nextLs2Ang == ang2,
+         prevLs1Ang == 32767, 0,
          nextLs2Ang != ang2 && prevLs1Ang != ang1 && prevLs1Ang != 32767 &&
              nextLs2Ang != 32767 && prevLs1Ang != nextLs2Ang,
-         nextLs2Ang != ang2});
+         nextLs2Ang != ang2,0,  nextLs2Ang == 32767});
   }
 
   if (ls1.second == ls2.first && !ls1FirstInLs2 && !ls2SecondInLs1) {
@@ -2027,11 +2083,11 @@ uint8_t IntersectorLine<T>::check(const LineSegment<T>& ls1, int16_t prevLs1Ang,
     int32_t ang2 = ((angBetween(ls1.second, ls1.first) / M_PI) * 32766);
 
     return boolArrToInt8(
-        {1, nextLs1Ang != ang1, nextLs1Ang == ang1 || prevLs2Ang == ang2,
-         nextLs1Ang == 32767 || prevLs2Ang == 32767,
+        {nextLs1Ang != ang1, nextLs1Ang == ang1 || prevLs2Ang == ang2,
+         0, nextLs1Ang == 32767 ,
          prevLs2Ang != ang2 && nextLs1Ang != ang1 && nextLs1Ang != 32767 &&
              prevLs2Ang != 32767 && prevLs2Ang != nextLs1Ang,
-         prevLs2Ang != ang2});
+         prevLs2Ang != ang2, prevLs2Ang == 32767, 0});
   }
 
   if (ls1.second == ls2.second && !ls1FirstInLs2 && !ls2FirstInLs1) {
@@ -2039,35 +2095,35 @@ uint8_t IntersectorLine<T>::check(const LineSegment<T>& ls1, int16_t prevLs1Ang,
     int32_t ang2 = ((angBetween(ls1.second, ls1.first) / M_PI) * 32766);
 
     return boolArrToInt8(
-        {1, ang1 != nextLs1Ang, ang1 == nextLs1Ang || ang2 == nextLs2Ang,
-         nextLs1Ang == 32767 || nextLs2Ang == 32767,
+        {ang1 != nextLs1Ang, ang1 == nextLs1Ang || ang2 == nextLs2Ang,
+         0, nextLs1Ang == 32767,
          nextLs2Ang != ang2 && nextLs1Ang != ang1 && nextLs1Ang != 32767 &&
              nextLs2Ang != 32767 && nextLs1Ang != nextLs2Ang,
-         nextLs2Ang != ang2});
+         nextLs2Ang != ang2, 0, nextLs2Ang == 32767});
   }
 
   if (ls2FirstInLs1 && ls1SecondInLs2) {
     int32_t ang1 = ((angBetween(ls1.first, ls1.second) / M_PI) * 32766);
     int32_t ang2 = ((angBetween(ls2.second, ls2.first) / M_PI) * 32766);
-    return boolArrToInt8({1, nextLs1Ang != ang1, 1, 0, 0, prevLs2Ang != ang2});
+    return boolArrToInt8({nextLs1Ang != ang1, 1, 0, nextLs1Ang == 32767, 0, prevLs2Ang != ang2, prevLs2Ang == 32767, 0});
   }
 
   if (ls2SecondInLs1 && ls1SecondInLs2) {
     int32_t ang1 = ((angBetween(ls1.first, ls1.second) / M_PI) * 32766);
     int32_t ang2 = ((angBetween(ls2.first, ls2.second) / M_PI) * 32766);
-    return boolArrToInt8({1, nextLs1Ang != ang1, 1, 0, 0, nextLs2Ang != ang2});
+    return boolArrToInt8({nextLs1Ang != ang1, 1, 0, nextLs1Ang == 32767, 0, nextLs2Ang != ang2, 0, nextLs2Ang == 32767});
   }
 
   if (ls2FirstInLs1 && ls1FirstInLs2) {
     int32_t ang1 = ((angBetween(ls1.second, ls1.first) / M_PI) * 32766);
     int32_t ang2 = ((angBetween(ls2.second, ls2.first) / M_PI) * 32766);
-    return boolArrToInt8({1, prevLs1Ang != ang1, 1, 0, 0, prevLs2Ang != ang2});
+    return boolArrToInt8({prevLs1Ang != ang1, 1, prevLs1Ang == 32767, 0, 0, prevLs2Ang != ang2, prevLs2Ang == 32767, 0});
   }
 
   if (ls2SecondInLs1 && ls1FirstInLs2) {
     int16_t ang1 = ((angBetween(ls1.second, ls1.first) / M_PI) * 32766);
     int16_t ang2 = ((angBetween(ls2.first, ls2.second) / M_PI) * 32766);
-    return boolArrToInt8({1, prevLs1Ang != ang1, 1, 0, 0, nextLs2Ang != ang2});
+    return boolArrToInt8({prevLs1Ang != ang1, 1, prevLs1Ang == 32767, 0, 0, nextLs2Ang != ang2, 0,  nextLs2Ang == 32767});
   }
 
   if (contains(ls1.second, ls2) && !ls1FirstInLs2 && !ls2FirstInLs1 &&
@@ -2076,8 +2132,8 @@ uint8_t IntersectorLine<T>::check(const LineSegment<T>& ls1, int16_t prevLs1Ang,
     int16_t ang2 = (angBetween(ls2.second, ls2.first) / M_PI) * 32766;
 
     return boolArrToInt8(
-        {1, 1, nextLs1Ang == ang1 || nextLs1Ang == ang2, nextLs1Ang == 32767,
-         nextLs1Ang != 32767 && nextLs1Ang != ang1 && nextLs1Ang != ang2, 1});
+        {1, nextLs1Ang == ang1 || nextLs1Ang == ang2, 0, nextLs1Ang == 32767,
+         nextLs1Ang != 32767 && nextLs1Ang != ang1 && nextLs1Ang != ang2, 1, 0, 0});
   }
 
   if (ls1FirstInLs2 && !ls1SecondInLs2 && !ls2FirstInLs1 && !ls2SecondInLs1) {
@@ -2085,8 +2141,8 @@ uint8_t IntersectorLine<T>::check(const LineSegment<T>& ls1, int16_t prevLs1Ang,
     int16_t ang2 = (angBetween(ls2.second, ls2.first) / M_PI) * 32766;
 
     return boolArrToInt8(
-        {1, 1, prevLs1Ang == ang1 || prevLs1Ang == ang2, prevLs1Ang == 32767,
-         prevLs1Ang != 32767 && prevLs1Ang != ang1 && prevLs1Ang != ang2, 1});
+        {1, prevLs1Ang == ang1 || prevLs1Ang == ang2, prevLs1Ang == 32767, 0,
+         prevLs1Ang != 32767 && prevLs1Ang != ang1 && prevLs1Ang != ang2, 1, 0, 0});
   }
 
   if (ls2FirstInLs1 && !ls1SecondInLs2 && !ls1FirstInLs2 && !ls2SecondInLs1) {
@@ -2094,8 +2150,8 @@ uint8_t IntersectorLine<T>::check(const LineSegment<T>& ls1, int16_t prevLs1Ang,
     int16_t ang2 = (angBetween(ls1.second, ls1.first) / M_PI) * 32766;
 
     return boolArrToInt8(
-        {1, 1, prevLs2Ang == ang1 || prevLs2Ang == ang2, prevLs2Ang == 32767,
-         prevLs2Ang != 32767 && prevLs2Ang != ang1 && prevLs2Ang != ang2, 1});
+        {1, prevLs2Ang == ang1 || prevLs2Ang == ang2, 0, 0,
+         prevLs2Ang != 32767 && prevLs2Ang != ang1 && prevLs2Ang != ang2, 1, prevLs2Ang == 32767, 0});
   }
 
   if (ls2SecondInLs1 && !ls2FirstInLs1 && !ls1FirstInLs2 && !ls1SecondInLs2) {
@@ -2103,14 +2159,14 @@ uint8_t IntersectorLine<T>::check(const LineSegment<T>& ls1, int16_t prevLs1Ang,
     int16_t ang2 = (angBetween(ls1.second, ls1.first) / M_PI) * 32766;
 
     return boolArrToInt8(
-        {1, 1, nextLs2Ang == ang1 || nextLs2Ang == ang2, nextLs2Ang == 32767,
-         nextLs2Ang != 32767 && nextLs2Ang != ang1 && nextLs2Ang != ang2, 1});
+        {1, nextLs2Ang == ang1 || nextLs2Ang == ang2, 0, 0,
+         nextLs2Ang != 32767 && nextLs2Ang != ang1 && nextLs2Ang != ang2, 1, 0, nextLs2Ang == 32767});
   }
 
   // the line segments strictly intersect
   if (((crossProd(ls1.first, ls2) < 0) ^ (crossProd(ls1.second, ls2) < 0)) &&
       ((crossProd(ls2.first, ls1) < 0) ^ (crossProd(ls2.second, ls1) < 0))) {
-    return 0b110011;
+    return 0b00110001;
   }
 
   return 0;
