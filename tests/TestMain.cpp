@@ -1834,7 +1834,7 @@ int main(int argc, char** argv) {
 
   {
     auto a = lineFromWKT<int>("LINESTRING(0 1, 2 1)");
-    auto b = polygonFromWKT<int>("POLYGON((-1 -1, -1 10, 10 10, 10 -1, -1 -1)");
+    auto b = polygonFromWKT<int>("POLYGON((-1 -1, -1 10, 10 10, 10 -1, -1 -1))");
     XSortedLine<int> ax(a);
     XSortedPolygon<int> bx(b);
 
@@ -1858,10 +1858,75 @@ int main(int argc, char** argv) {
     TEST(std::get<4>(geo::intersectsContainsCovers(ax, util::geo::getBoundingBox(a), bx, util::geo::getBoundingBox(b))));
 
     auto de9im = DE9IM(ax, util::geo::getBoundingBox(a), bx, util::geo::getBoundingBox(b));
-    TEST(de9im, ==, "101F00212");
+    TEST(de9im, ==, "1010F0212");
 
     de9im = DE9IM(bx, util::geo::getBoundingBox(b), ax, util::geo::getBoundingBox(b));
-    TEST(de9im, ==, "1F2001102");
+    TEST(de9im, ==, "1020F1102");
+  }
+
+  {
+    auto a = lineFromWKT<int>("LINESTRING(0 1, 9 1)");
+    auto b = polygonFromWKT<int>("POLYGON((-1 -1, -1 10, 10 10, 10 -1, -1 -1), (1 0, 1 3, 3 3, 3 0, 1 0), (4 0, 4 3,7 3, 7 0, 4 0))");
+    XSortedLine<int> ax(a);
+    XSortedPolygon<int> bx(b);
+
+    auto de9im = DE9IM(ax, util::geo::getBoundingBox(a), bx, util::geo::getBoundingBox(b));
+    TEST(de9im, ==, "1010FF212");
+
+    de9im = DE9IM(bx, util::geo::getBoundingBox(b), ax, util::geo::getBoundingBox(b));
+    TEST(de9im, ==, "1020F11F2");
+  }
+
+  {
+    auto a = lineFromWKT<int>("LINESTRING(3 1, 4 1)");
+    auto b = polygonFromWKT<int>("POLYGON((-1 -1, -1 10, 10 10, 10 -1, -1 -1), (1 0, 1 3, 3 3, 3 0, 1 0), (4 0, 4 3,7 3, 7 0, 4 0))");
+    XSortedLine<int> ax(a);
+    XSortedPolygon<int> bx(b);
+
+    auto de9im = DE9IM(ax, util::geo::getBoundingBox(a), bx, util::geo::getBoundingBox(b));
+    TEST(de9im, ==, "1FFF0F212");
+
+    de9im = DE9IM(bx, util::geo::getBoundingBox(b), ax, util::geo::getBoundingBox(b));
+    TEST(de9im, ==, "1F2F01FF2");
+  }
+
+  {
+    auto a = lineFromWKT<int>("LINESTRING(3 1, 4 1)");
+    auto b = polygonFromWKT<int>("POLYGON((-1 -1, -1 10, 10 10, 10 -1, -1 -1), (1 0, 1 3, 3 3, 3 0, 1 0))");
+    XSortedLine<int> ax(a);
+    XSortedPolygon<int> bx(b);
+
+    auto de9im = DE9IM(ax, util::geo::getBoundingBox(a), bx, util::geo::getBoundingBox(b));
+    TEST(de9im, ==, "1FF00F212");
+
+    de9im = DE9IM(bx, util::geo::getBoundingBox(b), ax, util::geo::getBoundingBox(b));
+    TEST(de9im, ==, "102F01FF2");
+  }
+
+  {
+    auto a = lineFromWKT<int>("LINESTRING(0 1, 1 1)");
+    auto b = polygonFromWKT<int>("POLYGON((-1 -1, -1 10, 10 10, 10 -1, -1 -1), (1 0, 1 3, 3 3, 3 0, 1 0))");
+    XSortedLine<int> ax(a);
+    XSortedPolygon<int> bx(b);
+
+    auto de9im = DE9IM(ax, util::geo::getBoundingBox(a), bx, util::geo::getBoundingBox(b));
+    TEST(de9im, ==, "1FF00F212");
+
+    de9im = DE9IM(bx, util::geo::getBoundingBox(b), ax, util::geo::getBoundingBox(b));
+    TEST(de9im, ==, "102F01FF2");
+  }
+
+  {
+    auto a = lineFromWKT<int>("LINESTRING(3 1, 1 1)");
+    auto b = polygonFromWKT<int>("POLYGON((-1 -1, -1 10, 10 10, 10 -1, -1 -1), (1 0, 1 3, 3 3, 3 0, 1 0))");
+    XSortedLine<int> ax(a);
+    XSortedPolygon<int> bx(b);
+
+    auto de9im = DE9IM(ax, util::geo::getBoundingBox(a), bx, util::geo::getBoundingBox(b));
+    TEST(de9im, ==, "FF1F0F212");
+
+    de9im = DE9IM(bx, util::geo::getBoundingBox(b), ax, util::geo::getBoundingBox(b));
+    TEST(de9im, ==, "FF2F011F2");
   }
 
   {

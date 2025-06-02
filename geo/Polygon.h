@@ -420,6 +420,10 @@ class XSortedPolygon {
     return getFirstInner(b.rawRing().front().seg().first);
   }
 
+  size_t getFirstInner(const util::geo::XSortedLine<T>& b) const {
+    return getFirstInner(b.rawLine().front().seg().first);
+  }
+
   size_t getFirstInner(const util::geo::Point<T>& p) const {
     if (_inners.size() == 0) return 0;
     size_t i = 0;

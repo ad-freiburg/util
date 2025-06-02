@@ -111,8 +111,8 @@ typedef XSortedMultiPolygon<int64_t> I64XSortedMultiPolygon;
 template <typename T>
 struct IntersectorLinePoly {
   static uint8_t check(const LineSegment<T>& ls1, int16_t prevLs1Ang,
-                       int16_t nextLs1Ang, const LineSegment<T>& ls2, int16_t prevLs2Ang,
-                       int16_t nextLs2Ang);
+                       int16_t nextLs1Ang, const LineSegment<T>& ls2,
+                       int16_t prevLs2Ang, int16_t nextLs2Ang);
 };
 
 template <typename T>
@@ -1346,6 +1346,38 @@ inline std::tuple<bool, bool> intersectsContains(const Point<T>& p,
 
 // _____________________________________________________________________________
 template <typename T>
+inline std::string DE9IM(const Point<T>& p, const XSortedLine<T>& line,
+                         size_t i) {
+  auto res = intersectsContains(p, line, i);
+  if (res.first) return "0FFFFF102";
+  if (res.second) return "F0FFFF102";
+  return "FF0FFF102";
+}
+
+// _____________________________________________________________________________
+template <typename T>
+inline std::string DE9IM(const Point<T>& p, const XSortedLine<T>& line) {
+  return DE9IM(p, line, 0);
+}
+
+// _____________________________________________________________________________
+template <typename T>
+inline std::string DE9IM(const XSortedLine<T>& line, size_t i,
+                         const Point<T>& p) {
+  auto res = intersectsContains(p, line, i);
+  if (res.first) return "0F1FF0FF2";
+  if (res.second) return "FF1F00FF2";
+  return "FF1FF00F2";
+}
+
+// _____________________________________________________________________________
+template <typename T>
+inline std::string DE9IM(const XSortedLine<T>& line, const Point<T>& p) {
+  return DE9IM(line, 0, p);
+}
+
+// _____________________________________________________________________________
+template <typename T>
 inline std::pair<bool, bool> containsCovers(const Point<T>& p,
                                             const XSortedPolygon<T>& poly,
                                             size_t i) {
@@ -1385,6 +1417,38 @@ template <typename T>
 inline std::pair<bool, bool> containsCovers(const Point<T>& p,
                                             const XSortedPolygon<T>& poly) {
   return containsCovers(p, poly, 0);
+}
+
+// _____________________________________________________________________________
+template <typename T>
+inline std::string DE9IM(const Point<T>& p, const XSortedPolygon<T>& poly,
+                         size_t i) {
+  auto res = containsCovers(p, poly, i);
+  if (res.first) return "0FFFFF212";
+  if (res.second) return "F0FFFF212";
+  return "FF0FFF212";
+}
+
+// _____________________________________________________________________________
+template <typename T>
+inline std::string DE9IM(const Point<T>& p, const XSortedPolygon<T>& poly) {
+  return DE9IM(p, poly, 0);
+}
+
+// _____________________________________________________________________________
+template <typename T>
+inline std::string DE9IM(const XSortedPolygon<T>& poly, size_t i,
+                         const Point<T>& p) {
+  auto res = containsCovers(p, poly, i);
+  if (res.first) return "0F2FF1FF2";
+  if (res.second) return "FF20F1FF2";
+  return "FF2FF10F2";
+}
+
+// _____________________________________________________________________________
+template <typename T>
+inline std::string DE9IM(const XSortedPolygon<T>& poly, const Point<T>& p) {
+  return DE9IM(poly, 0, p);
 }
 
 // _____________________________________________________________________________
@@ -1877,11 +1941,11 @@ intersectsPoly(const std::vector<XSortedTuple<T>>& ls1,
 
 // _____________________________________________________________________________
 template <typename T>
-inline std::tuple<bool, bool, bool, bool, bool>
-intersectsLinePoly(const std::vector<XSortedTuple<T>>& ls1,
-               const std::vector<XSortedTuple<T>>& ls2, T maxSegLenA,
-               T maxSegLenB, const Box<T>& boxA, const Box<T>& boxB,
-               size_t* firstRelIn1, size_t* firstRelIn2) {
+inline std::tuple<bool, bool, bool, bool, bool> intersectsLinePoly(
+    const std::vector<XSortedTuple<T>>& ls1,
+    const std::vector<XSortedTuple<T>>& ls2, T maxSegLenA, T maxSegLenB,
+    const Box<T>& boxA, const Box<T>& boxB, size_t* firstRelIn1,
+    size_t* firstRelIn2) {
   uint8_t ret = intersectsHelper<T, IntersectorLinePoly>(
       ls1, ls2, maxSegLenA, maxSegLenB, boxA, boxB, firstRelIn1, firstRelIn2);
 
@@ -1913,12 +1977,13 @@ inline std::tuple<bool, bool, bool, bool, bool> intersectsCovers(
   const bool aInB = !crosses && !strictIntersect && weakIntersect;
   const bool bInA = !crosses && !strictIntersect2 && weakIntersect;
 
-  return {weakIntersect,                                       // intersects
-          !crosses && !strictIntersect && weakIntersect,       // covers
-          !crosses && touches && !overlaps,                    // touches
-          overlaps && !aInB && !bInA,                          // overlaps
-          crosses && !overlaps // is this OGC conform?         // crosses
-                               };
+  return {
+      weakIntersect,                                  // intersects
+      !crosses && !strictIntersect && weakIntersect,  // covers
+      !crosses && touches && !overlaps,               // touches
+      overlaps && !aInB && !bInA,                     // overlaps
+      crosses && !overlaps  // is this OGC conform?         // crosses
+  };
 }
 
 // _____________________________________________________________________________
@@ -1948,12 +2013,13 @@ inline std::tuple<bool, bool, bool, bool, bool> intersectsCovers(
 
 // _____________________________________________________________________________
 template <typename T>
-inline std::string DE9IM(
-    const util::geo::XSortedLine<T>& a, const util::geo::XSortedLine<T>& b,
-    const Box<T>& boxA, const Box<T>& boxB, size_t* firstRelIn1,
-    size_t* firstRelIn2) {
+inline std::string DE9IM(const util::geo::XSortedLine<T>& a,
+                         const util::geo::XSortedLine<T>& b, const Box<T>& boxA,
+                         const Box<T>& boxB, size_t* firstRelIn1,
+                         size_t* firstRelIn2) {
   uint8_t ret = intersectsHelper<T, IntersectorLine>(
-      a.rawLine(), b.rawLine(), a.getMaxSegLen(), b.getMaxSegLen(), boxA, boxB, firstRelIn1, firstRelIn2);
+      a.rawLine(), b.rawLine(), a.getMaxSegLen(), b.getMaxSegLen(), boxA, boxB,
+      firstRelIn1, firstRelIn2);
 
   const bool weakIntersect = ret;
 
@@ -1970,11 +2036,24 @@ inline std::string DE9IM(
   const bool bInA = !crosses && !strictIntersect2 && weakIntersect;
 
   char ii = overlaps ? '1' : (crosses ? '0' : 'F');
-  char ib = ((bFirstInA && b.firstPoint() != a.firstPoint() && b.firstPoint() != a.lastPoint()) || (bSecondInA && b.lastPoint() != a.firstPoint() && b.lastPoint() != a.lastPoint())) ? '0' : 'F';
+  char ib = ((bFirstInA && b.firstPoint() != a.firstPoint() &&
+              b.firstPoint() != a.lastPoint()) ||
+             (bSecondInA && b.lastPoint() != a.firstPoint() &&
+              b.lastPoint() != a.lastPoint()))
+                ? '0'
+                : 'F';
   char ie = aInB ? 'F' : '1';
-  char bi = ((aFirstInB && a.firstPoint() != b.firstPoint() && a.firstPoint() != b.lastPoint()) || (aSecondInB && a.lastPoint() != b.firstPoint() && a.lastPoint() != b.lastPoint())) ? '0' : 'F';
-  char bb = (a.firstPoint() == b.firstPoint() || a.lastPoint() == b.firstPoint()
-  || a.lastPoint() == b.lastPoint() || a.firstPoint() == b.lastPoint()) ? '0' : 'F';
+  char bi = ((aFirstInB && a.firstPoint() != b.firstPoint() &&
+              a.firstPoint() != b.lastPoint()) ||
+             (aSecondInB && a.lastPoint() != b.firstPoint() &&
+              a.lastPoint() != b.lastPoint()))
+                ? '0'
+                : 'F';
+  char bb =
+      (a.firstPoint() == b.firstPoint() || a.lastPoint() == b.firstPoint() ||
+       a.lastPoint() == b.lastPoint() || a.firstPoint() == b.lastPoint())
+          ? '0'
+          : 'F';
   char be = !(aFirstInB && aSecondInB) ? '0' : 'F';
   char ei = bInA ? 'F' : '1';
   char eb = !(bFirstInA && bSecondInA) ? '0' : 'F';
@@ -1983,28 +2062,28 @@ inline std::string DE9IM(
   return {ii, ib, ie, bi, bb, be, ei, eb, ee};
 
   // return {weakIntersect,                                       // intersects
-          // !crosses && !strictIntersect && weakIntersect,       // covers
-          // !crosses && touches && !overlaps,                    // touches
-          // !crosses && overlaps && !touches && !aInB && !bInA,  // overlaps
-          // crosses && !overlaps};                               // crosses
+  // !crosses && !strictIntersect && weakIntersect,       // covers
+  // !crosses && touches && !overlaps,                    // touches
+  // !crosses && overlaps && !touches && !aInB && !bInA,  // overlaps
+  // crosses && !overlaps};                               // crosses
 }
 
 // _____________________________________________________________________________
 template <typename T>
-inline std::string DE9IM(
-    const util::geo::XSortedLine<T>& a, const util::geo::XSortedLine<T>& b,
-    const Box<T>& boxA, const Box<T>& boxB) {
+inline std::string DE9IM(const util::geo::XSortedLine<T>& a,
+                         const util::geo::XSortedLine<T>& b, const Box<T>& boxA,
+                         const Box<T>& boxB) {
   return util::geo::DE9IM(a, b, boxA, boxB, 0, 0);
 }
 
 // _____________________________________________________________________________
 template <typename T>
-inline std::tuple<bool, bool, bool, bool, bool>
-intersectsLinePoly(const XSortedRing<T>& ls1, const XSortedRing<T>& ls2,
-               T maxSegLenA, T maxSegLenB, const Box<T>& boxA,
-               const Box<T>& boxB, size_t* firstRelIn1, size_t* firstRelIn2) {
-  return intersectsLinePoly(ls1.rawRing(), ls2.rawRing(), maxSegLenA, maxSegLenB,
-                        boxA, boxB, firstRelIn1, firstRelIn2);
+inline std::tuple<bool, bool, bool, bool, bool> intersectsLinePoly(
+    const XSortedRing<T>& ls1, const XSortedRing<T>& ls2, T maxSegLenA,
+    T maxSegLenB, const Box<T>& boxA, const Box<T>& boxB, size_t* firstRelIn1,
+    size_t* firstRelIn2) {
+  return intersectsLinePoly(ls1.rawRing(), ls2.rawRing(), maxSegLenA,
+                            maxSegLenB, boxA, boxB, firstRelIn1, firstRelIn2);
 }
 
 // _____________________________________________________________________________
@@ -2022,8 +2101,9 @@ template <typename T>
 uint8_t IntersectorLine<T>::check(const LineSegment<T>& ls1, int16_t prevLs1Ang,
                                   int16_t nextLs1Ang, const LineSegment<T>& ls2,
                                   int16_t prevLs2Ang, int16_t nextLs2Ang) {
-  // {strictly intersects, overlaps, ls1.first inside ls2, ls1.last inside ls2, crosses, strictly
-  // intersects ls2/ls1, ls2.first inside ls1, ls2.last inside ls1}
+  // {strictly intersects, overlaps, ls1.first inside ls2, ls1.last inside ls2,
+  // crosses, strictly intersects ls2/ls1, ls2.first inside ls1, ls2.last inside
+  // ls1}
 
   // trivial case: no intersect
   if (!intersects(getBoundingBox(ls1), getBoundingBox(ls2))) return 0;
@@ -2035,23 +2115,30 @@ uint8_t IntersectorLine<T>::check(const LineSegment<T>& ls1, int16_t prevLs1Ang,
 
   // ls1 and ls2 are equivalent
   if (ls2FirstInLs1 && ls2SecondInLs1 && ls1FirstInLs2 && ls1SecondInLs2) {
-    return boolArrToInt8({0, 1, prevLs1Ang == 32767, nextLs1Ang == 32767, 0, 0, prevLs2Ang == 32767, nextLs2Ang == 32767});
+    return boolArrToInt8({0, 1, prevLs1Ang == 32767, nextLs1Ang == 32767, 0, 0,
+                          prevLs2Ang == 32767, nextLs2Ang == 32767});
   }
 
   // ls2 is completely in ls1
   if (ls2FirstInLs1 && ls2SecondInLs1) {
     int32_t ang1 = ((angBetween(ls2.first, ls2.second) / M_PI) * 32766);
     int32_t ang2 = ((angBetween(ls2.second, ls2.first) / M_PI) * 32766);
-    if (prevLs2Ang == ang2 && nextLs2Ang == ang1) return boolArrToInt8({0, 1, 0, 0, 0, 0, prevLs2Ang == 32767, nextLs2Ang == 32767});
-    return boolArrToInt8({0, 1, 0, 0, 0, 1, prevLs2Ang == 32767, nextLs2Ang == 32767});
+    if (prevLs2Ang == ang2 && nextLs2Ang == ang1)
+      return boolArrToInt8(
+          {0, 1, 0, 0, 0, 0, prevLs2Ang == 32767, nextLs2Ang == 32767});
+    return boolArrToInt8(
+        {0, 1, 0, 0, 0, 1, prevLs2Ang == 32767, nextLs2Ang == 32767});
   }
 
   // ls1 is completely in ls2
   if (ls1FirstInLs2 && ls1SecondInLs2) {
     int32_t ang1 = ((angBetween(ls1.first, ls1.second) / M_PI) * 32766);
     int32_t ang2 = ((angBetween(ls1.second, ls1.first) / M_PI) * 32766);
-    if (prevLs1Ang == ang2 && nextLs1Ang == ang1) return boolArrToInt8({0, 1, prevLs1Ang == 32767, nextLs1Ang == 32767, 0, 0, 0, 0});
-    return boolArrToInt8({1, 1, prevLs1Ang == 32767, nextLs1Ang == 32767, 0, 0, 0, 0});
+    if (prevLs1Ang == ang2 && nextLs1Ang == ang1)
+      return boolArrToInt8(
+          {0, 1, prevLs1Ang == 32767, nextLs1Ang == 32767, 0, 0, 0, 0});
+    return boolArrToInt8(
+        {1, 1, prevLs1Ang == 32767, nextLs1Ang == 32767, 0, 0, 0, 0});
   }
 
   if (ls1.first == ls2.first && !ls1SecondInLs2 && !ls2SecondInLs1) {
@@ -2075,7 +2162,7 @@ uint8_t IntersectorLine<T>::check(const LineSegment<T>& ls1, int16_t prevLs1Ang,
          prevLs1Ang == 32767, 0,
          nextLs2Ang != ang2 && prevLs1Ang != ang1 && prevLs1Ang != 32767 &&
              nextLs2Ang != 32767 && prevLs1Ang != nextLs2Ang,
-         nextLs2Ang != ang2,0,  nextLs2Ang == 32767});
+         nextLs2Ang != ang2, 0, nextLs2Ang == 32767});
   }
 
   if (ls1.second == ls2.first && !ls1FirstInLs2 && !ls2SecondInLs1) {
@@ -2083,8 +2170,8 @@ uint8_t IntersectorLine<T>::check(const LineSegment<T>& ls1, int16_t prevLs1Ang,
     int32_t ang2 = ((angBetween(ls1.second, ls1.first) / M_PI) * 32766);
 
     return boolArrToInt8(
-        {nextLs1Ang != ang1, nextLs1Ang == ang1 || prevLs2Ang == ang2,
-         0, nextLs1Ang == 32767 ,
+        {nextLs1Ang != ang1, nextLs1Ang == ang1 || prevLs2Ang == ang2, 0,
+         nextLs1Ang == 32767,
          prevLs2Ang != ang2 && nextLs1Ang != ang1 && nextLs1Ang != 32767 &&
              prevLs2Ang != 32767 && prevLs2Ang != nextLs1Ang,
          prevLs2Ang != ang2, prevLs2Ang == 32767, 0});
@@ -2095,8 +2182,8 @@ uint8_t IntersectorLine<T>::check(const LineSegment<T>& ls1, int16_t prevLs1Ang,
     int32_t ang2 = ((angBetween(ls1.second, ls1.first) / M_PI) * 32766);
 
     return boolArrToInt8(
-        {ang1 != nextLs1Ang, ang1 == nextLs1Ang || ang2 == nextLs2Ang,
-         0, nextLs1Ang == 32767,
+        {ang1 != nextLs1Ang, ang1 == nextLs1Ang || ang2 == nextLs2Ang, 0,
+         nextLs1Ang == 32767,
          nextLs2Ang != ang2 && nextLs1Ang != ang1 && nextLs1Ang != 32767 &&
              nextLs2Ang != 32767 && nextLs1Ang != nextLs2Ang,
          nextLs2Ang != ang2, 0, nextLs2Ang == 32767});
@@ -2105,25 +2192,29 @@ uint8_t IntersectorLine<T>::check(const LineSegment<T>& ls1, int16_t prevLs1Ang,
   if (ls2FirstInLs1 && ls1SecondInLs2) {
     int32_t ang1 = ((angBetween(ls1.first, ls1.second) / M_PI) * 32766);
     int32_t ang2 = ((angBetween(ls2.second, ls2.first) / M_PI) * 32766);
-    return boolArrToInt8({nextLs1Ang != ang1, 1, 0, nextLs1Ang == 32767, 0, prevLs2Ang != ang2, prevLs2Ang == 32767, 0});
+    return boolArrToInt8({nextLs1Ang != ang1, 1, 0, nextLs1Ang == 32767, 0,
+                          prevLs2Ang != ang2, prevLs2Ang == 32767, 0});
   }
 
   if (ls2SecondInLs1 && ls1SecondInLs2) {
     int32_t ang1 = ((angBetween(ls1.first, ls1.second) / M_PI) * 32766);
     int32_t ang2 = ((angBetween(ls2.first, ls2.second) / M_PI) * 32766);
-    return boolArrToInt8({nextLs1Ang != ang1, 1, 0, nextLs1Ang == 32767, 0, nextLs2Ang != ang2, 0, nextLs2Ang == 32767});
+    return boolArrToInt8({nextLs1Ang != ang1, 1, 0, nextLs1Ang == 32767, 0,
+                          nextLs2Ang != ang2, 0, nextLs2Ang == 32767});
   }
 
   if (ls2FirstInLs1 && ls1FirstInLs2) {
     int32_t ang1 = ((angBetween(ls1.second, ls1.first) / M_PI) * 32766);
     int32_t ang2 = ((angBetween(ls2.second, ls2.first) / M_PI) * 32766);
-    return boolArrToInt8({prevLs1Ang != ang1, 1, prevLs1Ang == 32767, 0, 0, prevLs2Ang != ang2, prevLs2Ang == 32767, 0});
+    return boolArrToInt8({prevLs1Ang != ang1, 1, prevLs1Ang == 32767, 0, 0,
+                          prevLs2Ang != ang2, prevLs2Ang == 32767, 0});
   }
 
   if (ls2SecondInLs1 && ls1FirstInLs2) {
     int16_t ang1 = ((angBetween(ls1.second, ls1.first) / M_PI) * 32766);
     int16_t ang2 = ((angBetween(ls2.first, ls2.second) / M_PI) * 32766);
-    return boolArrToInt8({prevLs1Ang != ang1, 1, prevLs1Ang == 32767, 0, 0, nextLs2Ang != ang2, 0,  nextLs2Ang == 32767});
+    return boolArrToInt8({prevLs1Ang != ang1, 1, prevLs1Ang == 32767, 0, 0,
+                          nextLs2Ang != ang2, 0, nextLs2Ang == 32767});
   }
 
   if (contains(ls1.second, ls2) && !ls1FirstInLs2 && !ls2FirstInLs1 &&
@@ -2133,7 +2224,8 @@ uint8_t IntersectorLine<T>::check(const LineSegment<T>& ls1, int16_t prevLs1Ang,
 
     return boolArrToInt8(
         {1, nextLs1Ang == ang1 || nextLs1Ang == ang2, 0, nextLs1Ang == 32767,
-         nextLs1Ang != 32767 && nextLs1Ang != ang1 && nextLs1Ang != ang2, 1, 0, 0});
+         nextLs1Ang != 32767 && nextLs1Ang != ang1 && nextLs1Ang != ang2, 1, 0,
+         0});
   }
 
   if (ls1FirstInLs2 && !ls1SecondInLs2 && !ls2FirstInLs1 && !ls2SecondInLs1) {
@@ -2142,7 +2234,8 @@ uint8_t IntersectorLine<T>::check(const LineSegment<T>& ls1, int16_t prevLs1Ang,
 
     return boolArrToInt8(
         {1, prevLs1Ang == ang1 || prevLs1Ang == ang2, prevLs1Ang == 32767, 0,
-         prevLs1Ang != 32767 && prevLs1Ang != ang1 && prevLs1Ang != ang2, 1, 0, 0});
+         prevLs1Ang != 32767 && prevLs1Ang != ang1 && prevLs1Ang != ang2, 1, 0,
+         0});
   }
 
   if (ls2FirstInLs1 && !ls1SecondInLs2 && !ls1FirstInLs2 && !ls2SecondInLs1) {
@@ -2151,7 +2244,8 @@ uint8_t IntersectorLine<T>::check(const LineSegment<T>& ls1, int16_t prevLs1Ang,
 
     return boolArrToInt8(
         {1, prevLs2Ang == ang1 || prevLs2Ang == ang2, 0, 0,
-         prevLs2Ang != 32767 && prevLs2Ang != ang1 && prevLs2Ang != ang2, 1, prevLs2Ang == 32767, 0});
+         prevLs2Ang != 32767 && prevLs2Ang != ang1 && prevLs2Ang != ang2, 1,
+         prevLs2Ang == 32767, 0});
   }
 
   if (ls2SecondInLs1 && !ls2FirstInLs1 && !ls1FirstInLs2 && !ls1SecondInLs2) {
@@ -2160,7 +2254,8 @@ uint8_t IntersectorLine<T>::check(const LineSegment<T>& ls1, int16_t prevLs1Ang,
 
     return boolArrToInt8(
         {1, nextLs2Ang == ang1 || nextLs2Ang == ang2, 0, 0,
-         nextLs2Ang != 32767 && nextLs2Ang != ang1 && nextLs2Ang != ang2, 1, 0, nextLs2Ang == 32767});
+         nextLs2Ang != 32767 && nextLs2Ang != ang1 && nextLs2Ang != ang2, 1, 0,
+         nextLs2Ang == 32767});
   }
 
   // the line segments strictly intersect
@@ -2175,12 +2270,14 @@ uint8_t IntersectorLine<T>::check(const LineSegment<T>& ls1, int16_t prevLs1Ang,
 // _____________________________________________________________________________
 template <typename T>
 uint8_t IntersectorLinePoly<T>::check(const LineSegment<T>& ls1,
-                                        int16_t prevLs1Ang, int16_t nextLs1Ang,
-                                        const LineSegment<T>& ls2, int16_t prevLs2Ang, int16_t nextLs2Ang) {
+                                      int16_t prevLs1Ang, int16_t nextLs1Ang,
+                                      const LineSegment<T>& ls2,
+                                      int16_t prevLs2Ang, int16_t nextLs2Ang) {
   // trivial case: no intersect
   if (!intersects(getBoundingBox(ls1), getBoundingBox(ls2))) return 0;
 
-  int8_t ret = IntersectorPoly<T>::checkOneDir(ls1, prevLs1Ang, nextLs1Ang, ls2);
+  int8_t ret =
+      IntersectorPoly<T>::checkOneDir(ls1, prevLs1Ang, nextLs1Ang, ls2);
 
   if (prevLs2Ang == 32767 && contains(ls2.first, ls1)) ret |= 0b10000;
   if (nextLs2Ang == 32767 && contains(ls2.second, ls1)) ret |= 0b10000;
@@ -2590,16 +2687,16 @@ inline bool intersects(const std::vector<GeometryA<T>>& multigeomA,
 
 // _____________________________________________________________________________
 template <typename T>
-inline std::tuple<bool, bool, bool, bool, bool> intersectsContainsInner(
+inline std::tuple<bool, bool, bool, bool, bool, bool> intersectsContainsInner(
     const util::geo::XSortedLine<T>& a, const util::geo::XSortedRing<T>& b) {
   // returns {intersects, contains, covered, border intersects, border
-  // intersects strict}
+  // intersects strict, border overlaps}
 
   size_t firstRel1 = 0;
   size_t firstRel2 = 0;
 
   if (a.rawLine().size() == 0 || b.rawRing().size() == 0)
-    return {0, 0, 0, 0, 0};
+    return {0, 0, 0, 0, 0, 0};
 
   auto borderInt = util::geo::intersectsPoly(
       a.rawLine(), b.rawRing(), a.getMaxSegLen(), b.getMaxSegLen(),
@@ -2613,24 +2710,34 @@ inline std::tuple<bool, bool, bool, bool, bool> intersectsContainsInner(
 
   if (std::get<1>(borderInt)) {
     // intersects
-    return {true, false, !std::get<2>(borderInt), true, true};
+    return {true, false, !std::get<2>(borderInt),
+            true, true,  std::get<3>(borderInt)};
   }
 
   if (util::geo::ringContains(a.rawLine().front().seg().second, b, firstRel2)
           .second) {
-    return {true, !std::get<0>(borderInt), !std::get<2>(borderInt),
-            std::get<0>(borderInt), std::get<1>(borderInt)};
+    return {true,
+            !std::get<0>(borderInt),
+            !std::get<2>(borderInt),
+            std::get<0>(borderInt),
+            std::get<1>(borderInt),
+            std::get<3>(borderInt)};
   }
 
   // disjoint
-  return {std::get<0>(borderInt), false, false, std::get<0>(borderInt),
-          std::get<1>(borderInt)};
+  return {std::get<0>(borderInt),
+          false,
+          false,
+          std::get<0>(borderInt),
+          std::get<1>(borderInt),
+          std::get<3>(borderInt)};
 }
 
 // _____________________________________________________________________________
 template <typename T>
-inline std::tuple<bool, bool, bool, bool, bool, bool, bool> intersectsContainsInner(
-    const util::geo::XSortedRing<T>& a, const util::geo::XSortedRing<T>& b) {
+inline std::tuple<bool, bool, bool, bool, bool, bool, bool>
+intersectsContainsInner(const util::geo::XSortedRing<T>& a,
+                        const util::geo::XSortedRing<T>& b) {
   // returns {intersects, contains, covered, border isect, border isect strict,
   // border overlaps, border isect strict reverse}
 
@@ -2651,8 +2758,13 @@ inline std::tuple<bool, bool, bool, bool, bool, bool, bool> intersectsContainsIn
 
   if (std::get<1>(borderInt)) {
     // strictly intersects
-    return {true, false, !std::get<2>(borderInt),
-            true, true, std::get<3>(borderInt), std::get<5>(borderInt)};
+    return {true,
+            false,
+            !std::get<2>(borderInt),
+            true,
+            true,
+            std::get<3>(borderInt),
+            std::get<5>(borderInt)};
   }
 
   if (util::geo::ringContains(a.rawRing().front().seg().second, b, firstRel2)
@@ -2662,28 +2774,39 @@ inline std::tuple<bool, bool, bool, bool, bool, bool, bool> intersectsContainsIn
             !std::get<2>(borderInt),
             std::get<0>(borderInt),
             false,
-            std::get<3>(borderInt), std::get<5>(borderInt)};
+            std::get<3>(borderInt),
+            std::get<5>(borderInt)};
   }
 
   if (util::geo::ringContains(b.rawRing().front().seg().second, a, firstRel1)
           .second) {
     // intersects (b is in a)
-    return {true,  false,
-            false, std::get<0>(borderInt),
-            false, std::get<3>(borderInt), std::get<5>(borderInt)};
+    return {true,
+            false,
+            false,
+            std::get<0>(borderInt),
+            false,
+            std::get<3>(borderInt),
+            std::get<5>(borderInt)};
   }
 
   // disjoint
-  return {std::get<0>(borderInt), false, false, std::get<0>(borderInt),
-          std::get<1>(borderInt), false, std::get<5>(borderInt)};
+  return {std::get<0>(borderInt),
+          false,
+          false,
+          std::get<0>(borderInt),
+          std::get<1>(borderInt),
+          false,
+          std::get<5>(borderInt)};
 }
 
 // _____________________________________________________________________________
 template <typename T>
-inline std::string DE9IM(
-    const util::geo::XSortedLine<T>& a, const util::geo::Box<T>& boxA,
-    const util::geo::XSortedPolygon<T>& b, const util::geo::Box<T>& boxB,
-    size_t* firstRel1, size_t* firstRel2) {
+inline std::string DE9IM(const util::geo::XSortedLine<T>& a,
+                         const util::geo::Box<T>& boxA,
+                         const util::geo::XSortedPolygon<T>& b,
+                         const util::geo::Box<T>& boxB, size_t* firstRel1,
+                         size_t* firstRel2) {
   if (a.rawLine().size() == 0) return "FF1FF0102";
   if (b.getOuter().rawRing().size() < 2) return "FF1FF0102";
 
@@ -2707,7 +2830,10 @@ inline std::string DE9IM(
       auto cc1 = containsCovers(a.firstPoint(), b);
       auto cc2 = containsCovers(a.lastPoint(), b);
       bi = std::get<0>(cc1) || std::get<0>(cc2) ? '0' : 'F';
-      bb = (!std::get<0>(cc1) && std::get<1>(cc1)) || (!std::get<0>(cc2) && std::get<1>(cc2)) ? '0' : 'F';
+      bb = (!std::get<0>(cc1) && std::get<1>(cc1)) ||
+                   (!std::get<0>(cc2) && std::get<1>(cc2))
+               ? '0'
+               : 'F';
     }
 
     char be = '0';
@@ -2722,17 +2848,52 @@ inline std::string DE9IM(
        util::geo::ringContains(a.rawLine().front().seg().second, b.getOuter(),
                                *firstRel2)
            .second)) {
-    // a is contained or cover in the outer of B
+    // a is contained or covered in the outer of B
     char ii = !std::get<0>(res) || std::get<2>(res) ? '1' : 'F';
     char ie = 'F';
 
     auto cc1 = containsCovers(a.firstPoint(), b);
     auto cc2 = containsCovers(a.lastPoint(), b);
     char bi = std::get<0>(cc1) || std::get<0>(cc2) ? '0' : 'F';
-    char bb = (!std::get<0>(cc1) && std::get<1>(cc1)) || (!std::get<0>(cc2) && std::get<1>(cc2)) ? '0' : 'F';
-    char be = 'F';
+    char bb = (!std::get<0>(cc1) && std::get<1>(cc1)) ||
+                      (!std::get<0>(cc2) && std::get<1>(cc2))
+                  ? '0'
+                  : 'F';
+    char be = (std::get<1>(cc1) && std::get<1>(cc2)) ? 'F' : '0';
     char ei = '2';
     char eb = '1';
+
+    // check inner polygons
+    for (size_t i = b.getFirstInner(a); i < b.getInners().size(); i++) {
+      if (b.getInners()[i].rawRing().size() < 2) continue;
+      const auto& innerBBox = b.getInnerBoxes()[i];
+      if (b.getInnerBoxes()[i].getLowerLeft().getX() >
+          a.rawLine().back().seg().second.getX())
+        break;
+      if (!util::geo::intersects(boxA, innerBBox)) continue;
+
+      auto res = intersectsContainsInner(a, b.getInners()[i]);
+
+      if (std::get<1>(res)) {
+        return "FF1FF0102";  // a is completely contained by innerB
+      }
+
+      if (std::get<2>(res)) {
+        // a is completely covered by inner b
+        ii = 'F';
+        ib = std::get<5>(res) ? '1' : 'F';
+        ie = !std::get<5>(res) ? '1' : 'F';
+
+        return {ii, ib, ie, bi, bb, be, ei, eb, '2'};
+      }
+
+      if (std::get<4>(res)) {
+        // strictly intersects
+        ii = '1';
+        ie = '1';
+        if (ib != '1') ib = std::get<5>(res) ? '1' : '0';
+      }
+    }
 
     return {ii, ib, ie, bi, bb, be, ei, eb, '2'};
   }
@@ -2742,27 +2903,30 @@ inline std::string DE9IM(
 
 // _____________________________________________________________________________
 template <typename T>
-inline std::string DE9IM(
-    const util::geo::XSortedPolygon<T>& a, const util::geo::Box<T>& boxA,
-    const util::geo::XSortedLine<T>& b, const util::geo::Box<T>& boxB,
-    size_t* firstRel1, size_t* firstRel2) {
-  auto de9im = DE9IM(b, boxB, a, boxA,  firstRel2, firstRel1);
-  return {de9im[0], de9im[3], de9im[6], de9im[1], de9im[4], de9im[7], de9im[2], de9im[5], de9im[8]};
+inline std::string DE9IM(const util::geo::XSortedPolygon<T>& a,
+                         const util::geo::Box<T>& boxA,
+                         const util::geo::XSortedLine<T>& b,
+                         const util::geo::Box<T>& boxB, size_t* firstRel1,
+                         size_t* firstRel2) {
+  auto de9im = DE9IM(b, boxB, a, boxA, firstRel2, firstRel1);
+  return {de9im[0], de9im[3], de9im[6], de9im[1], de9im[4],
+          de9im[7], de9im[2], de9im[5], de9im[8]};
 }
 
 // _____________________________________________________________________________
 template <typename T>
-inline std::string DE9IM(
-    const util::geo::XSortedLine<T>& a, const util::geo::Box<T>& boxA,
-    const util::geo::XSortedPolygon<T>& b, const util::geo::Box<T>& boxB) {
+inline std::string DE9IM(const util::geo::XSortedLine<T>& a,
+                         const util::geo::Box<T>& boxA,
+                         const util::geo::XSortedPolygon<T>& b,
+                         const util::geo::Box<T>& boxB) {
   size_t firstRel1 = 0;
   size_t firstRel2 = 0;
   return DE9IM(a, boxA, b, boxB, &firstRel1, &firstRel2);
 }
 // _____________________________________________________________________________
 template <typename T>
-inline std::string DE9IM(
-    const util::geo::XSortedLine<T>& a, const util::geo::XSortedPolygon<T>& b) {
+inline std::string DE9IM(const util::geo::XSortedLine<T>& a,
+                         const util::geo::XSortedPolygon<T>& b) {
   return DE9IM(
       a,
       util::geo::Box<T>(
@@ -2776,18 +2940,19 @@ inline std::string DE9IM(
 
 // _____________________________________________________________________________
 template <typename T>
-inline std::string DE9IM(
-    const util::geo::XSortedPolygon<T>& a, const util::geo::Box<T>& boxA,
-    const util::geo::XSortedLine<T>& b, const util::geo::Box<T>& boxB) {
+inline std::string DE9IM(const util::geo::XSortedPolygon<T>& a,
+                         const util::geo::Box<T>& boxA,
+                         const util::geo::XSortedLine<T>& b,
+                         const util::geo::Box<T>& boxB) {
   size_t firstRel1 = 0;
   size_t firstRel2 = 0;
   return DE9IM(a, boxA, b, boxB, &firstRel1, &firstRel2);
 }
 // _____________________________________________________________________________
 template <typename T>
-inline std::string DE9IM(
-    const util::geo::XSortedPolygon<T>& a, const util::geo::XSortedLine<T>& b) {
-   return DE9IM(
+inline std::string DE9IM(const util::geo::XSortedPolygon<T>& a,
+                         const util::geo::XSortedLine<T>& b) {
+  return DE9IM(
       a,
       util::geo::Box<T>(
           {std::numeric_limits<T>::lowest(), std::numeric_limits<T>::lowest()},
@@ -3078,7 +3243,8 @@ inline std::string DE9IM(const util::geo::XSortedPolygon<T>& a,
         bool contained = false;
         bool covered = false;
         bool borderOverlap = false;
-        for (size_t i = a.getFirstInner(innerB); i < a.getInners().size(); i++) {
+        for (size_t i = a.getFirstInner(innerB); i < a.getInners().size();
+             i++) {
           const auto& innerABox = a.getInnerBoxes()[i];
           if (innerABox.getLowerLeft().getX() >
               innerB.rawRing().back().seg().second.getX())
@@ -3171,7 +3337,8 @@ inline std::string DE9IM(const util::geo::XSortedPolygon<T>& a,
         bool contained = false;
         bool covered = false;
         bool borderOverlap = false;
-        for (size_t i = b.getFirstInner(innerA); i < b.getInners().size(); i++) {
+        for (size_t i = b.getFirstInner(innerA); i < b.getInners().size();
+             i++) {
           const auto& innerBBox = b.getInnerBoxes()[i];
           if (innerBBox.getLowerLeft().getX() >
               innerA.rawRing().back().seg().second.getX())
@@ -3306,42 +3473,29 @@ inline std::tuple<bool, bool, bool, bool, bool> intersectsContainsCovers(
     bool intersectsInnerBorder = false;
 
     // check inner polygons
-    if (b.getInners().size()) {
-      size_t i = 0;
+    for (size_t i = b.getFirstInner(a); i < b.getInners().size(); i++) {
+      if (b.getInners()[i].rawRing().size() < 2) continue;
+      const auto& innerBBox = b.getInnerBoxes()[i];
+      if (b.getInnerBoxes()[i].getLowerLeft().getX() >
+          a.rawLine().back().seg().second.getX())
+        break;
+      if (!util::geo::intersects(boxA, innerBBox)) continue;
 
-      if (b.getInnerMaxSegLen() < std::numeric_limits<T>::max()) {
-        i = std::lower_bound(
-                b.getInnerBoxIdx().begin(), b.getInnerBoxIdx().end(),
-                std::pair<T, size_t>{a.rawLine().front().seg().first.getX() -
-                                         b.getInnerMaxSegLen(),
-                                     0}) -
-            b.getInnerBoxIdx().begin();
-      }
+      auto res = intersectsContainsInner(a, b.getInners()[i]);
 
-      for (; i < b.getInners().size(); i++) {
-        if (b.getInners()[i].rawRing().size() < 2) continue;
-        if (b.getInnerBoxes()[i].getLowerLeft().getX() >
-            a.rawLine().back().seg().second.getX())
-          break;
-        if (!util::geo::intersects(boxA, b.getInnerBoxes()[i])) continue;
+      if (std::get<1>(res))
+        return {false, false, false, false, false};  // a is contained by innerB
 
-        auto res = intersectsContainsInner(a, b.getInners()[i]);
+      if (std::get<4>(res))
+        return {true, false, false, std::get<2>(res),
+                !std::get<2>(res)};  // a strictly intersects border of innerB
 
-        if (std::get<1>(res))
-          return {false, false, false, false,
-                  false};  // a is contained by innerB
+      if (std::get<2>(res))
+        return {true, false, true, true,
+                false};  // a is completely covered by innerB
 
-        if (std::get<4>(res))
-          return {true, false, false, std::get<2>(res),
-                  !std::get<2>(res)};  // a strictly intersects border of innerB
-
-        if (std::get<2>(res))
-          return {true, false, true, true,
-                  false};  // a is completely covered by innerB
-
-        if (std::get<3>(res))
-          intersectsInnerBorder = true;  // a intersects border of innerB
-      }
+      if (std::get<3>(res))
+        intersectsInnerBorder = true;  // a intersects border of innerB
     }
 
     // intersects + contains
