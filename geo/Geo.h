@@ -26,6 +26,7 @@
 #include "util/geo/Line.h"
 #include "util/geo/Point.h"
 #include "util/geo/Polygon.h"
+#include "util/geo/DE9IMatrix.h"
 
 // -------------------
 // Geometry stuff
@@ -1346,23 +1347,23 @@ inline std::tuple<bool, bool> intersectsContains(const Point<T>& p,
 
 // _____________________________________________________________________________
 template <typename T>
-inline std::string DE9IM(const Point<T>& p, const XSortedLine<T>& line,
+inline DE9IMatrix DE9IM(const Point<T>& p, const XSortedLine<T>& line,
                          size_t i) {
   auto res = intersectsContains(p, line, i);
-  if (res.first) return "0FFFFF102";
-  if (res.second) return "F0FFFF102";
+  if (std::get<0>(res)) return "0FFFFF102";
+  if (std::get<1>(res)) return "F0FFFF102";
   return "FF0FFF102";
 }
 
 // _____________________________________________________________________________
 template <typename T>
-inline std::string DE9IM(const Point<T>& p, const XSortedLine<T>& line) {
+inline DE9IMatrix DE9IM(const Point<T>& p, const XSortedLine<T>& line) {
   return DE9IM(p, line, 0);
 }
 
 // _____________________________________________________________________________
 template <typename T>
-inline std::string DE9IM(const XSortedLine<T>& line, size_t i,
+inline DE9IMatrix DE9IM(const XSortedLine<T>& line, size_t i,
                          const Point<T>& p) {
   auto res = intersectsContains(p, line, i);
   if (res.first) return "0F1FF0FF2";
@@ -1372,7 +1373,7 @@ inline std::string DE9IM(const XSortedLine<T>& line, size_t i,
 
 // _____________________________________________________________________________
 template <typename T>
-inline std::string DE9IM(const XSortedLine<T>& line, const Point<T>& p) {
+inline DE9IMatrix DE9IM(const XSortedLine<T>& line, const Point<T>& p) {
   return DE9IM(line, 0, p);
 }
 
@@ -1421,23 +1422,23 @@ inline std::pair<bool, bool> containsCovers(const Point<T>& p,
 
 // _____________________________________________________________________________
 template <typename T>
-inline std::string DE9IM(const Point<T>& p, const XSortedPolygon<T>& poly,
+inline DE9IMatrix DE9IM(const Point<T>& p, const XSortedPolygon<T>& poly,
                          size_t i) {
   auto res = containsCovers(p, poly, i);
-  if (res.first) return "0FFFFF212";
-  if (res.second) return "F0FFFF212";
+  if (std::get<0>(res)) return "0FFFFF212";
+  if (std::get<1>(res)) return "F0FFFF212";
   return "FF0FFF212";
 }
 
 // _____________________________________________________________________________
 template <typename T>
-inline std::string DE9IM(const Point<T>& p, const XSortedPolygon<T>& poly) {
+inline DE9IMatrix DE9IM(const Point<T>& p, const XSortedPolygon<T>& poly) {
   return DE9IM(p, poly, 0);
 }
 
 // _____________________________________________________________________________
 template <typename T>
-inline std::string DE9IM(const XSortedPolygon<T>& poly, size_t i,
+inline DE9IMatrix DE9IM(const XSortedPolygon<T>& poly, size_t i,
                          const Point<T>& p) {
   auto res = containsCovers(p, poly, i);
   if (res.first) return "0F2FF1FF2";
@@ -1447,7 +1448,7 @@ inline std::string DE9IM(const XSortedPolygon<T>& poly, size_t i,
 
 // _____________________________________________________________________________
 template <typename T>
-inline std::string DE9IM(const XSortedPolygon<T>& poly, const Point<T>& p) {
+inline DE9IMatrix DE9IM(const XSortedPolygon<T>& poly, const Point<T>& p) {
   return DE9IM(poly, 0, p);
 }
 
@@ -2013,7 +2014,7 @@ inline std::tuple<bool, bool, bool, bool, bool> intersectsCovers(
 
 // _____________________________________________________________________________
 template <typename T>
-inline std::string DE9IM(const util::geo::XSortedLine<T>& a,
+inline DE9IMatrix DE9IM(const util::geo::XSortedLine<T>& a,
                          const util::geo::XSortedLine<T>& b, const Box<T>& boxA,
                          const Box<T>& boxB, size_t* firstRelIn1,
                          size_t* firstRelIn2) {
@@ -2059,18 +2060,12 @@ inline std::string DE9IM(const util::geo::XSortedLine<T>& a,
   char eb = !(bFirstInA && bSecondInA) ? '0' : 'F';
   char ee = '2';
 
-  return {ii, ib, ie, bi, bb, be, ei, eb, ee};
-
-  // return {weakIntersect,                                       // intersects
-  // !crosses && !strictIntersect && weakIntersect,       // covers
-  // !crosses && touches && !overlaps,                    // touches
-  // !crosses && overlaps && !touches && !aInB && !bInA,  // overlaps
-  // crosses && !overlaps};                               // crosses
+  return std::string{ii, ib, ie, bi, bb, be, ei, eb, ee};
 }
 
 // _____________________________________________________________________________
 template <typename T>
-inline std::string DE9IM(const util::geo::XSortedLine<T>& a,
+inline DE9IMatrix DE9IM(const util::geo::XSortedLine<T>& a,
                          const util::geo::XSortedLine<T>& b, const Box<T>& boxA,
                          const Box<T>& boxB) {
   return util::geo::DE9IM(a, b, boxA, boxB, 0, 0);
@@ -2802,7 +2797,7 @@ intersectsContainsInner(const util::geo::XSortedRing<T>& a,
 
 // _____________________________________________________________________________
 template <typename T>
-inline std::string DE9IM(const util::geo::XSortedLine<T>& a,
+inline DE9IMatrix DE9IM(const util::geo::XSortedLine<T>& a,
                          const util::geo::Box<T>& boxA,
                          const util::geo::XSortedPolygon<T>& b,
                          const util::geo::Box<T>& boxB, size_t* firstRel1,
@@ -2823,12 +2818,13 @@ inline std::string DE9IM(const util::geo::XSortedLine<T>& a,
     char bi = 'F';
     char bb = 'F';
 
+
     if (std::get<4>(res)) {
       bi = 'F';
       bb = '0';
     } else {
-      auto cc1 = containsCovers(a.firstPoint(), b);
-      auto cc2 = containsCovers(a.lastPoint(), b);
+      auto cc1 = containsCovers(a.firstPoint(), b, *firstRel2);
+      auto cc2 = containsCovers(a.lastPoint(), b, *firstRel2);
       bi = std::get<0>(cc1) || std::get<0>(cc2) ? '0' : 'F';
       bb = (!std::get<0>(cc1) && std::get<1>(cc1)) ||
                    (!std::get<0>(cc2) && std::get<1>(cc2))
@@ -2840,7 +2836,7 @@ inline std::string DE9IM(const util::geo::XSortedLine<T>& a,
     char ei = '2';
     char eb = '1';
 
-    return {ii, ib, ie, bi, bb, be, ei, eb, '2'};
+    return std::string{ii, ib, ie, bi, bb, be, ei, eb, '2'};
   }
 
   if (util::geo::contains(boxA, boxB) &&
@@ -2852,8 +2848,8 @@ inline std::string DE9IM(const util::geo::XSortedLine<T>& a,
     char ii = !std::get<0>(res) || std::get<2>(res) ? '1' : 'F';
     char ie = 'F';
 
-    auto cc1 = containsCovers(a.firstPoint(), b);
-    auto cc2 = containsCovers(a.lastPoint(), b);
+    auto cc1 = containsCovers(a.firstPoint(), b, *firstRel2);
+    auto cc2 = containsCovers(a.lastPoint(), b, *firstRel2);
     char bi = std::get<0>(cc1) || std::get<0>(cc2) ? '0' : 'F';
     char bb = (!std::get<0>(cc1) && std::get<1>(cc1)) ||
                       (!std::get<0>(cc2) && std::get<1>(cc2))
@@ -2884,7 +2880,7 @@ inline std::string DE9IM(const util::geo::XSortedLine<T>& a,
         ib = std::get<5>(res) ? '1' : 'F';
         ie = !std::get<5>(res) ? '1' : 'F';
 
-        return {ii, ib, ie, bi, bb, be, ei, eb, '2'};
+        return std::string{ii, ib, ie, bi, bb, be, ei, eb, '2'};
       }
 
       if (std::get<4>(res)) {
@@ -2895,7 +2891,7 @@ inline std::string DE9IM(const util::geo::XSortedLine<T>& a,
       }
     }
 
-    return {ii, ib, ie, bi, bb, be, ei, eb, '2'};
+    return std::string{ii, ib, ie, bi, bb, be, ei, eb, '2'};
   }
 
   return "FF1FF0102";
@@ -2903,19 +2899,18 @@ inline std::string DE9IM(const util::geo::XSortedLine<T>& a,
 
 // _____________________________________________________________________________
 template <typename T>
-inline std::string DE9IM(const util::geo::XSortedPolygon<T>& a,
+inline DE9IMatrix DE9IM(const util::geo::XSortedPolygon<T>& a,
                          const util::geo::Box<T>& boxA,
                          const util::geo::XSortedLine<T>& b,
                          const util::geo::Box<T>& boxB, size_t* firstRel1,
                          size_t* firstRel2) {
-  auto de9im = DE9IM(b, boxB, a, boxA, firstRel2, firstRel1);
-  return {de9im[0], de9im[3], de9im[6], de9im[1], de9im[4],
-          de9im[7], de9im[2], de9im[5], de9im[8]};
+  DE9IMatrix de9im = DE9IM(b, boxB, a, boxA, firstRel2, firstRel1);
+  return de9im.transpose();
 }
 
 // _____________________________________________________________________________
 template <typename T>
-inline std::string DE9IM(const util::geo::XSortedLine<T>& a,
+inline DE9IMatrix DE9IM(const util::geo::XSortedLine<T>& a,
                          const util::geo::Box<T>& boxA,
                          const util::geo::XSortedPolygon<T>& b,
                          const util::geo::Box<T>& boxB) {
@@ -2925,7 +2920,7 @@ inline std::string DE9IM(const util::geo::XSortedLine<T>& a,
 }
 // _____________________________________________________________________________
 template <typename T>
-inline std::string DE9IM(const util::geo::XSortedLine<T>& a,
+inline DE9IMatrix DE9IM(const util::geo::XSortedLine<T>& a,
                          const util::geo::XSortedPolygon<T>& b) {
   return DE9IM(
       a,
@@ -2940,7 +2935,7 @@ inline std::string DE9IM(const util::geo::XSortedLine<T>& a,
 
 // _____________________________________________________________________________
 template <typename T>
-inline std::string DE9IM(const util::geo::XSortedPolygon<T>& a,
+inline DE9IMatrix DE9IM(const util::geo::XSortedPolygon<T>& a,
                          const util::geo::Box<T>& boxA,
                          const util::geo::XSortedLine<T>& b,
                          const util::geo::Box<T>& boxB) {
@@ -2950,7 +2945,7 @@ inline std::string DE9IM(const util::geo::XSortedPolygon<T>& a,
 }
 // _____________________________________________________________________________
 template <typename T>
-inline std::string DE9IM(const util::geo::XSortedPolygon<T>& a,
+inline DE9IMatrix DE9IM(const util::geo::XSortedPolygon<T>& a,
                          const util::geo::XSortedLine<T>& b) {
   return DE9IM(
       a,
@@ -3131,7 +3126,7 @@ inline std::tuple<bool, bool, bool, bool, bool> intersectsContainsCovers(
 
 // _____________________________________________________________________________
 template <typename T>
-inline std::string DE9IM(const util::geo::XSortedPolygon<T>& a,
+inline DE9IMatrix DE9IM(const util::geo::XSortedPolygon<T>& a,
                          const util::geo::Box<T>& boxA, double outerAreaA,
                          const util::geo::XSortedPolygon<T>& b,
                          const util::geo::Box<T>& boxB, double outerAreaB,
@@ -3203,13 +3198,15 @@ inline std::string DE9IM(const util::geo::XSortedPolygon<T>& a,
                                b.getOuter(), *firstRel2)
            .second)) {
     // the outer hull of A is inside the outer hull of B!
+    bool equal = std::get<0>(borderInt) && !std::get<2>(borderInt) && !std::get<6>(borderInt);
+
     char ii = '2';
     char ib = 'F';
     char ie = 'F';
-    char bi = outerAreaB == outerAreaA ? 'F' : '1';
+    char bi = equal ? 'F' : '1';
     char be = 'F';
-    char ei = outerAreaB == outerAreaA ? 'F' : '2';
-    char eb = outerAreaB == outerAreaA ? 'F' : '1';
+    char ei = equal ? 'F' : '2';
+    char eb = equal ? 'F' : '1';
     char ee = '2';
 
     // check inner polygons
@@ -3296,12 +3293,13 @@ inline std::string DE9IM(const util::geo::XSortedPolygon<T>& a,
                     *firstRel1)
            .second)) {
     // the outer hull of B is inside the outer hull of A!
+    bool equal = std::get<0>(borderInt) && !std::get<2>(borderInt) && !std::get<6>(borderInt);
 
     char ii = '2';
     char ib = '1';
-    char ie = outerAreaB == outerAreaA ? 'F' : '2';
+    char ie = equal ? 'F' : '2';
     char bi = 'F';
-    char be = outerAreaB == outerAreaA ? 'F' : '1';
+    char be = equal ? 'F' : '1';
     char ei = 'F';
     char eb = 'F';
     char ee = '2';
@@ -3364,8 +3362,6 @@ inline std::string DE9IM(const util::geo::XSortedPolygon<T>& a,
         if (bb == 'F' && !contained && covered) bb = '0';
       }
 
-      // TODO: inner is completely covered by b
-
       // inner and b truly overlap, but we must still check others for BB if
       // not yet maxed out
       if (!std::get<2>(res) && std::get<4>(res) && std::get<6>(res)) {
@@ -3391,7 +3387,7 @@ inline std::string DE9IM(const util::geo::XSortedPolygon<T>& a,
 
 // _____________________________________________________________________________
 template <typename T>
-inline std::string DE9IM(const util::geo::Point<T>& a,
+inline DE9IMatrix DE9IM(const util::geo::Point<T>& a,
                          const util::geo::Point<T>& b) {
   if (a == b) return "0FFFFFFF2";
   return "FF0FFF0F2";
@@ -3399,7 +3395,7 @@ inline std::string DE9IM(const util::geo::Point<T>& a,
 
 // _____________________________________________________________________________
 template <typename T>
-inline std::string DE9IM(const util::geo::XSortedPolygon<T>& a,
+inline DE9IMatrix DE9IM(const util::geo::XSortedPolygon<T>& a,
                          const util::geo::Box<T>& boxA, double outerAreaA,
                          const util::geo::XSortedPolygon<T>& b,
                          const util::geo::Box<T>& boxB, double outerAreaB) {
@@ -3410,7 +3406,7 @@ inline std::string DE9IM(const util::geo::XSortedPolygon<T>& a,
 
 // _____________________________________________________________________________
 template <typename T>
-inline std::string DE9IM(const util::geo::XSortedPolygon<T>& a,
+inline DE9IMatrix DE9IM(const util::geo::XSortedPolygon<T>& a,
                          const util::geo::XSortedPolygon<T>& b) {
   return DE9IM(
       a,

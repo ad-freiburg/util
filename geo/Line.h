@@ -364,7 +364,7 @@ class XSortedLine {
   }
 
   bool operator==(const XSortedLine<T>& other) const {
-    return _maxSegLen == other._maxSegLen && _line == other._line;
+    return _maxSegLen == other._maxSegLen && _line == other._line && _first == other._first && _last == other._last;
   }
 
   size_t size() const { return _line.size(); }
@@ -376,6 +376,9 @@ class XSortedLine {
 
   Point<T> firstPoint() const { return _first; }
   Point<T> lastPoint() const { return _last; }
+
+  void setFirstPoint(const Point<T>& p) { _first = p; }
+  void setLastPoint(const Point<T>& p) { _last = p; }
 
   const std::vector<XSortedTuple<T>>& rawLine() const { return _line; }
   std::vector<XSortedTuple<T>>& rawLine() { return _line; }

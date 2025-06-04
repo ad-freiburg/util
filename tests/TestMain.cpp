@@ -283,6 +283,49 @@ int main(int argc, char** argv) {
   }
 
   {
+    util::geo::DE9IMatrix de9im1 = "FFFFFFFF2";
+    util::geo::DE9IMatrix de9im2 = "FFFFFFFF2";
+    util::geo::DE9IMatrix de9im3 = "F1FFFFFF2";
+
+    TEST(de9im1, ==, de9im2);
+    TEST(de9im1, !=, de9im3);
+
+    TEST(de9im1.toString(), ==, "FFFFFFFF2");
+    TEST(de9im2.toString(), ==, "FFFFFFFF2");
+    TEST(de9im3.toString(), ==, "F1FFFFFF2");
+
+    de9im3.setTo(2, D2);
+    TEST(de9im3.toString(), ==, "F12FFFFF2");
+
+    de9im3.setTo(7, D1);
+    TEST(de9im3.toString(), ==, "F12FFFF12");
+
+    de9im3.setTo(4, D0);
+    TEST(de9im3.toString(), ==, "F12F0FF12");
+
+    de9im3.II(D0);
+    TEST(de9im3.II(), ==, D0);
+    TEST(de9im3.toString(), ==, "012F0FF12");
+
+    de9im3.BB(D2);
+    TEST(de9im3.BB(), ==, D2);
+    TEST(de9im3.toString(), ==, "012F2FF12");
+
+    util::geo::DE9IMatrix de9im4 = "FFFFFFFF2";
+    util::geo::DE9IMatrix de9im5 = "F0FFFFFF2";
+    auto a = de9im4 + de9im5;
+    TEST(a.toString(), ==, "F0FFFFFF2");
+
+    util::geo::DE9IMatrix de9im6 = "000200002";
+
+    auto c = de9im3 + de9im5;
+    TEST(c.toString(), ==, "012F2FF12");
+
+    auto d = de9im3 + de9im5 + de9im6;
+    TEST(d.toString(), ==, "012220012");
+  }
+
+  {
     auto a = lineFromWKT<int>("LINESTRING(1 1, 2 2)");
     auto b = lineFromWKT<int>("LINESTRING(0 0, 4 4)");
     XSortedLine<int> ax(a);
