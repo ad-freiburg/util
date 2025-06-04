@@ -20,6 +20,7 @@ class DE9IMatrix {
   DE9IMatrix() {}
 
   DE9IMatrix(const char* m) {
+    if (!m) return;
     for (size_t i = 0; i < 8; i++) {
       if (m[i] == '0') _m |= (D0 << (i * 2));
       if (m[i] == '1') _m |= (D1 << (i * 2));
