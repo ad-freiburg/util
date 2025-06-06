@@ -22,11 +22,11 @@
 #include "util/String.h"
 #include "util/geo/Box.h"
 #include "util/geo/Collection.h"
+#include "util/geo/DE9IMatrix.h"
 #include "util/geo/IntervalIdx.h"
 #include "util/geo/Line.h"
 #include "util/geo/Point.h"
 #include "util/geo/Polygon.h"
-#include "util/geo/DE9IMatrix.h"
 
 // -------------------
 // Geometry stuff
@@ -690,14 +690,7 @@ inline Polygon<T> polygonFromWKT(std::string wkt) {
       }
     }
 
-    if (ret.getOuter().size() > 1 &&
-        ret.getOuter().back() == ret.getOuter().front())
-      ret.getOuter().pop_back();
-
-    for (auto& inner : ret.getInners()) {
-      if (inner.size() > 1 && inner.back() == inner.front()) inner.pop_back();
-    }
-
+    ret.fix();
     return ret;
   }
   throw std::runtime_error("Could not parse WKT");
@@ -1348,7 +1341,7 @@ inline std::tuple<bool, bool> intersectsContains(const Point<T>& p,
 // _____________________________________________________________________________
 template <typename T>
 inline DE9IMatrix DE9IM(const Point<T>& p, const XSortedLine<T>& line,
-                         size_t i) {
+                        size_t i) {
   auto res = intersectsContains(p, line, i);
   if (std::get<0>(res)) return "0FFFFF102";
   if (std::get<1>(res)) return "F0FFFF102";
@@ -1364,7 +1357,7 @@ inline DE9IMatrix DE9IM(const Point<T>& p, const XSortedLine<T>& line) {
 // _____________________________________________________________________________
 template <typename T>
 inline DE9IMatrix DE9IM(const XSortedLine<T>& line, size_t i,
-                         const Point<T>& p) {
+                        const Point<T>& p) {
   auto res = intersectsContains(p, line, i);
   if (res.first) return "0F1FF0FF2";
   if (res.second) return "FF1F00FF2";
@@ -1423,7 +1416,7 @@ inline std::pair<bool, bool> containsCovers(const Point<T>& p,
 // _____________________________________________________________________________
 template <typename T>
 inline DE9IMatrix DE9IM(const Point<T>& p, const XSortedPolygon<T>& poly,
-                         size_t i) {
+                        size_t i) {
   auto res = containsCovers(p, poly, i);
   if (std::get<0>(res)) return "0FFFFF212";
   if (std::get<1>(res)) return "F0FFFF212";
@@ -1439,7 +1432,7 @@ inline DE9IMatrix DE9IM(const Point<T>& p, const XSortedPolygon<T>& poly) {
 // _____________________________________________________________________________
 template <typename T>
 inline DE9IMatrix DE9IM(const XSortedPolygon<T>& poly, size_t i,
-                         const Point<T>& p) {
+                        const Point<T>& p) {
   auto res = containsCovers(p, poly, i);
   if (res.first) return "0F2FF1FF2";
   if (res.second) return "FF20F1FF2";
@@ -2015,9 +2008,9 @@ inline std::tuple<bool, bool, bool, bool, bool> intersectsCovers(
 // _____________________________________________________________________________
 template <typename T>
 inline DE9IMatrix DE9IM(const util::geo::XSortedLine<T>& a,
-                         const util::geo::XSortedLine<T>& b, const Box<T>& boxA,
-                         const Box<T>& boxB, size_t* firstRelIn1,
-                         size_t* firstRelIn2) {
+                        const util::geo::XSortedLine<T>& b, const Box<T>& boxA,
+                        const Box<T>& boxB, size_t* firstRelIn1,
+                        size_t* firstRelIn2) {
   uint8_t ret = intersectsHelper<T, IntersectorLine>(
       a.rawLine(), b.rawLine(), a.getMaxSegLen(), b.getMaxSegLen(), boxA, boxB,
       firstRelIn1, firstRelIn2);
@@ -2066,8 +2059,8 @@ inline DE9IMatrix DE9IM(const util::geo::XSortedLine<T>& a,
 // _____________________________________________________________________________
 template <typename T>
 inline DE9IMatrix DE9IM(const util::geo::XSortedLine<T>& a,
-                         const util::geo::XSortedLine<T>& b, const Box<T>& boxA,
-                         const Box<T>& boxB) {
+                        const util::geo::XSortedLine<T>& b, const Box<T>& boxA,
+                        const Box<T>& boxB) {
   return util::geo::DE9IM(a, b, boxA, boxB, 0, 0);
 }
 
@@ -2798,10 +2791,10 @@ intersectsContainsInner(const util::geo::XSortedRing<T>& a,
 // _____________________________________________________________________________
 template <typename T>
 inline DE9IMatrix DE9IM(const util::geo::XSortedLine<T>& a,
-                         const util::geo::Box<T>& boxA,
-                         const util::geo::XSortedPolygon<T>& b,
-                         const util::geo::Box<T>& boxB, size_t* firstRel1,
-                         size_t* firstRel2) {
+                        const util::geo::Box<T>& boxA,
+                        const util::geo::XSortedPolygon<T>& b,
+                        const util::geo::Box<T>& boxB, size_t* firstRel1,
+                        size_t* firstRel2) {
   if (a.rawLine().size() == 0) return "FF1FF0102";
   if (b.getOuter().rawRing().size() < 2) return "FF1FF0102";
 
@@ -2817,7 +2810,6 @@ inline DE9IMatrix DE9IM(const util::geo::XSortedLine<T>& a,
 
     char bi = 'F';
     char bb = 'F';
-
 
     if (std::get<4>(res)) {
       bi = 'F';
@@ -2900,10 +2892,10 @@ inline DE9IMatrix DE9IM(const util::geo::XSortedLine<T>& a,
 // _____________________________________________________________________________
 template <typename T>
 inline DE9IMatrix DE9IM(const util::geo::XSortedPolygon<T>& a,
-                         const util::geo::Box<T>& boxA,
-                         const util::geo::XSortedLine<T>& b,
-                         const util::geo::Box<T>& boxB, size_t* firstRel1,
-                         size_t* firstRel2) {
+                        const util::geo::Box<T>& boxA,
+                        const util::geo::XSortedLine<T>& b,
+                        const util::geo::Box<T>& boxB, size_t* firstRel1,
+                        size_t* firstRel2) {
   DE9IMatrix de9im = DE9IM(b, boxB, a, boxA, firstRel2, firstRel1);
   return de9im.transpose();
 }
@@ -2911,9 +2903,9 @@ inline DE9IMatrix DE9IM(const util::geo::XSortedPolygon<T>& a,
 // _____________________________________________________________________________
 template <typename T>
 inline DE9IMatrix DE9IM(const util::geo::XSortedLine<T>& a,
-                         const util::geo::Box<T>& boxA,
-                         const util::geo::XSortedPolygon<T>& b,
-                         const util::geo::Box<T>& boxB) {
+                        const util::geo::Box<T>& boxA,
+                        const util::geo::XSortedPolygon<T>& b,
+                        const util::geo::Box<T>& boxB) {
   size_t firstRel1 = 0;
   size_t firstRel2 = 0;
   return DE9IM(a, boxA, b, boxB, &firstRel1, &firstRel2);
@@ -2921,7 +2913,7 @@ inline DE9IMatrix DE9IM(const util::geo::XSortedLine<T>& a,
 // _____________________________________________________________________________
 template <typename T>
 inline DE9IMatrix DE9IM(const util::geo::XSortedLine<T>& a,
-                         const util::geo::XSortedPolygon<T>& b) {
+                        const util::geo::XSortedPolygon<T>& b) {
   return DE9IM(
       a,
       util::geo::Box<T>(
@@ -2936,9 +2928,9 @@ inline DE9IMatrix DE9IM(const util::geo::XSortedLine<T>& a,
 // _____________________________________________________________________________
 template <typename T>
 inline DE9IMatrix DE9IM(const util::geo::XSortedPolygon<T>& a,
-                         const util::geo::Box<T>& boxA,
-                         const util::geo::XSortedLine<T>& b,
-                         const util::geo::Box<T>& boxB) {
+                        const util::geo::Box<T>& boxA,
+                        const util::geo::XSortedLine<T>& b,
+                        const util::geo::Box<T>& boxB) {
   size_t firstRel1 = 0;
   size_t firstRel2 = 0;
   return DE9IM(a, boxA, b, boxB, &firstRel1, &firstRel2);
@@ -2946,7 +2938,7 @@ inline DE9IMatrix DE9IM(const util::geo::XSortedPolygon<T>& a,
 // _____________________________________________________________________________
 template <typename T>
 inline DE9IMatrix DE9IM(const util::geo::XSortedPolygon<T>& a,
-                         const util::geo::XSortedLine<T>& b) {
+                        const util::geo::XSortedLine<T>& b) {
   return DE9IM(
       a,
       util::geo::Box<T>(
@@ -3127,10 +3119,10 @@ inline std::tuple<bool, bool, bool, bool, bool> intersectsContainsCovers(
 // _____________________________________________________________________________
 template <typename T>
 inline DE9IMatrix DE9IM(const util::geo::XSortedPolygon<T>& a,
-                         const util::geo::Box<T>& boxA, double outerAreaA,
-                         const util::geo::XSortedPolygon<T>& b,
-                         const util::geo::Box<T>& boxB, double outerAreaB,
-                         size_t* firstRel1, size_t* firstRel2) {
+                        const util::geo::Box<T>& boxA, double outerAreaA,
+                        const util::geo::XSortedPolygon<T>& b,
+                        const util::geo::Box<T>& boxB, double outerAreaB,
+                        size_t* firstRel1, size_t* firstRel2) {
   if (a.getOuter().rawRing().size() < 2) return "FF2FF1212";
   if (b.getOuter().rawRing().size() < 2) return "FF2FF1212";
 
@@ -3198,7 +3190,8 @@ inline DE9IMatrix DE9IM(const util::geo::XSortedPolygon<T>& a,
                                b.getOuter(), *firstRel2)
            .second)) {
     // the outer hull of A is inside the outer hull of B!
-    bool equal = std::get<0>(borderInt) && !std::get<2>(borderInt) && !std::get<6>(borderInt);
+    bool equal = std::get<0>(borderInt) && !std::get<2>(borderInt) &&
+                 !std::get<6>(borderInt);
 
     char ii = '2';
     char ib = 'F';
@@ -3293,7 +3286,8 @@ inline DE9IMatrix DE9IM(const util::geo::XSortedPolygon<T>& a,
                     *firstRel1)
            .second)) {
     // the outer hull of B is inside the outer hull of A!
-    bool equal = std::get<0>(borderInt) && !std::get<2>(borderInt) && !std::get<6>(borderInt);
+    bool equal = std::get<0>(borderInt) && !std::get<2>(borderInt) &&
+                 !std::get<6>(borderInt);
 
     char ii = '2';
     char ib = '1';
@@ -3388,7 +3382,7 @@ inline DE9IMatrix DE9IM(const util::geo::XSortedPolygon<T>& a,
 // _____________________________________________________________________________
 template <typename T>
 inline DE9IMatrix DE9IM(const util::geo::Point<T>& a,
-                         const util::geo::Point<T>& b) {
+                        const util::geo::Point<T>& b) {
   if (a == b) return "0FFFFFFF2";
   return "FF0FFF0F2";
 }
@@ -3396,9 +3390,9 @@ inline DE9IMatrix DE9IM(const util::geo::Point<T>& a,
 // _____________________________________________________________________________
 template <typename T>
 inline DE9IMatrix DE9IM(const util::geo::XSortedPolygon<T>& a,
-                         const util::geo::Box<T>& boxA, double outerAreaA,
-                         const util::geo::XSortedPolygon<T>& b,
-                         const util::geo::Box<T>& boxB, double outerAreaB) {
+                        const util::geo::Box<T>& boxA, double outerAreaA,
+                        const util::geo::XSortedPolygon<T>& b,
+                        const util::geo::Box<T>& boxB, double outerAreaB) {
   size_t firstA = 0;
   size_t firstB = 0;
   return DE9IM(a, boxA, outerAreaA, b, boxB, outerAreaB, &firstA, &firstB);
@@ -3407,7 +3401,7 @@ inline DE9IMatrix DE9IM(const util::geo::XSortedPolygon<T>& a,
 // _____________________________________________________________________________
 template <typename T>
 inline DE9IMatrix DE9IM(const util::geo::XSortedPolygon<T>& a,
-                         const util::geo::XSortedPolygon<T>& b) {
+                        const util::geo::XSortedPolygon<T>& b) {
   return DE9IM(
       a,
       util::geo::Box<T>(
@@ -4107,12 +4101,14 @@ Polygon<T> polygonFromWKT(
     if ((!cc && q) || (q && cc && q < cc)) {
       // polygon closes at q
       if (endr) (*endr) = q;
+      poly.fix();
       return poly;
     }
 
     if (cc) c = cc;
   }
 
+  poly.fix();
   return poly;
 }
 

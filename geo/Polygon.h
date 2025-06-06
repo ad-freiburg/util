@@ -22,14 +22,32 @@ class Polygon {
  public:
   Polygon() {}
 
-  explicit Polygon(const Ring<T>& l) : _outer(l) {}
+  explicit Polygon(const Ring<T>& l) : _outer(l) { fix(); }
   Polygon(const Ring<T>& l, const std::vector<Ring<T>>& inners)
-      : _outer(l), _inners(inners) {}
+      : _outer(l), _inners(inners) {
+    fix();
+  }
   explicit Polygon(const Box<T>& b)
       : _outer({b.getLowerLeft(),
                 Point<T>(b.getLowerLeft().getX(), b.getUpperRight().getY()),
                 b.getUpperRight(),
-                Point<T>(b.getUpperRight().getX(), b.getLowerLeft().getY())}) {}
+                Point<T>(b.getUpperRight().getX(), b.getLowerLeft().getY())}) {
+    fix();
+  }
+
+  void fix() {
+    if (_outer.size() > 1 && _outer.back() == _outer.front()) _outer.pop_back();
+
+    // outer ring  must be oriented counter-clockwise
+    if (signedRingArea(_outer) > 0) std::reverse(_outer.begin(), _outer.end());
+
+    for (auto& inner : _inners) {
+      if (inner.size() > 1 && inner.back() == inner.front()) inner.pop_back();
+
+      // inner rings must be oriented clockwise
+      if (signedRingArea(inner) < 0) std::reverse(inner.begin(), inner.end());
+    }
+  }
 
   const Ring<T>& getOuter() const { return _outer; }
   Ring<T>& getOuter() { return _outer; }
@@ -431,10 +449,7 @@ class XSortedPolygon {
     if (getInnerMaxSegLen() < std::numeric_limits<T>::max()) {
       i = std::lower_bound(
               getInnerBoxIdx().begin(), getInnerBoxIdx().end(),
-              std::pair<T, size_t>{
-                  p.getX() -
-                      getInnerMaxSegLen(),
-                  0}) -
+              std::pair<T, size_t>{p.getX() - getInnerMaxSegLen(), 0}) -
           getInnerBoxIdx().begin();
     }
     return i;
