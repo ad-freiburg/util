@@ -3038,9 +3038,9 @@ int main(int argc, char** argv) {
     auto a = polygonFromWKT<int>("POLYGON((0 0, 10 0, 10 10, 0 10, 0 0), (4 4, 5 4, 5 5, 4 5, 4 4))");
     auto b = polygonFromWKT<int>("POLYGON((1 1, 9 1, 9 9, 1 9, 1 1), (3 3, 6 3, 6 6, 3 6, 3 3))");
 
-    TEST(geo::getWKT(a), ==, "POLYGON((0 0,10 0,10 10,0 10,0 0),(4 4,5 4,5 5,4 5,4 4))");
+    TEST(geo::getWKT(a), ==, "POLYGON((0 0,10 0,10 10,0 10,0 0),(4 5,5 5,5 4,4 4,4 5))");
     TEST(geo::getWKT(b.getOuter().front()), ==, "POINT(1 1)");
-    TEST(geo::getWKT(a.getInners().front()), ==, "LINESTRING(4 4,5 4,5 5,4 5)");
+    TEST(geo::getWKT(a.getInners().front()), ==, "LINESTRING(4 5,5 5,5 4,4 4)");
 
     TEST(geo::contains(b, a));
     TEST(!geo::contains(a, b));
@@ -3061,9 +3061,9 @@ int main(int argc, char** argv) {
     auto a = polygonFromWKT<int>("POLYGON((0 0, 10 0, 10 10, 0 10, 0 0), (4 4, 5 4, 5 5, 4 5, 4 4))");
     auto b = polygonFromWKT<int>("POLYGON((1 1, 9 1, 9 9, 1 9, 1 1), (3 3, 6 3, 6 6, 3 6, 3 3))");
 
-    TEST(geo::getWKT(a), ==, "POLYGON((0 0,10 0,10 10,0 10,0 0),(4 4,5 4,5 5,4 5,4 4))");
+    TEST(geo::getWKT(a), ==, "POLYGON((0 0,10 0,10 10,0 10,0 0),(4 5,5 5,5 4,4 4,4 5))");
     TEST(geo::getWKT(b.getOuter().front()), ==, "POINT(1 1)");
-    TEST(geo::getWKT(a.getInners().front()), ==, "LINESTRING(4 4,5 4,5 5,4 5)");
+    TEST(geo::getWKT(a.getInners().front()), ==, "LINESTRING(4 5,5 5,5 4,4 4)");
 
     TEST(geo::contains(b, a));
     TEST(!geo::contains(a, b));
@@ -4794,7 +4794,7 @@ int main(int argc, char** argv) {
   Polygon<double> poly({Point<double>(1, 1), Point<double>(3, 2),
                         Point<double>(4, 3), Point<double>(6, 3),
                         Point<double>(5, 1)});
-  TEST(geo::getWKT(poly), ==, "POLYGON((1 1,3 2,4 3,6 3,5 1,1 1))");
+  TEST(geo::getWKT(poly), ==, "POLYGON((5 1,6 3,4 3,3 2,1 1,5 1))");
   TEST(geo::contains(Point<double>(4, 2), poly));
   TEST(!geo::contains(Point<double>(3, 3), poly));
   TEST(geo::contains(Point<double>(1, 1), poly));
@@ -4877,23 +4877,15 @@ int main(int argc, char** argv) {
   auto polyy = Polygon<double>({{0, 0}, {3, 4}, {4, 3}});
   MultiPolygon<double> mpoly{polyy, polyy};
 
-  TEST(geo::getWKT(polyy), ==, "POLYGON((0 0,3 4,4 3,0 0))");
+  TEST(geo::getWKT(polyy), ==, "POLYGON((4 3,3 4,0 0,4 3))");
   TEST(geo::getWKT(mpoly) ==
-         "MULTIPOLYGON(((0 0,3 4,4 3,0 0)),((0 0,3 4,4 3,0 0)))");
+         "MULTIPOLYGON(((4 3,3 4,0 0,4 3)),((4 3,3 4,0 0,4 3)))");
 
   TEST(geo::getWKT(geo::centroid(mpoly)) == geo::getWKT(geo::centroid(polyy)));
 
   auto hull = geo::convexHull(Line<double>{
       {0.1, 3}, {1, 1}, {2, 2}, {4, 4}, {0, 0}, {1, 2}, {3, 1}, {3, 3}});
   TEST(hull.getOuter().size(), ==, size_t(4));
-  TEST(hull.getOuter()[0].getX(), ==, approx(0));
-  TEST(hull.getOuter()[0].getY(), ==, approx(0));
-  TEST(hull.getOuter()[1].getX(), ==, approx(0.1));
-  TEST(hull.getOuter()[1].getY(), ==, approx(3));
-  TEST(hull.getOuter()[2].getX(), ==, approx(4));
-  TEST(hull.getOuter()[2].getY(), ==, approx(4));
-  TEST(hull.getOuter()[3].getX(), ==, approx(3));
-  TEST(hull.getOuter()[3].getY(), ==, approx(1));
   TEST(geo::contains(geo::convexHull(geo::getBoundingBox(poly)),
                        geo::getBoundingBox(poly)));
   TEST(geo::contains(geo::getBoundingBox(poly),
@@ -4909,70 +4901,70 @@ int main(int argc, char** argv) {
                                             {3, 3},
                                             {-0.1, 1}});
   TEST(hull2.getOuter().size(), ==, size_t(5));
-  TEST(hull2.getOuter()[0].getX(), ==, approx(-.1));
-  TEST(hull2.getOuter()[0].getY(), ==, approx(1));
-  TEST(hull2.getOuter()[1].getX(), ==, approx(0.1));
-  TEST(hull2.getOuter()[1].getY(), ==, approx(3));
+  TEST(hull2.getOuter()[4].getX(), ==, approx(-.1));
+  TEST(hull2.getOuter()[4].getY(), ==, approx(1));
+  TEST(hull2.getOuter()[3].getX(), ==, approx(0.1));
+  TEST(hull2.getOuter()[3].getY(), ==, approx(3));
   TEST(hull2.getOuter()[2].getX(), ==, approx(4));
   TEST(hull2.getOuter()[2].getY(), ==, approx(4));
-  TEST(hull2.getOuter()[3].getX(), ==, approx(3));
-  TEST(hull2.getOuter()[3].getY(), ==, approx(1));
-  TEST(hull2.getOuter()[4].getX(), ==, approx(0));
-  TEST(hull2.getOuter()[4].getY(), ==, approx(0));
+  TEST(hull2.getOuter()[1].getX(), ==, approx(3));
+  TEST(hull2.getOuter()[1].getY(), ==, approx(1));
+  TEST(hull2.getOuter()[0].getX(), ==, approx(0));
+  TEST(hull2.getOuter()[0].getY(), ==, approx(0));
 
   auto hull3 =
       geo::convexHull(Line<double>{{0.1, 3}, {4, 4}, {0, 0}, {1, 2}, {3, 1}});
   TEST(hull3.getOuter().size(), ==, size_t(4));
-  TEST(hull3.getOuter()[0].getX(), ==, approx(0));
-  TEST(hull3.getOuter()[0].getY(), ==, approx(0));
-  TEST(hull3.getOuter()[3].getX(), ==, approx(3));
-  TEST(hull3.getOuter()[3].getY(), ==, approx(1));
-  TEST(hull3.getOuter()[2].getX(), ==, approx(4));
-  TEST(hull3.getOuter()[2].getY(), ==, approx(4));
-  TEST(hull3.getOuter()[1].getX(), ==, approx(0.1));
-  TEST(hull3.getOuter()[1].getY(), ==, approx(3));
+  TEST(hull3.getOuter()[0].getX(), ==, approx(3));
+  TEST(hull3.getOuter()[0].getY(), ==, approx(1));
+  TEST(hull3.getOuter()[1].getX(), ==, approx(4));
+  TEST(hull3.getOuter()[1].getY(), ==, approx(4));
+  TEST(hull3.getOuter()[2].getX(), ==, approx(0.1));
+  TEST(hull3.getOuter()[2].getY(), ==, approx(3));
+  TEST(hull3.getOuter()[3].getX(), ==, approx(0));
+  TEST(hull3.getOuter()[3].getY(), ==, approx(0));
 
   hull3 = geo::convexHull(
       Line<double>{{0.1, 3}, {4, 4}, {2, 1}, {3, 2}, {0, 0}, {1, 2}, {3, 1}});
   TEST(hull3.getOuter().size(), ==, size_t(4));
-  TEST(hull3.getOuter()[0].getX(), ==, approx(0));
-  TEST(hull3.getOuter()[0].getY(), ==, approx(0));
-  TEST(hull3.getOuter()[3].getX(), ==, approx(3));
-  TEST(hull3.getOuter()[3].getY(), ==, approx(1));
-  TEST(hull3.getOuter()[2].getX(), ==, approx(4));
-  TEST(hull3.getOuter()[2].getY(), ==, approx(4));
-  TEST(hull3.getOuter()[1].getX(), ==, approx(0.1));
-  TEST(hull3.getOuter()[1].getY(), ==, approx(3));
+  TEST(hull3.getOuter()[0].getX(), ==, approx(3));
+  TEST(hull3.getOuter()[0].getY(), ==, approx(1));
+  TEST(hull3.getOuter()[1].getX(), ==, approx(4));
+  TEST(hull3.getOuter()[1].getY(), ==, approx(4));
+  TEST(hull3.getOuter()[2].getX(), ==, approx(0.1));
+  TEST(hull3.getOuter()[2].getY(), ==, approx(3));
+  TEST(hull3.getOuter()[3].getX(), ==, approx(0));
+  TEST(hull3.getOuter()[3].getY(), ==, approx(0));
 
   hull3 = geo::convexHull(Line<double>{
       {4, 4}, {1, 2}, {2, 1}, {3, 2}, {0.1, 3}, {0, 0}, {1, 2}, {3, 1}});
   TEST(hull3.getOuter().size(), ==, size_t(4));
-  TEST(hull3.getOuter()[0].getX(), ==, approx(0));
-  TEST(hull3.getOuter()[0].getY(), ==, approx(0));
-  TEST(hull3.getOuter()[3].getX(), ==, approx(3));
-  TEST(hull3.getOuter()[3].getY(), ==, approx(1));
-  TEST(hull3.getOuter()[2].getX(), ==, approx(4));
-  TEST(hull3.getOuter()[2].getY(), ==, approx(4));
-  TEST(hull3.getOuter()[1].getX(), ==, approx(0.1));
-  TEST(hull3.getOuter()[1].getY(), ==, approx(3));
+  TEST(hull3.getOuter()[0].getX(), ==, approx(3));
+  TEST(hull3.getOuter()[0].getY(), ==, approx(1));
+  TEST(hull3.getOuter()[1].getX(), ==, approx(4));
+  TEST(hull3.getOuter()[1].getY(), ==, approx(4));
+  TEST(hull3.getOuter()[2].getX(), ==, approx(0.1));
+  TEST(hull3.getOuter()[2].getY(), ==, approx(3));
+  TEST(hull3.getOuter()[3].getX(), ==, approx(0));
+  TEST(hull3.getOuter()[3].getY(), ==, approx(0));
 
   hull3 = geo::convexHull(Line<double>{{4, 4}, {1, 2}, {3, 1}});
   TEST(hull3.getOuter().size(), ==, size_t(3));
-  TEST(hull3.getOuter()[0].getX(), ==, approx(1));
-  TEST(hull3.getOuter()[0].getY(), ==, approx(2));
-  TEST(hull3.getOuter()[2].getX(), ==, approx(3));
-  TEST(hull3.getOuter()[2].getY(), ==, approx(1));
+  TEST(hull3.getOuter()[0].getX(), ==, approx(3));
+  TEST(hull3.getOuter()[0].getY(), ==, approx(1));
   TEST(hull3.getOuter()[1].getX(), ==, approx(4));
   TEST(hull3.getOuter()[1].getY(), ==, approx(4));
+  TEST(hull3.getOuter()[2].getX(), ==, approx(1));
+  TEST(hull3.getOuter()[2].getY(), ==, approx(2));
 
   hull3 = geo::convexHull(Line<double>{{4, 4}, {1, 2}, {3, 10}});
   TEST(hull3.getOuter().size(), ==, size_t(3));
-  TEST(hull3.getOuter()[0].getX(), ==, approx(1));
-  TEST(hull3.getOuter()[0].getY(), ==, approx(2));
-  TEST(hull3.getOuter()[2].getX(), ==, approx(4));
-  TEST(hull3.getOuter()[2].getY(), ==, approx(4));
+  TEST(hull3.getOuter()[0].getX(), ==, approx(4));
+  TEST(hull3.getOuter()[0].getY(), ==, approx(4));
   TEST(hull3.getOuter()[1].getX(), ==, approx(3));
   TEST(hull3.getOuter()[1].getY(), ==, approx(10));
+  TEST(hull3.getOuter()[2].getX(), ==, approx(1));
+  TEST(hull3.getOuter()[2].getY(), ==, approx(2));
 
   Line<double> test{{0.3215348546593775, 0.03629583077160248},
                     {0.02402358131857918, -0.2356728797179394},
@@ -5051,16 +5043,16 @@ int main(int argc, char** argv) {
                                        {3, 14},
                                        {25, -5.5}});
   TEST(hull3.getOuter().size(), ==, size_t(5));
-  TEST(hull3.getOuter()[0].getX(), ==, approx(-4));
-  TEST(hull3.getOuter()[0].getY(), ==, approx(5));
-  TEST(hull3.getOuter()[4].getX(), ==, approx(20));
-  TEST(hull3.getOuter()[4].getY(), ==, approx(-10));
-  TEST(hull3.getOuter()[3].getX(), ==, approx(30));
-  TEST(hull3.getOuter()[3].getY(), ==, approx(-9));
+  TEST(hull3.getOuter()[0].getX(), ==, approx(20));
+  TEST(hull3.getOuter()[0].getY(), ==, approx(-10));
+  TEST(hull3.getOuter()[1].getX(), ==, approx(30));
+  TEST(hull3.getOuter()[1].getY(), ==, approx(-9));
   TEST(hull3.getOuter()[2].getX(), ==, approx(45));
   TEST(hull3.getOuter()[2].getY(), ==, approx(1));
-  TEST(hull3.getOuter()[1].getX(), ==, approx(3));
-  TEST(hull3.getOuter()[1].getY(), ==, approx(14));
+  TEST(hull3.getOuter()[3].getX(), ==, approx(3));
+  TEST(hull3.getOuter()[3].getY(), ==, approx(14));
+  TEST(hull3.getOuter()[4].getX(), ==, approx(-4));
+  TEST(hull3.getOuter()[4].getY(), ==, approx(5));
 
   hull3 = geo::convexHull(Line<double>{
       {7, 7}, {7, -7}, {-7, -7}, {-7, 7}, {9, 0}, {-9, 0}, {0, 9}, {0, -9}});
@@ -5323,7 +5315,7 @@ int main(int argc, char** argv) {
 	std::string a = ss.str();
 	replaceAll(a, " ", "");
 	replaceAll(a, "\n", "");
-	TEST(a ,==,"{\"type\":\"FeatureCollection\",\"features\":[{\"type\":\"Feature\",\"geometry\":{\"type\":\"Polygon\",\"coordinates\":[[[1,1],[3,2],[4,3],[6,3],[5,1],[1,1]]]},\"properties\":{}}]}");
+	TEST(a ,==,"{\"type\":\"FeatureCollection\",\"features\":[{\"type\":\"Feature\",\"geometry\":{\"type\":\"Polygon\",\"coordinates\":[[[5,1],[6,3],[4,3],[3,2],[1,1],[5,1]]]},\"properties\":{}}]}");
 
   Polygon<int> poly2{{{1, 1}, {3, 2}, {4, 3}, {6, 3}, {5, 1}, {1, 1}}, {{{1, 1}, {1, 2}, {2, 2}, {1, 1}}}};
 
@@ -5333,7 +5325,7 @@ int main(int argc, char** argv) {
 	a = ss.str();
 	replaceAll(a, " ", "");
 	replaceAll(a, "\n", "");
-	TEST(a ,==,"{\"type\":\"Feature\",\"geometry\":{\"type\":\"Polygon\",\"coordinates\":[[[1,1],[3,2],[4,3],[6,3],[5,1],[1,1]],[[1,1],[1,2],[2,2],[1,1]]]},\"properties\":{}}");
+	TEST(a ,==,"{\"type\":\"Feature\",\"geometry\":{\"type\":\"Polygon\",\"coordinates\":[[[5,1],[6,3],[4,3],[3,2],[1,1],[5,1]],[[1,1],[1,2],[2,2],[1,1]]]},\"properties\":{}}");
 
 	ss.str("");
   out.print(util::geo::MultiPolygon<int>{poly3, poly2}, {});
@@ -5341,7 +5333,7 @@ int main(int argc, char** argv) {
 	a = ss.str();
 	replaceAll(a, " ", "");
 	replaceAll(a, "\n", "");
-	TEST(a ,==,"{\"type\":\"Feature\",\"geometry\":{\"type\":\"MultiPolygon\",\"coordinates\":[[[[1,3],[3,4],[4,5],[6,5],[5,3],[1,3]]],[[[1,1],[3,2],[4,3],[6,3],[5,1],[1,1]],[[1,1],[1,2],[2,2],[1,1]]]]},\"properties\":{}}");
+	TEST(a ,==,"{\"type\":\"Feature\",\"geometry\":{\"type\":\"MultiPolygon\",\"coordinates\":[[[[5,3],[6,5],[4,5],[3,4],[1,3],[5,3]]],[[[5,1],[6,3],[4,3],[3,2],[1,1],[5,1]],[[1,1],[1,2],[2,2],[1,1]]]]},\"properties\":{}}");
 
 	ss.str("");
   out.print(geo::lineFromWKT<int>("LINESTRING(0 0,1 1)"), {});
@@ -5396,7 +5388,7 @@ int main(int argc, char** argv) {
 	std::string a = ss.str();
 	replaceAll(a, " ", "");
 	replaceAll(a, "\n", "");
-	TEST(a ,==,"{\"type\":\"FeatureCollection\",\"features\":[{\"type\":\"Feature\",\"geometry\":{\"type\":\"Polygon\",\"coordinates\":[[[1,1],[3,2],[4,3],[6,3],[5,1],[1,1]]]},\"properties\":{}}]}");
+	TEST(a ,==,"{\"type\":\"FeatureCollection\",\"features\":[{\"type\":\"Feature\",\"geometry\":{\"type\":\"Polygon\",\"coordinates\":[[[5,1],[6,3],[4,3],[3,2],[1,1],[5,1]]]},\"properties\":{}}]}");
 
   Polygon<int> poly2{{{1, 1}, {3, 2}, {4, 3}, {6, 3}, {5, 1}, {1, 1}}, {{{1, 1}, {1, 2}, {2, 2}, {1, 1}}}};
 
@@ -5406,7 +5398,7 @@ int main(int argc, char** argv) {
 	a = ss.str();
 	replaceAll(a, " ", "");
 	replaceAll(a, "\n", "");
-	TEST(a ,==,"{\"type\":\"Feature\",\"geometry\":{\"type\":\"Polygon\",\"coordinates\":[[[1,1],[3,2],[4,3],[6,3],[5,1],[1,1]],[[1,1],[1,2],[2,2],[1,1]]]},\"properties\":{}}");
+	TEST(a ,==,"{\"type\":\"Feature\",\"geometry\":{\"type\":\"Polygon\",\"coordinates\":[[[5,1],[6,3],[4,3],[3,2],[1,1],[5,1]],[[1,1],[1,2],[2,2],[1,1]]]},\"properties\":{}}");
 
 	ss.str("");
   out.print(util::geo::MultiPolygon<int>{poly3, poly2}, {});
@@ -5414,7 +5406,7 @@ int main(int argc, char** argv) {
 	a = ss.str();
 	replaceAll(a, " ", "");
 	replaceAll(a, "\n", "");
-	TEST(a ,==,"{\"type\":\"Feature\",\"geometry\":{\"type\":\"MultiPolygon\",\"coordinates\":[[[[1,3],[3,4],[4,5],[6,5],[5,3],[1,3]]],[[[1,1],[3,2],[4,3],[6,3],[5,1],[1,1]],[[1,1],[1,2],[2,2],[1,1]]]]},\"properties\":{}}");
+	TEST(a ,==,"{\"type\":\"Feature\",\"geometry\":{\"type\":\"MultiPolygon\",\"coordinates\":[[[[5,3],[6,5],[4,5],[3,4],[1,3],[5,3]]],[[[5,1],[6,3],[4,3],[3,2],[1,1],[5,1]],[[1,1],[1,2],[2,2],[1,1]]]]},\"properties\":{}}");
 
 	ss.str("");
   out.print(geo::lineFromWKT<int>("LINESTRING(0 0, 1 1)"), {});
@@ -5469,7 +5461,7 @@ int main(int argc, char** argv) {
 	std::string a = ss.str();
 	replaceAll(a, " ", "");
 	replaceAll(a, "\n", "");
-	TEST(a ,==,"{\"type\":\"FeatureCollection\",\"features\":[{\"type\":\"Feature\",\"geometry\":{\"type\":\"Polygon\",\"coordinates\":[[[1,1],[3,2],[4,3],[6,3],[5,1],[1,1]]]},\"properties\":{}}]}");
+	TEST(a ,==,"{\"type\":\"FeatureCollection\",\"features\":[{\"type\":\"Feature\",\"geometry\":{\"type\":\"Polygon\",\"coordinates\":[[[5,1],[6,3],[4,3],[3,2],[1,1],[5,1]]]},\"properties\":{}}]}");
 
   Polygon<int> poly2{{{1, 1}, {3, 2}, {4, 3}, {6, 3}, {5, 1}, {1, 1}}, {{{1, 1}, {1, 2}, {2, 2}, {1, 1}}}};
 
@@ -5479,7 +5471,7 @@ int main(int argc, char** argv) {
 	a = ss.str();
 	replaceAll(a, " ", "");
 	replaceAll(a, "\n", "");
-	TEST(a ,==,"{\"type\":\"Feature\",\"geometry\":{\"type\":\"Polygon\",\"coordinates\":[[[1,1],[3,2],[4,3],[6,3],[5,1],[1,1]],[[1,1],[1,2],[2,2],[1,1]]]},\"properties\":{}}");
+	TEST(a ,==,"{\"type\":\"Feature\",\"geometry\":{\"type\":\"Polygon\",\"coordinates\":[[[5,1],[6,3],[4,3],[3,2],[1,1],[5,1]],[[1,1],[1,2],[2,2],[1,1]]]},\"properties\":{}}");
 
 	ss.str("");
   out.print(util::geo::MultiPolygon<int>{poly3, poly2}, {});
@@ -5487,7 +5479,7 @@ int main(int argc, char** argv) {
 	a = ss.str();
 	replaceAll(a, " ", "");
 	replaceAll(a, "\n", "");
-	TEST(a ,==,"{\"type\":\"Feature\",\"geometry\":{\"type\":\"MultiPolygon\",\"coordinates\":[[[[1,3],[3,4],[4,5],[6,5],[5,3],[1,3]]],[[[1,1],[3,2],[4,3],[6,3],[5,1],[1,1]],[[1,1],[1,2],[2,2],[1,1]]]]},\"properties\":{}}");
+	TEST(a ,==,"{\"type\":\"Feature\",\"geometry\":{\"type\":\"MultiPolygon\",\"coordinates\":[[[[5,3],[6,5],[4,5],[3,4],[1,3],[5,3]]],[[[5,1],[6,3],[4,3],[3,2],[1,1],[5,1]],[[1,1],[1,2],[2,2],[1,1]]]]},\"properties\":{}}");
 
 	ss.str("");
   out.print(geo::lineFromWKT<int>("LINESTRING(0 0, 1 1)"), {});
@@ -5600,7 +5592,7 @@ int main(int argc, char** argv) {
   TEST(util::geo::getWKT(util::geo::convexHull(coll)), ==, "POLYGON((1 1,3 2,1 1))");
   TEST(util::geo::dimension(coll), ==, 2);
   TEST(util::geo::getWKT(util::geo::centroid(coll)), ==, "POINT(2 1.5)");
-  TEST(util::geo::getWKT(util::geo::convexHull(util::geo::getOrientedEnvelope(coll))), ==, "POLYGON((3 2,3 2,1 1,1 1,3 2))");
+  TEST(util::geo::getWKT(util::geo::convexHull(util::geo::getOrientedEnvelope(coll))), ==, "POLYGON((1 1,1 1,3 2,3 2,1 1))");
 
   TEST(util::geo::getWKT(util::geo::centroid(coll2)), ==, "POINT(3 2)");
   TEST(util::geo::getWKT(util::geo::centroid(coll3)), ==, "POINT(2 1.5)");
