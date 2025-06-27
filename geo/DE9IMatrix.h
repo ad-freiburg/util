@@ -94,6 +94,8 @@ class DE9IMatrix {
   }
 
   bool disjoint() const { return !II() && !IB() && !BI() && !BB(); }
+  bool contains() const { return II() && !EI() && !EB(); }
+  bool covers() const { return (II() || IB() || BI() || BB()) && !EI() && !EB(); }
 
   uint16_t getMatrix() const { return _m; }
 
