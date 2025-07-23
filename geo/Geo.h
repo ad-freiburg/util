@@ -630,71 +630,6 @@ inline bool doubleEq(double a, double b) { return fabs(a - b) < EPSILON; }
 
 // _____________________________________________________________________________
 template <typename T>
-inline Point<T> pointFromWKT(std::string wkt) {
-  wkt = util::normalizeWhiteSpace(util::trim(wkt));
-  if (wkt.rfind("POINT") == 0 || wkt.rfind("MPOINT") == 0) {
-    size_t b = wkt.find("(") + 1;
-    size_t e = wkt.find(")", b);
-    if (b > e) throw std::runtime_error("Could not parse WKT");
-    auto xy = util::split(util::trim(wkt.substr(b, e - b)), ' ');
-    if (xy.size() < 2) throw std::runtime_error("Could not parse WKT");
-    double x = atof(xy[0].c_str());
-    double y = atof(xy[1].c_str());
-    return Point<T>(x, y);
-  }
-  throw std::runtime_error("Could not parse WKT");
-}
-
-// _____________________________________________________________________________
-template <typename T>
-inline Polygon<T> polygonFromWKT(std::string wkt) {
-  wkt = util::normalizeWhiteSpace(util::trim(wkt));
-  if (wkt.rfind("POLYGON") == 0 || wkt.rfind("MPOLYGON") == 0) {
-    Polygon<T> ret;
-    size_t b = wkt.find("(") + 1;
-    size_t e = wkt.rfind(")");
-    if (b > e) throw std::runtime_error("Could not parse WKT");
-
-    auto pairs = util::split(wkt.substr(b, e - b), ')');
-
-    for (size_t i = 0; i < pairs.size(); i++) {
-      size_t b = pairs[i].find("(") + 1;
-      size_t e = pairs[i].rfind(")", b);
-      auto pairsLoc = util::split(pairs[i].substr(b, e - b), ',');
-
-      if (i > 0) {
-        ret.getInners().push_back({});
-      }
-
-      for (const auto& p : pairsLoc) {
-        auto xy = util::split(util::trim(p), ' ');
-        if (xy.size() < 2) throw std::runtime_error("Could not parse WKT");
-        double x = atof(xy[0].c_str());
-        double y = atof(xy[1].c_str());
-
-        if (i == 0) {
-          ret.getOuter().push_back({x, y});
-        } else {
-          ret.getInners().back().push_back({x, y});
-        }
-      }
-    }
-
-    if (ret.getOuter().size() > 1 &&
-        ret.getOuter().back() == ret.getOuter().front())
-      ret.getOuter().pop_back();
-
-    for (auto& inner : ret.getInners()) {
-      if (inner.size() > 1 && inner.back() == inner.front()) inner.pop_back();
-    }
-
-    return ret;
-  }
-  throw std::runtime_error("Could not parse WKT");
-}
-
-// _____________________________________________________________________________
-template <typename T>
 inline std::string getWKT(const Point<T>& p, uint16_t prec) {
   std::string ret = "POINT(";
   ret.reserve(6 + prec + 3 + prec + 3 + 1);
@@ -3402,6 +3337,13 @@ inline MultiPoint<T> multiPointFromWKT(const std::string& wkt) {
 
 // _____________________________________________________________________________
 template <typename T>
+inline MultiPoint<T> multiPointFromWKT(const std::string& wkt,
+    std::function<Point<T>(const Point<double>& p1)> projFunc) {
+  return multiPointFromWKT<T>(wkt.c_str(), 0, projFunc);
+}
+
+// _____________________________________________________________________________
+template <typename T>
 inline Point<T> pointFromWKT(
     const char* c, const char** endr,
     std::function<Point<T>(const Point<double>& p1)> projFunc) {
@@ -3431,6 +3373,19 @@ inline Point<T> pointFromWKT(const char* c, const char** endr) {
   return pointFromWKT<T>(c, endr, [](const Point<double>& p) {
     return Point<T>{static_cast<T>(p.getX()), static_cast<T>(p.getY())};
   });
+}
+
+// _____________________________________________________________________________
+template <typename T>
+inline Point<T> pointFromWKT(std::string wkt) {
+  return pointFromWKT<T>(wkt.c_str(), 0);
+}
+
+// _____________________________________________________________________________
+template <typename T>
+inline Point<T> pointFromWKT(std::string wkt,
+    std::function<Point<T>(const Point<double>& p1)> projFunc) {
+  return pointFromWKT<T>(wkt.c_str(), 0, projFunc);
 }
 
 // _____________________________________________________________________________
@@ -3485,6 +3440,19 @@ inline Polygon<T> polygonFromWKT(const char* c, const char** endr) {
   return polygonFromWKT<T>(c, endr, [](const Point<double>& p) {
     return Point<T>{static_cast<T>(p.getX()), static_cast<T>(p.getY())};
   });
+}
+
+// _____________________________________________________________________________
+template <typename T>
+inline Polygon<T> polygonFromWKT(std::string wkt) {
+  return polygonFromWKT<T>(wkt.c_str(), 0);
+}
+
+// _____________________________________________________________________________
+template <typename T>
+inline Polygon<T> polygonFromWKT(std::string wkt,
+    std::function<Point<T>(const Point<double>& p1)> projFunc) {
+  return polygonFromWKT<T>(wkt.c_str(), 0, projFunc);
 }
 
 // _____________________________________________________________________________
@@ -3644,7 +3612,6 @@ Collection<T> collectionFromWKT(
       return {};
     }
 
-    // TODO: getWKTType()
     if (wktType == POINT) {
       const char* end = 0;
       const auto& point = pointFromWKT(c, &end, projFunc);
@@ -3730,8 +3697,22 @@ inline Line<T> lineFromWKT(const std::string& wkt) {
 
 // _____________________________________________________________________________
 template <typename T>
+inline Line<T> lineFromWKT(const std::string& wkt,
+    std::function<Point<T>(const Point<double>& p1)> projFunc) {
+  return lineFromWKT<T>(wkt.c_str(), 0, projFunc);
+}
+
+// _____________________________________________________________________________
+template <typename T>
 inline MultiLine<T> multiLineFromWKT(const std::string& wkt) {
   return multiLineFromWKT<T>(wkt.c_str(), 0);
+}
+
+// _____________________________________________________________________________
+template <typename T>
+inline MultiLine<T> multiLineFromWKT(const std::string& wkt,
+    std::function<Point<T>(const Point<double>& p1)> projFunc) {
+  return multiLineFromWKT<T>(wkt.c_str(), 0, projFunc);
 }
 
 // _____________________________________________________________________________
@@ -3742,8 +3723,22 @@ inline MultiPolygon<T> multiPolygonFromWKT(const std::string& wkt) {
 
 // _____________________________________________________________________________
 template <typename T>
+inline MultiPolygon<T> multiPolygonFromWKT(const std::string& wkt,
+    std::function<Point<T>(const Point<double>& p1)> projFunc) {
+  return multiPolygonFromWKT<T>(wkt.c_str(), 0, projFunc);
+}
+
+// _____________________________________________________________________________
+template <typename T>
 inline Collection<T> collectionFromWKT(const std::string& wkt) {
   return collectionFromWKT<T>(wkt.c_str(), 0);
+}
+
+// _____________________________________________________________________________
+template <typename T>
+inline Collection<T> collectionFromWKT(const std::string& wkt,
+    std::function<Point<T>(const Point<double>& p1)> projFunc) {
+  return collectionFromWKT<T>(wkt.c_str(), 0, projFunc);
 }
 
 // _____________________________________________________________________________

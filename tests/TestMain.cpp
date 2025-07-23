@@ -2399,7 +2399,7 @@ int main(int argc, char** argv) {
 
     TEST(geo::getWKT(a), ==, "POLYGON((0 0,10 0,10 10,0 10,0 0),(4 4,5 4,5 5,4 5,4 4))");
     TEST(geo::getWKT(b.getOuter().front()), ==, "POINT(1 1)");
-    TEST(geo::getWKT(a.getInners().front()), ==, "LINESTRING(4 4,5 4,5 5,4 5)");
+    TEST(geo::getWKT(a.getInners().front()), ==, "LINESTRING(4 4,5 4,5 5,4 5,4 4)");
 
     TEST(geo::contains(b, a));
     TEST(!geo::contains(a, b));
@@ -2422,7 +2422,7 @@ int main(int argc, char** argv) {
 
     TEST(geo::getWKT(a), ==, "POLYGON((0 0,10 0,10 10,0 10,0 0),(4 4,5 4,5 5,4 5,4 4))");
     TEST(geo::getWKT(b.getOuter().front()), ==, "POINT(1 1)");
-    TEST(geo::getWKT(a.getInners().front()), ==, "LINESTRING(4 4,5 4,5 5,4 5)");
+    TEST(geo::getWKT(a.getInners().front()), ==, "LINESTRING(4 4,5 4,5 5,4 5,4 4)");
 
     TEST(geo::contains(b, a));
     TEST(!geo::contains(a, b));
