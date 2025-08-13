@@ -1949,64 +1949,6 @@ inline std::tuple<bool, bool, bool, bool, bool> intersectsLinePoly(
 
 // _____________________________________________________________________________
 template <typename T>
-inline std::tuple<bool, bool, bool, bool, bool> intersectsCovers(
-    const std::vector<XSortedTuple<T>>& ls1,
-    const std::vector<XSortedTuple<T>>& ls2, T maxSegLenA, T maxSegLenB,
-    const Box<T>& boxA, const Box<T>& boxB, size_t* firstRelIn1,
-    size_t* firstRelIn2) {
-  uint8_t ret = intersectsHelper<T, IntersectorLine>(
-      ls1, ls2, maxSegLenA, maxSegLenB, boxA, boxB, firstRelIn1, firstRelIn2);
-
-  const bool weakIntersect = ret;
-  const bool strictIntersect = (ret >> 0) & 1;
-  const bool overlaps = (ret >> 1) & 1;
-  const bool bFirstInA = (ret >> 2) & 1;
-  const bool bSecondInA = (ret >> 3) & 1;
-  const bool aFirstInB = (ret >> 6) & 1;
-  const bool aSecondInB = (ret >> 7) & 1;
-  const bool crosses = (ret >> 4) & 1;
-  const bool strictIntersect2 = (ret >> 5) & 1;
-  const bool touches = aFirstInB || aSecondInB || bFirstInA || bSecondInA;
-
-  const bool aInB = !crosses && !strictIntersect && weakIntersect;
-  const bool bInA = !crosses && !strictIntersect2 && weakIntersect;
-
-  return {
-      weakIntersect,                                  // intersects
-      !crosses && !strictIntersect && weakIntersect,  // covers
-      !crosses && touches && !overlaps,               // touches
-      overlaps && !aInB && !bInA,                     // overlaps
-      crosses && !overlaps  // is this OGC conform?         // crosses
-  };
-}
-
-// _____________________________________________________________________________
-template <typename T>
-inline std::tuple<bool, bool, bool, bool, bool> intersectsCovers(
-    const std::vector<XSortedTuple<T>>& ls1,
-    const std::vector<XSortedTuple<T>>& ls2, T maxSegLenA, T maxSegLenB) {
-  return intersectsCovers(
-      ls1, ls2, maxSegLenA, maxSegLenB,
-      util::geo::Box<T>(
-          {std::numeric_limits<T>::min(), std::numeric_limits<T>::min()},
-          {std::numeric_limits<T>::max(), std::numeric_limits<T>::max()}),
-      util::geo::Box<T>(
-          {std::numeric_limits<T>::min(), std::numeric_limits<T>::min()},
-          {std::numeric_limits<T>::max(), std::numeric_limits<T>::max()}),
-      0, 0);
-}
-
-// _____________________________________________________________________________
-template <typename T>
-inline std::tuple<bool, bool, bool, bool, bool> intersectsCovers(
-    const std::vector<XSortedTuple<T>>& ls1,
-    const std::vector<XSortedTuple<T>>& ls2) {
-  return intersectsCovers(ls1, ls2, std::numeric_limits<T>::max(),
-                          std::numeric_limits<T>::max());
-}
-
-// _____________________________________________________________________________
-template <typename T>
 inline DE9IMatrix DE9IM(const util::geo::XSortedLine<T>& a,
                         const util::geo::XSortedLine<T>& b, const Box<T>& boxA,
                         const Box<T>& boxB, size_t* firstRelIn1,
@@ -3434,9 +3376,32 @@ inline std::tuple<bool, bool, bool, bool, bool> intersectsCovers(
     const util::geo::XSortedLine<T>& a, const util::geo::XSortedLine<T>& b,
     const Box<T>& boxA, const Box<T>& boxB, size_t* firstRelIn1,
     size_t* firstRelIn2) {
-  return util::geo::intersectsCovers(a.rawLine(), b.rawLine(), a.getMaxSegLen(),
-                                     b.getMaxSegLen(), boxA, boxB, firstRelIn1,
-                                     firstRelIn2);
+  uint8_t ret = intersectsHelper<T, IntersectorLine>(
+      a.rawLine(), b.rawLine(), a.getMaxSegLen(), b.getMaxSegLen(), boxA, boxB, firstRelIn1, firstRelIn2);
+
+  const bool weakIntersect = ret;
+  const bool strictIntersect = (ret >> 0) & 1;
+  const bool overlaps = (ret >> 1) & 1;
+  const bool bFirstInA = (ret >> 2) & 1;
+  const bool bSecondInA = (ret >> 3) & 1;
+  const bool aFirstInB = (ret >> 6) & 1;
+  const bool aSecondInB = (ret >> 7) & 1;
+  const bool crosses = (ret >> 4) & 1;
+  const bool strictIntersect2 = (ret >> 5) & 1;
+  const bool touches = aFirstInB || aSecondInB || bFirstInA || bSecondInA ||
+      a.firstPoint() == b.firstPoint() || a.lastPoint() == b.firstPoint() ||
+       a.lastPoint() == b.lastPoint() || a.firstPoint() == b.lastPoint();
+
+  const bool aInB = !crosses && !strictIntersect && weakIntersect;
+  const bool bInA = !crosses && !strictIntersect2 && weakIntersect;
+
+  return {
+      weakIntersect,                                  // intersects
+      !crosses && !strictIntersect && weakIntersect,  // covers
+      !crosses && touches && !overlaps,               // touches
+      overlaps && !aInB && !bInA,                     // overlaps
+      crosses && !overlaps  // is this OGC conform?         // crosses
+  };
 }
 
 // _____________________________________________________________________________
@@ -3444,8 +3409,7 @@ template <typename T>
 inline std::tuple<bool, bool, bool, bool, bool> intersectsCovers(
     const util::geo::XSortedLine<T>& a, const util::geo::XSortedLine<T>& b,
     const Box<T>& boxA, const Box<T>& boxB) {
-  return util::geo::intersectsCovers(a.rawLine(), b.rawLine(), a.getMaxSegLen(),
-                                     b.getMaxSegLen(), boxA, boxB, 0, 0);
+  return util::geo::intersectsCovers(a, b, boxA, boxB, 0, 0);
 }
 
 // _____________________________________________________________________________
