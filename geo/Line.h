@@ -24,7 +24,9 @@ template <typename T>
 struct AngledLineSegment {
   LineSegment<T> seg;
   int16_t prevAng;
+  bool firstIsBoundary;
   int16_t nextAng;
+  bool secondIsBoundary;
 };
 
 // _____________________________________________________________________________
@@ -75,6 +77,8 @@ struct XSortedTuple {
   // bit 1, and whether this element is an out event on bit 0. Bit 2 is 1 if
   // the line is completely empty.
   // bit 3 holds whether the line segment was reversed due to the x order
+  // bit 4 holds whether the first segment point was part of the boundary
+  // bit 5 holds whether the second segment point was part of the boundary
   // for 64bit points, we thus safe 16 bytes (~29%), which let's more
   // XSortedTuples fit into the CPU caches during tests for intersect / contains
   // (in particular the binary search during startup), and also makes for faster
@@ -83,7 +87,7 @@ struct XSortedTuple {
   Point<T> other;
   int16_t outAngle;
   int16_t inAngle;
-  uint8_t vals : 4;
+  uint8_t vals;
 
   XSortedTuple() {}
   XSortedTuple(const Point<T>& p, bool out) : p(p), vals(0) {
@@ -92,6 +96,10 @@ struct XSortedTuple {
   }
   XSortedTuple(const Point<T>& p, const LineSegment<T>& seg, bool rev,
                double prevAngle, double nextAngle, bool out)
+      : XSortedTuple(p, seg, rev, prevAngle, nextAngle, false, false, out) {}
+  XSortedTuple(const Point<T>& p, const LineSegment<T>& seg, bool rev,
+               double prevAngle, double nextAngle, bool firstIsBoundary,
+               bool secondIsBoundary, bool out)
       : p(p), vals(0) {
     if (out) vals = 1;
     if (rev) vals += 8;
@@ -106,6 +114,9 @@ struct XSortedTuple {
 
     if (nextAngle > M_PI) outAngle = 32767;
     if (prevAngle > M_PI) inAngle = 32767;
+
+    if (firstIsBoundary) vals += 16;
+    if (secondIsBoundary) vals += 32;
   }
 
   double nextAng() const { return ((1.0 * outAngle) / 32766.0) * M_PI; }
@@ -113,6 +124,9 @@ struct XSortedTuple {
 
   int16_t rawNextAng() const { return outAngle; }
   int16_t rawPrevAng() const { return inAngle; }
+
+  bool firstIsBoundary() const { return vals & 16; }
+  bool secondIsBoundary() const { return vals & 32; }
 
   LineSegment<T> seg() const {
     if (vals & 4) return {{0, 0}, {0, 0}};
@@ -135,15 +149,15 @@ struct XSortedTuple {
 
   AngledLineSegment<T> origSegAng() const {
     if (vals & 4) {
-      return {{{0, 0}, {0, 0}}, rawPrevAng(), rawNextAng()};
+      return {{{0, 0}, {0, 0}}, rawPrevAng(), firstIsBoundary(), rawNextAng(), secondIsBoundary()};
     }
     if (vals & 2) {
-      if (vals & 8) return {{other, p}, rawPrevAng(), rawNextAng()};
-      return {{p, other}, rawPrevAng(), rawNextAng()};
+      if (vals & 8) return {{other, p}, rawPrevAng(), firstIsBoundary(), rawNextAng(), secondIsBoundary()};
+      return {{p, other}, rawPrevAng(), firstIsBoundary(), rawNextAng(), secondIsBoundary()};
     }
 
-    if (vals & 8) return {{p, other}, rawPrevAng(), rawNextAng()};
-    return {{other, p}, rawPrevAng(), rawNextAng()};
+    if (vals & 8) return {{p, other}, rawPrevAng(), firstIsBoundary(), rawNextAng(), secondIsBoundary()};
+    return {{other, p}, rawPrevAng(), firstIsBoundary(), rawNextAng(), secondIsBoundary()};
   }
 
   bool out() const { return vals & 1; }
@@ -289,33 +303,39 @@ class XSortedLine {
       T len = fabs(line[i - 1].getX() - line[i].getX());
       if (len > _maxSegLen) _maxSegLen = len;
 
-      double prevAng = M_PI;
-      double nextAng = M_PI;
+      double prevAng = 0;
+      double nextAng = 0;
 
-      int64_t prev = i - 2;
+      size_t prev;
 
-      while (prev >= 0 && line[prev].getX() == line[i - 1].getX() &&
-             line[prev].getY() == line[i - 1].getY()) {
-        prev = prev - 1;
+      if (i > 1)
+        prev = i - 2;
+      else
+        prev = line.size() - 1;
+
+      while (line[prev].getX() == line[i - 1].getX() &&
+             line[prev].getY() == line[i - 1].getY() && prev != i - 1) {
+        if (prev > 0)
+          prev = prev - 1;
+        else
+          prev = line.size() - 1;
       }
 
-      if (prev >= 0) {
-        prevAng = util::geo::angBetween(line[i - 1], line[prev]);
+      prevAng = util::geo::angBetween(line[i - 1], line[prev]);
+
+      size_t next = (i + 1) % line.size();
+
+      while (line[next].getX() == line[i].getX() &&
+             line[next].getY() == line[i].getY() && next != i) {
+        next = (next + 1) % line.size();
       }
 
-      size_t next = i + 1;
+      nextAng = util::geo::angBetween(line[i], line[next]);
 
-      while (next < line.size() && line[next].getX() == line[i].getX() &&
-             line[next].getY() == line[i].getY()) {
-        next = next + 1;
+      if (line.front() != line.back()) {
+        if (i == 1) prevAng = 2 * M_PI;
+        if (i == line.size() - 1) nextAng = 2 * M_PI;
       }
-
-      if (next < line.size()) {
-        nextAng = util::geo::angBetween(line[i], line[next]);
-      }
-
-      if (i == 1) prevAng = 2 * M_PI;
-      if (i == line.size() - 1) nextAng = 2 * M_PI;
 
       if (line[i - 1].getX() < line[i].getX()) {
         _line.push_back({line[i - 1],
@@ -323,17 +343,33 @@ class XSortedLine {
                          false,
                          prevAng,
                          nextAng,
+                         i == 1,
+                         i == line.size() - 1,
                          false});
-        _line.push_back(
-            {line[i], {line[i - 1], line[i]}, false, prevAng, nextAng, true});
+        _line.push_back({line[i],
+                         {line[i - 1], line[i]},
+                         false,
+                         prevAng,
+                         nextAng,
+                         i == 1,
+                         i == line.size() - 1,
+                         true});
       } else {
-        _line.push_back(
-            {line[i], {line[i], line[i - 1]}, true, prevAng, nextAng, false});
+        _line.push_back({line[i],
+                         {line[i], line[i - 1]},
+                         true,
+                         prevAng,
+                         nextAng,
+                         i == 1,
+                         i == line.size() - 1,
+                         false});
         _line.push_back({line[i - 1],
                          {line[i], line[i - 1]},
                          true,
                          prevAng,
                          nextAng,
+                         i == 1,
+                         i == line.size() - 1,
                          true});
       }
     }
@@ -346,17 +382,21 @@ class XSortedLine {
     if (line.first.getX() < line.second.getX()) {
       _line[0] = {line.first, {line.first, line.second},
                   false,      2 * M_PI,
-                  2 * M_PI,   false};
+                  2 * M_PI,   true,
+                  true,       false};
       _line[1] = {line.second, {line.first, line.second},
                   false,       2 * M_PI,
-                  2 * M_PI,    true};
+                  2 * M_PI,    true,
+                  true,        true};
     } else {
       _line[0] = {line.second, {line.second, line.first},
                   true,        2 * M_PI,
-                  2 * M_PI,    false};
+                  2 * M_PI,    true,
+                  true,        false};
       _line[1] = {line.first, {line.second, line.first},
                   true,       2 * M_PI,
-                  2 * M_PI,   true};
+                  2 * M_PI,   true,
+                  true,       true};
     }
     _maxSegLen = fabs(line.first.getX() - line.second.getX());
     _first = line.first;
@@ -364,7 +404,8 @@ class XSortedLine {
   }
 
   bool operator==(const XSortedLine<T>& other) const {
-    return _maxSegLen == other._maxSegLen && _line == other._line && _first == other._first && _last == other._last;
+    return _maxSegLen == other._maxSegLen && _line == other._line &&
+           _first == other._first && _last == other._last;
   }
 
   size_t size() const { return _line.size(); }

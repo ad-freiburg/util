@@ -111,25 +111,25 @@ typedef XSortedMultiPolygon<int64_t> I64XSortedMultiPolygon;
 
 template <typename T>
 struct IntersectorLinePoly {
-  static uint8_t check(const LineSegment<T>& ls1, int16_t prevLs1Ang,
-                       int16_t nextLs1Ang, const LineSegment<T>& ls2,
-                       int16_t prevLs2Ang, int16_t nextLs2Ang);
+  static uint8_t check(const LineSegment<T>& ls1, int16_t prevLs1Ang, bool,
+                       int16_t nextLs1Ang, bool, const LineSegment<T>& ls2,
+                       int16_t prevLs2Ang, bool, int16_t nextLs2Ang, bool);
 };
 
 template <typename T>
 struct IntersectorPoly {
-  static uint8_t check(const LineSegment<T>& ls1, int16_t prevLs1Ang,
-                       int16_t nextLs1Ang, const LineSegment<T>& ls2, int16_t,
-                       int16_t);
+  static uint8_t check(const LineSegment<T>& ls1, int16_t prevLs1Ang, bool,
+                       int16_t nextLs1Ang, bool, const LineSegment<T>& ls2, int16_t, bool,
+                       int16_t, bool);
   static uint8_t checkOneDir(const LineSegment<T>& ls1, int16_t prevLs1Ang,
                              int16_t nextLs1Ang, const LineSegment<T>& ls2);
 };
 
 template <typename T>
 struct IntersectorLine {
-  static uint8_t check(const LineSegment<T>& ls1, int16_t prevLs1Ang,
-                       int16_t nextLs1Ang, const LineSegment<T>& ls2,
-                       int16_t prevLs2Ang, int16_t nextLs2Ang);
+  static uint8_t check(const LineSegment<T>& ls1, int16_t prevLs1Ang, bool,
+                       int16_t nextLs1Ang, bool, const LineSegment<T>& ls2,
+                       int16_t prevLs2Ang, bool, int16_t nextLs2Ang, bool);
 };
 
 const static double EPSILON = 0.0000001;
@@ -1731,9 +1731,9 @@ inline uint8_t intersectsHelper(const std::vector<XSortedTuple<T>>& ls1,
           auto a = above;
 
           do {
-            auto r = C<T>::check(above->seg, above->prevAng, above->nextAng,
-                                 ls1[i].origSeg(), ls1[i].rawPrevAng(),
-                                 ls1[i].rawNextAng());
+            auto r = C<T>::check(above->seg, above->prevAng, above->firstIsBoundary, above->nextAng, above->secondIsBoundary,
+                                 ls1[i].origSeg(), ls1[i].rawPrevAng(), ls1[i].firstIsBoundary(),
+                                 ls1[i].rawNextAng(), ls1[i].secondIsBoundary());
             ret |= r;
 
             if (!r) break;
@@ -1746,8 +1746,8 @@ inline uint8_t intersectsHelper(const std::vector<XSortedTuple<T>>& ls1,
           auto a = aa;
           do {
             auto r =
-                C<T>::check(a->seg, a->prevAng, a->nextAng, ls1[i].origSeg(),
-                            ls1[i].rawPrevAng(), ls1[i].rawNextAng());
+                C<T>::check(a->seg, a->prevAng, a->firstIsBoundary, a->nextAng, a->secondIsBoundary, ls1[i].origSeg(),
+                            ls1[i].rawPrevAng(), ls1[i].firstIsBoundary(), ls1[i].rawNextAng(), ls1[i].secondIsBoundary());
             ret |= r;
 
             if (!r || a == active2.begin()) break;
@@ -1767,8 +1767,8 @@ inline uint8_t intersectsHelper(const std::vector<XSortedTuple<T>>& ls1,
               bool found = false;
               auto aa = above;
               do {
-                auto r = C<T>::check(aa->seg, aa->prevAng, aa->nextAng, b->seg,
-                                     b->prevAng, b->nextAng);
+                auto r = C<T>::check(aa->seg, aa->prevAng, aa->firstIsBoundary, aa->nextAng, aa->secondIsBoundary, b->seg,
+                                     b->prevAng, b->firstIsBoundary, b->nextAng, b->secondIsBoundary);
                 ret |= r;
 
                 if (!r) break;
@@ -1790,8 +1790,8 @@ inline uint8_t intersectsHelper(const std::vector<XSortedTuple<T>>& ls1,
               auto a = aa;
               bool found = false;
               do {
-                auto r = C<T>::check(a->seg, a->prevAng, a->nextAng, b->seg,
-                                     b->prevAng, b->nextAng);
+                auto r = C<T>::check(a->seg, a->prevAng, a->firstIsBoundary, a->nextAng, a->secondIsBoundary, b->seg,
+                                     b->prevAng, b->firstIsBoundary, b->nextAng, b->secondIsBoundary);
                 ret |= r;
                 if (!r) break;
                 found = true;
@@ -1839,9 +1839,9 @@ inline uint8_t intersectsHelper(const std::vector<XSortedTuple<T>>& ls1,
         if (above != active1.end()) {
           auto a = above;
           do {
-            auto r = C<T>::check(ls2[j].origSeg(), ls2[j].rawPrevAng(),
-                                 ls2[j].rawNextAng(), a->seg, a->prevAng,
-                                 a->nextAng);
+            auto r = C<T>::check(ls2[j].origSeg(), ls2[j].rawPrevAng(), ls2[j].firstIsBoundary(),
+                                 ls2[j].rawNextAng(), ls2[j].secondIsBoundary(), a->seg, a->prevAng, a->firstIsBoundary,
+                                 a->nextAng, a->secondIsBoundary);
             ret |= r;
             if (!r) break;
             a = std::next(a);
@@ -1852,9 +1852,9 @@ inline uint8_t intersectsHelper(const std::vector<XSortedTuple<T>>& ls1,
           auto aa = std::prev(above);
           auto a = aa;
           do {
-            auto r = C<T>::check(ls2[j].origSeg(), ls2[j].rawPrevAng(),
-                                 ls2[j].rawNextAng(), a->seg, a->prevAng,
-                                 a->nextAng);
+            auto r = C<T>::check(ls2[j].origSeg(), ls2[j].rawPrevAng(), ls2[j].firstIsBoundary(),
+                                 ls2[j].rawNextAng(), ls2[j].secondIsBoundary(), a->seg, a->prevAng, a->firstIsBoundary,
+                                 a->nextAng, a->secondIsBoundary);
             ret |= r;
             if (!r || a == active1.begin()) break;
             a = std::prev(a);
@@ -1873,8 +1873,8 @@ inline uint8_t intersectsHelper(const std::vector<XSortedTuple<T>>& ls1,
               auto aa = above;
               bool found = false;
               do {
-                auto r = C<T>::check(b->seg, b->prevAng, b->nextAng, aa->seg,
-                                     aa->prevAng, aa->nextAng);
+                auto r = C<T>::check(b->seg, b->prevAng, b->firstIsBoundary, b->nextAng, b->secondIsBoundary, aa->seg,
+                                     aa->prevAng, aa->firstIsBoundary, aa->nextAng, aa->secondIsBoundary);
                 ret |= r;
                 if (!r) break;
                 found = true;
@@ -1895,8 +1895,8 @@ inline uint8_t intersectsHelper(const std::vector<XSortedTuple<T>>& ls1,
               auto a = aa;
               bool found = false;
               do {
-                auto r = C<T>::check(b->seg, b->prevAng, b->nextAng, a->seg,
-                                     a->prevAng, a->nextAng);
+                auto r = C<T>::check(b->seg, b->prevAng, b->firstIsBoundary, b->nextAng, b->secondIsBoundary, a->seg,
+                                     a->prevAng, a->firstIsBoundary, a->nextAng, a->secondIsBoundary);
                 ret |= r;
                 if (!r) break;
                 found = true;
@@ -2019,38 +2019,34 @@ inline DE9IMatrix DE9IM(const util::geo::XSortedLine<T>& a,
 
   const bool strictIntersect = (ret >> 0) & 1;
   const bool overlaps = (ret >> 1) & 1;
-  const bool aFirstInB = (ret >> 6) & 1;
-  const bool aSecondInB = (ret >> 7) & 1;
   const bool crosses = (ret >> 4) & 1;
   const bool strictIntersect2 = (ret >> 5) & 1;
   const bool bFirstInA = (ret >> 2) & 1;
-  const bool bSecondInA = (ret >> 3) & 1;
+  const bool bLastInA = (ret >> 3) & 1;
+  const bool aFirstInB = (ret >> 6) & 1;
+  const bool aLastInB = (ret >> 7) & 1;
 
   const bool aInB = !crosses && !strictIntersect && weakIntersect;
   const bool bInA = !crosses && !strictIntersect2 && weakIntersect;
 
+  bool aFirstOnBoundary = a.firstPoint() == b.firstPoint() || a.firstPoint() == b.lastPoint();
+  bool aLastOnBoundary = a.lastPoint() == b.firstPoint() || a.lastPoint() == b.lastPoint();
+
+  bool bFirstOnBoundary = b.firstPoint() == a.firstPoint() || b.firstPoint() == a.lastPoint();
+  bool bLastOnBoundary = b.lastPoint() == a.firstPoint() || b.lastPoint() == a.lastPoint();
+
   char ii = overlaps ? '1' : (crosses ? '0' : 'F');
-  char ib = ((bFirstInA && b.firstPoint() != a.firstPoint() &&
-              b.firstPoint() != a.lastPoint()) ||
-             (bSecondInA && b.lastPoint() != a.firstPoint() &&
-              b.lastPoint() != a.lastPoint()))
-                ? '0'
-                : 'F';
+  char ib = (bFirstInA || bLastInA) ? '0' : 'F';
   char ie = aInB ? 'F' : '1';
-  char bi = ((aFirstInB && a.firstPoint() != b.firstPoint() &&
-              a.firstPoint() != b.lastPoint()) ||
-             (aSecondInB && a.lastPoint() != b.firstPoint() &&
-              a.lastPoint() != b.lastPoint()))
-                ? '0'
-                : 'F';
+  char bi = ((aFirstInB && !aFirstOnBoundary) || (aLastInB && !aLastOnBoundary) ) ? '0' : 'F';
   char bb =
       (a.firstPoint() == b.firstPoint() || a.lastPoint() == b.firstPoint() ||
        a.lastPoint() == b.lastPoint() || a.firstPoint() == b.lastPoint())
           ? '0'
           : 'F';
-  char be = !(aFirstInB && aSecondInB) ? '0' : 'F';
+  char be = ((aFirstInB || aFirstOnBoundary) && (aLastInB || aLastOnBoundary)) ? 'F' : '0';
   char ei = bInA ? 'F' : '1';
-  char eb = !(bFirstInA && bSecondInA) ? '0' : 'F';
+  char eb = ((bFirstInA || bFirstOnBoundary) && (bLastInA || bLastOnBoundary)) ? 'F' : '0';
   char ee = '2';
 
   return std::string{ii, ib, ie, bi, bb, be, ei, eb, ee};
@@ -2086,9 +2082,9 @@ intersectsPoly(const XSortedRing<T>& ls1, const XSortedRing<T>& ls2,
 
 // _____________________________________________________________________________
 template <typename T>
-uint8_t IntersectorLine<T>::check(const LineSegment<T>& ls1, int16_t prevLs1Ang,
-                                  int16_t nextLs1Ang, const LineSegment<T>& ls2,
-                                  int16_t prevLs2Ang, int16_t nextLs2Ang) {
+uint8_t IntersectorLine<T>::check(const LineSegment<T>& ls1, int16_t prevLs1Ang, bool ls1FirstIsBoundary,
+                                  int16_t nextLs1Ang, bool ls1SecondIsBoundary, const LineSegment<T>& ls2,
+                                  int16_t prevLs2Ang, bool ls2FirstIsBoundary, int16_t nextLs2Ang, bool ls2SecondIsBoundary) {
   // {strictly intersects, overlaps, ls1.first inside ls2, ls1.last inside ls2,
   // crosses, strictly intersects ls2/ls1, ls2.first inside ls1, ls2.last inside
   // ls1}
@@ -2103,30 +2099,42 @@ uint8_t IntersectorLine<T>::check(const LineSegment<T>& ls1, int16_t prevLs1Ang,
 
   // ls1 and ls2 are equivalent
   if (ls2FirstInLs1 && ls2SecondInLs1 && ls1FirstInLs2 && ls1SecondInLs2) {
-    return boolArrToInt8({0, 1, prevLs1Ang == 32767, nextLs1Ang == 32767, 0, 0,
-                          prevLs2Ang == 32767, nextLs2Ang == 32767});
+    return boolArrToInt8({0, 1, ls1FirstIsBoundary && ((ls1.first == ls2.first && !ls2FirstIsBoundary) || (ls1.first == ls2.second && !ls2SecondIsBoundary)), ls1SecondIsBoundary && ((ls1.second == ls2.first && !ls2FirstIsBoundary) || (ls1.second == ls2.second && !ls2SecondIsBoundary)), 0, 0,
+                          ls2FirstIsBoundary && ((ls2.first == ls1.first && !ls1FirstIsBoundary) || (ls2.first == ls1.second && !ls1SecondIsBoundary)), ls2SecondIsBoundary && ((ls2.second == ls1.first && !ls1FirstIsBoundary) || (ls2.second == ls1.second && !ls1SecondIsBoundary))});
   }
 
   // ls2 is completely in ls1
   if (ls2FirstInLs1 && ls2SecondInLs1) {
     int32_t ang1 = ((angBetween(ls2.first, ls2.second) / M_PI) * 32766);
+    if (nextLs2Ang == 32767 &&
+        (ls2.second == ls1.first || ls2.second == ls1.second))
+      ang1 = 32767;
+
     int32_t ang2 = ((angBetween(ls2.second, ls2.first) / M_PI) * 32766);
-    if (prevLs2Ang == ang2 && nextLs2Ang == ang1)
-      return boolArrToInt8(
-          {0, 1, 0, 0, 0, 0, prevLs2Ang == 32767, nextLs2Ang == 32767});
-    return boolArrToInt8(
-        {0, 1, 0, 0, 0, 1, prevLs2Ang == 32767, nextLs2Ang == 32767});
+    if (prevLs2Ang == 32767 &&
+        (ls2.first == ls1.first || ls2.first == ls1.second))
+      ang2 = 32767;
+
+    return boolArrToInt8({0, 1, 0, 0,
+                          0, prevLs2Ang == ang2 && nextLs2Ang == ang1 ? 0 : 1,
+                          ls2FirstIsBoundary, ls2SecondIsBoundary});
   }
 
   // ls1 is completely in ls2
   if (ls1FirstInLs2 && ls1SecondInLs2) {
     int32_t ang1 = ((angBetween(ls1.first, ls1.second) / M_PI) * 32766);
+    if (nextLs1Ang == 32767 &&
+        (ls1.second == ls2.first || ls1.second == ls2.second))
+      ang1 = 32767;
+
     int32_t ang2 = ((angBetween(ls1.second, ls1.first) / M_PI) * 32766);
-    if (prevLs1Ang == ang2 && nextLs1Ang == ang1)
-      return boolArrToInt8(
-          {0, 1, prevLs1Ang == 32767, nextLs1Ang == 32767, 0, 0, 0, 0});
-    return boolArrToInt8(
-        {1, 1, prevLs1Ang == 32767, nextLs1Ang == 32767, 0, 0, 0, 0});
+    if (prevLs1Ang == 32767 &&
+        (ls1.first == ls2.first || ls1.first == ls2.second))
+      ang2 = 32767;
+
+    return boolArrToInt8({prevLs1Ang == ang2 && nextLs1Ang == ang1 ? 0 : 1, 1,
+                          ls1FirstIsBoundary && !(ls2FirstIsBoundary && ls1.first == ls2.first) && !(ls2SecondIsBoundary && ls1.first == ls2.second), ls1SecondIsBoundary && !(ls2FirstIsBoundary && ls1.second == ls2.first) && !(ls2SecondIsBoundary && ls1.second == ls2.second), 0, 0,
+                          0, 0});
   }
 
   if (ls1.first == ls2.first && !ls1SecondInLs2 && !ls2SecondInLs1) {
@@ -2135,10 +2143,10 @@ uint8_t IntersectorLine<T>::check(const LineSegment<T>& ls1, int16_t prevLs1Ang,
 
     return boolArrToInt8(
         {prevLs1Ang != ang1, prevLs1Ang == ang1 || prevLs2Ang == ang2,
-         prevLs1Ang == 32767, 0,
+         ls1FirstIsBoundary && !ls2FirstIsBoundary, 0,
          prevLs2Ang != ang2 && prevLs1Ang != ang1 && prevLs1Ang != 32767 &&
              prevLs2Ang != 32767 && prevLs2Ang != prevLs1Ang,
-         prevLs2Ang != ang2, prevLs2Ang == 32767, 0});
+         prevLs2Ang != ang2, ls2FirstIsBoundary && !ls1FirstIsBoundary, 0});
   }
 
   if (ls1.first == ls2.second && !ls1SecondInLs2 && !ls2FirstInLs1) {
@@ -2147,10 +2155,10 @@ uint8_t IntersectorLine<T>::check(const LineSegment<T>& ls1, int16_t prevLs1Ang,
 
     return boolArrToInt8(
         {prevLs1Ang != ang1, prevLs1Ang == ang1 || nextLs2Ang == ang2,
-         prevLs1Ang == 32767, 0,
+         ls1FirstIsBoundary && !ls2SecondIsBoundary, 0,
          nextLs2Ang != ang2 && prevLs1Ang != ang1 && prevLs1Ang != 32767 &&
              nextLs2Ang != 32767 && prevLs1Ang != nextLs2Ang,
-         nextLs2Ang != ang2, 0, nextLs2Ang == 32767});
+         nextLs2Ang != ang2, 0, ls2SecondIsBoundary && !ls1FirstIsBoundary});
   }
 
   if (ls1.second == ls2.first && !ls1FirstInLs2 && !ls2SecondInLs1) {
@@ -2159,10 +2167,10 @@ uint8_t IntersectorLine<T>::check(const LineSegment<T>& ls1, int16_t prevLs1Ang,
 
     return boolArrToInt8(
         {nextLs1Ang != ang1, nextLs1Ang == ang1 || prevLs2Ang == ang2, 0,
-         nextLs1Ang == 32767,
+         ls1SecondIsBoundary && !ls2FirstIsBoundary,
          prevLs2Ang != ang2 && nextLs1Ang != ang1 && nextLs1Ang != 32767 &&
              prevLs2Ang != 32767 && prevLs2Ang != nextLs1Ang,
-         prevLs2Ang != ang2, prevLs2Ang == 32767, 0});
+         prevLs2Ang != ang2, ls2FirstIsBoundary && !ls1SecondIsBoundary, 0});
   }
 
   if (ls1.second == ls2.second && !ls1FirstInLs2 && !ls2FirstInLs1) {
@@ -2171,38 +2179,38 @@ uint8_t IntersectorLine<T>::check(const LineSegment<T>& ls1, int16_t prevLs1Ang,
 
     return boolArrToInt8(
         {ang1 != nextLs1Ang, ang1 == nextLs1Ang || ang2 == nextLs2Ang, 0,
-         nextLs1Ang == 32767,
+         ls1SecondIsBoundary && !ls2SecondIsBoundary,
          nextLs2Ang != ang2 && nextLs1Ang != ang1 && nextLs1Ang != 32767 &&
              nextLs2Ang != 32767 && nextLs1Ang != nextLs2Ang,
-         nextLs2Ang != ang2, 0, nextLs2Ang == 32767});
+         nextLs2Ang != ang2, 0, ls2SecondIsBoundary && !ls1SecondIsBoundary});
   }
 
   if (ls2FirstInLs1 && ls1SecondInLs2) {
     int32_t ang1 = ((angBetween(ls1.first, ls1.second) / M_PI) * 32766);
     int32_t ang2 = ((angBetween(ls2.second, ls2.first) / M_PI) * 32766);
-    return boolArrToInt8({nextLs1Ang != ang1, 1, 0, nextLs1Ang == 32767, 0,
-                          prevLs2Ang != ang2, prevLs2Ang == 32767, 0});
+    return boolArrToInt8({nextLs1Ang != ang1, 1, 0, ls1SecondIsBoundary, 0,
+                          prevLs2Ang != ang2, ls2FirstIsBoundary, 0});
   }
 
   if (ls2SecondInLs1 && ls1SecondInLs2) {
     int32_t ang1 = ((angBetween(ls1.first, ls1.second) / M_PI) * 32766);
     int32_t ang2 = ((angBetween(ls2.first, ls2.second) / M_PI) * 32766);
-    return boolArrToInt8({nextLs1Ang != ang1, 1, 0, nextLs1Ang == 32767, 0,
-                          nextLs2Ang != ang2, 0, nextLs2Ang == 32767});
+    return boolArrToInt8({nextLs1Ang != ang1, 1, 0, ls1SecondIsBoundary, 0,
+                          nextLs2Ang != ang2, 0, ls2SecondIsBoundary});
   }
 
   if (ls2FirstInLs1 && ls1FirstInLs2) {
     int32_t ang1 = ((angBetween(ls1.second, ls1.first) / M_PI) * 32766);
     int32_t ang2 = ((angBetween(ls2.second, ls2.first) / M_PI) * 32766);
-    return boolArrToInt8({prevLs1Ang != ang1, 1, prevLs1Ang == 32767, 0, 0,
-                          prevLs2Ang != ang2, prevLs2Ang == 32767, 0});
+    return boolArrToInt8({prevLs1Ang != ang1, 1, ls1FirstIsBoundary, 0, 0,
+                          prevLs2Ang != ang2, ls2FirstIsBoundary, 0});
   }
 
   if (ls2SecondInLs1 && ls1FirstInLs2) {
     int16_t ang1 = ((angBetween(ls1.second, ls1.first) / M_PI) * 32766);
     int16_t ang2 = ((angBetween(ls2.first, ls2.second) / M_PI) * 32766);
-    return boolArrToInt8({prevLs1Ang != ang1, 1, prevLs1Ang == 32767, 0, 0,
-                          nextLs2Ang != ang2, 0, nextLs2Ang == 32767});
+    return boolArrToInt8({prevLs1Ang != ang1, 1, ls1FirstIsBoundary, 0, 0,
+                          nextLs2Ang != ang2, 0, ls2SecondIsBoundary});
   }
 
   if (contains(ls1.second, ls2) && !ls1FirstInLs2 && !ls2FirstInLs1 &&
@@ -2211,7 +2219,7 @@ uint8_t IntersectorLine<T>::check(const LineSegment<T>& ls1, int16_t prevLs1Ang,
     int16_t ang2 = (angBetween(ls2.second, ls2.first) / M_PI) * 32766;
 
     return boolArrToInt8(
-        {1, nextLs1Ang == ang1 || nextLs1Ang == ang2, 0, nextLs1Ang == 32767,
+        {1, nextLs1Ang == ang1 || nextLs1Ang == ang2, 0, ls1SecondIsBoundary,
          nextLs1Ang != 32767 && nextLs1Ang != ang1 && nextLs1Ang != ang2, 1, 0,
          0});
   }
@@ -2221,7 +2229,7 @@ uint8_t IntersectorLine<T>::check(const LineSegment<T>& ls1, int16_t prevLs1Ang,
     int16_t ang2 = (angBetween(ls2.second, ls2.first) / M_PI) * 32766;
 
     return boolArrToInt8(
-        {1, prevLs1Ang == ang1 || prevLs1Ang == ang2, prevLs1Ang == 32767, 0,
+        {1, prevLs1Ang == ang1 || prevLs1Ang == ang2, ls1FirstIsBoundary, 0,
          prevLs1Ang != 32767 && prevLs1Ang != ang1 && prevLs1Ang != ang2, 1, 0,
          0});
   }
@@ -2233,7 +2241,7 @@ uint8_t IntersectorLine<T>::check(const LineSegment<T>& ls1, int16_t prevLs1Ang,
     return boolArrToInt8(
         {1, prevLs2Ang == ang1 || prevLs2Ang == ang2, 0, 0,
          prevLs2Ang != 32767 && prevLs2Ang != ang1 && prevLs2Ang != ang2, 1,
-         prevLs2Ang == 32767, 0});
+         ls2FirstIsBoundary, 0});
   }
 
   if (ls2SecondInLs1 && !ls2FirstInLs1 && !ls1FirstInLs2 && !ls1SecondInLs2) {
@@ -2243,7 +2251,7 @@ uint8_t IntersectorLine<T>::check(const LineSegment<T>& ls1, int16_t prevLs1Ang,
     return boolArrToInt8(
         {1, nextLs2Ang == ang1 || nextLs2Ang == ang2, 0, 0,
          nextLs2Ang != 32767 && nextLs2Ang != ang1 && nextLs2Ang != ang2, 1, 0,
-         nextLs2Ang == 32767});
+         ls2SecondIsBoundary});
   }
 
   // the line segments strictly intersect
@@ -2258,9 +2266,9 @@ uint8_t IntersectorLine<T>::check(const LineSegment<T>& ls1, int16_t prevLs1Ang,
 // _____________________________________________________________________________
 template <typename T>
 uint8_t IntersectorLinePoly<T>::check(const LineSegment<T>& ls1,
-                                      int16_t prevLs1Ang, int16_t nextLs1Ang,
+                                      int16_t prevLs1Ang, bool ls1FirstIsBoundary, int16_t nextLs1Ang, bool ls1SecondIsBoundary,
                                       const LineSegment<T>& ls2,
-                                      int16_t prevLs2Ang, int16_t nextLs2Ang) {
+                                      int16_t prevLs2Ang, bool ls2FirstIsBoundary, int16_t nextLs2Ang, bool ls2SecondIsBoundary) {
   // trivial case: no intersect
   if (!intersects(getBoundingBox(ls1), getBoundingBox(ls2))) return 0;
 
@@ -2415,9 +2423,9 @@ uint8_t IntersectorPoly<T>::checkOneDir(const LineSegment<T>& ls1,
 
 // _____________________________________________________________________________
 template <typename T>
-uint8_t IntersectorPoly<T>::check(const LineSegment<T>& ls1, int16_t prevLs1Ang,
-                                  int16_t nextLs1Ang, const LineSegment<T>& ls2,
-                                  int16_t prevLs2Ang, int16_t nextLs2Ang) {
+uint8_t IntersectorPoly<T>::check(const LineSegment<T>& ls1, int16_t prevLs1Ang,bool,
+                                  int16_t nextLs1Ang, bool, const LineSegment<T>& ls2,
+                                  int16_t prevLs2Ang, bool, int16_t nextLs2Ang, bool) {
   // returns {intersects, strict intersects, inside, overlap}
   // returns a bit array, where bit 1 means "intersects", bit 2 means "strict
   // intersects" (that is the the segments intersects in a single point "into
@@ -2849,7 +2857,7 @@ inline DE9IMatrix DE9IM(const util::geo::XSortedLine<T>& a,
                   : 'F';
     char be = (std::get<1>(cc1) && std::get<1>(cc2)) ? 'F' : '0';
     char ei = '2';
-    char eb = '1';
+    char eb = (!std::get<0>(res) || std::get<2>(res)) ? '1' : 'F';
 
     // check inner polygons
     for (size_t i = b.getFirstInner(a); i < b.getInners().size(); i++) {
@@ -2875,12 +2883,18 @@ inline DE9IMatrix DE9IM(const util::geo::XSortedLine<T>& a,
         return std::string{ii, ib, ie, bi, bb, be, ei, eb, '2'};
       }
 
+      if (std::get<5>(res)) {
+        ib = '1';
+      }
+
       if (std::get<4>(res)) {
         // strictly intersects
         ii = '1';
         ie = '1';
+
         if (ib != '1') ib = std::get<5>(res) ? '1' : '0';
       }
+
     }
 
     return std::string{ii, ib, ie, bi, bb, be, ei, eb, '2'};

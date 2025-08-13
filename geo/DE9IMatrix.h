@@ -93,9 +93,19 @@ class DE9IMatrix {
     return *this;
   }
 
+  // see https://en.wikipedia.org/wiki/DE-9IM
   bool disjoint() const { return !II() && !IB() && !BI() && !BB(); }
   bool contains() const { return II() && !EI() && !EB(); }
-  bool covers() const { return (II() || IB() || BI() || BB()) && !EI() && !EB(); }
+  bool covers() const {
+    return (II() || IB() || BI() || BB()) && !EI() && !EB();
+  }
+  bool equals() const { return II() && !IE() && !BE() && !EI() && !EB(); }
+  bool touches() const { return !II() && (IB() || BI() || BB()); }
+  bool intersects() const { return !disjoint(); }
+  bool within() const { return II() && !IE() && !BE(); }
+  bool covered() const {
+    return !IE() && !BE() && (II() || IB() || BI() || BB());
+  }
 
   uint16_t getMatrix() const { return _m; }
 
