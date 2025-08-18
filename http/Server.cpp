@@ -19,7 +19,7 @@
 #include <stdexcept>
 #include <thread>
 #include <unordered_map>
-#ifdef ZLIB_FOUND
+#ifdef PBUTIL_ZLIB_FOUND
 #include <zlib.h>
 #endif
 #include <vector>
@@ -293,7 +293,7 @@ Req HttpServer::getReq(int connection) {
 
 // _____________________________________________________________________________
 std::string HttpServer::compress(const std::string& str, std::string* enc) {
-#ifdef ZLIB_FOUND
+#ifdef PBUTIL_ZLIB_FOUND
   // do not compress small payloads
   if (str.size() < 500) return str;
 

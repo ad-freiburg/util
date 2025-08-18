@@ -3915,10 +3915,10 @@ inline bool empty(const Collection<T>& g) {
 }
 
 // _____________________________________________________________________________
-template <typename T>
+template <typename T, typename F>
 inline Line<T> lineFromWKT(
     const char* c, const char** endr,
-    std::function<Point<T>(const Point<double>& p1)> projFunc) {
+    F projFunc) {
   Line<T> line;
 
   c = strchr(c, '(');
@@ -3938,26 +3938,23 @@ inline Line<T> lineFromWKT(
   line.reserve((end - c) / 20);
 
   while (true) {
-    while (*c && *c != ')' && isspace(*c)) c++;
+    while (*c && *c != ')' && (*c == ' ' || *c == '\n' || *c == '\t' || *c == '\r')) c++;
 
     double x = util::atof(c, 10);
 
-    const char* next = strchr(c, ' ');
+    const char* next = c;
+    while(*next && *next != ' ') next++;
 
     if (!next || next >= end) return {};  // parse error
 
-    while (*next && *next != ')' && isspace(*next)) next++;
+    while (*next && *next != ')' && (*next == ' ' || *next == '\n' || *next == '\t' || *next == '\r')) next++;
 
     double y = util::atof(next, 10);
 
-    // auto projPoint = latLngToWebMerc(util::geo::DPoint(x, y));
-
     line.push_back(projFunc(util::geo::DPoint(x, y)));
 
-    // line.push_back({static_cast<int>(projPoint.getX() * PREC),
-    // static_cast<int>(projPoint.getY() * PREC)});
-
-    auto n = strchr(next, ',');
+    auto n = next;
+    while(*n && *n != ',') n++;
     if (!n || n > end) break;
     c = n + 1;
   }
@@ -3975,11 +3972,19 @@ inline Line<T> lineFromWKT(const char* c, const char** endr) {
 
 // _____________________________________________________________________________
 template <typename T>
+inline MultiLine<T> multiLineFromWKT(const char* c, const char** endr) {
+  return multiLineFromWKT<T>(c, endr, [](const Point<double>& p) {
+    return Point<T>{static_cast<T>(p.getX()), static_cast<T>(p.getY())};
+  });
+}
+
+// _____________________________________________________________________________
+template <typename T, typename F>
 inline MultiPoint<T> multiPointFromWKT(
     const char* c, const char** endr,
-    std::function<Point<T>(const Point<double>& p1)> projFunc) {
+    F projFunc) {
   // try MULTIPOINT((1 1), (2 2)) syntax
-  const auto& mline = multiLineFromWKT(c, endr, projFunc);
+  const auto& mline = multiLineFromWKT<T, F>(c, endr, projFunc);
 
   MultiPoint<T> ret;
   for (const auto& l : mline) {
@@ -3989,7 +3994,7 @@ inline MultiPoint<T> multiPointFromWKT(
   if (ret.size()) return ret;
 
   // try MULTIPOINT(1 1, 2 2) syntax
-  const auto& line = lineFromWKT(c, endr, projFunc);
+  const auto& line = lineFromWKT<T, F>(c, endr, projFunc);
   if (line.size() > 0) return MultiPoint<T>(std::move(line));
 
   return ret;
@@ -4010,10 +4015,9 @@ inline MultiPoint<T> multiPointFromWKT(const std::string& wkt) {
 }
 
 // _____________________________________________________________________________
-template <typename T>
+template <typename T, typename F>
 inline Point<T> pointFromWKT(
-    const char* c, const char** endr,
-    std::function<Point<T>(const Point<double>& p1)> projFunc) {
+    const char* c, const char** endr, F projFunc) {
   c = strchr(c, '(');
   if (!c) {
     if (endr) (*endr) = 0;
@@ -4021,12 +4025,12 @@ inline Point<T> pointFromWKT(
   }
 
   c += 1;
-  while (*c && *c != ')' && isspace(*c)) c++;
+  while (*c && *c != ')' && (*c == ' ' || *c == '\n' || *c == '\t' || *c == '\r')) c++;
 
   double x = util::atof(c, 10);
   const char* next = strchr(c, ' ');
   if (!next) return {0, 0};  // TODO!
-  while (*next && *next != ')' && isspace(*next)) next++;
+  while (*next && *next != ')' && (*next == ' ' || *next == '\n' || *next == '\t' || *next == '\r')) next++;
   double y = util::atof(next, 10);
 
   if (endr) (*endr) = strchr(next, ')');
@@ -4043,10 +4047,10 @@ inline Point<T> pointFromWKT(const char* c, const char** endr) {
 }
 
 // _____________________________________________________________________________
-template <typename T>
+template <typename T, typename F>
 Polygon<T> polygonFromWKT(
     const char* c, const char** endr,
-    std::function<Point<T>(const Point<double>& p1)> projFunc) {
+    F projFunc) {
   c = strchr(c, '(');
   if (!c) {
     if (endr) (*endr) = 0;
@@ -4058,7 +4062,7 @@ Polygon<T> polygonFromWKT(
   Polygon<T> poly;
   while ((c = strchr(c, '('))) {
     const char* end = 0;
-    const auto& line = lineFromWKT(c, &end, projFunc);
+    const auto& line = lineFromWKT<T, F>(c, &end, projFunc);
 
     if (!end) {
       if (endr) (*endr) = 0;
@@ -4099,10 +4103,10 @@ inline Polygon<T> polygonFromWKT(const char* c, const char** endr) {
 }
 
 // _____________________________________________________________________________
-template <typename T>
+template <typename T, typename F>
 MultiLine<T> multiLineFromWKT(
     const char* c, const char** endr,
-    std::function<Point<T>(const Point<double>& p1)> projFunc) {
+    F projFunc) {
   c = strchr(c, '(');
   if (!c) {
     if (endr) (*endr) = 0;
@@ -4113,7 +4117,7 @@ MultiLine<T> multiLineFromWKT(
   MultiLine<T> ml;
   while ((c = strchr(c, '('))) {
     const char* end = 0;
-    const auto& line = lineFromWKT(c, &end, projFunc);
+    const auto& line = lineFromWKT<T, F>(c, &end, projFunc);
     if (!end) break;
     if (line.size() != 0) ml.push_back(std::move(line));
 
@@ -4132,19 +4136,12 @@ MultiLine<T> multiLineFromWKT(
   return ml;
 }
 
-// _____________________________________________________________________________
-template <typename T>
-inline MultiLine<T> multiLineFromWKT(const char* c, const char** endr) {
-  return multiLineFromWKT<T>(c, endr, [](const Point<double>& p) {
-    return Point<T>{static_cast<T>(p.getX()), static_cast<T>(p.getY())};
-  });
-}
 
 // _____________________________________________________________________________
-template <typename T>
+template <typename T, typename F>
 MultiPolygon<T> multiPolygonFromWKT(
     const char* c, const char** endr,
-    std::function<Point<T>(const Point<double>& p1)> projFunc) {
+    F projFunc) {
   c = strchr(c, '(');
   if (!c) {
     if (endr) (*endr) = 0;
@@ -4157,7 +4154,7 @@ MultiPolygon<T> multiPolygonFromWKT(
     c = strchr(c, '(');
     if (!c) break;
     const char* end = 0;
-    const auto& poly = polygonFromWKT(c, &end, projFunc);
+    const auto& poly = polygonFromWKT<T, F>(c, &end, projFunc);
 
     if (!end) break;
 
@@ -4188,8 +4185,8 @@ inline MultiPolygon<T> multiPolygonFromWKT(const char* c, const char** endr) {
 
 // _____________________________________________________________________________
 inline WKTType getWKTType(const char* c, const char** endr) {
-  while (isspace(*c) || ((*c) == '"') || ((*c) == '\'') ||
-         (tolower(*c) == 'm' && (isspace(*c + 1) || tolower(*(c + 1)) != 'u')))
+  while ((*c == ' ' || *c == '\n' || *c == '\t' || *c == '\r') || ((*c) == '"') || ((*c) == '\'') ||
+         (tolower(*c) == 'm' && ((*(c+1) == ' ' || *(c+1) == '\n' || *(c+1) == '\t' || *(c+1) == '\r') || tolower(*(c + 1)) != 'u')))
     c++;  // skip possible whitespace and/or measurement M
   if (strncicmp("POINT", c, 5) == 0) {
     if (endr) (*endr) = c + 5;
@@ -4233,10 +4230,10 @@ inline WKTType getWKTType(const std::string& str) {
 }
 
 // _____________________________________________________________________________
-template <typename T>
+template <typename T, typename F>
 Collection<T> collectionFromWKT(
     const char* c, const char** endr,
-    std::function<Point<T>(const Point<double>& p1)> projFunc) {
+    F projFunc) {
   Collection<T> col;
 
   c = strchr(c, '(');
@@ -4246,7 +4243,7 @@ Collection<T> collectionFromWKT(
   }
   do {
     c++;
-    while (isspace(*c)) c++;  // skip possible whitespace
+    while ((*c == ' ' || *c == '\n' || *c == '\t' || *c == '\r')) c++;  // skip possible whitespace
 
     auto wktType = getWKTType(c, &c);
 
@@ -4258,7 +4255,7 @@ Collection<T> collectionFromWKT(
     // TODO: getWKTType()
     if (wktType == POINT) {
       const char* end = 0;
-      const auto& point = pointFromWKT(c, &end, projFunc);
+      const auto& point = pointFromWKT<T, F>(c, &end, projFunc);
 
       if (!end) {
         if (endr) (*endr) = 0;
@@ -4269,7 +4266,7 @@ Collection<T> collectionFromWKT(
       c = const_cast<char*>(strchr(end, ','));
     } else if (wktType == POLYGON) {
       const char* end = 0;
-      const auto& poly = polygonFromWKT(c, &end, projFunc);
+      const auto& poly = polygonFromWKT<T, F>(c, &end, projFunc);
 
       if (!end) {
         if (endr) (*endr) = 0;
@@ -4279,7 +4276,7 @@ Collection<T> collectionFromWKT(
       c = const_cast<char*>(strchr(end, ','));
     } else if (wktType == LINESTRING) {
       const char* end = 0;
-      const auto& line = lineFromWKT(c, &end, projFunc);
+      const auto& line = lineFromWKT<T, F>(c, &end, projFunc);
 
       if (!end) {
         if (endr) (*endr) = 0;
@@ -4289,7 +4286,7 @@ Collection<T> collectionFromWKT(
       c = const_cast<char*>(strchr(end, ','));
     } else if (wktType == MULTIPOINT) {
       const char* end = 0;
-      const auto& line = lineFromWKT(c, &end, projFunc);
+      const auto& line = lineFromWKT<T, F>(c, &end, projFunc);
 
       if (!end) {
         if (endr) (*endr) = 0;
@@ -4299,7 +4296,7 @@ Collection<T> collectionFromWKT(
       c = const_cast<char*>(strchr(end, ','));
     } else if (wktType == MULTIPOLYGON) {
       const char* end = 0;
-      const auto& mp = multiPolygonFromWKT(c, &end, projFunc);
+      const auto& mp = multiPolygonFromWKT<T, F>(c, &end, projFunc);
 
       if (!end) {
         if (endr) (*endr) = 0;
@@ -4309,7 +4306,7 @@ Collection<T> collectionFromWKT(
       c = const_cast<char*>(strchr(end, ','));
     } else if (wktType == MULTILINESTRING) {
       const char* end = 0;
-      const auto& ml = multiLineFromWKT(c, &end, projFunc);
+      const auto& ml = multiLineFromWKT<T, F>(c, &end, projFunc);
 
       if (!end) {
         if (endr) (*endr) = 0;

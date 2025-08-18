@@ -13,24 +13,20 @@ target_include_directories(pb_util PUBLIC
 
 if (NOT BZIP2_FOUND)
     find_package(BZip2)
-    if (BZIP2_FOUND)
-		add_definitions( -DBZIP2_FOUND=${BZIP2_FOUND} )
-	endif()
 endif()
 
 if (BZIP2_FOUND)
+	target_compile_definitions(pb_util INTERFACE DPBUTIL_BZIP2_FOUND=${BZIP2_FOUND} )
 	target_include_directories(pb_util INTERFACE ${BZIP2_INCLUDE_DIR} )
 	target_link_libraries( pb_util ${BZIP2_LIBRARIES} )
 endif(BZIP2_FOUND)
 
 if (NOT ZLIB_FOUND)
     find_package(ZLIB)
-    if (ZLIB_FOUND)
-		add_definitions( -DZLIB_FOUND=${ZLIB_FOUND} )
-	endif()
 endif()
 
 if (ZLIB_FOUND)
+	target_compile_definitions(pb_util INTERFACE DPBUTIL_ZLIB_FOUND=${ZLIB_FOUND} )
 	target_include_directories(pb_util INTERFACE ${ZLIB_INCLUDE_DIRS} )
 	target_link_libraries( pb_util ${ZLIB_LIBRARIES} )
 endif(ZLIB_FOUND)

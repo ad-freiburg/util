@@ -5,10 +5,10 @@
 #ifndef UTIL_XML_XMLWRITER_H_
 #define UTIL_XML_XMLWRITER_H_
 
-#ifdef ZLIB_FOUND
+#ifdef PBUTIL_ZLIB_FOUND
 #include <zlib.h>
 #endif
-#ifdef BZLIB_FOUND
+#ifdef PBUTIL_BZLIB_FOUND
 #include <bzlib.h>
 #endif
 #include <map>
@@ -45,10 +45,10 @@ class XmlWriter {
   XmlWriter(const std::string& file, bool pretty);
   XmlWriter(const std::string& file, bool pretty, size_t indent);
   ~XmlWriter(){
-#ifdef ZLIB_FOUND
+#ifdef PBUTIL_ZLIB_FOUND
     if (_gzfile) gzclose(_gzfile);
 #endif
-#ifdef BZLIB_FOUND
+#ifdef PBUTIL_BZLIB_FOUND
     int err;
     if (_bzfile) {
       try {
@@ -112,13 +112,13 @@ class XmlWriter {
   bool _pretty;
   size_t _indent;
 
-#ifdef ZLIB_FOUND
+#ifdef PBUTIL_ZLIB_FOUND
   gzFile _gzfile;
 #else
   int _gzfile;
 #endif
 
-#ifdef BZLIB_FOUND
+#ifdef PBUTIL_BZLIB_FOUND
   char* _bzbuf;
   size_t _bzbufpos = 0;
   BZFILE* _bzfile;

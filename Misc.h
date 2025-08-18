@@ -22,6 +22,12 @@
 #include <vector>
 #include <queue>
 #include <unistd.h>
+#ifdef PBUTIL_ZLIB_FOUND
+#include <zlib.h>
+#endif
+#ifdef PBUTIL_BZIP2_FOUND
+#include <bzlib.h>
+#endif
 #include <sys/types.h>
 #include <fcntl.h>
 #include <pwd.h>
@@ -309,7 +315,7 @@ inline std::string formatFloat(double f, int DIGITS) {
 inline double atof(const char* p, uint8_t mn) {
   // this atof implementation works only on "normal" float strings like
   // 56.445 or -345.00, but should be faster than std::atof
-  while (*p && isspace(*p)) p++;
+  while (*p && (*p == ' ' || *p == '\n' || *p == '\t' || *p == '\r')) p++;
 
   double ret = 0.0;
   bool neg = false;
@@ -357,6 +363,38 @@ inline ssize_t preadAll(int file, unsigned char* buf, size_t count, size_t offse
 }
 
 // _____________________________________________________________________________
+#ifdef PBUTIL_ZLIB_FOUND
+inline ssize_t zreadAll(gzFile file, unsigned char* buf, size_t count ) {
+  ssize_t r;
+  ssize_t rem = count;
+
+  while ((r = gzread(file, buf + (count - rem), rem))) {
+    if (r < 0) return -1;
+    rem -= r;
+  }
+
+  return count - rem;
+}
+#endif
+
+// _____________________________________________________________________________
+#ifdef PBUTIL_BZIP2_FOUND
+inline ssize_t bz2readAll(BZFILE* file, unsigned char* buf, size_t count ) {
+  ssize_t r;
+  ssize_t rem = count;
+
+  int err;
+
+  while ((r = BZ2_bzRead(&err, file, buf + (count - rem), rem))) {
+    if (r < 0) return -1;
+    rem -= r;
+  }
+
+  return count - rem;
+}
+#endif
+
+// _____________________________________________________________________________
 inline ssize_t readAll(int file, unsigned char* buf, size_t count ) {
   ssize_t r;
   ssize_t rem = count;
@@ -370,7 +408,8 @@ inline ssize_t readAll(int file, unsigned char* buf, size_t count ) {
 }
 
 // _____________________________________________________________________________
-inline ssize_t pwriteAll(int file, const unsigned char* buf, size_t count, size_t offset ) {
+inline ssize_t pwriteAll(int file, const unsigned char* buf, size_t count,
+                         size_t offset) {
   ssize_t r;
   ssize_t rem = count;
 
@@ -382,7 +421,6 @@ inline ssize_t pwriteAll(int file, const unsigned char* buf, size_t count, size_
 
   return count - rem;
 }
-
 // _____________________________________________________________________________
 inline ssize_t writeAll(int file, const unsigned char* buf, size_t count ) {
   ssize_t r;
@@ -637,7 +675,10 @@ inline std::string readableSize(double size) {
 }
 
 // _____________________________________________________________________________
-inline void sortPart(int file, size_t objSize, size_t part, unsigned char* buf, unsigned char* partbuf, size_t bufferSize, size_t partsBufSize, size_t* partsize, int (*cmpf)(const void*, const void*)) {
+inline void sortPart(int file, size_t objSize, size_t part, unsigned char* buf,
+                     unsigned char* partbuf, size_t bufferSize,
+                     size_t partsBufSize, size_t* partsize,
+                     int (*cmpf)(const void*, const void*)) {
   // read entire part to buf
   ssize_t n = preadAll(file, buf, bufferSize, bufferSize * part);
   if (n < 0) {

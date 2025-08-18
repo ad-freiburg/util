@@ -9,7 +9,7 @@
 #include <ostream>
 #include <stack>
 #include <string>
-#ifdef BZLIB_FOUND
+#ifdef PBUTIL_BZLIB_FOUND
 #include <bzlib.h>
 #endif
 
@@ -47,7 +47,7 @@ XmlWriter::XmlWriter(const std::string& file, bool pret, size_t indent)
     : _out(0), _pretty(pret), _indent(indent), _gzfile(0), _bzfile(0) {
   if (file.size() > 2 && file[file.size() - 1] == 'z' &&
       file[file.size() - 2] == 'g' && file[file.size() - 3] == '.') {
-#ifdef ZLIB_FOUND
+#ifdef PBUTIL_ZLIB_FOUND
     _gzfile = gzopen(file.c_str(), "w");
     if (_gzfile == Z_NULL) {
       throw std::runtime_error("Could not open file for writing.");
@@ -60,7 +60,7 @@ XmlWriter::XmlWriter(const std::string& file, bool pret, size_t indent)
   } else if (file.size() > 3 && file[file.size() - 1] == '2' &&
              file[file.size() - 2] == 'z' && file[file.size() - 3] == 'b' &&
              file[file.size() - 4] == '.') {
-#ifdef BZLIB_FOUND
+#ifdef PBUTIL_BZLIB_FOUND
     _bzbuf = new char[BUFFER_S];
 
     _bzfhandle = fopen(file.c_str(), "w");
@@ -198,11 +198,11 @@ void XmlWriter::closeHanging() {
 // _____________________________________________________________________________
 void XmlWriter::put(const string& str) {
   if (_gzfile) {
-#ifdef ZLIB_FOUND
+#ifdef PBUTIL_ZLIB_FOUND
     gzwrite(_gzfile, str.c_str(), str.size());
 #endif
   } else if (_bzfile) {
-#ifdef BZLIB_FOUND
+#ifdef PBUTIL_BZLIB_FOUND
     if (_bzbufpos == BUFFER_S || _bzbufpos + str.size() > BUFFER_S) flushBzip();
     memcpy( _bzbuf + _bzbufpos, str.c_str(), str.size());
     _bzbufpos += str.size();
@@ -214,7 +214,7 @@ void XmlWriter::put(const string& str) {
 
 // _____________________________________________________________________________
 void XmlWriter::flushBzip() {
-#ifdef BZLIB_FOUND
+#ifdef PBUTIL_BZLIB_FOUND
     int err = 0;
     BZ2_bzWrite(&err, _bzfile, _bzbuf, _bzbufpos);
     if (err == BZ_IO_ERROR) {
@@ -229,12 +229,12 @@ void XmlWriter::flushBzip() {
 // _____________________________________________________________________________
 void XmlWriter::put(const char c) {
   if (_gzfile) {
-#ifdef ZLIB_FOUND
+#ifdef PBUTIL_ZLIB_FOUND
     gzputc(_gzfile, c);
 
 #endif
   } else if (_bzfile) {
-#ifdef BZLIB_FOUND
+#ifdef PBUTIL_BZLIB_FOUND
     _bzbuf[_bzbufpos++] = c;
     if (_bzbufpos == BUFFER_S) flushBzip();
 #endif
