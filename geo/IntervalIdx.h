@@ -9,6 +9,7 @@
 #include <list>
 #include <memory>
 #include <unordered_map>
+#include <set>
 
 namespace util {
 namespace geo {

@@ -6,6 +6,9 @@
 #define UTIL_GEO_LINE_H_
 
 #include <vector>
+#include <algorithm>
+#include <cstdint>
+#include <math.h>
 
 #include "./Point.h"
 
