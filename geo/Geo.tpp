@@ -2761,133 +2761,16 @@ std::tuple<bool, bool, bool, bool, bool> intersectsContainsCovers(
     const util::geo::Box<T>& boxB, double outerAreaB, size_t* firstRel1,
     size_t* firstRel2) {
   // returns {intersects, contains, covers, touches, overlaps}
+  auto de9im = DE9IM(a, boxA, outerAreaA, b, boxB, outerAreaB, firstRel1, firstRel2);
 
-  if (a.getOuter().rawRing().size() < 2) return {0, 0, 0, 0, 0};
-  if (b.getOuter().rawRing().size() < 2) return {0, 0, 0, 0, 0};
-
-  auto borderInt = util::geo::intersectsPoly(
-      a.getOuter(), b.getOuter(), a.getOuter().getMaxSegLen(),
-      b.getOuter().getMaxSegLen(), boxA, boxB, firstRel1, firstRel2);
-
-  if (std::get<1>(borderInt)) {
-    // intersects, not contained, not covered, touches
-    return {1, 0, 0, !std::get<2>(borderInt), std::get<2>(borderInt)};
-  }
-
-  if (a.getOuter().rawRing().size() > 1 && outerAreaA <= outerAreaB &&
-      util::geo::contains(boxA, boxB) &&
-      (std::get<0>(borderInt) ||
-       util::geo::ringContains(a.getOuter().rawRing().front().seg().second,
-                               b.getOuter(), *firstRel2)
-           .second)) {
-    // the outer hull of A is inside the outer hull of B!
-
-    bool intersectsInnerBorder = false;
-
-    // check inner polygons
-    for (size_t i = b.getFirstInner(a); i < b.getInners().size(); i++) {
-      const auto& innerBBox = b.getInnerBoxes()[i];
-      if (innerBBox.getLowerLeft().getX() >
-          a.getOuter().rawRing().back().seg().second.getX())
-        break;
-
-      if (!util::geo::intersects(innerBBox, boxA)) continue;
-
-      const auto& innerB = b.getInners()[i];
-
-      auto res = intersectsContainsInner(a.getOuter(), innerB);
-
-      if (std::get<1>(res)) return {0, 0, 0, 0, 0};
-      if (std::get<2>(res)) return {1, 0, 0, 1, 0};
-      if (std::get<4>(res)) return {1, 0, 0, 0, 1};
-      if (std::get<3>(res)) intersectsInnerBorder = true;
-
-      bool contains = false;
-      bool covered = false;
-      if (!std::get<3>(res) && std::get<0>(res)) {
-        // else: inner is in a
-        // it must be covered by an inner polygon of a, otherwise a ist not
-        // in b
-        for (size_t i = a.getFirstInner(innerBBox); i < a.getInners().size();
-             i++) {
-          const auto& innerABox = a.getInnerBoxes()[i];
-          if (innerABox.getLowerLeft().getX() > innerBBox.getLowerLeft().getX())
-            break;
-
-          if (!util::geo::intersects(innerBBox, innerABox)) continue;
-
-          const auto& innerA = a.getInners()[i];
-
-          auto res = intersectsContainsInner(innerB, innerA);
-
-          if (std::get<1>(res) || std::get<2>(res)) {
-            contains = std::get<1>(res);
-            covered = std::get<2>(res);
-            break;
-          }
-        }
-
-        if (!contains && !covered) return {true, false, false, false, true};
-        if (!contains) intersectsInnerBorder = true;
-      }
-    }
-
-    return {true, !std::get<0>(borderInt) && !intersectsInnerBorder,
-            !std::get<1>(borderInt), false, false};
-  }
-
-  if (b.getOuter().rawRing().size() > 1 && outerAreaB <= outerAreaA &&
-      util::geo::contains(boxB, boxA) &&
-      (std::get<0>(borderInt) ||
-       ringContains(b.getOuter().rawRing().front().seg().second, a.getOuter(),
-                    *firstRel1)
-           .second)) {
-    // the outer of B is inside the outer of A
-    //
-    // now the only possibility is that A intersects B - but if B is fully
-    // contained in an inner ring of A, they are disjoint
-
-    // check inner polygons
-    bool intersects = false;
-    for (size_t i = a.getFirstInner(b); i < a.getInners().size(); i++) {
-      const auto& innerABox = a.getInnerBoxes()[i];
-      if (innerABox.getLowerLeft().getX() >
-          b.getOuter().rawRing().back().seg().second.getX())
-        break;
-
-      if (!util::geo::intersects(innerABox, boxB)) continue;
-
-      const auto& innerA = a.getInners()[i];
-      auto res = intersectsContainsInner(b.getOuter(), innerA);
-      if (std::get<1>(res)) return {std::get<0>(borderInt), 0, 0, 0, 0};
-      if (std::get<2>(res)) return {1, 0, 0, 1, 0};
-      if (std::get<0>(res)) {
-        // the inner of A intersects the outer of B, but it might be covered
-        // by an inner ring of B
-        intersects = true;
-        for (size_t i = b.getFirstInner(innerABox); i < b.getInners().size();
-             i++) {
-          const auto& innerBBox = b.getInnerBoxes()[i];
-          if (innerBBox.getLowerLeft().getX() > innerABox.getLowerLeft().getX())
-            break;
-
-          if (!util::geo::intersects(innerABox, innerBBox)) continue;
-
-          const auto& innerB = b.getInners()[i];
-
-          auto res = intersectsContainsInner(innerA, innerB);
-
-          if (std::get<1>(res) || std::get<2>(res)) {
-            intersects = false;
-            break;
-          }
-        }
-      }
-    }
-    return {true, false, false, false, intersects};
-  }
-
-  return {std::get<0>(borderInt), false, false, false, false};
+  // see https://en.wikipedia.org/wiki/DE-9IM#Spatial_predicates
+  return {
+      de9im.intersects(),
+      de9im.within(),
+      de9im.covered(),
+      de9im.touches(),
+      de9im.overlaps02()
+  };
 }
 
 // _____________________________________________________________________________
@@ -3222,33 +3105,15 @@ std::tuple<bool, bool, bool, bool, bool> intersectsCovers(
     const util::geo::XSortedLine<T>& a, const util::geo::XSortedLine<T>& b,
     const Box<T>& boxA, const Box<T>& boxB, size_t* firstRelIn1,
     size_t* firstRelIn2) {
-  uint8_t ret = intersectsHelper<T, IntersectorLine>(
-      a.rawLine(), b.rawLine(), a.getMaxSegLen(), b.getMaxSegLen(), boxA, boxB,
-      firstRelIn1, firstRelIn2);
+  auto de9im = DE9IM(a, b, boxA, boxB, firstRelIn1, firstRelIn2);
 
-  const bool weakIntersect = ret;
-  const bool strictIntersect = (ret >> 0) & 1;
-  const bool overlaps = (ret >> 1) & 1;
-  const bool bFirstInA = (ret >> 2) & 1;
-  const bool bSecondInA = (ret >> 3) & 1;
-  const bool aFirstInB = (ret >> 6) & 1;
-  const bool aSecondInB = (ret >> 7) & 1;
-  const bool crosses = (ret >> 4) & 1;
-  const bool strictIntersect2 = (ret >> 5) & 1;
-  const bool touches =
-      aFirstInB || aSecondInB || bFirstInA || bSecondInA ||
-      a.firstPoint() == b.firstPoint() || a.lastPoint() == b.firstPoint() ||
-      a.lastPoint() == b.lastPoint() || a.firstPoint() == b.lastPoint();
-
-  const bool aInB = !crosses && !strictIntersect && weakIntersect;
-  const bool bInA = !crosses && !strictIntersect2 && weakIntersect;
-
+  // see https://en.wikipedia.org/wiki/DE-9IM#Spatial_predicates
   return {
-      weakIntersect,                                  // intersects
-      !crosses && !strictIntersect && weakIntersect,  // covers
-      !crosses && touches && !overlaps,               // touches
-      overlaps && !aInB && !bInA,                     // overlaps
-      crosses && !overlaps  // is this OGC conform?         // crosses
+      de9im.intersects(),
+      de9im.covered(),
+      de9im.touches(),
+      de9im.overlaps1(),
+      de9im.II() == D0
   };
 }
 
@@ -3267,63 +3132,16 @@ std::tuple<bool, bool, bool, bool, bool> intersectsContainsCovers(
     const util::geo::XSortedPolygon<T>& b, const util::geo::Box<T>& boxB,
     size_t* firstRel1, size_t* firstRel2) {
   // returns {intersects, contains, covers, touches, crosses}
-  if (a.rawLine().size() == 0) return {0, 0, 0, 0, 0};
-  if (b.getOuter().rawRing().size() < 2) return {0, 0, 0, 0, 0};
+  auto de9im = DE9IM(a, boxA, b, boxB, firstRel1, firstRel2);
 
-  auto borderInt = util::geo::intersectsPoly(
-      a.rawLine(), b.getOuter().rawRing(), a.getMaxSegLen(),
-      b.getOuter().getMaxSegLen(), boxA, boxB, firstRel1, firstRel2);
-
-  if (std::get<1>(borderInt)) {
-    // intersects, not contained, not covered, touches
-    return {true, false, false, !std::get<2>(borderInt),
-            std::get<2>(borderInt)};
-  }
-
-  if (util::geo::contains(boxA, boxB) &&
-      (std::get<0>(borderInt) ||
-       util::geo::ringContains(a.rawLine().front().seg().second, b.getOuter(),
-                               *firstRel2)
-           .second)) {
-    // a is inside the outer of B
-    bool intersectsInnerBorder = false;
-
-    // check inner polygons
-    for (size_t i = b.getFirstInner(a); i < b.getInners().size(); i++) {
-      if (b.getInners()[i].rawRing().size() < 2) continue;
-      const auto& innerBBox = b.getInnerBoxes()[i];
-      if (b.getInnerBoxes()[i].getLowerLeft().getX() >
-          a.rawLine().back().seg().second.getX())
-        break;
-      if (!util::geo::intersects(boxA, innerBBox)) continue;
-
-      auto res = intersectsContainsInner(a, b.getInners()[i]);
-
-      if (std::get<1>(res))
-        return {false, false, false, false, false};  // a is contained by innerB
-
-      if (std::get<4>(res))
-        return {true, false, false, std::get<2>(res),
-                !std::get<2>(res)};  // a strictly intersects border of innerB
-
-      if (std::get<2>(res))
-        return {true, false, true, true,
-                false};  // a is completely covered by innerB
-
-      if (std::get<3>(res))
-        intersectsInnerBorder = true;  // a intersects border of innerB
-    }
-
-    // intersects + contains
-    return {true, !std::get<0>(borderInt) && !intersectsInnerBorder,
-            !std::get<1>(borderInt),
-            std::get<0>(borderInt) && !std::get<2>(borderInt) &&
-                !intersectsInnerBorder,
-            false};
-  }
-
-  // disjoint
-  return {std::get<0>(borderInt), false, false, false, false};
+  // see https://en.wikipedia.org/wiki/DE-9IM#Spatial_predicates
+  return {
+      de9im.intersects(),
+      de9im.within(),
+      de9im.covered(),
+      de9im.touches(),
+      de9im.II() && de9im.IE()
+  };
 }
 
 // _____________________________________________________________________________

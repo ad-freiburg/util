@@ -106,6 +106,16 @@ class DE9IMatrix {
   bool covered() const {
     return !IE() && !BE() && (II() || IB() || BI() || BB());
   }
+  bool coveredBy() const {
+    return covered();
+  }
+  bool overlaps02() const {
+    return II() && IE() && EI();
+  }
+
+  bool overlaps1() const {
+    return II() == D1 && IE() && EI();
+  }
 
   uint16_t getMatrix() const { return _m; }
 
