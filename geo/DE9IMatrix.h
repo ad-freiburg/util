@@ -19,7 +19,7 @@ class DE9IMatrix {
  public:
   DE9IMatrix() {}
 
-  DE9IMatrix(const char* m) {
+  constexpr DE9IMatrix(const char* m) {
     if (!m) return;
     for (size_t i = 0; i < 8; i++) {
       if (m[i] == '0') _m |= (D0 << (i * 2));
@@ -29,6 +29,8 @@ class DE9IMatrix {
   }
 
   DE9IMatrix(const std::string& m) : DE9IMatrix(m.c_str()) {}
+
+  DE9IMatrix(const uint16_t m) : _m(m) {}
 
   std::string toString() const {
     std::string ret = "FFFFFFFF2";
@@ -117,11 +119,29 @@ class DE9IMatrix {
     return II() == D1 && IE() && EI();
   }
 
-  uint16_t getMatrix() const { return _m; }
+  constexpr uint16_t getMatrix() const { return _m; }
 
  private:
   uint16_t _m = 0;
 };
+
+// often used matrices
+constexpr DE9IMatrix M0FFFFF102("0FFFFF102");
+constexpr DE9IMatrix MF0FFFF102("F0FFFF102");
+constexpr DE9IMatrix MFF0FFF102("FF0FFF102");
+constexpr DE9IMatrix M0F1FF0FF2("0F1FF0FF2");
+constexpr DE9IMatrix MFF1F00FF2("FF1F00FF2");
+constexpr DE9IMatrix MFF1FF00F2("FF1FF00F2");
+constexpr DE9IMatrix M0FFFFF212("0FFFFF212");
+constexpr DE9IMatrix MF0FFFF212("F0FFFF212");
+constexpr DE9IMatrix MFF0FFF212("FF0FFF212");
+constexpr DE9IMatrix M0F2FF1FF2("0F2FF1FF2");
+constexpr DE9IMatrix MFF20F1FF2("FF20F1FF2");
+constexpr DE9IMatrix MFF2FF10F2("FF2FF10F2");
+constexpr DE9IMatrix MFF1FF0102("FF1FF0102");
+constexpr DE9IMatrix MFF2FF1212("FF2FF1212");
+constexpr DE9IMatrix M0FFFFFFF2("0FFFFFFF2");
+constexpr DE9IMatrix MFF0FFF0F2("FF0FFF0F2");
 
 inline DE9IMatrix operator+(const DE9IMatrix a, const DE9IMatrix b) {
   DE9IMatrix ret;

@@ -1148,9 +1148,9 @@ std::tuple<bool, bool> intersectsContains(const Point<T>& p,
 template <typename T>
 DE9IMatrix DE9IM(const Point<T>& p, const XSortedLine<T>& line, size_t i) {
   auto res = intersectsContains(p, line, i);
-  if (std::get<0>(res)) return "0FFFFF102";
-  if (std::get<1>(res)) return "F0FFFF102";
-  return "FF0FFF102";
+  if (std::get<0>(res)) return M0FFFFF102;
+  if (std::get<1>(res)) return MF0FFFF102;
+  return MFF0FFF102;
 }
 
 // _____________________________________________________________________________
@@ -1163,9 +1163,9 @@ DE9IMatrix DE9IM(const Point<T>& p, const XSortedLine<T>& line) {
 template <typename T>
 DE9IMatrix DE9IM(const XSortedLine<T>& line, size_t i, const Point<T>& p) {
   auto res = intersectsContains(p, line, i);
-  if (res.first) return "0F1FF0FF2";
-  if (res.second) return "FF1F00FF2";
-  return "FF1FF00F2";
+  if (res.first) return M0F1FF0FF2;
+  if (res.second) return MFF1F00FF2;
+  return MFF1FF00F2;
 }
 
 // _____________________________________________________________________________
@@ -1220,9 +1220,9 @@ std::pair<bool, bool> containsCovers(const Point<T>& p,
 template <typename T>
 DE9IMatrix DE9IM(const Point<T>& p, const XSortedPolygon<T>& poly, size_t i) {
   auto res = containsCovers(p, poly, i);
-  if (std::get<0>(res)) return "0FFFFF212";
-  if (std::get<1>(res)) return "F0FFFF212";
-  return "FF0FFF212";
+  if (std::get<0>(res)) return M0FFFFF212;
+  if (std::get<1>(res)) return MF0FFFF212;
+  return MFF0FFF212;
 }
 
 // _____________________________________________________________________________
@@ -1235,9 +1235,9 @@ DE9IMatrix DE9IM(const Point<T>& p, const XSortedPolygon<T>& poly) {
 template <typename T>
 DE9IMatrix DE9IM(const XSortedPolygon<T>& poly, size_t i, const Point<T>& p) {
   auto res = containsCovers(p, poly, i);
-  if (res.first) return "0F2FF1FF2";
-  if (res.second) return "FF20F1FF2";
-  return "FF2FF10F2";
+  if (res.first) return M0F2FF1FF2;
+  if (res.second) return MFF20F1FF2;
+  return MFF2FF10F2;
 }
 
 // _____________________________________________________________________________
@@ -1796,27 +1796,27 @@ DE9IMatrix DE9IM(const util::geo::XSortedLine<T>& a,
   bool bLastOnBoundary =
       b.lastPoint() == a.firstPoint() || b.lastPoint() == a.lastPoint();
 
-  char ii = overlaps ? '1' : (crosses ? '0' : 'F');
-  char ib = (bFirstInA || bLastInA) ? '0' : 'F';
-  char ie = aInB ? 'F' : '1';
-  char bi = ((aFirstInB && !aFirstOnBoundary) || (aLastInB && !aLastOnBoundary))
-                ? '0'
-                : 'F';
-  char bb =
+  uint16_t ii = overlaps ? D1 : (crosses ? D0 : F);
+  uint16_t ib = (bFirstInA || bLastInA) ? D0 : F;
+  uint16_t ie = aInB ? F : D1;
+  uint16_t bi =
+      ((aFirstInB && !aFirstOnBoundary) || (aLastInB && !aLastOnBoundary)) ? D0
+                                                                           : F;
+  uint16_t bb =
       (a.firstPoint() == b.firstPoint() || a.lastPoint() == b.firstPoint() ||
        a.lastPoint() == b.lastPoint() || a.firstPoint() == b.lastPoint())
-          ? '0'
-          : 'F';
-  char be = ((aFirstInB || aFirstOnBoundary) && (aLastInB || aLastOnBoundary))
-                ? 'F'
-                : '0';
-  char ei = bInA ? 'F' : '1';
-  char eb = ((bFirstInA || bFirstOnBoundary) && (bLastInA || bLastOnBoundary))
-                ? 'F'
-                : '0';
-  char ee = '2';
+          ? D0
+          : F;
+  uint16_t be =
+      ((aFirstInB || aFirstOnBoundary) && (aLastInB || aLastOnBoundary)) ? F
+                                                                         : D0;
+  uint16_t ei = bInA ? F : D1;
+  uint16_t eb =
+      ((bFirstInA || bFirstOnBoundary) && (bLastInA || bLastOnBoundary)) ? F
+                                                                         : D0;
 
-  return std::string{ii, ib, ie, bi, bb, be, ei, eb, ee};
+  return (ii << 0) | (ib << 2) | (ie << 4) | (bi << 6) | (bb << 8) |
+         (be << 10) | (ei << 12) | (eb << 14);
 }
 
 // _____________________________________________________________________________
@@ -2054,11 +2054,12 @@ uint8_t IntersectorLine<T>::check(const LineSegment<T>& ls1, int16_t prevLs1Ang,
 
 // _____________________________________________________________________________
 template <typename T>
-uint8_t IntersectorLinePoly<T>::check(
-    const LineSegment<T>& ls1, int16_t prevLs1Ang, bool,
-    int16_t nextLs1Ang, bool, const LineSegment<T>& ls2,
-    int16_t prevLs2Ang, bool, int16_t nextLs2Ang,
-    bool) {
+uint8_t IntersectorLinePoly<T>::check(const LineSegment<T>& ls1,
+                                      int16_t prevLs1Ang, bool,
+                                      int16_t nextLs1Ang, bool,
+                                      const LineSegment<T>& ls2,
+                                      int16_t prevLs2Ang, bool,
+                                      int16_t nextLs2Ang, bool) {
   // trivial case: no intersect
   if (!intersects(getBoundingBox(ls1), getBoundingBox(ls2))) return 0;
 
@@ -2593,40 +2594,41 @@ DE9IMatrix DE9IM(const util::geo::XSortedLine<T>& a,
                  const util::geo::XSortedPolygon<T>& b,
                  const util::geo::Box<T>& boxB, size_t* firstRel1,
                  size_t* firstRel2) {
-  if (a.rawLine().size() == 0) return "FF1FF0102";
-  if (b.getOuter().rawRing().size() < 2) return "FF1FF0102";
+  if (a.rawLine().size() == 0) return MFF1FF0102;
+  if (b.getOuter().rawRing().size() < 2) return MFF1FF0102;
 
   auto res = util::geo::intersectsLinePoly(
       a.rawLine(), b.getOuter().rawRing(), a.getMaxSegLen(),
       b.getOuter().getMaxSegLen(), boxA, boxB, firstRel1, firstRel2);
 
-  char ib = std::get<3>(res) ? '1' : (std::get<2>(res) ? '0' : 'F');
+  uint16_t ib = std::get<3>(res) ? D1 : (std::get<2>(res) ? D0 : F);
 
   if (std::get<1>(res)) {
-    char ii = std::get<2>(res) ? '1' : 'F';
-    char ie = '1';
+    uint16_t ii = std::get<2>(res) ? D1 : F;
+    uint16_t ie = D1;
 
-    char bi = 'F';
-    char bb = 'F';
+    uint16_t bi = F;
+    uint16_t bb = F;
 
     if (std::get<4>(res)) {
-      bi = 'F';
-      bb = '0';
+      bi = F;
+      bb = D0;
     } else {
       auto cc1 = containsCovers(a.firstPoint(), b, *firstRel2);
       auto cc2 = containsCovers(a.lastPoint(), b, *firstRel2);
-      bi = std::get<0>(cc1) || std::get<0>(cc2) ? '0' : 'F';
+      bi = std::get<0>(cc1) || std::get<0>(cc2) ? D0 : F;
       bb = (!std::get<0>(cc1) && std::get<1>(cc1)) ||
                    (!std::get<0>(cc2) && std::get<1>(cc2))
-               ? '0'
-               : 'F';
+               ? D0
+               : F;
     }
 
-    char be = '0';
-    char ei = '2';
-    char eb = '1';
+    uint16_t be = D0;
+    uint16_t ei = D2;
+    uint16_t eb = D1;
 
-    return std::string{ii, ib, ie, bi, bb, be, ei, eb, '2'};
+    return (ii << 0) | (ib << 2) | (ie << 4) | (bi << 6) | (bb << 8) |
+           (be << 10) | (ei << 12) | (eb << 14);
   }
 
   if (util::geo::contains(boxA, boxB) &&
@@ -2635,19 +2637,19 @@ DE9IMatrix DE9IM(const util::geo::XSortedLine<T>& a,
                                *firstRel2)
            .second)) {
     // a is contained or covered in the outer of B
-    char ii = !std::get<0>(res) || std::get<2>(res) ? '1' : 'F';
-    char ie = 'F';
+    uint16_t ii = !std::get<0>(res) || std::get<2>(res) ? D1 : F;
+    uint16_t ie = F;
 
     auto cc1 = containsCovers(a.firstPoint(), b, *firstRel2);
     auto cc2 = containsCovers(a.lastPoint(), b, *firstRel2);
-    char bi = std::get<0>(cc1) || std::get<0>(cc2) ? '0' : 'F';
-    char bb = (!std::get<0>(cc1) && std::get<1>(cc1)) ||
-                      (!std::get<0>(cc2) && std::get<1>(cc2))
-                  ? '0'
-                  : 'F';
-    char be = (std::get<1>(cc1) && std::get<1>(cc2)) ? 'F' : '0';
-    char ei = '2';
-    char eb = (!std::get<0>(res) || std::get<2>(res)) ? '1' : 'F';
+    uint16_t bi = std::get<0>(cc1) || std::get<0>(cc2) ? D0 : F;
+    uint16_t bb = (!std::get<0>(cc1) && std::get<1>(cc1)) ||
+                          (!std::get<0>(cc2) && std::get<1>(cc2))
+                      ? D0
+                      : F;
+    uint16_t be = (std::get<1>(cc1) && std::get<1>(cc2)) ? F : D0;
+    uint16_t ei = D2;
+    uint16_t eb = (!std::get<0>(res) || std::get<2>(res)) ? D1 : F;
 
     // check inner polygons
     for (size_t i = b.getFirstInner(a); i < b.getInners().size(); i++) {
@@ -2661,35 +2663,37 @@ DE9IMatrix DE9IM(const util::geo::XSortedLine<T>& a,
       auto res = intersectsContainsInner(a, b.getInners()[i]);
 
       if (std::get<1>(res)) {
-        return "FF1FF0102";  // a is completely contained by innerB
+        return MFF1FF0102;  // a is completely contained by innerB
       }
 
       if (std::get<2>(res)) {
         // a is completely covered by inner b
-        ii = 'F';
-        ib = std::get<5>(res) ? '1' : 'F';
-        ie = !std::get<5>(res) ? '1' : 'F';
+        ii = F;
+        ib = std::get<5>(res) ? D1 : F;
+        ie = !std::get<5>(res) ? D1 : F;
 
-        return std::string{ii, ib, ie, bi, bb, be, ei, eb, '2'};
+        return (ii << 0) | (ib << 2) | (ie << 4) | (bi << 6) | (bb << 8) |
+               (be << 10) | (ei << 12) | (eb << 14);
       }
 
       if (std::get<5>(res)) {
-        ib = '1';
+        ib = D1;
       }
 
       if (std::get<4>(res)) {
         // strictly intersects
-        ii = '1';
-        ie = '1';
+        ii = D1;
+        ie = D1;
 
-        if (ib != '1') ib = std::get<5>(res) ? '1' : '0';
+        if (ib != D1) ib = std::get<5>(res) ? D1 : D0;
       }
     }
 
-    return std::string{ii, ib, ie, bi, bb, be, ei, eb, '2'};
+    return (ii << 0) | (ib << 2) | (ie << 4) | (bi << 6) | (bb << 8) |
+           (be << 10) | (ei << 12) | (eb << 14);
   }
 
-  return "FF1FF0102";
+  return MFF1FF0102;
 }
 
 // _____________________________________________________________________________
@@ -2761,16 +2765,12 @@ std::tuple<bool, bool, bool, bool, bool> intersectsContainsCovers(
     const util::geo::Box<T>& boxB, double outerAreaB, size_t* firstRel1,
     size_t* firstRel2) {
   // returns {intersects, contains, covers, touches, overlaps}
-  auto de9im = DE9IM(a, boxA, outerAreaA, b, boxB, outerAreaB, firstRel1, firstRel2);
+  auto de9im =
+      DE9IM(a, boxA, outerAreaA, b, boxB, outerAreaB, firstRel1, firstRel2);
 
   // see https://en.wikipedia.org/wiki/DE-9IM#Spatial_predicates
-  return {
-      de9im.intersects(),
-      de9im.within(),
-      de9im.covered(),
-      de9im.touches(),
-      de9im.overlaps02()
-  };
+  return {de9im.intersects(), de9im.within(), de9im.covered(), de9im.touches(),
+          de9im.overlaps02()};
 }
 
 // _____________________________________________________________________________
@@ -2809,27 +2809,26 @@ DE9IMatrix DE9IM(const util::geo::XSortedPolygon<T>& a,
                  const util::geo::XSortedPolygon<T>& b,
                  const util::geo::Box<T>& boxB, double outerAreaB,
                  size_t* firstRel1, size_t* firstRel2) {
-  if (a.getOuter().rawRing().size() < 2) return "FF2FF1212";
-  if (b.getOuter().rawRing().size() < 2) return "FF2FF1212";
+  if (a.getOuter().rawRing().size() < 2) return MFF2FF1212;
+  if (b.getOuter().rawRing().size() < 2) return MFF2FF1212;
 
   auto borderInt = util::geo::intersectsPoly(
       b.getOuter(), a.getOuter(), b.getOuter().getMaxSegLen(),
       a.getOuter().getMaxSegLen(), boxB, boxA, firstRel2, firstRel1);
 
-  char bb = std::get<3>(borderInt) ? '1' : std::get<0>(borderInt) ? '0' : 'F';
+  uint16_t bb = std::get<3>(borderInt) ? D1 : std::get<0>(borderInt) ? D0 : F;
 
   if (std::get<1>(borderInt) && std::get<5>(borderInt)) {
-    char ii = (std::get<2>(borderInt) || std::get<6>(borderInt)) ? '2' : 'F';
-    char ib = std::get<2>(borderInt) ? '1' : 'F';
-    char ie = (!std::get<2>(borderInt) && std::get<6>(borderInt)) ? 'F' : '2';
-    char bi = (std::get<2>(borderInt) || std::get<6>(borderInt)) ? '1' : 'F';
-    bb = std::get<3>(borderInt) ? '1' : '0';
-    char be = (!std::get<2>(borderInt) && std::get<6>(borderInt)) ? 'F' : '1';
-    char ei = '2';
-    char eb = '1';
-    char ee = '2';
+    uint16_t ii = (std::get<2>(borderInt) || std::get<6>(borderInt)) ? D2 : F;
+    uint16_t ib = std::get<2>(borderInt) ? D1 : F;
+    uint16_t ie = (!std::get<2>(borderInt) && std::get<6>(borderInt)) ? F : D2;
+    uint16_t bi = (std::get<2>(borderInt) || std::get<6>(borderInt)) ? D1 : F;
+    bb = std::get<3>(borderInt) ? D1 : D0;
+    uint16_t be = (!std::get<2>(borderInt) && std::get<6>(borderInt)) ? F : D1;
+    uint16_t ei = D2;
+    uint16_t eb = D1;
 
-    if (bb != '1') {
+    if (bb != D1) {
       // check inner polygons
       for (size_t i = b.getFirstInner(a); i < b.getInners().size(); i++) {
         const auto& innerBBox = b.getInnerBoxes()[i];
@@ -2841,13 +2840,13 @@ DE9IMatrix DE9IM(const util::geo::XSortedPolygon<T>& a,
         const auto& innerB = b.getInners()[i];
         auto res = intersectsContainsInner(a.getOuter(), innerB);
         if (std::get<5>(res)) {
-          bb = '1';
+          bb = D1;
           break;
         }
       }
     }
 
-    if (bb != '1') {
+    if (bb != D1) {
       for (size_t i = a.getFirstInner(b); i < a.getInners().size(); i++) {
         const auto& innerABox = a.getInnerBoxes()[i];
         if (innerABox.getLowerLeft().getX() >
@@ -2860,13 +2859,14 @@ DE9IMatrix DE9IM(const util::geo::XSortedPolygon<T>& a,
 
         auto res = intersectsContainsInner(b.getOuter(), innerA);
         if (std::get<5>(res)) {
-          bb = '1';
+          bb = D1;
           break;
         }
       }
     }
 
-    return std::string{ii, ib, ie, bi, bb, be, ei, eb, ee};
+    return (ii << 0) | (ib << 2) | (ie << 4) | (bi << 6) | (bb << 8) |
+           (be << 10) | (ei << 12) | (eb << 14);
   }
 
   if (a.getOuter().rawRing().size() > 1 && outerAreaA <= outerAreaB &&
@@ -2879,14 +2879,13 @@ DE9IMatrix DE9IM(const util::geo::XSortedPolygon<T>& a,
     bool equal = std::get<0>(borderInt) && !std::get<2>(borderInt) &&
                  !std::get<6>(borderInt);
 
-    char ii = '2';
-    char ib = 'F';
-    char ie = 'F';
-    char bi = equal ? 'F' : '1';
-    char be = 'F';
-    char ei = equal ? 'F' : '2';
-    char eb = equal ? 'F' : '1';
-    char ee = '2';
+    uint16_t ii = D2;
+    uint16_t ib = F;
+    uint16_t ie = F;
+    uint16_t bi = equal ? F : D1;
+    uint16_t be = F;
+    uint16_t ei = equal ? F : D2;
+    uint16_t eb = equal ? F : D1;
 
     // check inner polygons
     for (size_t i = b.getFirstInner(a); i < b.getInners().size(); i++) {
@@ -2901,16 +2900,16 @@ DE9IMatrix DE9IM(const util::geo::XSortedPolygon<T>& a,
 
       auto res = intersectsContainsInner(a.getOuter(), innerB);
 
-      if (bb != '1')
-        bb = std::get<5>(res) ? '1' : (std::get<3>(res) ? '0' : bb);
+      if (bb != D1) bb = std::get<5>(res) ? D1 : (std::get<3>(res) ? D0 : bb);
 
       // a ist completely contained in inner
-      if (std::get<1>(res)) return "FF2FF1212";
+      if (std::get<1>(res)) return MFF2FF1212;
 
       // a ist completely covered by inner
       if (std::get<2>(res)) {
-        char be = outerAreaA < b.getInnerAreas()[i] ? '1' : 'F';
-        return std::string{'F', 'F', '2', 'F', bb, be, '2', '1', '2'};
+        uint16_t be = outerAreaA < b.getInnerAreas()[i] ? D1 : F;
+        return (F << 0) | (F << 2) | (D2 << 4) | (F << 6) | (bb << 8) |
+               (be << 10) | (D2 << 12) | (D1 << 14);
       }
 
       // inner is completely covered by A
@@ -2938,31 +2937,31 @@ DE9IMatrix DE9IM(const util::geo::XSortedPolygon<T>& a,
         }
 
         if (!covered) {
-          ie = '2';
-          ib = '1';
+          ie = D2;
+          ib = D1;
         }
 
-        if (borderOverlap) bb = '1';
-        if (bb == 'F' && !contained && covered) bb = '0';
+        if (borderOverlap) bb = D1;
+        if (bb == F && !contained && covered) bb = D0;
       }
 
       // inner and a truly overlap, but we must still check others for BB if
       // not yet maxed out
       if (!std::get<2>(res) && std::get<4>(res) && std::get<6>(res)) {
-        ii = '2';
-        ib = '1';
-        ie = '2';
-        bi = '1';
-        be = '1';
-        ei = '2';
-        eb = '1';
-        ee = '2';
+        ii = D2;
+        ib = D1;
+        ie = D2;
+        bi = D1;
+        be = D1;
+        ei = D2;
+        eb = D1;
 
-        if (bb == '1') break;
+        if (bb == D1) break;
       }
     }
 
-    return std::string{ii, ib, ie, bi, bb, be, ei, eb, ee};
+    return (ii << 0) | (ib << 2) | (ie << 4) | (bi << 6) | (bb << 8) |
+           (be << 10) | (ei << 12) | (eb << 14);
   }
 
   if (b.getOuter().rawRing().size() > 1 && outerAreaB <= outerAreaA &&
@@ -2975,14 +2974,13 @@ DE9IMatrix DE9IM(const util::geo::XSortedPolygon<T>& a,
     bool equal = std::get<0>(borderInt) && !std::get<2>(borderInt) &&
                  !std::get<6>(borderInt);
 
-    char ii = '2';
-    char ib = '1';
-    char ie = equal ? 'F' : '2';
-    char bi = 'F';
-    char be = equal ? 'F' : '1';
-    char ei = 'F';
-    char eb = 'F';
-    char ee = '2';
+    uint16_t ii = D2;
+    uint16_t ib = D1;
+    uint16_t ie = equal ? F : D2;
+    uint16_t bi = F;
+    uint16_t be = equal ? F : D1;
+    uint16_t ei = F;
+    uint16_t eb = F;
 
     // check inner polygons
     for (size_t i = a.getFirstInner(b); i < a.getInners().size(); i++) {
@@ -2997,16 +2995,16 @@ DE9IMatrix DE9IM(const util::geo::XSortedPolygon<T>& a,
 
       auto res = intersectsContainsInner(b.getOuter(), innerA);
 
-      if (bb != '1')
-        bb = std::get<5>(res) ? '1' : (std::get<3>(res) ? '0' : bb);
+      if (bb != D1) bb = std::get<5>(res) ? D1 : (std::get<3>(res) ? D0 : bb);
 
       // b ist completely contained in inner
-      if (std::get<1>(res)) return "FF2FF1212";
+      if (std::get<1>(res)) return MFF2FF1212;
 
       // b ist completely covered by inner
       if (std::get<2>(res)) {
-        char eb = outerAreaB < a.getInnerAreas()[i] ? '1' : 'F';
-        return std::string{'F', 'F', '2', 'F', bb, '1', '2', eb, '2'};
+        uint16_t eb = outerAreaB < a.getInnerAreas()[i] ? D1 : F;
+        return (F << 0) | (F << 2) | (D2 << 4) | (F << 6) | (bb << 8) |
+               (D1 << 10) | (D2 << 12) | (eb << 14);
       }
 
       // inner is completely covered by b
@@ -3034,42 +3032,41 @@ DE9IMatrix DE9IM(const util::geo::XSortedPolygon<T>& a,
         }
 
         if (!covered) {
-          ei = '2';
-          bi = '1';
+          ei = D2;
+          bi = D1;
         }
 
-        if (borderOverlap) bb = '1';
-        if (bb == 'F' && !contained && covered) bb = '0';
+        if (borderOverlap) bb = D1;
+        if (bb == F && !contained && covered) bb = D0;
       }
 
       // inner and b truly overlap, but we must still check others for BB if
       // not yet maxed out
       if (!std::get<2>(res) && std::get<4>(res) && std::get<6>(res)) {
-        ii = '2';
-        ib = '1';
-        ie = '2';
-        bi = '1';
-        be = '1';
-        ei = '2';
-        eb = '1';
-        ee = '2';
+        ii = D2;
+        ib = D1;
+        ie = D2;
+        bi = D1;
+        be = D1;
+        ei = D2;
+        eb = D1;
 
-        if (bb == '1') break;
-        // return std::string{'2', '1', '2', '1', bb, '1', '2', '1', '2'};
+        if (bb == D1) break;
       }
     }
 
-    return std::string{ii, ib, ie, bi, bb, be, ei, eb, ee};
+    return (ii << 0) | (ib << 2) | (ie << 4) | (bi << 6) | (bb << 8) |
+           (be << 10) | (ei << 12) | (eb << 14);
   }
 
-  return "FF2FF1212";
+  return MFF2FF1212;
 }
 
 // _____________________________________________________________________________
 template <typename T>
 DE9IMatrix DE9IM(const util::geo::Point<T>& a, const util::geo::Point<T>& b) {
-  if (a == b) return "0FFFFFFF2";
-  return "FF0FFF0F2";
+  if (a == b) return M0FFFFFFF2;
+  return MFF0FFF0F2;
 }
 
 // _____________________________________________________________________________
@@ -3108,13 +3105,8 @@ std::tuple<bool, bool, bool, bool, bool> intersectsCovers(
   auto de9im = DE9IM(a, b, boxA, boxB, firstRelIn1, firstRelIn2);
 
   // see https://en.wikipedia.org/wiki/DE-9IM#Spatial_predicates
-  return {
-      de9im.intersects(),
-      de9im.covered(),
-      de9im.touches(),
-      de9im.overlaps1(),
-      de9im.II() == D0
-  };
+  return {de9im.intersects(), de9im.covered(), de9im.touches(),
+          de9im.overlaps1(), de9im.II() == D0};
 }
 
 // _____________________________________________________________________________
@@ -3135,13 +3127,8 @@ std::tuple<bool, bool, bool, bool, bool> intersectsContainsCovers(
   auto de9im = DE9IM(a, boxA, b, boxB, firstRel1, firstRel2);
 
   // see https://en.wikipedia.org/wiki/DE-9IM#Spatial_predicates
-  return {
-      de9im.intersects(),
-      de9im.within(),
-      de9im.covered(),
-      de9im.touches(),
-      de9im.II() && de9im.IE()
-  };
+  return {de9im.intersects(), de9im.within(), de9im.covered(), de9im.touches(),
+          de9im.II() && de9im.IE()};
 }
 
 // _____________________________________________________________________________
