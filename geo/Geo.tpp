@@ -1899,7 +1899,7 @@ uint8_t IntersectorLine<T>::check(const LineSegment<T>& ls1, int16_t prevLs1Ang,
       ang2 = 32767;
 
     return boolArrToInt8({0, 1, 0, 0, 0,
-                          prevLs2Ang == ang2 && nextLs2Ang == ang1 ? 0 : 1,
+                          !(prevLs2Ang == ang2 && nextLs2Ang == ang1),
                           ls2FirstIsBoundary, ls2SecondIsBoundary});
   }
 
@@ -1916,7 +1916,7 @@ uint8_t IntersectorLine<T>::check(const LineSegment<T>& ls1, int16_t prevLs1Ang,
       ang2 = 32767;
 
     return boolArrToInt8(
-        {prevLs1Ang == ang2 && nextLs1Ang == ang1 ? 0 : 1, 1,
+        {!(prevLs1Ang == ang2 && nextLs1Ang == ang1), 1,
          ls1FirstIsBoundary &&
              !(ls2FirstIsBoundary && ls1.first == ls2.first) &&
              !(ls2SecondIsBoundary && ls1.first == ls2.second),
