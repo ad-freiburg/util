@@ -22,6 +22,7 @@ class DE9IMatrix {
   constexpr DE9IMatrix(const char* m) {
     if (!m) return;
     for (size_t i = 0; i < 8; i++) {
+      if (!m[i]) return;
       if (m[i] == '0') _m |= (D0 << (i * 2));
       if (m[i] == '1') _m |= (D1 << (i * 2));
       if (m[i] == '2') _m |= (D2 << (i * 2));
@@ -108,21 +109,101 @@ class DE9IMatrix {
   bool covered() const {
     return !IE() && !BE() && (II() || IB() || BI() || BB());
   }
-  bool coveredBy() const {
-    return covered();
-  }
-  bool overlaps02() const {
-    return II() && IE() && EI();
-  }
+  bool coveredBy() const { return covered(); }
+  bool overlaps02() const { return II() && IE() && EI(); }
 
-  bool overlaps1() const {
-    return II() == D1 && IE() && EI();
-  }
+  bool overlaps1() const { return II() == D1 && IE() && EI(); }
 
   constexpr uint16_t getMatrix() const { return _m; }
 
  private:
   uint16_t _m = 0;
+};
+
+class DE9IMFilter {
+ public:
+  DE9IMFilter() {}
+
+  constexpr DE9IMFilter(const char* m) {
+    if (!m) return;
+    for (size_t i = 0; i < 8; i++) {
+      if (!m[i]) return;
+      if (m[i] >= '0' && m[i] <= '2') {
+        _equalityMask |= (D2 << (i * 2));
+        _equalityValues |= ((m[i] - '0' + 1) << (i * 2));
+      }
+      if (m[i] == 'F') {
+        _equalityMask |= (D2 << (i * 2));
+      }
+      if (m[i] == 'T') {
+        _trueMask |= (D2 << (i * 2));
+      }
+    }
+    if (!m[8]) return;
+
+    if (m[8] == 'F') _eeVal = F;
+    if (m[8] == '0') _eeVal = D0;
+    if (m[8] == '1') _eeVal = D1;
+    if (m[8] == '2') _eeVal = D2;
+    if (m[8] == 'T') _eeVal = D2 + 1;
+  }
+
+  bool matches(const DE9IMatrix a) const {
+    if (_eeVal == F || _eeVal == D0 || _eeVal == D1) return false;
+    if ((a.getMatrix() & _equalityMask) != _equalityValues) return false;
+
+    // the _trueMask has a 11 pair where matrix pair values have to be 01, 10
+    // or 11. by shifting the trueMask'ed matrix to the right by 1, and or'ing
+    // this shifted matrix with the original trueMask'ed matrix, we get a matrix
+    // where the lower bit of each pair is 1 if the original pair had at least 1
+    // bit set. To avoid an overflow of a set bit into an adjacent previously
+    // unset pair, we then mask to only the lower bits (the overflow can only
+    // happen into the upper bit). This gives as something we can directly
+    // compare to the masked _trueMask
+
+    if (_trueMask &&
+        ((((a.getMatrix() & _trueMask) >> 1) | (a.getMatrix() & _trueMask)) &
+         0b0101010101010101) != (_trueMask & 0b0101010101010101))
+      return false;
+
+    return true;
+  }
+
+  std::string toString() const {
+    std::string ret = "*********";
+
+    for (size_t i = 0; i < 8; i++) {
+      uint8_t eqMask = (_equalityMask & (3 << (i * 2))) >> (i * 2);
+      if (!eqMask) continue;
+      uint8_t v = (_equalityValues & (3 << (i * 2))) >> (i * 2);
+
+      if (v == F) ret[i] = 'F';
+      if (v == D0) ret[i] = '0';
+      if (v == D1) ret[i] = '1';
+      if (v == D2) ret[i] = '2';
+    }
+
+    for (size_t i = 0; i < 8; i++) {
+      uint8_t trueMask = (_trueMask & (3 << (i * 2))) >> (i * 2);
+      if (!trueMask) continue;
+      ret[i] = 'T';
+    }
+
+    if (_eeVal == F) ret[8] = 'F';
+    if (_eeVal == D0) ret[8] = '0';
+    if (_eeVal == D1) ret[8] = '1';
+    if (_eeVal == D2) ret[8] = '2';
+    if (_eeVal == D2 + 1) ret[8] = 'T';
+    if (_eeVal == D2 + 2) ret[8] = '*';
+
+    return ret;
+  }
+
+ private:
+  uint16_t _equalityMask = 0;
+  uint16_t _trueMask = 0;
+  uint16_t _equalityValues = 0;
+  uint8_t _eeVal = D2 + 2;
 };
 
 // often used matrices
@@ -154,6 +235,14 @@ inline DE9IMatrix operator+(const DE9IMatrix a, const DE9IMatrix b) {
   }
 
   return ret;
+}
+
+inline bool operator&(const DE9IMFilter a, const DE9IMatrix b) {
+  return a.matches(b);
+}
+
+inline bool operator&(const DE9IMatrix a, const DE9IMFilter b) {
+  return b.matches(a);
 }
 
 inline std::ostream& operator<<(std::ostream& os, const DE9IMatrix a) {

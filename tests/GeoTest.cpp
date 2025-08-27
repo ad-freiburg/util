@@ -505,6 +505,74 @@ void GeoTest::run() {
   }
 
   {
+    util::geo::DE9IMFilter f1 = "F12******";
+    util::geo::DE9IMFilter f2 = "012******";
+    util::geo::DE9IMFilter f3 = "012*****1";
+    util::geo::DE9IMFilter f4 = "012**T**T";
+    util::geo::DE9IMFilter f5 = "012TTTTTT";
+    util::geo::DE9IMFilter f6 = "TTTTTTTTT";
+    util::geo::DE9IMatrix de9im1 = "F12222222";
+    util::geo::DE9IMatrix de9im2 = "012222222";
+
+    TEST(de9im1 & f1);
+    TEST(!(de9im2 & f1));
+    TEST(!(de9im1 & f2));
+    TEST(!(de9im1 & f3));
+    TEST(!(de9im2 & f3));
+    TEST(!(de9im1 & f4));
+    TEST(!(de9im1 & f5));
+    TEST(!(de9im1 & f6));
+    TEST(de9im2 & f6);
+    TEST(de9im2 & f2);
+    TEST(de9im2 & f4);
+    TEST(de9im2 & f5);
+
+    TEST(util::geo::DE9IMatrix("FFFF1FFF2") & util::geo::DE9IMFilter("****T****"));
+    TEST(!(util::geo::DE9IMatrix("FFFF1FFF2") & util::geo::DE9IMFilter("***T*****")));
+    TEST(!(util::geo::DE9IMatrix("FFFF1FFF2") & util::geo::DE9IMFilter("***TT*****")));
+    TEST((util::geo::DE9IMatrix("FFFF1FFF2") & util::geo::DE9IMFilter("****T****T")));
+    TEST((util::geo::DE9IMatrix("FFFF1FFF2") & util::geo::DE9IMFilter("****T***2")));
+
+    TEST((util::geo::DE9IMatrix("2FFF1FFF2") & util::geo::DE9IMFilter("T***T***2")));
+    TEST(!(util::geo::DE9IMatrix("2FFF1FFF2") & util::geo::DE9IMFilter("TT**T***2")));
+    TEST((util::geo::DE9IMatrix("20FF1FFF2") & util::geo::DE9IMFilter("TT**T***2")));
+    TEST(!(util::geo::DE9IMatrix("20FF1F1F2") & util::geo::DE9IMFilter("TT**T*2*2")));
+    TEST(!(util::geo::DE9IMatrix("20FF1F1F2") & util::geo::DE9IMFilter("TT**T*0*2")));
+    TEST((util::geo::DE9IMatrix("20FF1F1F2") & util::geo::DE9IMFilter("TT**T*T*2")));
+    TEST((util::geo::DE9IMatrix("20FF1F1F2") & util::geo::DE9IMFilter("TT**T*1*2")));
+
+    TEST((util::geo::DE9IMatrix("20FF1F1F2") & util::geo::DE9IMFilter("20FF1F1F2")));
+    TEST((util::geo::DE9IMatrix("20FF1F1F2") & util::geo::DE9IMFilter("2*FF1F1F2")));
+    TEST((util::geo::DE9IMatrix("20FF1F1F2") & util::geo::DE9IMFilter("2*FF1F1*2")));
+
+    TEST(!(util::geo::DE9IMatrix("20FF1F1F2") & util::geo::DE9IMFilter("20FF0F1F2")));
+    TEST((util::geo::DE9IMatrix("222222222") & util::geo::DE9IMFilter("222222222")));
+    TEST((util::geo::DE9IMatrix("222222222") & util::geo::DE9IMFilter("*********")));
+    TEST((util::geo::DE9IMatrix("222222222") & util::geo::DE9IMFilter("TTTTTTTTT")));
+    TEST((util::geo::DE9IMatrix("111111111") & util::geo::DE9IMFilter("TTTTTTTTT")));
+    TEST((util::geo::DE9IMatrix("000000000") & util::geo::DE9IMFilter("TTTTTTTTT")));
+    TEST(!(util::geo::DE9IMatrix("0000F0000") & util::geo::DE9IMFilter("TTTTTTTTT")));
+    TEST(!(util::geo::DE9IMatrix("0F0F0F0F0") & util::geo::DE9IMFilter("TTTTTTTTT")));
+    TEST((util::geo::DE9IMatrix("0F0F0F0F0") & util::geo::DE9IMFilter("TFTFTFTFT")));
+    TEST(!(util::geo::DE9IMatrix("0F0F0F0F0") & util::geo::DE9IMFilter("FTFTFTFTF")));
+    TEST(!(util::geo::DE9IMatrix("1F1F1F1F1") & util::geo::DE9IMFilter("TTTTTTTTT")));
+    TEST((util::geo::DE9IMatrix("1F1F1F1F1") & util::geo::DE9IMFilter("TFTFTFTFT")));
+    TEST(!(util::geo::DE9IMatrix("1F1F1F1F1") & util::geo::DE9IMFilter("FTFTFTFTF")));
+    TEST(!(util::geo::DE9IMatrix("2F2F2F2F2") & util::geo::DE9IMFilter("TTTTTTTTT")));
+    TEST((util::geo::DE9IMatrix("2F2F2F2F2") & util::geo::DE9IMFilter("TFTFTFTFT")));
+    TEST(!(util::geo::DE9IMatrix("2F2F2F2F2") & util::geo::DE9IMFilter("FTFTFTFTF")));
+
+    TEST(util::geo::DE9IMFilter("FTFTFTFT*").toString(), ==, "FTFTFTFT*");
+    TEST(util::geo::DE9IMFilter("FTFTFTFT2").toString(), ==, "FTFTFTFT2");
+    TEST(util::geo::DE9IMFilter("FTFTFTFT1").toString(), ==, "FTFTFTFT1");
+    TEST(util::geo::DE9IMFilter("FTFTFTFT0").toString(), ==, "FTFTFTFT0");
+    TEST(util::geo::DE9IMFilter("TTTTTTTTT").toString(), ==, "TTTTTTTTT");
+    TEST(util::geo::DE9IMFilter("*********").toString(), ==, "*********");
+    TEST(util::geo::DE9IMFilter("****1****").toString(), ==, "****1****");
+    TEST(util::geo::DE9IMFilter("T*T*T*T*T").toString(), ==, "T*T*T*T*T");
+  }
+
+  {
     auto a = lineFromWKT<int>("LINESTRING(1 1, 2 2)");
     auto b = lineFromWKT<int>("LINESTRING(0 0, 4 4)");
     XSortedLine<int> ax(a);
