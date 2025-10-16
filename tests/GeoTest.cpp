@@ -1,13 +1,12 @@
 // Copyright 2016
 // Author: Patrick Brosi
 
-#include "util/tests/GeoTest.h"
-
 #include "util/Test.h"
 #include "util/geo/Geo.h"
 #include "util/geo/Grid.h"
 #include "util/geo/RTree.h"
 #include "util/geo/output/GeoJsonOutput.h"
+#include "util/tests/GeoTest.h"
 
 using namespace util;
 using namespace util::geo;
@@ -527,40 +526,71 @@ void GeoTest::run() {
     TEST(de9im2 & f4);
     TEST(de9im2 & f5);
 
-    TEST(util::geo::DE9IMatrix("FFFF1FFF2") & util::geo::DE9IMFilter("****T****"));
-    TEST(!(util::geo::DE9IMatrix("FFFF1FFF2") & util::geo::DE9IMFilter("***T*****")));
-    TEST(!(util::geo::DE9IMatrix("FFFF1FFF2") & util::geo::DE9IMFilter("***TT*****")));
-    TEST((util::geo::DE9IMatrix("FFFF1FFF2") & util::geo::DE9IMFilter("****T****T")));
-    TEST((util::geo::DE9IMatrix("FFFF1FFF2") & util::geo::DE9IMFilter("****T***2")));
+    TEST(util::geo::DE9IMatrix("FFFF1FFF2") &
+         util::geo::DE9IMFilter("****T****"));
+    TEST(!(util::geo::DE9IMatrix("FFFF1FFF2") &
+           util::geo::DE9IMFilter("***T*****")));
+    TEST(!(util::geo::DE9IMatrix("FFFF1FFF2") &
+           util::geo::DE9IMFilter("***TT*****")));
+    TEST((util::geo::DE9IMatrix("FFFF1FFF2") &
+          util::geo::DE9IMFilter("****T****T")));
+    TEST((util::geo::DE9IMatrix("FFFF1FFF2") &
+          util::geo::DE9IMFilter("****T***2")));
 
-    TEST((util::geo::DE9IMatrix("2FFF1FFF2") & util::geo::DE9IMFilter("T***T***2")));
-    TEST(!(util::geo::DE9IMatrix("2FFF1FFF2") & util::geo::DE9IMFilter("TT**T***2")));
-    TEST((util::geo::DE9IMatrix("20FF1FFF2") & util::geo::DE9IMFilter("TT**T***2")));
-    TEST(!(util::geo::DE9IMatrix("20FF1F1F2") & util::geo::DE9IMFilter("TT**T*2*2")));
-    TEST(!(util::geo::DE9IMatrix("20FF1F1F2") & util::geo::DE9IMFilter("TT**T*0*2")));
-    TEST((util::geo::DE9IMatrix("20FF1F1F2") & util::geo::DE9IMFilter("TT**T*T*2")));
-    TEST((util::geo::DE9IMatrix("20FF1F1F2") & util::geo::DE9IMFilter("TT**T*1*2")));
+    TEST((util::geo::DE9IMatrix("2FFF1FFF2") &
+          util::geo::DE9IMFilter("T***T***2")));
+    TEST(!(util::geo::DE9IMatrix("2FFF1FFF2") &
+           util::geo::DE9IMFilter("TT**T***2")));
+    TEST((util::geo::DE9IMatrix("20FF1FFF2") &
+          util::geo::DE9IMFilter("TT**T***2")));
+    TEST(!(util::geo::DE9IMatrix("20FF1F1F2") &
+           util::geo::DE9IMFilter("TT**T*2*2")));
+    TEST(!(util::geo::DE9IMatrix("20FF1F1F2") &
+           util::geo::DE9IMFilter("TT**T*0*2")));
+    TEST((util::geo::DE9IMatrix("20FF1F1F2") &
+          util::geo::DE9IMFilter("TT**T*T*2")));
+    TEST((util::geo::DE9IMatrix("20FF1F1F2") &
+          util::geo::DE9IMFilter("TT**T*1*2")));
 
-    TEST((util::geo::DE9IMatrix("20FF1F1F2") & util::geo::DE9IMFilter("20FF1F1F2")));
-    TEST((util::geo::DE9IMatrix("20FF1F1F2") & util::geo::DE9IMFilter("2*FF1F1F2")));
-    TEST((util::geo::DE9IMatrix("20FF1F1F2") & util::geo::DE9IMFilter("2*FF1F1*2")));
+    TEST((util::geo::DE9IMatrix("20FF1F1F2") &
+          util::geo::DE9IMFilter("20FF1F1F2")));
+    TEST((util::geo::DE9IMatrix("20FF1F1F2") &
+          util::geo::DE9IMFilter("2*FF1F1F2")));
+    TEST((util::geo::DE9IMatrix("20FF1F1F2") &
+          util::geo::DE9IMFilter("2*FF1F1*2")));
 
-    TEST(!(util::geo::DE9IMatrix("20FF1F1F2") & util::geo::DE9IMFilter("20FF0F1F2")));
-    TEST((util::geo::DE9IMatrix("222222222") & util::geo::DE9IMFilter("222222222")));
-    TEST((util::geo::DE9IMatrix("222222222") & util::geo::DE9IMFilter("*********")));
-    TEST((util::geo::DE9IMatrix("222222222") & util::geo::DE9IMFilter("TTTTTTTTT")));
-    TEST((util::geo::DE9IMatrix("111111111") & util::geo::DE9IMFilter("TTTTTTTTT")));
-    TEST((util::geo::DE9IMatrix("000000000") & util::geo::DE9IMFilter("TTTTTTTTT")));
-    TEST(!(util::geo::DE9IMatrix("0000F0000") & util::geo::DE9IMFilter("TTTTTTTTT")));
-    TEST(!(util::geo::DE9IMatrix("0F0F0F0F0") & util::geo::DE9IMFilter("TTTTTTTTT")));
-    TEST((util::geo::DE9IMatrix("0F0F0F0F0") & util::geo::DE9IMFilter("TFTFTFTFT")));
-    TEST(!(util::geo::DE9IMatrix("0F0F0F0F0") & util::geo::DE9IMFilter("FTFTFTFTF")));
-    TEST(!(util::geo::DE9IMatrix("1F1F1F1F1") & util::geo::DE9IMFilter("TTTTTTTTT")));
-    TEST((util::geo::DE9IMatrix("1F1F1F1F1") & util::geo::DE9IMFilter("TFTFTFTFT")));
-    TEST(!(util::geo::DE9IMatrix("1F1F1F1F1") & util::geo::DE9IMFilter("FTFTFTFTF")));
-    TEST(!(util::geo::DE9IMatrix("2F2F2F2F2") & util::geo::DE9IMFilter("TTTTTTTTT")));
-    TEST((util::geo::DE9IMatrix("2F2F2F2F2") & util::geo::DE9IMFilter("TFTFTFTFT")));
-    TEST(!(util::geo::DE9IMatrix("2F2F2F2F2") & util::geo::DE9IMFilter("FTFTFTFTF")));
+    TEST(!(util::geo::DE9IMatrix("20FF1F1F2") &
+           util::geo::DE9IMFilter("20FF0F1F2")));
+    TEST((util::geo::DE9IMatrix("222222222") &
+          util::geo::DE9IMFilter("222222222")));
+    TEST((util::geo::DE9IMatrix("222222222") &
+          util::geo::DE9IMFilter("*********")));
+    TEST((util::geo::DE9IMatrix("222222222") &
+          util::geo::DE9IMFilter("TTTTTTTTT")));
+    TEST((util::geo::DE9IMatrix("111111111") &
+          util::geo::DE9IMFilter("TTTTTTTTT")));
+    TEST((util::geo::DE9IMatrix("000000000") &
+          util::geo::DE9IMFilter("TTTTTTTTT")));
+    TEST(!(util::geo::DE9IMatrix("0000F0000") &
+           util::geo::DE9IMFilter("TTTTTTTTT")));
+    TEST(!(util::geo::DE9IMatrix("0F0F0F0F0") &
+           util::geo::DE9IMFilter("TTTTTTTTT")));
+    TEST((util::geo::DE9IMatrix("0F0F0F0F0") &
+          util::geo::DE9IMFilter("TFTFTFTFT")));
+    TEST(!(util::geo::DE9IMatrix("0F0F0F0F0") &
+           util::geo::DE9IMFilter("FTFTFTFTF")));
+    TEST(!(util::geo::DE9IMatrix("1F1F1F1F1") &
+           util::geo::DE9IMFilter("TTTTTTTTT")));
+    TEST((util::geo::DE9IMatrix("1F1F1F1F1") &
+          util::geo::DE9IMFilter("TFTFTFTFT")));
+    TEST(!(util::geo::DE9IMatrix("1F1F1F1F1") &
+           util::geo::DE9IMFilter("FTFTFTFTF")));
+    TEST(!(util::geo::DE9IMatrix("2F2F2F2F2") &
+           util::geo::DE9IMFilter("TTTTTTTTT")));
+    TEST((util::geo::DE9IMatrix("2F2F2F2F2") &
+          util::geo::DE9IMFilter("TFTFTFTFT")));
+    TEST(!(util::geo::DE9IMatrix("2F2F2F2F2") &
+           util::geo::DE9IMFilter("FTFTFTFTF")));
 
     TEST(util::geo::DE9IMFilter("FTFTFTFT*").toString(), ==, "FTFTFTFT*");
     TEST(util::geo::DE9IMFilter("FTFTFTFT2").toString(), ==, "FTFTFTFT2");
@@ -4383,13 +4413,15 @@ void GeoTest::run() {
     Polygon<int> api;
     for (const auto& p : ap[0].getOuter()) {
       auto pp = latLngToWebMerc(p);
-      api.getOuter().push_back({pp.getX() * 10, pp.getY() * 10});
+      api.getOuter().push_back(
+          {static_cast<int>(pp.getX() * 10), static_cast<int>(pp.getY() * 10)});
     }
 
     Polygon<int> bpi;
     for (const auto& p : bp[0].getOuter()) {
       auto pp = latLngToWebMerc(p);
-      bpi.getOuter().push_back({pp.getX() * 10, pp.getY() * 10});
+      bpi.getOuter().push_back(
+          {static_cast<int>(pp.getX() * 10), static_cast<int>(pp.getY() * 10)});
     }
 
     XSortedPolygon<double> app(ap[0]);

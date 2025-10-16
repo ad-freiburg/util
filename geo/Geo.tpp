@@ -2046,7 +2046,7 @@ uint8_t IntersectorLine<T>::check(const LineSegment<T>& ls1, int16_t prevLs1Ang,
   // the line segments strictly intersect
   if (((crossProd(ls1.first, ls2) < 0) ^ (crossProd(ls1.second, ls2) < 0)) &&
       ((crossProd(ls2.first, ls1) < 0) ^ (crossProd(ls2.second, ls1) < 0))) {
-    return 0b00110001;
+    return bit16(00110001);
   }
 
   return 0;
@@ -2066,8 +2066,8 @@ uint8_t IntersectorLinePoly<T>::check(const LineSegment<T>& ls1,
   int8_t ret =
       IntersectorPoly<T>::checkOneDir(ls1, prevLs1Ang, nextLs1Ang, ls2);
 
-  if (prevLs2Ang == 32767 && contains(ls2.first, ls1)) ret |= 0b10000;
-  if (nextLs2Ang == 32767 && contains(ls2.second, ls1)) ret |= 0b10000;
+  if (prevLs2Ang == 32767 && contains(ls2.first, ls1)) ret |= bit16(10000);
+  if (nextLs2Ang == 32767 && contains(ls2.second, ls1)) ret |= bit16(10000);
 
   return ret;
 }
@@ -2081,7 +2081,7 @@ uint8_t IntersectorPoly<T>::checkOneDir(const LineSegment<T>& ls1,
   const bool ls2SecondInLs1 = contains(ls2.second, ls1);
 
   // ls2 is completely in ls1
-  if (ls2FirstInLs1 && ls2SecondInLs1) return 0b1001;
+  if (ls2FirstInLs1 && ls2SecondInLs1) return bit16(1001);
 
   bool ls1FirstInLs2 = contains(ls1.first, ls2);
   bool ls1SecondInLs2 = contains(ls1.second, ls2);
@@ -2090,7 +2090,7 @@ uint8_t IntersectorPoly<T>::checkOneDir(const LineSegment<T>& ls1,
     // this is not strictly correct, as we might overlap into the inside
     // of the polygon, but it doesn't matter, because this will be fetched
     // by the adjacent line segments of ls1
-    return 0b1001;
+    return bit16(1001);
   }
 
   if (ls1.first == ls2.first && !ls1SecondInLs2 && !ls2SecondInLs1) {
@@ -2101,10 +2101,10 @@ uint8_t IntersectorPoly<T>::checkOneDir(const LineSegment<T>& ls1,
               ls2.second.getY() - (ls1.first.getY() - ls1.second.getY())}) /
          M_PI) *
         32766;
-    if (ang > prevLs1Ang) return 0b0101;
-    if (ang == prevLs1Ang) return 0b1001;
+    if (ang > prevLs1Ang) return bit16(0101);
+    if (ang == prevLs1Ang) return bit16(1001);
 
-    return 0b0011;
+    return bit16(0011);
   }
 
   if (ls1.first == ls2.second && !ls1SecondInLs2 && !ls2FirstInLs1) {
@@ -2115,9 +2115,9 @@ uint8_t IntersectorPoly<T>::checkOneDir(const LineSegment<T>& ls1,
               ls2.first.getY() - (ls1.first.getY() - ls1.second.getY())}) /
          M_PI) *
         32766;
-    if (ang > prevLs1Ang) return 0b0101;
-    if (ang == prevLs1Ang) return 0b1001;
-    return 0b0011;
+    if (ang > prevLs1Ang) return bit16(0101);
+    if (ang == prevLs1Ang) return bit16(1001);
+    return bit16(0011);
   }
 
   if (ls1.second == ls2.first && !ls1FirstInLs2 && !ls2SecondInLs1) {
@@ -2129,9 +2129,9 @@ uint8_t IntersectorPoly<T>::checkOneDir(const LineSegment<T>& ls1,
          M_PI) *
         32766;
 
-    if (ang < nextLs1Ang) return 0b0101;
-    if (ang == nextLs1Ang) return 0b1001;
-    return 0b0011;
+    if (ang < nextLs1Ang) return bit16(0101);
+    if (ang == nextLs1Ang) return bit16(1001);
+    return bit16(0011);
   }
 
   if (ls1.second == ls2.second && !ls1FirstInLs2 && !ls2FirstInLs1) {
@@ -2143,9 +2143,9 @@ uint8_t IntersectorPoly<T>::checkOneDir(const LineSegment<T>& ls1,
          M_PI) *
         32766;
 
-    if (ang < nextLs1Ang) return 0b0101;
-    if (ang == nextLs1Ang) return 0b1001;
-    return 0b0011;
+    if (ang < nextLs1Ang) return bit16(0101);
+    if (ang == nextLs1Ang) return bit16(1001);
+    return bit16(0011);
   }
 
   if (ls1FirstInLs2 && !ls1SecondInLs2 && !ls2FirstInLs1 && !ls2SecondInLs1) {
@@ -2165,9 +2165,9 @@ uint8_t IntersectorPoly<T>::checkOneDir(const LineSegment<T>& ls1,
          M_PI) *
         32766;
 
-    if (ang1 > prevLs1Ang) return 0b0111;
-    if (ang2 > prevLs1Ang) return 0b0111;
-    return 0b0011;
+    if (ang1 > prevLs1Ang) return bit16(0111);
+    if (ang2 > prevLs1Ang) return bit16(0111);
+    return bit16(0011);
   }
 
   if (ls1SecondInLs2 && !ls1FirstInLs2 && !ls2FirstInLs1 && !ls2SecondInLs1) {
@@ -2186,27 +2186,27 @@ uint8_t IntersectorPoly<T>::checkOneDir(const LineSegment<T>& ls1,
               ls2.second.getY() - (ls1.second.getY() - ls1.first.getY())}) /
          M_PI) *
         32766;
-    if (ang1 < nextLs1Ang) return 0b0111;
-    if (ang2 < nextLs1Ang) return 0b0111;
-    return 0b0011;
+    if (ang1 < nextLs1Ang) return bit16(0111);
+    if (ang2 < nextLs1Ang) return bit16(0111);
+    return bit16(0011);
   }
 
   if (ls2FirstInLs1 && !ls1SecondInLs2 && !ls1FirstInLs2 && !ls2SecondInLs1) {
     // ls2.first is strictly (excluding end-points) on ls1
-    if (crossProd(ls2.second, ls1) > 0) return 0b0101;
-    return 0b0011;
+    if (crossProd(ls2.second, ls1) > 0) return bit16(0101);
+    return bit16(0011);
   }
 
   if (ls2SecondInLs1 && !ls2FirstInLs1 && !ls1FirstInLs2 && !ls1SecondInLs2) {
     // ls2.second is strictly (excluding end-points) on ls1
-    if (crossProd(ls2.first, ls1) > 0) return 0b0101;
-    return 0b0011;
+    if (crossProd(ls2.first, ls1) > 0) return bit16(0101);
+    return bit16(0011);
   }
 
   // the line segments strictly intersect
   if (((crossProd(ls1.first, ls2) < 0) ^ (crossProd(ls1.second, ls2) < 0)) &&
       ((crossProd(ls2.first, ls1) < 0) ^ (crossProd(ls2.second, ls1) < 0))) {
-    return 0b0111;
+    return bit16(0111);
   }
 
   return 0;

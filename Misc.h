@@ -54,6 +54,8 @@ static const size_t SORT_BUFFER_S = 64 * 128 * 1024;
 namespace util {
 
 struct SortJob {
+  SortJob() : part(0), partbuf(0) {}
+  SortJob(size_t part, unsigned char* partbuf) : part(part), partbuf(partbuf) {}
   size_t part = 0;
   unsigned char* partbuf = 0;
 };

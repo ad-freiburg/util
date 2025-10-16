@@ -24,13 +24,13 @@ static int pow10[10] = {1,      10,      100,      1000,      10000,
                         100000, 1000000, 10000000, 100000000, 1000000000};
 
 // _____________________________________________________________________________
-uint64_t factorial(uint64_t n) {
+uint64_t util::factorial(uint64_t n) {
   if (n < 2) return 1;
   return n * factorial(n - 1);
 }
 
 // _____________________________________________________________________________
-uint64_t atoul(const char* p) {
+uint64_t util::atoul(const char* p) {
   uint64_t ret = 0;
 
   while (*p) {
@@ -41,7 +41,7 @@ uint64_t atoul(const char* p) {
 }
 
 // _____________________________________________________________________________
-bool isFloatingPoint(const std::string& str) {
+bool util::isFloatingPoint(const std::string& str) {
   std::stringstream ss(str);
   double f;
   ss >> std::noskipws >> f;

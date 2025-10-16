@@ -5,21 +5,49 @@
 #ifndef UTIL_GEO_DE9IMATRIX_H_
 #define UTIL_GEO_DE9IMATRIX_H_
 
+// hacky helper function for writing 16 bit binary constants prior to C++ 14
+#define bit16_(x)                                                              \
+  (((x & 0x0000000000000001) ? 1 : 0) + ((x & 0x0000000000000010) ? 2 : 0) +   \
+   ((x & 0x0000000000000100) ? 4 : 0) + ((x & 0x0000000000001000) ? 8 : 0) +   \
+   ((x & 0x0000000000010000) ? 16 : 0) + ((x & 0x0000000000100000) ? 32 : 0) + \
+   ((x & 0x0000000001000000) ? 64 : 0) +                                       \
+   ((x & 0x0000000010000000) ? 128 : 0) +                                      \
+   ((x & 0x0000000100000000) ? 256 : 0) +                                      \
+   ((x & 0x0000001000000000) ? 512 : 0) +                                      \
+   ((x & 0x0000010000000000) ? 1024 : 0) +                                     \
+   ((x & 0x0000100000000000) ? 2048 : 0) +                                     \
+   ((x & 0x0001000000000000) ? 4096 : 0) +                                     \
+   ((x & 0x0010000000000000) ? 8192 : 0) +                                     \
+   ((x & 0x0100000000000000) ? 16384 : 0) +                                    \
+   ((x & 0x1000000000000000) ? 32768 : 0))
+
+#if __cplusplus >= 201402L
+#define bit16(d) (0b##d)
+#else
+#define bit16(d) ((uint16_t)bit16_(0x##d))
+#endif
+
+#if __cplusplus >= 201402L
+#define CONSTEXPR constexpr
+#else
+#define CONSTEXPR
+#endif
+
 #include <iostream>
 
 namespace util {
 namespace geo {
 
-const static uint16_t F = 0b00;
-const static uint16_t D0 = 0b01;
-const static uint16_t D1 = 0b10;
-const static uint16_t D2 = 0b11;
+const static uint16_t F = bit16(00);
+const static uint16_t D0 = bit16(01);
+const static uint16_t D1 = bit16(10);
+const static uint16_t D2 = bit16(11);
 
 class DE9IMatrix {
  public:
   DE9IMatrix() {}
 
-  constexpr DE9IMatrix(const char* m) {
+  CONSTEXPR DE9IMatrix(const char* m) {
     if (!m) return;
     for (size_t i = 0; i < 8; i++) {
       if (!m[i]) return;
@@ -114,7 +142,7 @@ class DE9IMatrix {
 
   bool overlaps1() const { return II() == D1 && IE() && EI(); }
 
-  constexpr uint16_t getMatrix() const { return _m; }
+  CONSTEXPR uint16_t getMatrix() const { return _m; }
 
  private:
   uint16_t _m = 0;
@@ -124,7 +152,7 @@ class DE9IMFilter {
  public:
   DE9IMFilter() {}
 
-  constexpr DE9IMFilter(const char* m) {
+  CONSTEXPR DE9IMFilter(const char* m) {
     if (!m) return;
     for (size_t i = 0; i < 8; i++) {
       if (!m[i]) return;
@@ -163,7 +191,7 @@ class DE9IMFilter {
 
     if (_trueMask &&
         ((((a.getMatrix() & _trueMask) >> 1) | (a.getMatrix() & _trueMask)) &
-         0b0101010101010101) != (_trueMask & 0b0101010101010101))
+         bit16(0101010101010101)) != (_trueMask & bit16(0101010101010101)))
       return false;
 
     return true;
@@ -207,22 +235,22 @@ class DE9IMFilter {
 };
 
 // often used matrices
-constexpr DE9IMatrix M0FFFFF102("0FFFFF102");
-constexpr DE9IMatrix MF0FFFF102("F0FFFF102");
-constexpr DE9IMatrix MFF0FFF102("FF0FFF102");
-constexpr DE9IMatrix M0F1FF0FF2("0F1FF0FF2");
-constexpr DE9IMatrix MFF1F00FF2("FF1F00FF2");
-constexpr DE9IMatrix MFF1FF00F2("FF1FF00F2");
-constexpr DE9IMatrix M0FFFFF212("0FFFFF212");
-constexpr DE9IMatrix MF0FFFF212("F0FFFF212");
-constexpr DE9IMatrix MFF0FFF212("FF0FFF212");
-constexpr DE9IMatrix M0F2FF1FF2("0F2FF1FF2");
-constexpr DE9IMatrix MFF20F1FF2("FF20F1FF2");
-constexpr DE9IMatrix MFF2FF10F2("FF2FF10F2");
-constexpr DE9IMatrix MFF1FF0102("FF1FF0102");
-constexpr DE9IMatrix MFF2FF1212("FF2FF1212");
-constexpr DE9IMatrix M0FFFFFFF2("0FFFFFFF2");
-constexpr DE9IMatrix MFF0FFF0F2("FF0FFF0F2");
+static CONSTEXPR DE9IMatrix M0FFFFF102("0FFFFF102");
+static CONSTEXPR DE9IMatrix MF0FFFF102("F0FFFF102");
+static CONSTEXPR DE9IMatrix MFF0FFF102("FF0FFF102");
+static CONSTEXPR DE9IMatrix M0F1FF0FF2("0F1FF0FF2");
+static CONSTEXPR DE9IMatrix MFF1F00FF2("FF1F00FF2");
+static CONSTEXPR DE9IMatrix MFF1FF00F2("FF1FF00F2");
+static CONSTEXPR DE9IMatrix M0FFFFF212("0FFFFF212");
+static CONSTEXPR DE9IMatrix MF0FFFF212("F0FFFF212");
+static CONSTEXPR DE9IMatrix MFF0FFF212("FF0FFF212");
+static CONSTEXPR DE9IMatrix M0F2FF1FF2("0F2FF1FF2");
+static CONSTEXPR DE9IMatrix MFF20F1FF2("FF20F1FF2");
+static CONSTEXPR DE9IMatrix MFF2FF10F2("FF2FF10F2");
+static CONSTEXPR DE9IMatrix MFF1FF0102("FF1FF0102");
+static CONSTEXPR DE9IMatrix MFF2FF1212("FF2FF1212");
+static CONSTEXPR DE9IMatrix M0FFFFFFF2("0FFFFFFF2");
+static CONSTEXPR DE9IMatrix MFF0FFF0F2("FF0FFF0F2");
 
 inline DE9IMatrix operator+(const DE9IMatrix a, const DE9IMatrix b) {
   DE9IMatrix ret;
