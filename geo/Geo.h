@@ -1013,6 +1013,16 @@ RotatedBox<T> getOrientedEnvelope(const Geometry<T>& pol);
 template <typename T>
 RotatedBox<T> getOrientedEnvelope(const Collection<T>& collection);
 
+template <template <typename> class Geometry, typename T>
+RotatedBox<T> getOrientedEnvelope(const std::vector<Geometry<T>>& pol,
+                                  double step);
+
+template <template <typename> class Geometry, typename T>
+RotatedBox<T> getOrientedEnvelope(const Geometry<T>& pol, double step);
+
+template <typename T>
+RotatedBox<T> getOrientedEnvelope(const Collection<T>& collection, double step);
+
 template <typename T>
 Polygon<T> buffer(const Line<T>& line, double d, size_t points);
 
