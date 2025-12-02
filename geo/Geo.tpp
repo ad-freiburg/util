@@ -1114,6 +1114,7 @@ std::tuple<bool, bool> intersectsContains(const Point<T>& p,
                                           const XSortedLine<T>& line,
                                           size_t i) {
   // check if point p lies on line
+  // returns {intersects, contains}
 
   // skip irrelevant parts
   if (line.getMaxSegLen() < std::numeric_limits<double>::infinity() &&
@@ -1148,8 +1149,8 @@ std::tuple<bool, bool> intersectsContains(const Point<T>& p,
 template <typename T>
 DE9IMatrix DE9IM(const Point<T>& p, const XSortedLine<T>& line, size_t i) {
   auto res = intersectsContains(p, line, i);
-  if (std::get<0>(res)) return M0FFFFF102;
-  if (std::get<1>(res)) return MF0FFFF102;
+  if (std::get<1>(res)) return M0FFFFF102;
+  if (std::get<0>(res)) return MF0FFFF102;
   return MFF0FFF102;
 }
 
@@ -4335,56 +4336,7 @@ RotatedBox<T> getOrientedEnvelope(const std::vector<Geometry<T>>& pol) {
 
 // _____________________________________________________________________________
 template <template <typename> class Geometry, typename T>
-inline RotatedBox<T> getOrientedEnvelope(const std::vector<Geometry<T>>& pol,
-                                         double step) {
-  // only allows angles which are multiples of step
-
-  Point<T> center = centroid(pol);
-  Box<T> tmpBox = getBoundingBox(pol);
-  double rotateDeg = 0;
-
-  std::vector<Geometry<T>> tmp = pol;
-
-  // rotate in steps
-  double i = step;
-  while (i < 360) {
-    tmp = rotate(tmp, step, center);
-    Box<T> e = getBoundingBox(tmp);
-    if (area(tmpBox) > area(e)) {
-      tmpBox = e;
-      rotateDeg = i;
-    }
-    i += step;
-  }
-
-  return RotatedBox<T>(tmpBox, -rotateDeg, center);
-}
-
-// _____________________________________________________________________________
-template <template <typename> class Geometry, typename T>
-inline RotatedBox<T> getOrientedEnvelope(const Geometry<T>& pol, double step) {
-  return getOrientedEnvelope(std::vector<Geometry<T>>{pol}, step);
-}
-
-// _____________________________________________________________________________
-template <typename T>
-inline RotatedBox<T> getOrientedEnvelope(const Collection<T>& collection,
-                                         double step) {
-  MultiPolygon<T> p;
-  for (const auto& g : collection) {
-    if (g.getType() == 0) p.push_back(convexHull(g.getPoint()));
-    if (g.getType() == 1) p.push_back(convexHull(g.getLine()));
-    if (g.getType() == 2) p.push_back(convexHull(g.getPolygon()));
-    if (g.getType() == 3) p.push_back(convexHull(g.getMultiLine()));
-    if (g.getType() == 4) p.push_back(convexHull(g.getMultiPolygon()));
-    if (g.getType() == 5) p.push_back(convexHull(g.getCollection()));
-  }
-  return getOrientedEnvelope(p, step);
-}
-
-// _____________________________________________________________________________
-template <template <typename> class Geometry, typename T>
-inline RotatedBox<T> getOrientedEnvelope(const Geometry<T>& pol) {
+RotatedBox<T> getOrientedEnvelope(const Geometry<T>& pol) {
   return getOrientedEnvelope(std::vector<Geometry<T>>{pol});
 }
 

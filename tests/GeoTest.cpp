@@ -1815,6 +1815,20 @@ void GeoTest::run() {
   }
 
   {
+    auto line =lineFromWKT<int>("LINESTRING(0 1, 2 1)");
+    auto point = pointFromWKT<int>("POINT(0 1)");
+    auto point2 = pointFromWKT<int>("POINT(1 1)");
+
+    XSortedLine<int> linex(line);
+
+    auto de9im = util::geo::DE9IM(point,linex);
+    TEST(de9im, ==, "F0FFFF102");
+
+    de9im = util::geo::DE9IM(point2,linex);
+    TEST(de9im, ==, "0FFFFF102");
+  }
+
+  {
     auto a = polygonFromWKT<int>("POLYGON((0 0, 2 0, 2 2, 0 2, 0 0))");
     auto aa =
         polygonFromWKT<int>("POLYGON((0 0, 2 0, 2 1, 1 1, 1 3, 0 3, 0 0))");
