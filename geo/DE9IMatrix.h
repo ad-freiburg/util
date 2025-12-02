@@ -160,20 +160,20 @@ class DE9IMFilter {
         _equalityMask |= (D2 << (i * 2));
         _equalityValues |= ((m[i] - '0' + 1) << (i * 2));
       }
-      if (m[i] == 'F') {
+      if (m[i] == 'F' || m[i] == 'f') {
         _equalityMask |= (D2 << (i * 2));
       }
-      if (m[i] == 'T') {
+      if (m[i] == 'T' || m[i] == 't') {
         _trueMask |= (D2 << (i * 2));
       }
     }
     if (!m[8]) return;
 
-    if (m[8] == 'F') _eeVal = F;
+    if (m[8] == 'F' || m[8] == 'f') _eeVal = F;
     if (m[8] == '0') _eeVal = D0;
     if (m[8] == '1') _eeVal = D1;
     if (m[8] == '2') _eeVal = D2;
-    if (m[8] == 'T') _eeVal = D2 + 1;
+    if (m[8] == 'T' || m[8] == 't') _eeVal = D2 + 1;
   }
 
   bool matches(const DE9IMatrix a) const {
@@ -227,12 +227,22 @@ class DE9IMFilter {
     return ret;
   }
 
+  bool operator==(const DE9IMFilter& other) const {
+    return _equalityMask == other._equalityMask &&
+           _trueMask == other._trueMask &&
+           _equalityValues == other._equalityValues && _eeVal == other._eeVal;
+  }
+
  private:
   uint16_t _equalityMask = 0;
   uint16_t _trueMask = 0;
   uint16_t _equalityValues = 0;
   uint8_t _eeVal = D2 + 2;
 };
+
+// often used filters
+static CONSTEXPR DE9IMFilter FANY("*********");
+static CONSTEXPR DE9IMFilter FDISJOINT("FF*FF****");
 
 // often used matrices
 static CONSTEXPR DE9IMatrix M0FFFFF102("0FFFFF102");
@@ -256,6 +266,8 @@ static CONSTEXPR DE9IMatrix M2FF1FF212("2FF1FF212");
 static CONSTEXPR DE9IMatrix M1FF0FF212("1FF0FF212");
 static CONSTEXPR DE9IMatrix M10FF0FFF2("10FF0FFF2");
 static CONSTEXPR DE9IMatrix MFF1FF0212("FF1FF0212");
+
+static CONSTEXPR DE9IMatrix MTFTFFFTFF("TFTFFFTFF");
 
 inline DE9IMatrix operator+(const DE9IMatrix a, const DE9IMatrix b) {
   DE9IMatrix ret;

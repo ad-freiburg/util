@@ -426,6 +426,22 @@ void GeoTest::run() {
          "GEOMETRYCOLLECTION(MULTIPOLYGON(((1 1,3 3,1 1),(0 0,1 1,0 0)),((1 "
          "3,3 1,1 3))))");
   }
+
+  {
+    auto a =
+        polygonFromWKT<int>("POLYGON((0 0, 1 0, 1 3, 3 3, 3 5, 0 5, 0 0))");
+    auto b = polygonFromWKT<int>("POLYGON((1 3, 2 3, 3 4, 1 4, 1 3))");
+    auto c = polygonFromWKT<int>("POLYGON((0 0, 1 0, 1 1, 0 1, 0 0))");
+
+    XSortedPolygon<int> ax(a);
+    XSortedPolygon<int> bx(b);
+    XSortedPolygon<int> cx(c);
+
+    TEST(signedRingArea(c.getOuter()), ==, signedRingArea(cx.getOuter()));
+    TEST(signedRingArea(a.getOuter()), ==, signedRingArea(ax.getOuter()));
+    TEST(signedRingArea(b.getOuter()), ==, signedRingArea(bx.getOuter()));
+  }
+
   {
     TEST(angBetween(Point<int>{0, 0}, Point<int>{0, 1}, Point<int>{0, 1}) == 0);
     TEST(angBetween(Point<int>{0, 0}, Point<int>{0, 1}, Point<int>{1, 1}) > 0);
@@ -2129,6 +2145,21 @@ void GeoTest::run() {
     TEST(!de9im.disjoint());
     TEST(!de9im.covered());
     TEST(!de9im.within());
+  }
+
+  {
+    auto a = polygonFromWKT<int>(
+        "POLYGON((842 645,849 614,857 575,973 603,940 746,854 726,825 719,842 "
+        "645))");
+    auto b = polygonFromWKT<int>(
+        "POLYGON((843 646,851 610,857 575,973 603,940 746,852 725,825 719,843 "
+        "646))");
+    XSortedPolygon<int> ax(a);
+    XSortedPolygon<int> bx(b);
+
+    auto de9im = geo::DE9IM(bx, ax);
+    auto de9imT = geo::DE9IM(ax, bx);
+    TEST(de9im, ==, de9imT.transpose());
   }
 
   {

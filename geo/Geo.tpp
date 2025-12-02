@@ -2869,6 +2869,13 @@ DE9IMatrix DE9IM(const util::geo::XSortedPolygon<T>& a,
            (be << 10) | (ei << 12) | (eb << 14);
   }
 
+  // re-calculate missing areas in special case
+  if (std::get<0>(borderInt) && outerAreaA == 0 && outerAreaB == 0 &&
+      util::geo::contains(boxA, boxB) && util::geo::contains(boxB, boxA)) {
+    outerAreaA = util::geo::outerArea(a);
+    outerAreaB = util::geo::outerArea(b);
+  }
+
   if (a.getOuter().rawRing().size() > 1 && outerAreaA <= outerAreaB &&
       util::geo::contains(boxA, boxB) &&
       (std::get<0>(borderInt) ||
