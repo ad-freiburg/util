@@ -142,6 +142,14 @@ class DE9IMatrix {
 
   bool overlaps1() const { return II() == D1 && IE() && EI(); }
 
+  bool crosses0vs1() const { return II() && IE(); }
+  bool crosses0vs2() const { return II() && IE(); }
+  bool crosses1vs2() const { return II() && IE(); }
+  bool crosses1vs0() const { return II() && EI(); }
+  bool crosses2vs0() const { return II() && EI(); }
+  bool crosses2vs1() const { return II() && EI(); }
+  bool crosses1vs1() const { return II() == D0; }
+
   CONSTEXPR uint16_t getMatrix() const { return _m; }
 
  private:
@@ -267,7 +275,8 @@ static CONSTEXPR DE9IMatrix M1FF0FF212("1FF0FF212");
 static CONSTEXPR DE9IMatrix M10FF0FFF2("10FF0FFF2");
 static CONSTEXPR DE9IMatrix MFF1FF0212("FF1FF0212");
 
-static CONSTEXPR DE9IMatrix MTFTFFFTFF("TFTFFFTFF");
+static CONSTEXPR DE9IMatrix M2F2FFF2F2("2F2FFF2F2");
+static CONSTEXPR DE9IMatrix M1F1FFFFF2("1F1FFFFF2");
 
 inline DE9IMatrix operator+(const DE9IMatrix a, const DE9IMatrix b) {
   DE9IMatrix ret;
