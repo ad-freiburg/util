@@ -1818,14 +1818,22 @@ void GeoTest::run() {
     auto line =lineFromWKT<int>("LINESTRING(0 1, 2 1)");
     auto point = pointFromWKT<int>("POINT(0 1)");
     auto point2 = pointFromWKT<int>("POINT(1 1)");
+    auto point3 = pointFromWKT<int>("POINT(2 1)");
+    auto point4 = pointFromWKT<int>("POINT(3 1)");
 
     XSortedLine<int> linex(line);
 
-    auto de9im = util::geo::DE9IM(point,linex);
+    auto de9im = util::geo::DE9IM(point, linex);
     TEST(de9im, ==, "F0FFFF102");
 
-    de9im = util::geo::DE9IM(point2,linex);
+    de9im = util::geo::DE9IM(point3, linex);
+    TEST(de9im, ==, "F0FFFF102");
+
+    de9im = util::geo::DE9IM(point2, linex);
     TEST(de9im, ==, "0FFFFF102");
+
+    de9im = util::geo::DE9IM(point4, linex);
+    TEST(de9im, ==, "FF0FFF102");
   }
 
   {
