@@ -20,7 +20,7 @@
 #include "String.h"
 
 // cached first 10 powers of 10
-static int pow_10[10] = {1,      10,      100,      1000,      10000,
+static int util_first_10_pow_10[10] = {1,      10,      100,      1000,      10000,
                         100000, 1000000, 10000000, 100000000, 1000000000};
 
 // _____________________________________________________________________________
@@ -96,7 +96,7 @@ double util::atof(const char* p, uint8_t mn) {
     }
 
     if (n < 10) {
-      ret += f / pow_10[n];
+      ret += f / util_first_10_pow_10[n];
     } else {
       double res = 1;
       double base = 10;
