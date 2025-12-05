@@ -246,6 +246,28 @@ class DE9IMFilter {
     return static_cast<int16_t>(ret) - 1;
   }
 
+  int16_t maxInteriorDim() const {
+    return std::max(maxLeftInteriorDim(), maxRightInteriorDim());
+  }
+
+  int16_t maxLeftInteriorDim() const {
+    uint16_t ret = 0;
+    ret = std::max(ret, valAt(0));
+    ret = std::max(ret, valAt(1));
+    ret = std::max(ret, valAt(2));
+
+    return static_cast<int16_t>(ret) - 1;
+  }
+
+  int16_t maxRightInteriorDim() const {
+    uint16_t ret = 0;
+    ret = std::max(ret, valAt(0));
+    ret = std::max(ret, valAt(3));
+    ret = std::max(ret, valAt(6));
+
+    return static_cast<int16_t>(ret) - 1;
+  }
+
   int16_t minBoundaryDim() const {
     return std::min(minLeftBoundaryDim(), minRightBoundaryDim());
   }
