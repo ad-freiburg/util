@@ -12,6 +12,7 @@
 #include <chrono>
 #include <cstring>
 #include <iostream>
+#include <cmath>
 #include <vector>
 #ifdef PBUTIL_ZLIB_FOUND
 #include <zlib.h>
