@@ -1366,7 +1366,13 @@ bool ringContains(const LineSegment<T>& ls, const Ring<T>& ph) {
 // _____________________________________________________________________________
 template <typename T>
 bool contains(const LineSegment<T>& ls, const Polygon<T>& p) {
-  return ringContains(ls, p.getOuter());
+  if (!ringContains(ls, p.getOuter())) return false;
+
+  for (const auto& inner : p.getInners()) {
+    if (ringContains(ls, inner)) return false;
+  }
+
+  return true;
 }
 
 // _____________________________________________________________________________
@@ -3289,6 +3295,40 @@ double angBetween(const Point<T>& p1, const MultiPoint<T>& points) {
 
 // _____________________________________________________________________________
 template <typename T>
+double dist(const AnyGeometry<T>& any1, const AnyGeometry<T>& any2) {
+  if (any1.getType() == 0) return dist(any1.getPoint(), any2);
+  if (any1.getType() == 1) return dist(any1.getLine(), any2);
+  if (any1.getType() == 2) return dist(any1.getPolygon(), any2);
+  if (any1.getType() == 3) return dist(any1.getMultiLine(), any2);
+  if (any1.getType() == 4) return dist(any1.getMultiPolygon(), any2);
+  if (any1.getType() == 5) return dist(any1.getCollection(), any2);
+  if (any1.getType() == 6) return dist(any1.getMultiPoint(), any2);
+
+  return std::numeric_limits<double>::infinity();
+}
+
+// _____________________________________________________________________________
+template <template <typename> class GeometryB, typename T>
+double dist(const AnyGeometry<T>& any, const GeometryB<T>& geomB) {
+  if (any.getType() == 0) return dist(any.getPoint(), geomB);
+  if (any.getType() == 1) return dist(any.getLine(), geomB);
+  if (any.getType() == 2) return dist(any.getPolygon(), geomB);
+  if (any.getType() == 3) return dist(any.getMultiLine(), geomB);
+  if (any.getType() == 4) return dist(any.getMultiPolygon(), geomB);
+  if (any.getType() == 5) return dist(any.getCollection(), geomB);
+  if (any.getType() == 6) return dist(any.getMultiPoint(), geomB);
+
+  return std::numeric_limits<double>::infinity();
+}
+
+// _____________________________________________________________________________
+template <template <typename> class GeometryB, typename T>
+double dist(const GeometryB<T>& geomB, const AnyGeometry<T>& any) {
+  return dist(any, geomB);
+}
+
+// _____________________________________________________________________________
+template <typename T>
 double dist(const LineSegment<T>& ls, const Point<T>& p) {
   return distToSegment(ls, p);
 }
@@ -3394,7 +3434,7 @@ template <template <typename> class GeometryA,
 double dist(const std::vector<GeometryA<T>>& multigeom, const GeometryB<T>& b) {
   double d = std::numeric_limits<double>::infinity();
   for (const auto& geom : multigeom)
-    if (dist(geom, b) < d) d = dist(geom, b);
+    d = std::min(d, dist(geom, b));
   return d;
 }
 
@@ -3405,6 +3445,7 @@ double dist(const GeometryB<T>& b, const std::vector<GeometryA<T>>& multigeom) {
   return dist(multigeom, b);
 }
 
+
 // _____________________________________________________________________________
 template <template <typename> class GeometryA,
           template <typename> class GeometryB, typename T>
@@ -3412,7 +3453,7 @@ double dist(const std::vector<GeometryA<T>>& multigeomA,
             const std::vector<GeometryB<T>>& multigeomB) {
   double d = std::numeric_limits<double>::infinity();
   for (const auto& geom : multigeomB)
-    if (dist(geom, multigeomA) < d) d = dist(geom, multigeomA);
+     d = std::min(d, dist(geom, multigeomA));
   return d;
 }
 
@@ -3440,22 +3481,63 @@ double crossProd(const Point<T>& p, const LineSegment<T>& ls) {
 // _____________________________________________________________________________
 template <typename T>
 double dist(const Polygon<T>& poly1, const Polygon<T>& poly2) {
-  if (contains(poly1, poly2) || contains(poly2, poly1)) return 0;
-  return dist(poly1.getOuter(), poly2.getOuter());
+  if (intersects(poly1, poly2) || intersects(poly2, poly1)) return 0;
+
+  double d = dist(poly1.getOuter(), poly2.getOuter());
+
+  for (const auto& inner1 : poly1.getInners()) {
+    d = std::min(d, dist(poly2.getOuter(), inner1));
+  }
+
+  for (const auto& inner2 : poly2.getInners()) {
+    d = std::min(d, dist(poly1.getOuter(), inner2));
+  }
+
+  for (const auto& inner1 : poly1.getInners()) {
+    for (const auto& inner2 : poly2.getInners()) {
+      d = std::min(d, dist(inner1, inner2));
+    }
+  }
+
+  return d;
 }
 
 // _____________________________________________________________________________
 template <typename T>
 double dist(const Line<T>& l, const Polygon<T>& poly) {
-  if (contains(l, poly)) return 0;
-  return dist(l, poly.getOuter());
+  if (intersects(l, poly)) return 0;
+  double d = dist(l, poly.getOuter());
+
+  for (const auto& inner : poly.getInners()) {
+    d = std::min(d, dist(l, inner));
+  }
+
+  return d;
+}
+
+// _____________________________________________________________________________
+template <typename T>
+double dist(const Polygon<T>& poly, const Line<T>& l) {
+  return dist(l, poly);
 }
 
 // _____________________________________________________________________________
 template <typename T>
 double dist(const Point<T>& p, const Polygon<T>& poly) {
   if (contains(p, poly)) return 0;
-  return dist(p, poly.getOuter());
+  double d = dist(p, poly.getOuter());
+
+  for (const auto& inner : poly.getInners()) {
+    d = std::min(d, dist(p, inner));
+  }
+
+  return d;
+}
+
+// _____________________________________________________________________________
+template <typename T>
+double dist(const Polygon<T>& poly, const Point<T>& p) {
+  return dist(p, poly);
 }
 
 // _____________________________________________________________________________

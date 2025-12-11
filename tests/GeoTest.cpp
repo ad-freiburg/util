@@ -6664,4 +6664,82 @@ void GeoTest::run() {
                  .getOuter())),
          ==, "POINT(7.838668 48.008154)");
   }
+
+  {
+    // dist between all possible combinations, including multigeometries
+
+    auto poly = polygonFromWKT<double>("POLYGON((1 1, 1 10, 10 10, 10 1, 1 1))");
+    auto poly2 = polygonFromWKT<double>("POLYGON((4.25 4.25, 4.75 4.25, 4.75 4.75, 4.25 4.75, 4.25 4.25))");
+    auto poly3 = polygonFromWKT<double>("POLYGON((3.25 4.25, 4.75 4.25, 4.75 4.75, 4.25 4.75, 4.25 4.25))");
+    auto poly4 = polygonFromWKT<double>("POLYGON((2.25 2.25, 2.75 2.25, 2.75 2.75, 2.25 2.75, 2.25 2.25))");
+    auto polyWithInner = polygonFromWKT<double>("POLYGON((0 0, 10 0, 10 10, 0 10, 0 0), (4 4, 5 4, 5 5, 4 5, 4 4))");
+    auto multiPoly = multiPolygonFromWKT<double>("MULTIPOLYGON(((4.25 4.25, 4.75 4.25, 4.75 4.75, 4.25 4.75, 4.25 4.25)), ((0 0, 10 0, 10 10, 0 10, 0 0), (4 4, 5 4, 5 5, 4 5, 4 4), (2 2, 3 2, 3 3, 2 3, 2 2)))");
+    auto line = lineFromWKT<double>("LINESTRING(10 4.5, 12 4.5)");
+    auto line2 = lineFromWKT<double>("LINESTRING(4.75 4.5, 4.27 4.5)");
+    auto line3 = lineFromWKT<double>("LINESTRING(3.75 4.5, 4.27 4.5)");
+    auto point = pointFromWKT<double>("POINT(4.5 4.5)");
+    auto point2 = pointFromWKT<double>("POINT(11 11)");
+    auto point3 = pointFromWKT<double>("POINT(19 19)");
+
+    auto collection = collectionFromWKT<double>(
+             "GEOMETRYCOLLECTION(MULTIPOLYGON(((4.25 4.25, 4.75 4.25, 4.75 4.75, 4.25 4.75, 4.25 4.25)), ((0 0, 10 0, 10 10, 0 10, 0 0), (4 4, 5 4, 5 5, 4 5, 4 4), (2 2, 3 2, 3 3, 2 3, 2 2))), POINT(20 20))");
+
+    auto collection2 = collectionFromWKT<double>(
+             "GEOMETRYCOLLECTION(MULTIPOINT(0 0, 1 1), POINT(2 2))");
+
+    auto collection3 = collectionFromWKT<double>(
+             "GEOMETRYCOLLECTION(POINT(4 4), POINT(3 3))");
+
+    TEST(util::geo::dist(point, line), ==, approx(5.5));
+    TEST(util::geo::dist(line, point), ==, approx(5.5));
+    TEST(util::geo::dist(point2, poly), ==, approx(sqrt(2)));
+    TEST(util::geo::dist(poly, point2), ==, approx(sqrt(2)));
+    TEST(util::geo::dist(line, poly), ==, 0);
+    TEST(util::geo::dist(poly, line), ==, 0);
+
+    TEST(util::geo::dist(point, point), ==, 0);
+    TEST(util::geo::dist(line, line), ==, 0);
+    TEST(util::geo::dist(poly, poly), ==, 0);
+
+    TEST(util::geo::dist(point, poly), ==, approx(0));
+    TEST(util::geo::dist(poly, point), ==, approx(0));
+
+    TEST(util::geo::dist(point, polyWithInner), ==, approx(0.5));
+    TEST(util::geo::dist(polyWithInner, point), ==, approx(0.5));
+
+    TEST(util::geo::dist(line2, polyWithInner), ==, approx(0.25));
+    TEST(util::geo::dist(polyWithInner, line2), ==, approx(0.25));
+
+    TEST(util::geo::dist(poly2, polyWithInner), ==, approx(0.25));
+    TEST(util::geo::dist(polyWithInner, poly2), ==, approx(0.25));
+
+    TEST(util::geo::dist(poly2, multiPoly), ==, approx(0));
+    TEST(util::geo::dist(multiPoly, poly2), ==, approx(0));
+
+    TEST(util::geo::dist(poly3, multiPoly), ==, approx(0));
+    TEST(util::geo::dist(multiPoly, poly3), ==, approx(0));
+
+    TEST(util::geo::dist(poly4, multiPoly), ==, approx(0.25));
+    TEST(util::geo::dist(multiPoly, poly4), ==, approx(0.25));
+
+    TEST(util::geo::dist(line2, multiPoly), ==, approx(0));
+    TEST(util::geo::dist(multiPoly, line2), ==, approx(0));
+
+    TEST(util::geo::dist(polyWithInner, poly3), ==, approx(0));
+    TEST(util::geo::dist(polyWithInner, line3), ==, approx(0));
+
+    TEST(util::geo::dist(collection, poly3), ==, approx(0));
+    TEST(util::geo::dist(poly3, collection), ==, approx(0));
+
+    TEST(util::geo::dist(collection, point3), ==, approx(sqrt(2)));
+    TEST(util::geo::dist(point3, collection), ==, approx(sqrt(2)));
+
+    TEST(util::geo::dist(collection, multiPoly), ==, approx(0));
+    TEST(util::geo::dist(multiPoly, collection), ==, approx(0));
+
+    TEST(util::geo::dist(collection, collection), ==, approx(0));
+
+    TEST(util::geo::dist(collection2, collection3), ==, approx(sqrt(2)));
+    TEST(util::geo::dist(collection3, collection2), ==, approx(sqrt(2)));
+  }
 }
