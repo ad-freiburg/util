@@ -6741,5 +6741,56 @@ void GeoTest::run() {
 
     TEST(util::geo::dist(collection2, collection3), ==, approx(sqrt(2)));
     TEST(util::geo::dist(collection3, collection2), ==, approx(sqrt(2)));
+
+    // with realistic max dist
+
+    TEST(util::geo::withinDist(point, XSortedLine<double>(line), 10.0), ==, approx(5.5));
+    TEST(util::geo::withinDist(XSortedLine<double>(line), point, 10.0), ==, approx(5.5));
+
+    TEST(util::geo::withinDist(XSortedPolygon<double>(poly), point2, 10.0), ==, approx(sqrt(2)));
+    TEST(util::geo::withinDist(point2, XSortedPolygon<double>(poly), 10.0), ==, approx(sqrt(2)));
+
+    TEST(util::geo::withinDist(XSortedLine<double>(line), XSortedPolygon<double>(poly), util::geo::getBoundingBox(line), util::geo::getBoundingBox(poly), 10.0), ==, 0);
+    TEST(util::geo::withinDist(XSortedPolygon<double>(poly), XSortedLine<double>(line), util::geo::getBoundingBox(poly), util::geo::getBoundingBox(line), 10.0), ==, 0);
+
+    TEST(util::geo::withinDist(XSortedLine<double>(line2), XSortedPolygon<double>(polyWithInner), util::geo::getBoundingBox(line2), util::geo::getBoundingBox(polyWithInner), 10.0), ==, approx(0.25));
+    TEST(util::geo::withinDist(XSortedPolygon<double>(polyWithInner), XSortedLine<double>(line2), util::geo::getBoundingBox(polyWithInner), util::geo::getBoundingBox(line2), 10.0), ==, approx(0.25));
+
+    TEST(util::geo::withinDist(XSortedPolygon<double>(poly2), XSortedPolygon<double>(polyWithInner), util::geo::getBoundingBox(poly2), util::geo::getBoundingBox(polyWithInner), 10.0), ==, approx(0.25));
+    TEST(util::geo::withinDist(XSortedPolygon<double>(polyWithInner), XSortedPolygon<double>(poly2), util::geo::getBoundingBox(polyWithInner), util::geo::getBoundingBox(poly2), 10.0), ==, approx(0.25));
+
+    // with infinity max dist
+
+    TEST(util::geo::withinDist(point, XSortedLine<double>(line)), ==, approx(5.5));
+    TEST(util::geo::withinDist(XSortedLine<double>(line), point), ==, approx(5.5));
+
+    TEST(util::geo::withinDist(XSortedPolygon<double>(poly), point2), ==, approx(sqrt(2)));
+    TEST(util::geo::withinDist(point2, XSortedPolygon<double>(poly)), ==, approx(sqrt(2)));
+
+    TEST(util::geo::withinDist(XSortedLine<double>(line), XSortedPolygon<double>(poly), util::geo::getBoundingBox(line), util::geo::getBoundingBox(poly)), ==, 0);
+    TEST(util::geo::withinDist(XSortedPolygon<double>(poly), XSortedLine<double>(line), util::geo::getBoundingBox(poly), util::geo::getBoundingBox(line)), ==, 0);
+
+    TEST(util::geo::withinDist(XSortedLine<double>(line2), XSortedPolygon<double>(polyWithInner), util::geo::getBoundingBox(line2), util::geo::getBoundingBox(polyWithInner)), ==, approx(0.25));
+    TEST(util::geo::withinDist(XSortedPolygon<double>(polyWithInner), XSortedLine<double>(line2), util::geo::getBoundingBox(polyWithInner), util::geo::getBoundingBox(line2)), ==, approx(0.25));
+
+    TEST(util::geo::withinDist(XSortedPolygon<double>(poly2), XSortedPolygon<double>(polyWithInner), util::geo::getBoundingBox(poly2), util::geo::getBoundingBox(polyWithInner)), ==, approx(0.25));
+    TEST(util::geo::withinDist(XSortedPolygon<double>(polyWithInner), XSortedPolygon<double>(poly2), util::geo::getBoundingBox(polyWithInner), util::geo::getBoundingBox(poly2)), ==, approx(0.25));
+
+    // with exact max dist
+
+    TEST(util::geo::withinDist(point, XSortedLine<double>(line), 5.5), ==, approx(5.5));
+    TEST(util::geo::withinDist(XSortedLine<double>(line), point, 5.5), ==, approx(5.5));
+
+    TEST(util::geo::withinDist(XSortedPolygon<double>(poly), point2, sqrt(2)), ==, approx(sqrt(2)));
+    TEST(util::geo::withinDist(point2, XSortedPolygon<double>(poly), sqrt(2)), ==, approx(sqrt(2)));
+
+    TEST(util::geo::withinDist(XSortedLine<double>(line), XSortedPolygon<double>(poly), util::geo::getBoundingBox(line), util::geo::getBoundingBox(poly), 0), ==, 0);
+    TEST(util::geo::withinDist(XSortedPolygon<double>(poly), XSortedLine<double>(line), util::geo::getBoundingBox(poly), util::geo::getBoundingBox(line), 0), ==, 0);
+
+    TEST(util::geo::withinDist(XSortedLine<double>(line2), XSortedPolygon<double>(polyWithInner), util::geo::getBoundingBox(line2), util::geo::getBoundingBox(polyWithInner), 0.25), ==, approx(0.25));
+    TEST(util::geo::withinDist(XSortedPolygon<double>(polyWithInner), XSortedLine<double>(line2), util::geo::getBoundingBox(polyWithInner), util::geo::getBoundingBox(line2), 0.25), ==, approx(0.25));
+
+    TEST(util::geo::withinDist(XSortedPolygon<double>(poly2), XSortedPolygon<double>(polyWithInner), util::geo::getBoundingBox(poly2), util::geo::getBoundingBox(polyWithInner), 0.25), ==, approx(0.25));
+    TEST(util::geo::withinDist(XSortedPolygon<double>(polyWithInner), XSortedPolygon<double>(poly2), util::geo::getBoundingBox(polyWithInner), util::geo::getBoundingBox(poly2), 0.25), ==, approx(0.25));
   }
 }

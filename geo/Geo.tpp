@@ -932,7 +932,8 @@ bool contains(const Point<T>& p, const Polygon<T>& poly) {
 // _____________________________________________________________________________
 template <typename T>
 std::pair<double, bool> withinDist(
-    const Point<T>& p, const XSortedRing<T>& ph, double maxEuclideanDist,
+    const Point<T>& p, const XSortedRing<T>& ph,
+    std::function<std::pair<double, double>(double)> maxEuclideanDistFunc,
     double maxDist,
     std::function<double(const Point<T>& p1, const Point<T>& p2)> distFunc) {
   // check if point p is within distance "maxDist" to ring, while also only
@@ -940,43 +941,64 @@ std::pair<double, bool> withinDist(
   //
   // returns {distance, contained}
 
+  if (ph.rawRing().size() == 0)
+    return {std::numeric_limits<double>::max(), false};
+
   int8_t c = -1;
   double minDist = std::numeric_limits<double>::max();
 
   size_t i = 0;
 
+  // do some distance probing to get a better upper bound
+  maxDist = std::min(maxDist, std::min(distFunc(p, ph.rawRing().back().other),
+                                       distFunc(p, ph.rawRing().front().p)));
+
+  auto maxEuclideanDist = maxEuclideanDistFunc(maxDist);
+
   // skip irrelevant parts in poly
   if (ph.getMaxSegLen() < std::numeric_limits<double>::infinity() &&
       i < ph.rawRing().size() &&
       ph.rawRing()[i].p.getX() <
-          p.getX() - ph.getMaxSegLen() - maxEuclideanDist) {
-    i = std::lower_bound(
-            ph.rawRing().begin() + i, ph.rawRing().end(),
-            XSortedTuple<T>{
-                {p.getX() - ph.getMaxSegLen() - maxEuclideanDist, 0}, false}) -
+          p.getX() - ph.getMaxSegLen() -
+              std::max(maxEuclideanDist.first, maxEuclideanDist.second)) {
+    i = std::lower_bound(ph.rawRing().begin() + i, ph.rawRing().end(),
+                         XSortedTuple<T>{{p.getX() - ph.getMaxSegLen() -
+                                              std::max(maxEuclideanDist.first,
+                                                       maxEuclideanDist.second),
+                                          0},
+                                         false}) -
         ph.rawRing().begin();
   }
 
   while (i < ph.rawRing().size() &&
-         ph.rawRing()[i].seg().second.getX() < p.getX() - maxEuclideanDist)
+         ph.rawRing()[i].seg().second.getX() <
+             p.getX() -
+                 std::max(maxEuclideanDist.first, maxEuclideanDist.second))
     i++;
 
   for (; i < ph.rawRing().size(); i++) {
     if (ph.rawRing()[i].out()) continue;
     // there won't be coming any more lines intersecting a straight north/south
     // line through p
-    if (ph.rawRing()[i].seg().first.getX() - maxEuclideanDist > p.getX()) break;
+    if (ph.rawRing()[i].seg().first.getX() -
+            std::max(maxEuclideanDist.first, maxEuclideanDist.second) >
+        p.getX())
+      break;
     c *= polyContCheck(p, ph.rawRing()[i].seg().first,
                        ph.rawRing()[i].seg().second);
     if (c == 0) return {0, false};
 
     double euclideanDist = dist(ph.rawRing()[i].seg(), p);
-    if (euclideanDist <= maxEuclideanDist) {
+    if (euclideanDist <=
+        std::max(maxEuclideanDist.first, maxEuclideanDist.second)) {
       auto p2 = projectOn(ph.rawRing()[i].seg().first, p,
                           ph.rawRing()[i].seg().second);
 
       double dist = distFunc(p, p2);
-      if (dist <= maxDist && dist < minDist) minDist = dist;
+      if (dist <= maxDist && dist < minDist) {
+        minDist = dist;
+        maxEuclideanDist = maxEuclideanDistFunc(dist);
+      }
       if (minDist == 0) return {0, false};
     }
   }
@@ -987,11 +1009,13 @@ std::pair<double, bool> withinDist(
 // _____________________________________________________________________________
 template <typename T>
 double withinDist(
-    const Point<T>& p, const XSortedPolygon<T>& poly, double maxEuclideanDist,
+    const Point<T>& p, const XSortedPolygon<T>& poly,
+    std::function<std::pair<double, double>(double)> maxEuclideanDistFunc,
     double maxDist,
     std::function<double(const Point<T>& p1, const Point<T>& p2)> distFunc) {
   // first do the check in the outer boundary
-  auto r = withinDist(p, poly.getOuter(), maxEuclideanDist, maxDist, distFunc);
+  auto r =
+      withinDist(p, poly.getOuter(), maxEuclideanDistFunc, maxDist, distFunc);
 
   // if we are not included in the outer ring,  we can abort here
   if (!r.second) return r.first;
@@ -1025,6 +1049,16 @@ double withinDist(
   }
 
   return r.second ? 0 : r.first;
+}
+
+// _____________________________________________________________________________
+template <typename T>
+double withinDist(
+    const XSortedPolygon<T>& poly, const Point<T>& p,
+    std::function<std::pair<double, double>(double)> maxEuclideanDistFunc,
+    double maxDist,
+    std::function<double(const Point<T>& p1, const Point<T>& p2)> distFunc) {
+  return withinDist(p, poly, maxEuclideanDistFunc, maxDist, distFunc);
 }
 
 // _____________________________________________________________________________
@@ -1067,45 +1101,72 @@ std::pair<bool, bool> ringContains(const Point<T>& p, const XSortedRing<T>& ph,
 // _____________________________________________________________________________
 template <typename T>
 double withinDist(
-    const Point<T>& p, const XSortedLine<T>& line, double maxEuclideanDist,
+    const Point<T>& p, const XSortedLine<T>& line,
+    std::function<std::pair<double, double>(double)> maxEuclideanDistFunc,
     double maxDist,
     std::function<double(const Point<T>& p1, const Point<T>& p2)> distFunc) {
   // check if point p lies on line
 
+  if (line.rawLine().size() == 0) return std::numeric_limits<double>::max();
+
   size_t i = 0;
   double minDist = std::numeric_limits<double>::max();
+
+  // do some distance probing to get a better upper bound
+  maxDist = std::min(maxDist, std::min(distFunc(p, line.rawLine().back().other),
+                                       distFunc(p, line.rawLine().front().p)));
+
+  auto maxEuclideanDist = maxEuclideanDistFunc(maxDist);
 
   // skip irrelevant parts
   if (line.getMaxSegLen() < std::numeric_limits<double>::infinity() &&
       i < line.rawLine().size()) {
-    i = std::lower_bound(
-            line.rawLine().begin() + i, line.rawLine().end(),
-            XSortedTuple<T>{
-                {p.getX() - line.getMaxSegLen() - maxEuclideanDist, 0},
-                false}) -
+    i = std::lower_bound(line.rawLine().begin() + i, line.rawLine().end(),
+                         XSortedTuple<T>{{p.getX() - line.getMaxSegLen() -
+                                              std::max(maxEuclideanDist.first,
+                                                       maxEuclideanDist.second),
+                                          0},
+                                         false}) -
         line.rawLine().begin();
   }
 
   while (i < line.rawLine().size() &&
-         line.rawLine()[i].seg().second.getX() < p.getX() - maxEuclideanDist)
+         line.rawLine()[i].seg().second.getX() <
+             p.getX() -
+                 std::max(maxEuclideanDist.first, maxEuclideanDist.second))
     i++;
 
   for (; i < line.rawLine().size(); i++) {
     const auto& cur = line.rawLine()[i];
     if (cur.out()) continue;
-    if (cur.seg().first.getX() - maxEuclideanDist > p.getX()) break;
+    if (cur.seg().first.getX() -
+            std::max(maxEuclideanDist.first, maxEuclideanDist.second) >
+        p.getX())
+      break;
 
     double euclideanDist = dist(cur.seg(), p);
-    if (euclideanDist <= maxEuclideanDist) {
+    if (euclideanDist <=
+        std::max(maxEuclideanDist.first, maxEuclideanDist.second)) {
       auto p2 = projectOn(cur.seg().first, p, cur.seg().second);
-
       double dist = distFunc(p, p2);
-      if (dist <= maxDist && dist < minDist) minDist = dist;
+      if (dist <= maxDist && dist < minDist) {
+        maxEuclideanDist = maxEuclideanDistFunc(dist);
+        minDist = dist;
+      }
       if (minDist == 0) return 0;
     }
   }
 
   return minDist;
+}
+
+// _____________________________________________________________________________
+template <typename T>
+double withinDist(
+    const XSortedLine<T>& line, const Point<T>& p, double maxEuclideanDist,
+    double maxDist,
+    std::function<double(const Point<T>& p1, const Point<T>& p2)> distFunc) {
+  return withinDist(p, line, maxEuclideanDist, maxDist, distFunc);
 }
 
 // _____________________________________________________________________________
@@ -3433,8 +3494,7 @@ template <template <typename> class GeometryA,
           template <typename> class GeometryB, typename T>
 double dist(const std::vector<GeometryA<T>>& multigeom, const GeometryB<T>& b) {
   double d = std::numeric_limits<double>::infinity();
-  for (const auto& geom : multigeom)
-    d = std::min(d, dist(geom, b));
+  for (const auto& geom : multigeom) d = std::min(d, dist(geom, b));
   return d;
 }
 
@@ -3445,15 +3505,13 @@ double dist(const GeometryB<T>& b, const std::vector<GeometryA<T>>& multigeom) {
   return dist(multigeom, b);
 }
 
-
 // _____________________________________________________________________________
 template <template <typename> class GeometryA,
           template <typename> class GeometryB, typename T>
 double dist(const std::vector<GeometryA<T>>& multigeomA,
             const std::vector<GeometryB<T>>& multigeomB) {
   double d = std::numeric_limits<double>::infinity();
-  for (const auto& geom : multigeomB)
-     d = std::min(d, dist(geom, multigeomA));
+  for (const auto& geom : multigeomB) d = std::min(d, dist(geom, multigeomA));
   return d;
 }
 
@@ -5328,30 +5386,40 @@ template <typename T>
 double withinDist(
     const std::vector<XSortedTuple<T>>& ls1,
     const std::vector<XSortedTuple<T>>& ls2, T maxSegLenA, T maxSegLenB,
-    const Box<T>& boxA, const Box<T>& boxB, double maxEuclideanDistX,
-    double maxEuclideanDistY, double maxDist,
+    const Box<T>& boxA, const Box<T>& boxB,
+    std::function<std::pair<double, double>(double)> maxEuclideanDistFunc,
+    double maxDist,
     std::function<double(const Point<T>& p1, const Point<T>& p2)> distFunc) {
   // returns {intersects, strict intersects, inside}
 
   // always ensure that ls2 is smaller, because ls2 is padded
   if (ls1.size() < ls2.size())
     return withinDist(ls2, ls1, maxSegLenB, maxSegLenA, boxB, boxA,
-                      maxEuclideanDistX, maxEuclideanDistY, maxDist, distFunc);
+                      maxEuclideanDistFunc, maxDist, distFunc);
 
   // ls2 is assumed to be a polygon ring
   if (ls1.size() == 0 || ls2.size() == 0)
     return std::numeric_limits<double>::max();
 
+  // do some distance probing to get a better upper bound
+  maxDist = std::min(
+      maxDist, std::min(std::min(distFunc(ls1.front().p, ls2.back().other),
+                                 distFunc(ls1.front().p, ls2.front().p)),
+                        std::min(distFunc(ls1.back().other, ls2.back().other),
+                                 distFunc(ls1.back().other, ls2.front().p))));
+
   size_t i = 0;  // position in ls1
   size_t j = 0;  // position in ls2
 
+  auto maxEuclideanDist = maxEuclideanDistFunc(maxDist);
+
   // skip irrelevant parts in ls1
   if (maxSegLenA < std::numeric_limits<T>::max() &&
-      ls1[i].p.getX() < ls2[j].p.getX() - maxSegLenA - maxEuclideanDistX) {
+      ls1[i].p.getX() < ls2[j].p.getX() - maxSegLenA - maxEuclideanDist.first) {
     i = std::lower_bound(
             ls1.begin() + i, ls1.end(),
             XSortedTuple<T>{{static_cast<T>(ls2[j].p.getX() - maxSegLenA -
-                                            maxEuclideanDistX),
+                                            maxEuclideanDist.first),
                              0},
                             false}) -
         ls1.begin();
@@ -5359,21 +5427,23 @@ double withinDist(
 
   // skip irrelevant parts in ls2
   if (maxSegLenB < std::numeric_limits<T>::max() &&
-      ls2[j].p.getX() < ls1[i].p.getX() - maxSegLenB - maxEuclideanDistX) {
+      ls2[j].p.getX() < ls1[i].p.getX() - maxSegLenB - maxEuclideanDist.first) {
     j = std::lower_bound(
             ls2.begin() + j, ls2.end(),
             XSortedTuple<T>{{static_cast<T>(ls1[i].p.getX() - maxSegLenB -
-                                            maxEuclideanDistX),
+                                            maxEuclideanDist.first),
                              0},
                             false}) -
         ls2.begin();
   }
 
-  while (i < ls1.size() && ls1[i].seg().second.getX() <
-                               boxB.getLowerLeft().getX() - maxEuclideanDistX)
+  while (i < ls1.size() &&
+         ls1[i].seg().second.getX() <
+             boxB.getLowerLeft().getX() - maxEuclideanDist.first)
     i++;
-  while (j < ls2.size() && ls2[j].seg().second.getX() <
-                               boxA.getLowerLeft().getX() - maxEuclideanDistX)
+  while (j < ls2.size() &&
+         ls2[j].seg().second.getX() <
+             boxA.getLowerLeft().getX() - maxEuclideanDist.first)
     j++;
 
   // segments active by their padded bounding box
@@ -5387,19 +5457,19 @@ double withinDist(
 
   while (i < ls1.size()) {
     if (j >= ls2.size() ||
-        ls1[i].p.getX() < ls2[j].p.getX() - maxEuclideanDistX ||
-        (ls1[i].p.getX() == ls2[j].p.getX() - maxEuclideanDistX &&
+        ls1[i].p.getX() < ls2[j].p.getX() - maxEuclideanDist.first ||
+        (ls1[i].p.getX() == ls2[j].p.getX() - maxEuclideanDist.first &&
          (!ls1[i].out() || ls2[j].out()))) {
       // advance ls1
 
       // check the deferred OUT events of ls2 first
       while (deferredOutLs2.size() &&
-             deferredOutLs2.front().p.getX() + maxEuclideanDistX <
+             deferredOutLs2.front().p.getX() + maxEuclideanDist.first <
                  ls1[i].p.getX()) {
         // OUT event LS2
 
         const auto& box = pad(getBoundingBox(deferredOutLs2.front().seg()),
-                              maxEuclideanDistX, maxEuclideanDistY);
+                              maxEuclideanDist.first, maxEuclideanDist.second);
 
         activesB.erase({box.getLowerLeft().getY(), box.getUpperRight().getY()},
                        deferredOutLs2.front().seg());
@@ -5408,7 +5478,8 @@ double withinDist(
             {box.getLowerLeft().getY(), box.getUpperRight().getY()});
 
         for (const auto& seg : overlaps) {
-          if (dist(deferredOutLs2.front().seg(), seg.v) <= maxEuclideanDistX) {
+          if (dist(deferredOutLs2.front().seg(), seg.v) <=
+              maxEuclideanDist.first) {
             double dist =
                 util::geo::dist(deferredOutLs2.front().seg(), seg.v, distFunc);
             if (dist <= maxDist && dist < minDist) minDist = dist;
@@ -5420,28 +5491,28 @@ double withinDist(
       }
 
       // we are past ls2
-      if (ls1[i].p.getX() > ls2.back().p.getX() + maxEuclideanDistX) break;
+      if (ls1[i].p.getX() > ls2.back().p.getX() + maxEuclideanDist.first) break;
 
       // ignore segments out of the X range
       if (ls1[i].seg().second.getX() <
-          boxB.getLowerLeft().getX() - maxEuclideanDistX) {
+          boxB.getLowerLeft().getX() - maxEuclideanDist.first) {
         i++;
         continue;
       }
 
       // ignore segments out of the Y range
       if (ls1[i].seg().first.getY() <
-              boxB.getLowerLeft().getY() - maxEuclideanDistY &&
+              boxB.getLowerLeft().getY() - maxEuclideanDist.second &&
           ls1[i].seg().second.getY() <
-              boxB.getLowerLeft().getY() - maxEuclideanDistY) {
+              boxB.getLowerLeft().getY() - maxEuclideanDist.second) {
         i++;
         continue;
       }
 
       if (ls1[i].seg().first.getY() >
-              boxB.getUpperRight().getY() + maxEuclideanDistY &&
+              boxB.getUpperRight().getY() + maxEuclideanDist.second &&
           ls1[i].seg().second.getY() >
-              boxB.getUpperRight().getY() + maxEuclideanDistY) {
+              boxB.getUpperRight().getY() + maxEuclideanDist.second) {
         i++;
         continue;
       }
@@ -5462,7 +5533,7 @@ double withinDist(
             {box.getLowerLeft().getY(), box.getUpperRight().getY()});
 
         for (const auto& seg : overlaps) {
-          if (dist(ls1[i].seg(), seg.v) <= maxEuclideanDistX) {
+          if (dist(ls1[i].seg(), seg.v) <= maxEuclideanDist.first) {
             double dist = util::geo::dist(ls1[i].seg(), seg.v, distFunc);
             if (dist <= maxDist && dist < minDist) minDist = dist;
             if (minDist == 0) return 0;
@@ -5472,22 +5543,23 @@ double withinDist(
 
       i++;
     } else if (j < ls2.size() &&
-               (ls2[j].p.getX() - maxEuclideanDistX < ls1[i].p.getX() ||
-                (ls2[j].p.getX() - maxEuclideanDistX == ls1[i].p.getX() &&
+               (ls2[j].p.getX() - maxEuclideanDist.first < ls1[i].p.getX() ||
+                (ls2[j].p.getX() - maxEuclideanDist.first == ls1[i].p.getX() &&
                  !ls2[j].out()))) {
       // advance ls2
-      const auto& box = pad(getBoundingBox(ls2[j].seg()), maxEuclideanDistX,
-                            maxEuclideanDistY);
+      const auto& box = pad(getBoundingBox(ls2[j].seg()),
+                            maxEuclideanDist.first, maxEuclideanDist.second);
 
       if (!ls2[j].out()) {
         // check the deferred OUT events of ls2 first
         while (deferredOutLs2.size() &&
-               deferredOutLs2.front().p.getX() + maxEuclideanDistX <
-                   ls2[j].p.getX() - maxEuclideanDistX) {
+               deferredOutLs2.front().p.getX() + maxEuclideanDist.first <
+                   ls2[j].p.getX() - maxEuclideanDist.first) {
           // OUT event LS2
 
-          const auto& box = pad(getBoundingBox(deferredOutLs2.front().seg()),
-                                maxEuclideanDistX, maxEuclideanDistY);
+          const auto& box =
+              pad(getBoundingBox(deferredOutLs2.front().seg()),
+                  maxEuclideanDist.first, maxEuclideanDist.second);
 
           activesB.erase(
               {box.getLowerLeft().getY(), box.getUpperRight().getY()},
@@ -5498,7 +5570,7 @@ double withinDist(
 
           for (const auto& seg : overlaps) {
             if (dist(deferredOutLs2.front().seg(), seg.v) <=
-                maxEuclideanDistX) {
+                maxEuclideanDist.first) {
               double dist = util::geo::dist(deferredOutLs2.front().seg(), seg.v,
                                             distFunc);
               if (dist <= maxDist && dist < minDist) minDist = dist;
@@ -5510,26 +5582,27 @@ double withinDist(
         }
 
         // we are past ls1, so simply return
-        if (ls2[j].p.getX() - maxEuclideanDistX > ls1.back().p.getX()) break;
+        if (ls2[j].p.getX() - maxEuclideanDist.first > ls1.back().p.getX())
+          break;
 
         // ignore segments out of the X range
-        if (ls2[j].seg().second.getX() + maxEuclideanDistX <
+        if (ls2[j].seg().second.getX() + maxEuclideanDist.first <
             boxA.getLowerLeft().getX()) {
           j++;
           continue;
         }
 
         // ignore segments out of the Y range
-        if (ls2[j].seg().first.getY() - maxEuclideanDistY <
+        if (ls2[j].seg().first.getY() - maxEuclideanDist.second <
                 boxA.getLowerLeft().getY() &&
-            ls2[j].seg().second.getY() + maxEuclideanDistY <
+            ls2[j].seg().second.getY() + maxEuclideanDist.second <
                 boxA.getLowerLeft().getY()) {
           j++;
           continue;
         }
-        if (ls2[j].seg().first.getY() - maxEuclideanDistY >
+        if (ls2[j].seg().first.getY() - maxEuclideanDist.second >
                 boxA.getUpperRight().getY() &&
-            ls2[j].seg().second.getY() + maxEuclideanDistY >
+            ls2[j].seg().second.getY() + maxEuclideanDist.second >
                 boxA.getUpperRight().getY()) {
           j++;
           continue;
@@ -5554,17 +5627,16 @@ double withinDist(
 template <typename T>
 std::pair<double, bool> withinDist(
     const XSortedRing<T>& p1, const XSortedRing<T>& p2, const Box<T>& boxA,
-    const Box<T>& boxB, double maxEuclideanDistX, double maxEuclideanDistY,
+    const Box<T>& boxB,
+    std::function<std::pair<double, double>(double)> maxEuclideanDistFunc,
     double maxDist,
     std::function<double(const Point<T>& p1, const Point<T>& p2)> distFunc) {
   if (p1.rawRing().size() == 1) {
-    return withinDist(p1.rawRing().front().p, p2,
-                      std::max(maxEuclideanDistX, maxEuclideanDistY), maxDist,
+    return withinDist(p1.rawRing().front().p, p2, maxEuclideanDistFunc, maxDist,
                       distFunc);
   }
   if (p2.rawRing().size() == 1) {
-    return withinDist(p2.rawRing().front().p, p1,
-                      std::max(maxEuclideanDistX, maxEuclideanDistY), maxDist,
+    return withinDist(p2.rawRing().front().p, p1, maxEuclideanDistFunc, maxDist,
                       distFunc);
   }
 
@@ -5575,7 +5647,7 @@ std::pair<double, bool> withinDist(
 
   double ringDist = util::geo::withinDist(
       p1.rawRing(), p2.rawRing(), p1.getMaxSegLen(), p2.getMaxSegLen(), boxA,
-      boxB, maxEuclideanDistX, maxEuclideanDistY, maxDist, distFunc);
+      boxB, maxEuclideanDistFunc, maxDist, distFunc);
 
   if (ringDist == 0) return {0, false};
   if (util::geo::ringContains(p1.rawRing().front().seg().second, p2, 0)
@@ -5590,19 +5662,18 @@ std::pair<double, bool> withinDist(
 template <typename T>
 std::pair<double, bool> withinDist(
     const XSortedLine<T>& ls1, const XSortedRing<T>& p2, const Box<T>& boxA,
-    const Box<T>& boxB, double maxEuclideanDistX, double maxEuclideanDistY,
+    const Box<T>& boxB,
+    std::function<std::pair<double, double>(double)> maxEuclideanDistFunc,
     double maxDist,
     std::function<double(const Point<T>& p1, const Point<T>& p2)> distFunc) {
   if (ls1.rawLine().size() == 1) {
-    return withinDist(ls1.rawLine().front().p, p2,
-                      std::max(maxEuclideanDistX, maxEuclideanDistY), maxDist,
-                      distFunc);
+    return withinDist(ls1.rawLine().front().p, p2, maxEuclideanDistFunc,
+                      maxDist, distFunc);
   }
 
   if (p2.rawRing().size() == 1) {
-    return {withinDist(p2.rawRing().front().p, ls1,
-                       std::max(maxEuclideanDistX, maxEuclideanDistY), maxDist,
-                       distFunc),
+    return {withinDist(p2.rawRing().front().p, ls1, maxEuclideanDistFunc,
+                       maxDist, distFunc),
             false};
   }
 
@@ -5613,7 +5684,7 @@ std::pair<double, bool> withinDist(
 
   double ringDist = util::geo::withinDist(
       ls1.rawLine(), p2.rawRing(), ls1.getMaxSegLen(), p2.getMaxSegLen(), boxA,
-      boxB, maxEuclideanDistX, maxEuclideanDistY, maxDist, distFunc);
+      boxB, maxEuclideanDistFunc, maxDist, distFunc);
 
   if (ringDist == 0) return {ringDist, false};
   if (util::geo::ringContains(ls1.rawLine().front().seg().second, p2, 0).second)
@@ -5626,11 +5697,12 @@ std::pair<double, bool> withinDist(
 template <typename T>
 double withinDist(
     const XSortedLine<T>& a, const XSortedPolygon<T>& b, const Box<T>& boxA,
-    const Box<T>& boxB, double maxEuclideanDistX, double maxEuclideanDistY,
+    const Box<T>& boxB,
+    std::function<std::pair<double, double>(double)> maxEuclideanDistFunc,
     double maxDist,
     std::function<double(const Point<T>& p1, const Point<T>& p2)> distFunc) {
-  auto r = withinDist(a, b.getOuter(), boxA, boxB, maxEuclideanDistX,
-                      maxEuclideanDistY, maxDist, distFunc);
+  auto r = withinDist(a, b.getOuter(), boxA, boxB, maxEuclideanDistFunc,
+                      maxDist, distFunc);
   if (!r.second) return r.first;
 
   // also check inner rings
@@ -5653,9 +5725,8 @@ double withinDist(
         break;
       if (!util::geo::intersects(boxA, b.getInnerBoxes()[i])) continue;
 
-      auto r2 =
-          withinDist(a, b.getInners()[i], boxA, b.getInnerBoxes()[i],
-                     maxEuclideanDistX, maxEuclideanDistY, maxDist, distFunc);
+      auto r2 = withinDist(a, b.getInners()[i], boxA, b.getInnerBoxes()[i],
+                           maxEuclideanDistFunc, maxDist, distFunc);
 
       // if we are contained in the inner ring, directly return the distance to
       // it
@@ -5670,17 +5741,24 @@ double withinDist(
 template <typename T>
 double withinDist(
     const XSortedPolygon<T>& p1, const XSortedPolygon<T>& p2,
-    const Box<T>& boxA, const Box<T>& boxB, double maxEuclideanDistX,
-    double maxEuclideanDistY, double maxDist,
+    const Box<T>& boxA, const Box<T>& boxB,
+    std::function<std::pair<double, double>(double)> maxEuclideanDistFunc,
+    double maxDist,
     std::function<double(const Point<T>& p1, const Point<T>& p2)> distFunc) {
   if (p1.getOuter().rawRing().size() == 0) return maxDist;
   if (p2.getOuter().rawRing().size() == 0) return maxDist;
 
-  auto outerR =
-      withinDist(p1.getOuter(), p2.getOuter(), boxA, boxB, maxEuclideanDistX,
-                 maxEuclideanDistY, maxDist, distFunc);
+  auto outerR = withinDist(p1.getOuter(), p2.getOuter(), boxA, boxB,
+                           maxEuclideanDistFunc, maxDist, distFunc);
 
+  // if we are not contained, directly return the distance (0 if we intersect)
   if (!outerR.second) return outerR.first;
+
+  // rationale: if we are contained in the outer ring, the distance can only be
+  // nonzero if we are inside an inner ring. But the distance to this inner ring
+  // cannot be greate than the distance to the outer ring, because otherwise the
+  // inner ring would lie outside the outer ring, which we do not support
+  maxDist = std::min(maxDist, outerR.first);
 
   // check if p1 is in an inner ring of p2
   if (p2.getInners().size()) {
@@ -5704,8 +5782,8 @@ double withinDist(
       if (!util::geo::intersects(boxA, p2.getInnerBoxes()[i])) continue;
 
       auto r2 = withinDist(p1.getOuter(), p2.getInners()[i], boxA,
-                           p2.getInnerBoxes()[i], maxEuclideanDistX,
-                           maxEuclideanDistY, maxDist, distFunc);
+                           p2.getInnerBoxes()[i], maxEuclideanDistFunc, maxDist,
+                           distFunc);
 
       // if we are contained in the inner ring, directly return the distance to
       // it
@@ -5735,8 +5813,8 @@ double withinDist(
       if (!util::geo::intersects(boxA, p1.getInnerBoxes()[i])) continue;
 
       auto r2 = withinDist(p2.getOuter(), p1.getInners()[i], boxB,
-                           p1.getInnerBoxes()[i], maxEuclideanDistX,
-                           maxEuclideanDistY, maxDist, distFunc);
+                           p1.getInnerBoxes()[i], maxEuclideanDistFunc, maxDist,
+                           distFunc);
 
       // if we are contained in the inner ring, directly return the distance to
       // it
@@ -5749,14 +5827,131 @@ double withinDist(
 
 // _____________________________________________________________________________
 template <typename T>
+double withinDist(const XSortedPolygon<T>& p1, const XSortedPolygon<T>& p2,
+                  const Box<T>& boxA, const Box<T>& boxB, double maxDist) {
+  // standard dist function
+  std::function<double(const Point<double>& a, const Point<double>& b)> distF =
+      [](const Point<double>& a, const Point<double>& b) -> double {
+    return util::geo::dist(a, b);
+  };
+
+  // standard max euclidean dist function
+  std::function<std::pair<double, double>(double)> maxEuclidF =
+      [](double d) -> std::pair<double, double> {
+    return {d, d};
+  };
+
+  return withinDist(p1, p2, boxA, boxB, maxEuclidF, maxDist, distF);
+}
+
+// _____________________________________________________________________________
+template <typename T>
 double withinDist(
     const XSortedLine<T>& ls1, const XSortedLine<T>& ls2, const Box<T>& padboxA,
-    const Box<T>& padboxB, double maxEuclideanDistX, double maxEuclideanDistY,
+    const Box<T>& padboxB,
+    std::function<std::pair<double, double>(double)> maxEuclideanDistFunc,
     double maxDist,
     std::function<double(const Point<T>& p1, const Point<T>& p2)> distFunc) {
   return withinDist(ls1.rawLine(), ls2.rawLine(), ls1.getMaxSegLen(),
-                    ls2.getMaxSegLen(), padboxA, padboxB, maxEuclideanDistX,
-                    maxEuclideanDistY, maxDist, distFunc);
+                    ls2.getMaxSegLen(), padboxA, padboxB, maxEuclideanDistFunc,
+                    maxDist, distFunc);
+}
+
+// _____________________________________________________________________________
+template <typename T>
+double withinDist(const XSortedLine<T>& ls1, const XSortedLine<T>& ls2,
+                  const Box<T>& padboxA, const Box<T>& padboxB,
+                  double maxDist) {
+  // standard dist function
+  std::function<double(const Point<double>& a, const Point<double>& b)> distF =
+      [](const Point<double>& a, const Point<double>& b) -> double {
+    return util::geo::dist(a, b);
+  };
+
+  // standard max euclidean dist function
+  std::function<std::pair<double, double>(double)> maxEuclidF =
+      [](double d) -> std::pair<double, double> {
+    return {d, d};
+  };
+  return withinDist(ls1.rawLine(), ls2.rawLine(), ls1.getMaxSegLen(),
+                    ls2.getMaxSegLen(), padboxA, padboxB, maxEuclidF, maxDist,
+                    distF);
+}
+
+// _____________________________________________________________________________
+template <typename T>
+double withinDist(const Point<T>& p, const XSortedLine<T>& line,
+                  double maxDist) {
+  // standard dist function
+  std::function<double(const Point<double>& a, const Point<double>& b)> distF =
+      [](const Point<double>& a, const Point<double>& b) -> double {
+    return util::geo::dist(a, b);
+  };
+
+  // standard max euclidean dist function
+  std::function<std::pair<double, double>(double)> maxEuclidF =
+      [](double d) -> std::pair<double, double> {
+    return {d, d};
+  };
+
+  return withinDist(p, line, maxEuclidF, maxDist, distF);
+}
+
+// _____________________________________________________________________________
+template <typename T>
+double withinDist(const XSortedLine<T>& line, const Point<T>& p,
+                  double maxDist) {
+  return withinDist(p, line, maxDist);
+}
+
+// _____________________________________________________________________________
+template <typename T>
+double withinDist(const XSortedPolygon<T>& poly, const Point<T>& p,
+                  double maxDist) {
+  // standard dist function
+  std::function<double(const Point<double>& a, const Point<double>& b)> distF =
+      [](const Point<double>& a, const Point<double>& b) -> double {
+    return util::geo::dist(a, b);
+  };
+
+  // standard max euclidean dist function
+  std::function<std::pair<double, double>(double)> maxEuclidF =
+      [](double d) -> std::pair<double, double> {
+    return {d, d};
+  };
+  return withinDist(poly, p, maxEuclidF, maxDist, distF);
+}
+
+// _____________________________________________________________________________
+template <typename T>
+double withinDist(const Point<T>& p, const XSortedPolygon<T>& poly,
+                  double maxDist) {
+  return withinDist(poly, p, maxDist);
+}
+
+// _____________________________________________________________________________
+template <typename T>
+double withinDist(const XSortedLine<T>& a, const XSortedPolygon<T>& b,
+                  const Box<T>& boxA, const Box<T>& boxB, double maxDist) {
+  // standard dist function
+  std::function<double(const Point<double>& a, const Point<double>& b)> distF =
+      [](const Point<double>& a, const Point<double>& b) -> double {
+    return util::geo::dist(a, b);
+  };
+
+  // standard max euclidean dist function
+  std::function<std::pair<double, double>(double)> maxEuclidF =
+      [](double d) -> std::pair<double, double> {
+    return {d, d};
+  };
+  return withinDist(a, b, boxA, boxB, maxEuclidF, maxDist, distF);
+}
+
+// _____________________________________________________________________________
+template <typename T>
+double withinDist(const XSortedPolygon<T>& a, const XSortedLine<T>& b,
+                  const Box<T>& boxA, const Box<T>& boxB, double maxDist) {
+  return withinDist(b, a, boxB, boxA, maxDist);
 }
 
 }  // namespace geo
