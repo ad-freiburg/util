@@ -5847,21 +5847,20 @@ double withinDist(const XSortedPolygon<T>& p1, const XSortedPolygon<T>& p2,
 // _____________________________________________________________________________
 template <typename T>
 double withinDist(
-    const XSortedLine<T>& ls1, const XSortedLine<T>& ls2, const Box<T>& padboxA,
-    const Box<T>& padboxB,
+    const XSortedLine<T>& ls1, const XSortedLine<T>& ls2, const Box<T>& boxA,
+    const Box<T>& boxB,
     std::function<std::pair<double, double>(double)> maxEuclideanDistFunc,
     double maxDist,
     std::function<double(const Point<T>& p1, const Point<T>& p2)> distFunc) {
   return withinDist(ls1.rawLine(), ls2.rawLine(), ls1.getMaxSegLen(),
-                    ls2.getMaxSegLen(), padboxA, padboxB, maxEuclideanDistFunc,
+                    ls2.getMaxSegLen(), boxA, boxB, maxEuclideanDistFunc,
                     maxDist, distFunc);
 }
 
 // _____________________________________________________________________________
 template <typename T>
 double withinDist(const XSortedLine<T>& ls1, const XSortedLine<T>& ls2,
-                  const Box<T>& padboxA, const Box<T>& padboxB,
-                  double maxDist) {
+                  const Box<T>& boxA, const Box<T>& boxB, double maxDist) {
   // standard dist function
   std::function<double(const Point<double>& a, const Point<double>& b)> distF =
       [](const Point<double>& a, const Point<double>& b) -> double {
@@ -5874,8 +5873,7 @@ double withinDist(const XSortedLine<T>& ls1, const XSortedLine<T>& ls2,
     return {d, d};
   };
   return withinDist(ls1.rawLine(), ls2.rawLine(), ls1.getMaxSegLen(),
-                    ls2.getMaxSegLen(), padboxA, padboxB, maxEuclidF, maxDist,
-                    distF);
+                    ls2.getMaxSegLen(), boxA, boxB, maxEuclidF, maxDist, distF);
 }
 
 // _____________________________________________________________________________
