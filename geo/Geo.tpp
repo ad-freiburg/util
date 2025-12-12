@@ -5829,19 +5829,8 @@ double withinDist(
 template <typename T>
 double withinDist(const XSortedPolygon<T>& p1, const XSortedPolygon<T>& p2,
                   const Box<T>& boxA, const Box<T>& boxB, double maxDist) {
-  // standard dist function
-  std::function<double(const Point<double>& a, const Point<double>& b)> distF =
-      [](const Point<double>& a, const Point<double>& b) -> double {
-    return util::geo::dist(a, b);
-  };
-
-  // standard max euclidean dist function
-  std::function<std::pair<double, double>(double)> maxEuclidF =
-      [](double d) -> std::pair<double, double> {
-    return {d, d};
-  };
-
-  return withinDist(p1, p2, boxA, boxB, maxEuclidF, maxDist, distF);
+  return withinDist(p1, p2, boxA, boxB, defaultMaxEuclideanDistFunc, maxDist,
+                    euclideanDistFunc);
 }
 
 // _____________________________________________________________________________
@@ -5861,38 +5850,17 @@ double withinDist(
 template <typename T>
 double withinDist(const XSortedLine<T>& ls1, const XSortedLine<T>& ls2,
                   const Box<T>& boxA, const Box<T>& boxB, double maxDist) {
-  // standard dist function
-  std::function<double(const Point<double>& a, const Point<double>& b)> distF =
-      [](const Point<double>& a, const Point<double>& b) -> double {
-    return util::geo::dist(a, b);
-  };
-
-  // standard max euclidean dist function
-  std::function<std::pair<double, double>(double)> maxEuclidF =
-      [](double d) -> std::pair<double, double> {
-    return {d, d};
-  };
   return withinDist(ls1.rawLine(), ls2.rawLine(), ls1.getMaxSegLen(),
-                    ls2.getMaxSegLen(), boxA, boxB, maxEuclidF, maxDist, distF);
+                    ls2.getMaxSegLen(), boxA, boxB, defaultMaxEuclideanDistFunc,
+                    maxDist, euclideanDistFunc);
 }
 
 // _____________________________________________________________________________
 template <typename T>
 double withinDist(const Point<T>& p, const XSortedLine<T>& line,
                   double maxDist) {
-  // standard dist function
-  std::function<double(const Point<double>& a, const Point<double>& b)> distF =
-      [](const Point<double>& a, const Point<double>& b) -> double {
-    return util::geo::dist(a, b);
-  };
-
-  // standard max euclidean dist function
-  std::function<std::pair<double, double>(double)> maxEuclidF =
-      [](double d) -> std::pair<double, double> {
-    return {d, d};
-  };
-
-  return withinDist(p, line, maxEuclidF, maxDist, distF);
+  return withinDist(p, line, defaultMaxEuclideanDistFunc, maxDist,
+                    euclideanDistFunc);
 }
 
 // _____________________________________________________________________________
@@ -5906,18 +5874,8 @@ double withinDist(const XSortedLine<T>& line, const Point<T>& p,
 template <typename T>
 double withinDist(const XSortedPolygon<T>& poly, const Point<T>& p,
                   double maxDist) {
-  // standard dist function
-  std::function<double(const Point<double>& a, const Point<double>& b)> distF =
-      [](const Point<double>& a, const Point<double>& b) -> double {
-    return util::geo::dist(a, b);
-  };
-
-  // standard max euclidean dist function
-  std::function<std::pair<double, double>(double)> maxEuclidF =
-      [](double d) -> std::pair<double, double> {
-    return {d, d};
-  };
-  return withinDist(poly, p, maxEuclidF, maxDist, distF);
+  return withinDist(poly, p, defaultMaxEuclideanDistFunc, maxDist,
+                    euclideanDistFunc);
 }
 
 // _____________________________________________________________________________
@@ -5931,18 +5889,8 @@ double withinDist(const Point<T>& p, const XSortedPolygon<T>& poly,
 template <typename T>
 double withinDist(const XSortedLine<T>& a, const XSortedPolygon<T>& b,
                   const Box<T>& boxA, const Box<T>& boxB, double maxDist) {
-  // standard dist function
-  std::function<double(const Point<double>& a, const Point<double>& b)> distF =
-      [](const Point<double>& a, const Point<double>& b) -> double {
-    return util::geo::dist(a, b);
-  };
-
-  // standard max euclidean dist function
-  std::function<std::pair<double, double>(double)> maxEuclidF =
-      [](double d) -> std::pair<double, double> {
-    return {d, d};
-  };
-  return withinDist(a, b, boxA, boxB, maxEuclidF, maxDist, distF);
+  return withinDist(a, b, boxA, boxB, defaultMaxEuclideanDistFunc, maxDist,
+                    euclideanDistFunc);
 }
 
 // _____________________________________________________________________________

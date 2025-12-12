@@ -1342,6 +1342,18 @@ template <typename T>
 double withinDist(const XSortedLine<T>& line, const Point<T>& p,
                   double maxDist = std::numeric_limits<double>::infinity());
 
+  // standard dist function
+  const static std::function<double(const Point<double>& a, const Point<double>& b)> euclideanDistFunc =
+      [](const Point<double>& a, const Point<double>& b) -> double {
+    return util::geo::dist(a, b);
+  };
+
+  // standard max euclidean dist function
+  const static std::function<std::pair<double, double>(double)> defaultMaxEuclideanDistFunc =
+      [](double d) -> std::pair<double, double> {
+    return {d, d};
+  };
+
 }  // namespace geo
 }  // namespace util
 
