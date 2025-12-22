@@ -368,16 +368,14 @@ bool contains(const Point<T>& p, const Polygon<T>& poly);
 
 template <typename T>
 std::pair<double, bool> withinDist(
-    const Point<T>& p, const XSortedRing<T>& ph,
-    std::function<std::pair<double, double>(double)> maxEuclideanDistFunc,
-    double maxDist,
+    const Point<T>& p, const XSortedRing<T>& ph, double maxDist,
+    std::function<double(double)> paddingFunc, double maxEuclideanDist,
     std::function<double(const Point<T>& p1, const Point<T>& p2)> distFunc);
 
 template <typename T>
 double withinDist(
-    const Point<T>& p, const XSortedPolygon<T>& poly,
-    std::function<std::pair<double, double>(double)> maxEuclideanDistFunc,
-    double maxDist,
+    const Point<T>& p, const XSortedPolygon<T>& poly, double maxDist,
+    std::function<double(double)> paddingFunc, double maxEuclideanDist,
     std::function<double(const Point<T>& p1, const Point<T>& p2)> distFunc);
 
 template <typename T>
@@ -386,9 +384,8 @@ std::pair<bool, bool> ringContains(const Point<T>& p, const XSortedRing<T>& ph,
 
 template <typename T>
 double withinDist(
-    const Point<T>& p, const XSortedLine<T>& line,
-    std::function<std::pair<double, double>(double)> maxEuclideanDistFunc,
-    double maxDist,
+    const Point<T>& p, const XSortedLine<T>& line, double maxDist,
+    std::function<double(double)> paddingFunc, double maxEuclideanDist,
     std::function<double(const Point<T>& p1, const Point<T>& p2)> distFunc);
 
 template <typename T>
@@ -1259,41 +1256,36 @@ template <typename T>
 double withinDist(
     const std::vector<XSortedTuple<T>>& ls1,
     const std::vector<XSortedTuple<T>>& ls2, T maxSegLenA, T maxSegLenB,
-    const Box<T>& boxA, const Box<T>& boxB,
-    std::function<std::pair<double, double>(double)> maxEuclideanDistFunc,
-    double maxDist,
+    const Box<T>& boxA, const Box<T>& boxB, double maxDist,
+    std::function<double(double)> paddingFunc, double maxEuclideanDist,
     std::function<double(const Point<T>& p1, const Point<T>& p2)> distFunc);
 
 template <typename T>
 std::pair<double, bool> withinDist(
     const XSortedRing<T>& p1, const XSortedRing<T>& p2, const Box<T>& boxA,
-    const Box<T>& boxB,
-    std::function<std::pair<double, double>(double)> maxEuclideanDistFunc,
-    double maxDist,
+    const Box<T>& boxB, double maxDist,
+    std::function<double(double)> paddingFunc, double maxEuclideanDist,
     std::function<double(const Point<T>& p1, const Point<T>& p2)> distFunc);
 
 template <typename T>
 std::pair<double, bool> withinDist(
     const XSortedLine<T>& ls1, const XSortedRing<T>& p2, const Box<T>& boxA,
-    const Box<T>& boxB,
-    std::function<std::pair<double, double>(double)> maxEuclideanDistFunc,
-    double maxDist,
+    const Box<T>& boxB, double maxDist,
+    std::function<double(double)> paddingFunc, double maxEuclideanDist,
     std::function<double(const Point<T>& p1, const Point<T>& p2)> distFunc);
 
 template <typename T>
 double withinDist(
     const XSortedLine<T>& a, const XSortedPolygon<T>& b, const Box<T>& boxA,
-    const Box<T>& boxB,
-    std::function<std::pair<double, double>(double)> maxEuclideanDistFunc,
-    double maxDist,
+    const Box<T>& boxB, double maxDist,
+    std::function<double(double)> paddingFunc, double maxEuclideanDist,
     std::function<double(const Point<T>& p1, const Point<T>& p2)> distFunc);
 
 template <typename T>
 double withinDist(
     const XSortedPolygon<T>& p1, const XSortedPolygon<T>& p2,
-    const Box<T>& boxA, const Box<T>& boxB,
-    std::function<std::pair<double, double>(double)> maxEuclideanDistFunc,
-    double maxDist,
+    const Box<T>& boxA, const Box<T>& boxB, double maxDist,
+    std::function<double(double)> paddingFunc, double maxEuclideanDist,
     std::function<double(const Point<T>& p1, const Point<T>& p2)> distFunc);
 
 template <typename T>
@@ -1304,31 +1296,24 @@ double withinDist(const XSortedPolygon<T>& p1, const XSortedPolygon<T>& p2,
 template <typename T>
 double withinDist(
     const XSortedLine<T>& ls1, const XSortedLine<T>& ls2, const Box<T>& padboxA,
-    const Box<T>& padboxB,
-    std::function<std::pair<double, double>(double)> maxEuclideanDistFunc,
-    double maxDist,
-    std::function<double(const Point<T>& p1, const Point<T>& p2)> distFunc);
-
-template <typename T>
-double withinDist(
-    const XSortedLine<T>& ls1, const XSortedLine<T>& ls2, const Box<T>& padboxA,
     const Box<T>& padboxB, double maxDist,
+    std::function<double(double)> paddingFunc, double maxEuclideanDist,
     std::function<double(const Point<T>& p1, const Point<T>& p2)> distFunc);
 
 template <typename T>
-double withinDist(
-    const XSortedLine<T>& ls1, const XSortedLine<T>& ls2, const Box<T>& padboxA,
-    const Box<T>& padboxB, double maxDist= std::numeric_limits<double>::infinity());
+double withinDist(const XSortedLine<T>& ls1, const XSortedLine<T>& ls2,
+                  const Box<T>& padboxA, const Box<T>& padboxB,
+                  double maxDist = std::numeric_limits<double>::infinity());
 
 template <typename T>
-double withinDist(
-    const XSortedPolygon<T>& ls1, const XSortedLine<T>& ls2, const Box<T>& padboxA,
-    const Box<T>& padboxB, double maxDist= std::numeric_limits<double>::infinity());
+double withinDist(const XSortedPolygon<T>& ls1, const XSortedLine<T>& ls2,
+                  const Box<T>& padboxA, const Box<T>& padboxB,
+                  double maxDist = std::numeric_limits<double>::infinity());
 
 template <typename T>
-double withinDist(
-    const XSortedLine<T>& ls1, const XSortedPolygon<T>& ls2, const Box<T>& padboxA,
-    const Box<T>& padboxB, double maxDist= std::numeric_limits<double>::infinity());
+double withinDist(const XSortedLine<T>& ls1, const XSortedPolygon<T>& ls2,
+                  const Box<T>& padboxA, const Box<T>& padboxB,
+                  double maxDist = std::numeric_limits<double>::infinity());
 
 template <typename T>
 double withinDist(const XSortedPolygon<T>& poly, const Point<T>& p,
@@ -1342,17 +1327,15 @@ template <typename T>
 double withinDist(const XSortedLine<T>& line, const Point<T>& p,
                   double maxDist = std::numeric_limits<double>::infinity());
 
-  // standard dist function
-  const static std::function<double(const Point<double>& a, const Point<double>& b)> euclideanDistFunc =
-      [](const Point<double>& a, const Point<double>& b) -> double {
-    return util::geo::dist(a, b);
-  };
+// standard dist function
+template <typename T>
+double euclideanDistFunc(const Point<T>& a, const Point<T>& b) {
+  return util::geo::dist(a, b);
+}
 
-  // standard max euclidean dist function
-  const static std::function<std::pair<double, double>(double)> defaultMaxEuclideanDistFunc =
-      [](double d) -> std::pair<double, double> {
-    return {d, d};
-  };
+// standard max euclidean dist function
+const static std::function<double(double)> defaultPaddingFunc =
+    [](double d) -> double { return d; };
 
 }  // namespace geo
 }  // namespace util
