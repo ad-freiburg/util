@@ -480,9 +480,6 @@ class XSortedPolygon {
   T _innerMaxSegLen = 0;
 };
 
-template <typename T>
-using XSortedMultiPolygon = std::vector<XSortedPolygon<T>>;
-
 // _____________________________________________________________________________
 template <typename T>
 inline double signedRingArea(const XSortedRing<T>& b) {
@@ -519,4 +516,4 @@ inline double outerArea(const XSortedPolygon<T>& b) {
 }  // namespace geo
 }  // namespace util
 
-#endif  // UTIL_GEO_LINE_H_
+#endif  // UTIL_GEO_POLYGON_H_

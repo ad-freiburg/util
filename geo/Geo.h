@@ -18,6 +18,7 @@
 #include "util/geo/Line.h"
 #include "util/geo/Point.h"
 #include "util/geo/Polygon.h"
+#include "util/geo/XSortedCollection.h"
 
 // -------------------
 // Geometry stuff
@@ -93,6 +94,9 @@ typedef Collection<float> FCollection;
 typedef Collection<int> ICollection;
 typedef Collection<int32_t> I32Collection;
 typedef Collection<int64_t> I64Collection;
+
+template <typename T>
+using XSortedMultiPolygon = XSortedCollection<T>;
 
 typedef XSortedMultiPolygon<double> DXSortedMultiPolygon;
 typedef XSortedMultiPolygon<float> FXSortedMultiPolygon;
