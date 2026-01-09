@@ -54,6 +54,7 @@ class Dijkstra : public ShortestPath<Dijkstra> {
 
   template <typename N, typename E, typename C>
   struct CostFunc : public util::graph::CostFunc<N, E, C> {
+    using util::graph::CostFunc<N, E, C>::operator();
     virtual ~CostFunc() = default;
     virtual C operator()(const Edge<N, E>* from, const Node<N, E>* n,
                  const Edge<N, E>* to) const {
@@ -66,6 +67,7 @@ class Dijkstra : public ShortestPath<Dijkstra> {
 
   template <typename N, typename E, typename C>
   struct HeurFunc : public util::graph::HeurFunc<N, E, C> {
+    using util::graph::HeurFunc<N, E, C>::operator();
     virtual ~HeurFunc() = default;
     C operator()(const Edge<N, E>* from,
                  const std::set<Edge<N, E>*>& to) const {
