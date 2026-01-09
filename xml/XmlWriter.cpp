@@ -70,11 +70,11 @@ XmlWriter::XmlWriter(const std::string& file, bool pret, size_t indent)
     _bzfile = BZ2_bzWriteOpen(&err, _bzfhandle, 9, 0, 30);
 
     if (err != BZ_OK) {
-      throw std::runtime_error("Could not open bzip file for writing.");
+      throw std::runtime_error("Could not open bzip2 file for writing.");
     }
 #else
     throw std::runtime_error(
-        "Could not open bzip file for writing, was compiled without bzip "
+        "Could not open bzip2 file for writing, was compiled without bzip2 "
         "support");
 #endif
   } else {
