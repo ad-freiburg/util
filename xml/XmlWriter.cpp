@@ -3,9 +3,10 @@
 // Authors: Patrick Brosi <brosi@informatik.uni-freiburg.de>
 
 #include <algorithm>
-#include <fstream>
-#include <map>
 #include <cstring>
+#include <fstream>
+#include <locale>
+#include <map>
 #include <ostream>
 #include <stack>
 #include <string>
@@ -45,8 +46,9 @@ XmlWriter::XmlWriter(const std::string& file, bool pret)
 // _____________________________________________________________________________
 XmlWriter::XmlWriter(const std::string& file, bool pret, size_t indent)
     : _out(0), _pretty(pret), _indent(indent), _gzfile(0), _bzfile(0) {
-  if (file.size() > 2 && file[file.size() - 1] == 'z' &&
-      file[file.size() - 2] == 'g' && file[file.size() - 3] == '.') {
+  if (file.size() > 2 && std::tolower(file[file.size() - 1]) == 'z' &&
+      std::tolower(file[file.size() - 2]) == 'g' &&
+      file[file.size() - 3] == '.') {
 #ifdef PBUTIL_ZLIB_FOUND
     _gzfile = gzopen(file.c_str(), "w");
     if (_gzfile == Z_NULL) {
@@ -58,14 +60,16 @@ XmlWriter::XmlWriter(const std::string& file, bool pret, size_t indent)
         "support");
 #endif
   } else if (file.size() > 3 && file[file.size() - 1] == '2' &&
-             file[file.size() - 2] == 'z' && file[file.size() - 3] == 'b' &&
+             std::tolower(file[file.size() - 2]) == 'z' &&
+             std::tolower(file[file.size() - 3]) == 'b' &&
              file[file.size() - 4] == '.') {
 #ifdef PBUTIL_BZLIB_FOUND
     _bzbuf = new char[BUFFER_S];
 
     _bzfhandle = fopen(file.c_str(), "w");
     int err;
-    if (!_bzfhandle) throw std::runtime_error("Could not open file for writing.");
+    if (!_bzfhandle)
+      throw std::runtime_error("Could not open file for writing.");
 
     _bzfile = BZ2_bzWriteOpen(&err, _bzfhandle, 9, 0, 30);
 
@@ -204,7 +208,7 @@ void XmlWriter::put(const string& str) {
   } else if (_bzfile) {
 #ifdef PBUTIL_BZLIB_FOUND
     if (_bzbufpos == BUFFER_S || _bzbufpos + str.size() > BUFFER_S) flushBzip();
-    memcpy( _bzbuf + _bzbufpos, str.c_str(), str.size());
+    memcpy(_bzbuf + _bzbufpos, str.c_str(), str.size());
     _bzbufpos += str.size();
 #endif
   } else {
@@ -215,15 +219,15 @@ void XmlWriter::put(const string& str) {
 // _____________________________________________________________________________
 void XmlWriter::flushBzip() {
 #ifdef PBUTIL_BZLIB_FOUND
-    int err = 0;
-    BZ2_bzWrite(&err, _bzfile, _bzbuf, _bzbufpos);
-    if (err == BZ_IO_ERROR) {
-      BZ2_bzWriteClose(&err, _bzfile, 0, 0, 0);
-      throw std::runtime_error("Could not write to file.");
-    }
+  int err = 0;
+  BZ2_bzWrite(&err, _bzfile, _bzbuf, _bzbufpos);
+  if (err == BZ_IO_ERROR) {
+    BZ2_bzWriteClose(&err, _bzfile, 0, 0, 0);
+    throw std::runtime_error("Could not write to file.");
+  }
 
-    _bzbufpos = 0;
-  #endif
+  _bzbufpos = 0;
+#endif
 }
 
 // _____________________________________________________________________________
