@@ -55,6 +55,12 @@ class Polygon {
   const std::vector<Ring<T>>& getInners() const { return _inners; }
   std::vector<Ring<T>>& getInners() { return _inners; }
 
+  size_t getSize() const {
+    size_t ret = _outer.size();
+    for (const auto& inner : _inners) ret += inner.size();
+    return ret;
+  }
+
  private:
   Ring<T> _outer;
   std::vector<Ring<T>> _inners;
