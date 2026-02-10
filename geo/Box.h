@@ -113,6 +113,14 @@ inline Box<T> extendBox(const Box<T>& a, Box<T> b) {
   return b;
 }
 
+// _____________________________________________________________________________
+template <typename T>
+double area(const Box<T>& b) {
+  return (1.0 * b.getUpperRight().getX() - 1.0 * b.getLowerLeft().getX()) *
+         (1.0 * b.getUpperRight().getY() - 1.0 * b.getLowerLeft().getY());
+}
+
+
 }  // namespace geo
 }  // namespace util
 

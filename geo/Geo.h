@@ -499,25 +499,22 @@ std::tuple<bool, bool, bool, bool, bool> intersectsLinePoly(
 
 template <typename T>
 DE9IMatrix DE9IM(const util::geo::XSortedLine<T>& a,
-                 const util::geo::XSortedLine<T>& b, const Box<T>& boxA,
-                 const Box<T>& boxB, size_t* firstRelIn1, size_t* firstRelIn2);
+                 const util::geo::XSortedLine<T>& b, size_t* firstRelIn1,
+                 size_t* firstRelIn2);
 
 template <typename T>
 DE9IMatrix DE9IM(const util::geo::XSortedLine<T>& a,
-                 const util::geo::XSortedLine<T>& b, const Box<T>& boxA,
-                 const Box<T>& boxB);
+                 const util::geo::XSortedLine<T>& b);
 
 template <typename T>
 std::tuple<bool, bool, bool, bool, bool> intersectsLinePoly(
     const XSortedRing<T>& ls1, const XSortedRing<T>& ls2, T maxSegLenA,
-    T maxSegLenB, const Box<T>& boxA, const Box<T>& boxB, size_t* firstRelIn1,
-    size_t* firstRelIn2);
+    T maxSegLenB, size_t* firstRelIn1, size_t* firstRelIn2);
 
 template <typename T>
 std::tuple<bool, bool, bool, bool, bool, bool, bool, bool> intersectsPoly(
     const XSortedRing<T>& ls1, const XSortedRing<T>& ls2, T maxSegLenA,
-    T maxSegLenB, const Box<T>& boxA, const Box<T>& boxB, size_t* firstRelIn1,
-    size_t* firstRelIn2);
+    T maxSegLenB, size_t* firstRelIn1, size_t* firstRelIn2);
 
 template <typename T>
 bool intersects(const LineSegment<T>& ls1, const LineSegment<T>& ls2);
@@ -602,23 +599,17 @@ std::tuple<bool, bool, bool, bool, bool, bool, bool> intersectsContainsInner(
 
 template <typename T>
 DE9IMatrix DE9IM(const util::geo::XSortedLine<T>& a,
-                 const util::geo::Box<T>& boxA,
-                 const util::geo::XSortedPolygon<T>& b,
-                 const util::geo::Box<T>& boxB, size_t* firstRel1,
+                 const util::geo::XSortedPolygon<T>& b, size_t* firstRel1,
                  size_t* firstRel2);
 
 template <typename T>
 DE9IMatrix DE9IM(const util::geo::XSortedPolygon<T>& a,
-                 const util::geo::Box<T>& boxA,
-                 const util::geo::XSortedLine<T>& b,
-                 const util::geo::Box<T>& boxB, size_t* firstRel1,
+                 const util::geo::XSortedLine<T>& b, size_t* firstRel1,
                  size_t* firstRel2);
 
 template <typename T>
 DE9IMatrix DE9IM(const util::geo::XSortedLine<T>& a,
-                 const util::geo::Box<T>& boxA,
-                 const util::geo::XSortedPolygon<T>& b,
-                 const util::geo::Box<T>& boxB);
+                 const util::geo::XSortedPolygon<T>& b);
 
 template <typename T>
 DE9IMatrix DE9IM(const util::geo::XSortedLine<T>& a,
@@ -626,9 +617,7 @@ DE9IMatrix DE9IM(const util::geo::XSortedLine<T>& a,
 
 template <typename T>
 DE9IMatrix DE9IM(const util::geo::XSortedPolygon<T>& a,
-                 const util::geo::Box<T>& boxA,
-                 const util::geo::XSortedLine<T>& b,
-                 const util::geo::Box<T>& boxB);
+                 const util::geo::XSortedLine<T>& b);
 
 template <typename T>
 DE9IMatrix DE9IM(const util::geo::XSortedPolygon<T>& a,
@@ -636,16 +625,14 @@ DE9IMatrix DE9IM(const util::geo::XSortedPolygon<T>& a,
 
 template <typename T>
 std::tuple<bool, bool, bool, bool, bool> intersectsContainsCovers(
-    const util::geo::XSortedPolygon<T>& a, const util::geo::Box<T>& boxA,
-    double outerAreaA, const util::geo::XSortedPolygon<T>& b,
-    const util::geo::Box<T>& boxB, double outerAreaB, size_t* firstRel1,
+    const util::geo::XSortedPolygon<T>& a,
+    const util::geo::XSortedPolygon<T>& b, size_t* firstRel1,
     size_t* firstRel2);
 
 template <typename T>
 std::tuple<bool, bool, bool, bool, bool> intersectsContainsCovers(
-    const util::geo::XSortedPolygon<T>& a, const util::geo::Box<T>& boxA,
-    double outerAreaA, const util::geo::XSortedPolygon<T>& b,
-    const util::geo::Box<T>& boxB, double outerAreaB);
+    const util::geo::XSortedPolygon<T>& a,
+    const util::geo::XSortedPolygon<T>& b);
 
 template <typename T>
 std::tuple<bool, bool, bool, bool, bool> intersectsContainsCovers(
@@ -654,19 +641,15 @@ std::tuple<bool, bool, bool, bool, bool> intersectsContainsCovers(
 
 template <typename T>
 DE9IMatrix DE9IM(const util::geo::XSortedPolygon<T>& a,
-                 const util::geo::Box<T>& boxA, double outerAreaA,
-                 const util::geo::XSortedPolygon<T>& b,
-                 const util::geo::Box<T>& boxB, double outerAreaB,
-                 size_t* firstRel1, size_t* firstRel2);
+                 const util::geo::XSortedPolygon<T>& b, size_t* firstRel1,
+                 size_t* firstRel2);
 
 template <typename T>
 DE9IMatrix DE9IM(const util::geo::Point<T>& a, const util::geo::Point<T>& b);
 
 template <typename T>
 DE9IMatrix DE9IM(const util::geo::XSortedPolygon<T>& a,
-                 const util::geo::Box<T>& boxA, double outerAreaA,
-                 const util::geo::XSortedPolygon<T>& b,
-                 const util::geo::Box<T>& boxB, double outerAreaB);
+                 const util::geo::XSortedPolygon<T>& b);
 
 template <typename T>
 DE9IMatrix DE9IM(const util::geo::XSortedPolygon<T>& a,
@@ -675,24 +658,20 @@ DE9IMatrix DE9IM(const util::geo::XSortedPolygon<T>& a,
 template <typename T>
 std::tuple<bool, bool, bool, bool, bool> intersectsCovers(
     const util::geo::XSortedLine<T>& a, const util::geo::XSortedLine<T>& b,
-    const Box<T>& boxA, const Box<T>& boxB, size_t* firstRelIn1,
-    size_t* firstRelIn2);
+    size_t* firstRelIn1, size_t* firstRelIn2);
 
 template <typename T>
 std::tuple<bool, bool, bool, bool, bool> intersectsCovers(
-    const util::geo::XSortedLine<T>& a, const util::geo::XSortedLine<T>& b,
-    const Box<T>& boxA, const Box<T>& boxB);
+    const util::geo::XSortedLine<T>& a, const util::geo::XSortedLine<T>& b);
 
 template <typename T>
 std::tuple<bool, bool, bool, bool, bool> intersectsContainsCovers(
-    const util::geo::XSortedLine<T>& a, const util::geo::Box<T>& boxA,
-    const util::geo::XSortedPolygon<T>& b, const util::geo::Box<T>& boxB,
+    const util::geo::XSortedLine<T>& a, const util::geo::XSortedPolygon<T>& b,
     size_t* firstRel1, size_t* firstRel2);
 
 template <typename T>
 std::tuple<bool, bool, bool, bool, bool> intersectsContainsCovers(
-    const util::geo::XSortedLine<T>& a, const util::geo::Box<T>& boxA,
-    const util::geo::XSortedPolygon<T>& b, const util::geo::Box<T>& boxB);
+    const util::geo::XSortedLine<T>& a, const util::geo::XSortedPolygon<T>& b);
 
 template <typename T>
 std::tuple<bool, bool, bool, bool, bool> intersectsContainsCovers(
@@ -1250,51 +1229,45 @@ double withinDist(const std::vector<XSortedTuple<T>>& ls1,
 
 template <typename T, typename PF, typename DF>
 std::pair<double, bool> withinDist(const XSortedRing<T>& p1,
-                                   const XSortedRing<T>& p2, const Box<T>& boxA,
-                                   const Box<T>& boxB, double maxDist,
+                                   const XSortedRing<T>& p2, double maxDist,
                                    PF&& paddingFunc, double maxEuclideanDist,
                                    DF&& distFunc);
 
 template <typename T, typename PF, typename DF>
 std::pair<double, bool> withinDist(const XSortedLine<T>& ls1,
-                                   const XSortedRing<T>& p2, const Box<T>& boxA,
-                                   const Box<T>& boxB, double maxDist,
+                                   const XSortedRing<T>& p2, double maxDist,
                                    PF&& paddingFunc, double maxEuclideanDist,
                                    DF&& distFunc);
 
 template <typename T, typename PF, typename DF>
 double withinDist(const XSortedLine<T>& a, const XSortedPolygon<T>& b,
-                  const Box<T>& boxA, const Box<T>& boxB, double maxDist,
-                  PF&& paddingFunc, double maxEuclideanDist, DF&& distFunc);
+                  double maxDist, PF&& paddingFunc, double maxEuclideanDist,
+                  DF&& distFunc);
 
 template <typename T, typename PF, typename DF>
 double withinDist(const XSortedPolygon<T>& p1, const XSortedPolygon<T>& p2,
-                  const Box<T>& boxA, const Box<T>& boxB, double maxDist,
-                  PF&& paddingFunc, double maxEuclideanDist, DF&& distFunc);
+                  double maxDist, PF&& paddingFunc, double maxEuclideanDist,
+                  DF&& distFunc);
 
 template <typename T>
 double withinDist(const XSortedPolygon<T>& p1, const XSortedPolygon<T>& p2,
-                  const Box<T>& boxA, const Box<T>& boxB,
                   double maxDist = std::numeric_limits<double>::infinity());
 
 template <typename T, typename PF, typename DF>
 double withinDist(const XSortedLine<T>& ls1, const XSortedLine<T>& ls2,
-                  const Box<T>& padboxA, const Box<T>& padboxB, double maxDist,
-                  PF&& paddingFunc, double maxEuclideanDist, DF&& distFunc);
+                  double maxDist, PF&& paddingFunc, double maxEuclideanDist,
+                  DF&& distFunc);
 
 template <typename T>
 double withinDist(const XSortedLine<T>& ls1, const XSortedLine<T>& ls2,
-                  const Box<T>& padboxA, const Box<T>& padboxB,
                   double maxDist = std::numeric_limits<double>::infinity());
 
 template <typename T>
 double withinDist(const XSortedPolygon<T>& ls1, const XSortedLine<T>& ls2,
-                  const Box<T>& padboxA, const Box<T>& padboxB,
                   double maxDist = std::numeric_limits<double>::infinity());
 
 template <typename T>
 double withinDist(const XSortedLine<T>& ls1, const XSortedPolygon<T>& ls2,
-                  const Box<T>& padboxA, const Box<T>& padboxB,
                   double maxDist = std::numeric_limits<double>::infinity());
 
 template <typename T>
@@ -1311,13 +1284,15 @@ double withinDist(const XSortedLine<T>& line, const Point<T>& p,
 
 // standard dist function
 template <typename T>
-double euclideanDistFunc(const Point<T>& a, const Point<T>& b) {
+double euclideanDistFunc(const Point<T>& a, const Point<T>& b, double) {
   return util::geo::dist(a, b);
 }
 
 // standard max euclidean dist function
-const static std::function<double(double)> defaultPaddingFunc =
-    [](double d) -> double { return d; };
+template <typename T>
+const static std::function<double(double, double, const Box<T>&, const Box<T>&)>
+    defaultPaddingFunc = [](double d, double, const Box<T>&,
+                            const Box<T>&) -> double { return d; };
 
 }  // namespace geo
 }  // namespace util

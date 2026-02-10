@@ -8,8 +8,8 @@
 #include <iostream>
 #include <list>
 #include <memory>
-#include <unordered_map>
 #include <set>
+#include <unordered_map>
 
 namespace util {
 namespace geo {
@@ -81,6 +81,34 @@ class IntervalIdx {
     return ret;
   }
 
+  // find all intervals, with their values, which overlap s= [a, b], call
+  // callback with each
+  bool overlap_find_all(const std::pair<K, K> s,
+                        std::function<bool(IntervalVal<K, V>)> cb) const {
+    // retrieve from each sub-list
+    for (size_t j = 0; j < _ts.size(); j++) {
+      if (get(s, _ivals[j], _ts[j], cb)) return true;
+    }
+
+    // also retrieve from largest sub-list
+    bool r = get(s, _ivals.back(), _maxSpan, cb);
+
+    return r;
+  }
+
+  // returns true if a request would surely return the entire content of this
+  // index - but may contain false negatives for performance reasons!
+  bool is_full_scan(const std::pair<K, K> s) {
+    for (size_t j = 0; j < _ivals.size(); j++) {
+      if (_ivals[j].size() == 0) continue;
+      if (*_ivals[j].begin() < IntervalVal<K, V>{s.first, s.first, V()} ||
+          !(*_ivals[j].rbegin() < IntervalVal<K, V>{s.second, s.second, V()}))
+        return false;
+    }
+
+    return true;
+  }
+
   // returns the size of the interval index
   size_t size() {
     size_t res = 0;
@@ -115,6 +143,21 @@ class IntervalIdx {
       }
       i++;
     }
+  }
+
+  // like above, but with callback
+  bool get(const std::pair<K, K>& val, const std::set<IntervalVal<K, V>>& idx,
+           K t, std::function<bool(IntervalVal<K, V>)> cb) const {
+    auto i = idx.lower_bound({val.first - t, 0, {}});
+
+    while (i != idx.end() && i->l <= val.second) {
+      if ((val.first >= i->l && val.first <= i->r) || (val.second <= i->r) ||
+          (i->l >= val.first) || (i->r >= val.first && i->r <= val.second)) {
+        if (cb(*i)) return true;
+      }
+      i++;
+    }
+    return false;
   }
 };
 

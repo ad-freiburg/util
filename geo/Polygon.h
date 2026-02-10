@@ -143,8 +143,9 @@ template <typename T>
 class XSortedRing {
  public:
   XSortedRing() {}
-  XSortedRing(const Box<T>& box) : _ring(8) {
+  XSortedRing(const Box<T>& box) : _ring(8), _bbox(box) {
     _maxSegLen = box.getUpperRight().getX() - box.getLowerLeft().getX();
+    _area = util::geo::area(box);
 
     _ring[0] = {box.getLowerLeft(),
                 {box.getLowerLeft(), box.getUpperLeft()},
@@ -198,6 +199,7 @@ class XSortedRing {
   }
 
   XSortedRing(const Ring<T>& ring) {
+    _area = ringArea(ring);
     _ring.reserve(ring.size());
 
     for (size_t i = 1; i < ring.size(); i++) {
@@ -206,6 +208,8 @@ class XSortedRing {
         continue;
       T len = fabs(ring[i - 1].getX() - ring[i].getX());
       if (len > _maxSegLen) _maxSegLen = len;
+
+      _bbox = extendBox(LineSegment<T>{ring[i-1], ring[i]}, _bbox);
 
       double prevAng = 0;
       double nextAng = 0;
@@ -330,6 +334,8 @@ class XSortedRing {
   bool operator==(const XSortedRing<T>& other) const {
     if (_ring.size() != other._ring.size()) return false;
     if (_maxSegLen != other._maxSegLen) return false;
+    if (_bbox != other._bbox) return false;
+    if (_area != other._area) return false;
 
     for (size_t i = 0; i < _ring.size(); i++) {
       if (_ring[i] != other._ring[i]) return false;
@@ -347,10 +353,16 @@ class XSortedRing {
 
   const std::vector<XSortedTuple<T>>& rawRing() const { return _ring; }
   std::vector<XSortedTuple<T>>& rawRing() { return _ring; }
+  Box<T> boundingBox() const { return _bbox; }
+  void setBoundingBox(const Box<T>& bbox) { _bbox = bbox; }
+  double area() const { return _area; }
+  void setArea(double area) { _area = area; }
 
  private:
   std::vector<XSortedTuple<T>> _ring;
   T _maxSegLen = -1;
+  Box<T> _bbox;
+  double _area = 0;
 };
 
 template <typename T>
@@ -470,6 +482,12 @@ class XSortedPolygon {
 
   T getInnerMaxSegLen() const { return _innerMaxSegLen; }
   void setInnerMaxSegLen(T len) { _innerMaxSegLen = len; }
+  Box<T> boundingBox() const { return _outer.boundingBox(); }
+  double area() const {
+    double ret = _outer.area();
+    for (const auto& inner : _inners) ret -= inner.area();
+    return ret;
+  }
 
  private:
   XSortedRing<T> _outer;
