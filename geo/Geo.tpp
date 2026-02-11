@@ -4233,7 +4233,7 @@ double len(const std::vector<XSortedTuple<T>>& g) {
 // _____________________________________________________________________________
 template <typename T>
 double len(const XSortedLine<T>& g) {
-  return len(g.rawLine());
+  return g.length();
 }
 
 // _____________________________________________________________________________
@@ -5082,6 +5082,12 @@ double area(const std::vector<Geometry<T>>& gs) {
   }
 
   return ret;
+}
+
+// _____________________________________________________________________________
+template <typename T>
+double area(const XSortedPolygon<T>& p) {
+  return p.area();
 }
 
 // _____________________________________________________________________________

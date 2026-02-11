@@ -295,6 +295,7 @@ class XSortedLine {
 
   XSortedLine(const Line<T>& line) {
     if (line.size() < 2) return;
+    _len = len(line);
     _first = line.front();
     _last = line.back();
 
@@ -407,6 +408,7 @@ class XSortedLine {
     _first = line.first;
     _last = line.second;
     _bbox = getBoundingBox(line);
+    _len = len(line);
   }
 
   bool operator==(const XSortedLine<T>& other) const {
@@ -433,12 +435,16 @@ class XSortedLine {
   Box<T> boundingBox() const { return _bbox; }
   void setBoundingBox(const Box<T>& bbox) { _bbox = bbox; }
 
+  double length() const { return _len; }
+  void setLength(double len) { _len = len; }
+
  private:
   std::vector<XSortedTuple<T>> _line;
   Point<T> _first;
   Point<T> _last;
   T _maxSegLen = -1;
   Box<T> _bbox;
+  double _len = 0;
 };
 
 template <typename T>
