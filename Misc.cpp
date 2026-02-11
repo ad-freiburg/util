@@ -144,7 +144,7 @@ ssize_t util::zreadAll(gzFile file, unsigned char* buf, size_t count) {
 #endif
 
 // _____________________________________________________________________________
-#ifdef PBUTIL_BZIP2_FOUND
+#ifdef PBUTIL_BZLIB_FOUND
 ssize_t util::bz2readAll(BZFILE* file, unsigned char* buf, size_t count) {
   ssize_t r;
   ssize_t rem = count;
