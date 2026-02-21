@@ -5,9 +5,16 @@
 #include "./Misc.h"
 
 #include <fcntl.h>
-#include <pwd.h>
 #include <stdio.h>
-#include <unistd.h>
+#ifndef _WIN32
+# include <pwd.h>
+# include <unistd.h>
+#else
+# include <io.h>
+# include <windows.h>
+# include <stdint.h>
+# include <sys/types.h>
+#endif
 
 #include <cmath>
 #include <cstdio>
@@ -18,6 +25,27 @@
 
 #include "3rdparty/fmt/core.h"
 #include "String.h"
+
+// Provide simple pread/pwrite stubs for Windows (MinGW)
+#ifdef _WIN32
+static inline ssize_t pwrite(int fd, const void* buf, size_t count, size_t offset) {
+  off_t cur = _lseeki64(fd, 0, SEEK_CUR);
+  if (cur == -1) return -1;
+  if (_lseeki64(fd, (off_t)offset, SEEK_SET) == -1) return -1;
+  int wrote = _write(fd, (const char*)buf, (unsigned int)count);
+  _lseeki64(fd, cur, SEEK_SET);
+  return (ssize_t)wrote;
+}
+
+static inline ssize_t pread(int fd, void* buf, size_t count, size_t offset) {
+  off_t cur = _lseeki64(fd, 0, SEEK_CUR);
+  if (cur == -1) return -1;
+  if (_lseeki64(fd, (off_t)offset, SEEK_SET) == -1) return -1;
+  int readn = _read(fd, (char*)buf, (unsigned int)count);
+  _lseeki64(fd, cur, SEEK_SET);
+  return (ssize_t)readn;
+}
+#endif
 
 // cached first 10 powers of 10
 static int pow10[10] = {1,      10,      100,      1000,      10000,
@@ -205,6 +233,20 @@ double util::atof(const char* p) { return atof(p, 38); }
 
 // _____________________________________________________________________________
 std::string util::getHomeDir() {
+#ifdef _WIN32
+  const char* homedir = getenv("USERPROFILE");
+  if (!homedir || !homedir[0]) {
+    const char* drive = getenv("HOMEDRIVE");
+    const char* path = getenv("HOMEPATH");
+    if (drive && path) {
+      std::string ret = std::string(drive) + std::string(path);
+      return ret;
+    }
+    homedir = getenv("HOMEDRIVE"); // fallback
+    if (!homedir) homedir = "";
+  }
+  return std::string(homedir);
+#else
   // parse implicit paths
   const char* homedir = 0;
   char* buf = 0;
@@ -227,6 +269,7 @@ std::string util::getHomeDir() {
   if (buf) free(buf);
 
   return ret;
+#endif
 }
 
 // _____________________________________________________________________________

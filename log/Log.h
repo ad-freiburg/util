@@ -10,6 +10,12 @@
 #include <iostream>
 #include <sstream>
 
+#if defined(_WIN32) || defined(__MINGW32__)
+#  ifdef ERROR
+#    undef ERROR
+#  endif
+#endif
+
 #ifndef UTIL_LOGLVL
 #define UTIL_LOGLVL 2
 #endif

@@ -7,13 +7,23 @@
 #endif
 
 #include <fcntl.h>
-#include <netdb.h>
-#include <netinet/in.h>
-#include <netinet/tcp.h>
-#include <sys/socket.h>
+#if !defined(_WIN32) && !defined(__MINGW32__)
+#  include <sys/socket.h>
+#  include <netinet/in.h>
+#  include <arpa/inet.h>
+#  include <netdb.h>
+#  include <unistd.h>
+#  include <signal.h>
+#else
+#  include <winsock2.h>
+#  include <ws2tcpip.h>
+#  include <windows.h>
+typedef int socklen_t;
+#endif
 
 #include <algorithm>
 #include <csignal>
+#include <cerrno>
 #include <memory>
 #include <sstream>
 #include <stdexcept>
@@ -24,7 +34,8 @@
 #endif
 #include <vector>
 
-#include "Server.h"
+#include "./Server.h"
+
 #include "util/Misc.h"
 #include "util/String.h"
 #include "util/log/Log.h"
@@ -39,6 +50,20 @@ using util::http::Socket;
 // _____________________________________________________________________________
 Socket::Socket(int port) {
   int y = 1;
+#if defined(_WIN32) || defined(__MINGW32__)
+  setsockopt(_sock, SOL_SOCKET, SO_REUSEADDR, reinterpret_cast<const char*>(&y), sizeof(y));
+  /* SO_REUSEPORT not available on Windows — skip */
+#else
+  setsockopt(_sock, SOL_SOCKET, SO_REUSEADDR, &y, sizeof(y));
+  #ifdef SO_REUSEPORT
+    setsockopt(_sock, SOL_SOCKET, SO_REUSEPORT, &y, sizeof(y));
+  #endif
+#endif
+
+#if !defined(_WIN32) && !defined(__MINGW32__)
+  signal(SIGPIPE, SIG_IGN);
+#endif
+
   _sock = socket(PF_INET, SOCK_STREAM, 0);
   if (_sock < 0)
     throw std::runtime_error(std::string("Could not create socket (") +
@@ -50,9 +75,6 @@ Socket::Socket(int port) {
   addr.sin_port = htons(port);
   addr.sin_addr.s_addr = INADDR_ANY;
   memset(&(addr.sin_zero), '\0', 8);
-
-  setsockopt(_sock, SOL_SOCKET, SO_REUSEADDR, &y, sizeof(y));
-  setsockopt(_sock, SOL_SOCKET, SO_REUSEPORT, &y, sizeof(y));
 
   if (bind(_sock, reinterpret_cast<sockaddr*>(&addr), sizeof(addr)) < 0) {
     throw std::runtime_error(std::string("Could not bind to port ") +
@@ -77,8 +99,9 @@ int Socket::wait() {
 
 // _____________________________________________________________________________
 void HttpServer::send(int sock, Answer* aw) {
-  // ignore SIGPIPE
+#if !defined(_WIN32) && !defined(__MINGW32__)
   signal(SIGPIPE, SIG_IGN);
+#endif
 
   std::string enc = "identity";
   if (aw->gzip) aw->pl = compress(aw->pl, &enc);
@@ -95,14 +118,24 @@ void HttpServer::send(int sock, Answer* aw) {
 
   size_t writes = 0;
 
-  while (writes != buff.size()) {
-    int64_t out =
-        ::send(sock, buff.c_str() + writes, buff.size() - writes, MSG_NOSIGNAL);
+  while (writes < buff.size()) {
+#if defined(_WIN32) || defined(__MINGW32__)
+    int toWrite = static_cast<int>(buff.size() - writes);
+    int out = ::send(sock, buff.c_str() + writes, toWrite, 0);
+    if (out == SOCKET_ERROR) {
+      int err = WSAGetLastError();
+      if (err == WSAEWOULDBLOCK || err == WSAEINTR) continue;
+      throw std::runtime_error("Failed to write to socket");
+    }
+    writes += static_cast<size_t>(out);
+#else
+    ssize_t out = ::send(sock, buff.c_str() + writes, buff.size() - writes, MSG_NOSIGNAL);
     if (out < 0) {
       if (errno == EWOULDBLOCK || errno == EAGAIN || errno == EINTR) continue;
       throw std::runtime_error("Failed to write to socket");
     }
-    writes += out;
+    writes += static_cast<size_t>(out);
+#endif
   }
 }
 

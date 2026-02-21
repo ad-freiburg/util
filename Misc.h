@@ -22,6 +22,20 @@
 #include <sys/types.h>
 #include "JobQueue.h"
 
+#if defined(_WIN32) || defined(__MINGW32__)
+#  ifndef WIN32_LEAN_AND_MEAN
+#    define WIN32_LEAN_AND_MEAN
+#  endif
+#  ifndef NOGDI
+#    define NOGDI
+#  endif
+#  ifndef NOMINMAX
+#    define NOMINMAX
+#  endif
+#include <windows.h>
+#endif
+
+
 static const size_t SORT_BUFFER_S = 64 * 128 * 1024;
 
 #define UNUSED(expr) do { (void)(expr); } while (0)
