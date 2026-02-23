@@ -12,11 +12,12 @@
 #include <chrono>
 #include <cstring>
 #include <iostream>
+#include <cmath>
 #include <vector>
 #ifdef PBUTIL_ZLIB_FOUND
 #include <zlib.h>
 #endif
-#ifdef PBUTIL_BZIP2_FOUND
+#ifdef PBUTIL_BZLIB_FOUND
 #include <bzlib.h>
 #endif
 #include <sys/types.h>
@@ -271,7 +272,7 @@ ssize_t preadAll(int file, unsigned char* buf, size_t count, size_t offset);
 ssize_t zreadAll(gzFile file, unsigned char* buf, size_t count);
 #endif
 
-#ifdef PBUTIL_BZIP2_FOUND
+#ifdef PBUTIL_BZLIB_FOUND
 ssize_t bz2readAll(BZFILE* file, unsigned char* buf, size_t count);
 #endif
 

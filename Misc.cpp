@@ -48,7 +48,7 @@ static inline ssize_t pread(int fd, void* buf, size_t count, size_t offset) {
 #endif
 
 // cached first 10 powers of 10
-static int pow10[10] = {1,      10,      100,      1000,      10000,
+static int util_first_10_pow_10[10] = {1,      10,      100,      1000,      10000,
                         100000, 1000000, 10000000, 100000000, 1000000000};
 
 // _____________________________________________________________________________
@@ -124,7 +124,7 @@ double util::atof(const char* p, uint8_t mn) {
     }
 
     if (n < 10) {
-      ret += f / pow10[n];
+      ret += f / util_first_10_pow_10[n];
     } else {
       double res = 1;
       double base = 10;
@@ -172,7 +172,7 @@ ssize_t util::zreadAll(gzFile file, unsigned char* buf, size_t count) {
 #endif
 
 // _____________________________________________________________________________
-#ifdef PBUTIL_BZIP2_FOUND
+#ifdef PBUTIL_BZLIB_FOUND
 ssize_t util::bz2readAll(BZFILE* file, unsigned char* buf, size_t count) {
   ssize_t r;
   ssize_t rem = count;

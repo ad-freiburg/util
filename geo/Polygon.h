@@ -55,6 +55,12 @@ class Polygon {
   const std::vector<Ring<T>>& getInners() const { return _inners; }
   std::vector<Ring<T>>& getInners() { return _inners; }
 
+  size_t getSize() const {
+    size_t ret = _outer.size();
+    for (const auto& inner : _inners) ret += inner.size();
+    return ret;
+  }
+
  private:
   Ring<T> _outer;
   std::vector<Ring<T>> _inners;
@@ -482,6 +488,39 @@ class XSortedPolygon {
 
 template <typename T>
 using XSortedMultiPolygon = std::vector<XSortedPolygon<T>>;
+
+// _____________________________________________________________________________
+template <typename T>
+inline double signedRingArea(const XSortedRing<T>& b) {
+  if (b.rawRing().size() < 3) return 0;
+
+  double ret = 0;
+
+  double xOff = b.rawRing()[0].origSeg().first.getX();
+  double yOff = b.rawRing()[0].origSeg().first.getY();
+
+  for (size_t i = 0; i < b.rawRing().size(); i++) {
+    if (b.rawRing()[i].out()) continue;  // skip OUT events
+    ret += (1.0 * (b.rawRing()[i].origSeg().first.getX() - xOff) +
+            1.0 * (b.rawRing()[i].origSeg().second.getX() - xOff)) *
+           (1.0 * (b.rawRing()[i].origSeg().first.getY() - yOff) -
+            1.0 * (b.rawRing()[i].origSeg().second.getY() - yOff));
+  }
+
+  return ret / 2.0;
+}
+
+// _____________________________________________________________________________
+template <typename T>
+inline double ringArea(const XSortedRing<T>& b) {
+  return fabs(signedRingArea(b));
+}
+
+// _____________________________________________________________________________
+template <typename T>
+inline double outerArea(const XSortedPolygon<T>& b) {
+  return ringArea(b.getOuter());
+}
 
 }  // namespace geo
 }  // namespace util

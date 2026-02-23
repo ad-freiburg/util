@@ -1114,6 +1114,7 @@ std::tuple<bool, bool> intersectsContains(const Point<T>& p,
                                           const XSortedLine<T>& line,
                                           size_t i) {
   // check if point p lies on line
+  // returns {intersects, contains}
 
   // skip irrelevant parts
   if (line.getMaxSegLen() < std::numeric_limits<double>::infinity() &&
@@ -1148,8 +1149,8 @@ std::tuple<bool, bool> intersectsContains(const Point<T>& p,
 template <typename T>
 DE9IMatrix DE9IM(const Point<T>& p, const XSortedLine<T>& line, size_t i) {
   auto res = intersectsContains(p, line, i);
-  if (std::get<0>(res)) return M0FFFFF102;
-  if (std::get<1>(res)) return MF0FFFF102;
+  if (std::get<1>(res)) return M0FFFFF102;
+  if (std::get<0>(res)) return MF0FFFF102;
   return MFF0FFF102;
 }
 
@@ -1365,7 +1366,13 @@ bool ringContains(const LineSegment<T>& ls, const Ring<T>& ph) {
 // _____________________________________________________________________________
 template <typename T>
 bool contains(const LineSegment<T>& ls, const Polygon<T>& p) {
-  return ringContains(ls, p.getOuter());
+  if (!ringContains(ls, p.getOuter())) return false;
+
+  for (const auto& inner : p.getInners()) {
+    if (ringContains(ls, inner)) return false;
+  }
+
+  return true;
 }
 
 // _____________________________________________________________________________
@@ -2869,6 +2876,13 @@ DE9IMatrix DE9IM(const util::geo::XSortedPolygon<T>& a,
            (be << 10) | (ei << 12) | (eb << 14);
   }
 
+  // re-calculate missing areas in special case
+  if (std::get<0>(borderInt) && outerAreaA == 0 && outerAreaB == 0 &&
+      util::geo::contains(boxA, boxB) && util::geo::contains(boxB, boxA)) {
+    outerAreaA = util::geo::outerArea(a);
+    outerAreaB = util::geo::outerArea(b);
+  }
+
   if (a.getOuter().rawRing().size() > 1 && outerAreaA <= outerAreaB &&
       util::geo::contains(boxA, boxB) &&
       (std::get<0>(borderInt) ||
@@ -3281,6 +3295,40 @@ double angBetween(const Point<T>& p1, const MultiPoint<T>& points) {
 
 // _____________________________________________________________________________
 template <typename T>
+double dist(const AnyGeometry<T>& any1, const AnyGeometry<T>& any2) {
+  if (any1.getType() == 0) return dist(any1.getPoint(), any2);
+  if (any1.getType() == 1) return dist(any1.getLine(), any2);
+  if (any1.getType() == 2) return dist(any1.getPolygon(), any2);
+  if (any1.getType() == 3) return dist(any1.getMultiLine(), any2);
+  if (any1.getType() == 4) return dist(any1.getMultiPolygon(), any2);
+  if (any1.getType() == 5) return dist(any1.getCollection(), any2);
+  if (any1.getType() == 6) return dist(any1.getMultiPoint(), any2);
+
+  return std::numeric_limits<double>::infinity();
+}
+
+// _____________________________________________________________________________
+template <template <typename> class GeometryB, typename T>
+double dist(const AnyGeometry<T>& any, const GeometryB<T>& geomB) {
+  if (any.getType() == 0) return dist(any.getPoint(), geomB);
+  if (any.getType() == 1) return dist(any.getLine(), geomB);
+  if (any.getType() == 2) return dist(any.getPolygon(), geomB);
+  if (any.getType() == 3) return dist(any.getMultiLine(), geomB);
+  if (any.getType() == 4) return dist(any.getMultiPolygon(), geomB);
+  if (any.getType() == 5) return dist(any.getCollection(), geomB);
+  if (any.getType() == 6) return dist(any.getMultiPoint(), geomB);
+
+  return std::numeric_limits<double>::infinity();
+}
+
+// _____________________________________________________________________________
+template <template <typename> class GeometryB, typename T>
+double dist(const GeometryB<T>& geomB, const AnyGeometry<T>& any) {
+  return dist(any, geomB);
+}
+
+// _____________________________________________________________________________
+template <typename T>
 double dist(const LineSegment<T>& ls, const Point<T>& p) {
   return distToSegment(ls, p);
 }
@@ -3386,7 +3434,7 @@ template <template <typename> class GeometryA,
 double dist(const std::vector<GeometryA<T>>& multigeom, const GeometryB<T>& b) {
   double d = std::numeric_limits<double>::infinity();
   for (const auto& geom : multigeom)
-    if (dist(geom, b) < d) d = dist(geom, b);
+    d = std::min(d, dist(geom, b));
   return d;
 }
 
@@ -3397,6 +3445,7 @@ double dist(const GeometryB<T>& b, const std::vector<GeometryA<T>>& multigeom) {
   return dist(multigeom, b);
 }
 
+
 // _____________________________________________________________________________
 template <template <typename> class GeometryA,
           template <typename> class GeometryB, typename T>
@@ -3404,7 +3453,7 @@ double dist(const std::vector<GeometryA<T>>& multigeomA,
             const std::vector<GeometryB<T>>& multigeomB) {
   double d = std::numeric_limits<double>::infinity();
   for (const auto& geom : multigeomB)
-    if (dist(geom, multigeomA) < d) d = dist(geom, multigeomA);
+     d = std::min(d, dist(geom, multigeomA));
   return d;
 }
 
@@ -3432,22 +3481,63 @@ double crossProd(const Point<T>& p, const LineSegment<T>& ls) {
 // _____________________________________________________________________________
 template <typename T>
 double dist(const Polygon<T>& poly1, const Polygon<T>& poly2) {
-  if (contains(poly1, poly2) || contains(poly2, poly1)) return 0;
-  return dist(poly1.getOuter(), poly2.getOuter());
+  if (intersects(poly1, poly2) || intersects(poly2, poly1)) return 0;
+
+  double d = dist(poly1.getOuter(), poly2.getOuter());
+
+  for (const auto& inner1 : poly1.getInners()) {
+    d = std::min(d, dist(poly2.getOuter(), inner1));
+  }
+
+  for (const auto& inner2 : poly2.getInners()) {
+    d = std::min(d, dist(poly1.getOuter(), inner2));
+  }
+
+  for (const auto& inner1 : poly1.getInners()) {
+    for (const auto& inner2 : poly2.getInners()) {
+      d = std::min(d, dist(inner1, inner2));
+    }
+  }
+
+  return d;
 }
 
 // _____________________________________________________________________________
 template <typename T>
 double dist(const Line<T>& l, const Polygon<T>& poly) {
-  if (contains(l, poly)) return 0;
-  return dist(l, poly.getOuter());
+  if (intersects(l, poly)) return 0;
+  double d = dist(l, poly.getOuter());
+
+  for (const auto& inner : poly.getInners()) {
+    d = std::min(d, dist(l, inner));
+  }
+
+  return d;
+}
+
+// _____________________________________________________________________________
+template <typename T>
+double dist(const Polygon<T>& poly, const Line<T>& l) {
+  return dist(l, poly);
 }
 
 // _____________________________________________________________________________
 template <typename T>
 double dist(const Point<T>& p, const Polygon<T>& poly) {
   if (contains(p, poly)) return 0;
-  return dist(p, poly.getOuter());
+  double d = dist(p, poly.getOuter());
+
+  for (const auto& inner : poly.getInners()) {
+    d = std::min(d, dist(p, inner));
+  }
+
+  return d;
+}
+
+// _____________________________________________________________________________
+template <typename T>
+double dist(const Polygon<T>& poly, const Point<T>& p) {
+  return dist(p, poly);
 }
 
 // _____________________________________________________________________________
@@ -4328,56 +4418,7 @@ RotatedBox<T> getOrientedEnvelope(const std::vector<Geometry<T>>& pol) {
 
 // _____________________________________________________________________________
 template <template <typename> class Geometry, typename T>
-inline RotatedBox<T> getOrientedEnvelope(const std::vector<Geometry<T>>& pol,
-                                         double step) {
-  // only allows angles which are multiples of step
-
-  Point<T> center = centroid(pol);
-  Box<T> tmpBox = getBoundingBox(pol);
-  double rotateDeg = 0;
-
-  std::vector<Geometry<T>> tmp = pol;
-
-  // rotate in steps
-  double i = step;
-  while (i < 360) {
-    tmp = rotate(tmp, step, center);
-    Box<T> e = getBoundingBox(tmp);
-    if (area(tmpBox) > area(e)) {
-      tmpBox = e;
-      rotateDeg = i;
-    }
-    i += step;
-  }
-
-  return RotatedBox<T>(tmpBox, -rotateDeg, center);
-}
-
-// _____________________________________________________________________________
-template <template <typename> class Geometry, typename T>
-inline RotatedBox<T> getOrientedEnvelope(const Geometry<T>& pol, double step) {
-  return getOrientedEnvelope(std::vector<Geometry<T>>{pol}, step);
-}
-
-// _____________________________________________________________________________
-template <typename T>
-inline RotatedBox<T> getOrientedEnvelope(const Collection<T>& collection,
-                                         double step) {
-  MultiPolygon<T> p;
-  for (const auto& g : collection) {
-    if (g.getType() == 0) p.push_back(convexHull(g.getPoint()));
-    if (g.getType() == 1) p.push_back(convexHull(g.getLine()));
-    if (g.getType() == 2) p.push_back(convexHull(g.getPolygon()));
-    if (g.getType() == 3) p.push_back(convexHull(g.getMultiLine()));
-    if (g.getType() == 4) p.push_back(convexHull(g.getMultiPolygon()));
-    if (g.getType() == 5) p.push_back(convexHull(g.getCollection()));
-  }
-  return getOrientedEnvelope(p, step);
-}
-
-// _____________________________________________________________________________
-template <template <typename> class Geometry, typename T>
-inline RotatedBox<T> getOrientedEnvelope(const Geometry<T>& pol) {
+RotatedBox<T> getOrientedEnvelope(const Geometry<T>& pol) {
   return getOrientedEnvelope(std::vector<Geometry<T>>{pol});
 }
 

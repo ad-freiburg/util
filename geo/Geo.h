@@ -728,6 +728,15 @@ double angBetween(const Point<T>& p1, const MultiPoint<T>& points);
 double dist(double x1, double y1, double x2, double y2);
 
 template <typename T>
+double dist(const AnyGeometry<T>& any1, const AnyGeometry<T>& any2);
+
+template <template <typename> class GeometryB, typename T>
+double dist(const AnyGeometry<T>& any1, const GeometryB<T>& geomB);
+
+template <template <typename> class GeometryB, typename T>
+double dist(const GeometryB<T>& geomB, const AnyGeometry<T>& any2);
+
+template <typename T>
 double dist(const LineSegment<T>& ls, const Point<T>& p);
 
 template <typename T>
@@ -790,7 +799,13 @@ template <typename T>
 double dist(const Line<T>& l, const Polygon<T>& poly);
 
 template <typename T>
+double dist(const Polygon<T>& poly, const Line<T>& l);
+
+template <typename T>
 double dist(const Point<T>& p, const Polygon<T>& poly);
+
+template <typename T>
+double dist(const Polygon<T>& poly, const Point<T>& p);
 
 template <typename T>
 double dist(const Point<T>& p1, const Point<T>& p2);

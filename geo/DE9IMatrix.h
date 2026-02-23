@@ -42,6 +42,8 @@ const static uint16_t F = bit16(00);
 const static uint16_t D0 = bit16(01);
 const static uint16_t D1 = bit16(10);
 const static uint16_t D2 = bit16(11);
+const static uint16_t T = bit16(100);
+const static uint16_t STAR = bit16(101);
 
 class DE9IMatrix {
  public:
@@ -142,6 +144,14 @@ class DE9IMatrix {
 
   bool overlaps1() const { return II() == D1 && IE() && EI(); }
 
+  bool crosses0vs1() const { return II() && IE(); }
+  bool crosses0vs2() const { return II() && IE(); }
+  bool crosses1vs2() const { return II() && IE(); }
+  bool crosses1vs0() const { return II() && EI(); }
+  bool crosses2vs0() const { return II() && EI(); }
+  bool crosses2vs1() const { return II() && EI(); }
+  bool crosses1vs1() const { return II() == D0; }
+
   CONSTEXPR uint16_t getMatrix() const { return _m; }
 
  private:
@@ -160,20 +170,20 @@ class DE9IMFilter {
         _equalityMask |= (D2 << (i * 2));
         _equalityValues |= ((m[i] - '0' + 1) << (i * 2));
       }
-      if (m[i] == 'F') {
+      if (m[i] == 'F' || m[i] == 'f') {
         _equalityMask |= (D2 << (i * 2));
       }
-      if (m[i] == 'T') {
+      if (m[i] == 'T' || m[i] == 't') {
         _trueMask |= (D2 << (i * 2));
       }
     }
     if (!m[8]) return;
 
-    if (m[8] == 'F') _eeVal = F;
+    if (m[8] == 'F' || m[8] == 'f') _eeVal = F;
     if (m[8] == '0') _eeVal = D0;
     if (m[8] == '1') _eeVal = D1;
     if (m[8] == '2') _eeVal = D2;
-    if (m[8] == 'T') _eeVal = D2 + 1;
+    if (m[8] == 'T' || m[8] == 't') _eeVal = T;
   }
 
   bool matches(const DE9IMatrix a) const {
@@ -197,42 +207,129 @@ class DE9IMFilter {
     return true;
   }
 
+  uint16_t valAt(uint16_t i) const {
+    if (i == 8) return _eeVal;
+
+    uint16_t ret = STAR;
+
+    uint8_t eqMask = (_equalityMask & (3 << (i * 2))) >> (i * 2);
+    if (eqMask) {
+      uint8_t v = (_equalityValues & (3 << (i * 2))) >> (i * 2);
+      if (v <= D2) ret = v;
+    }
+
+    uint8_t trueMask = (_trueMask & (3 << (i * 2))) >> (i * 2);
+    if (trueMask) ret = T;
+
+    return ret;
+  }
+
+  int16_t minInteriorDim() const {
+    return std::min(minLeftInteriorDim(), minRightInteriorDim());
+  }
+
+  int16_t minLeftInteriorDim() const {
+    uint16_t ret = 0;
+    if (valAt(0) <= D2) ret = std::max(ret, valAt(0));
+    if (valAt(1) <= D2) ret = std::max(ret, valAt(1));
+    if (valAt(2) <= D2) ret = std::max(ret, valAt(2));
+
+    return static_cast<int16_t>(ret) - 1;
+  }
+
+  int16_t minRightInteriorDim() const {
+    uint16_t ret = 0;
+    if (valAt(0) <= D2) ret = std::max(ret, valAt(0));
+    if (valAt(4) <= D2) ret = std::max(ret, valAt(4));
+    if (valAt(7) <= D2) ret = std::max(ret, valAt(7));
+
+    return static_cast<int16_t>(ret) - 1;
+  }
+
+  int16_t maxInteriorDim() const {
+    return std::max(maxLeftInteriorDim(), maxRightInteriorDim());
+  }
+
+  int16_t maxLeftInteriorDim() const {
+    uint16_t ret = 0;
+    ret = std::max(ret, valAt(0));
+    ret = std::max(ret, valAt(1));
+    ret = std::max(ret, valAt(2));
+
+    return static_cast<int16_t>(ret) - 1;
+  }
+
+  int16_t maxRightInteriorDim() const {
+    uint16_t ret = 0;
+    ret = std::max(ret, valAt(0));
+    ret = std::max(ret, valAt(3));
+    ret = std::max(ret, valAt(6));
+
+    return static_cast<int16_t>(ret) - 1;
+  }
+
+  int16_t minBoundaryDim() const {
+    return std::min(minLeftBoundaryDim(), minRightBoundaryDim());
+  }
+
+  int16_t minLeftBoundaryDim() const {
+    uint16_t ret = 0;
+    if (valAt(3) <= D2) ret = std::max(ret, valAt(3));
+    if (valAt(4) <= D2) ret = std::max(ret, valAt(4));
+    if (valAt(5) <= D2) ret = std::max(ret, valAt(5));
+
+    return static_cast<int16_t>(ret) - 1;
+  }
+
+  int16_t minRightBoundaryDim() const {
+    uint16_t ret = 0;
+    if (valAt(1) <= D2) ret = std::max(ret, valAt(1));
+    if (valAt(4) <= D2) ret = std::max(ret, valAt(4));
+    if (valAt(7) <= D2) ret = std::max(ret, valAt(7));
+
+    return static_cast<int16_t>(ret) - 1;
+  }
+
+  int16_t maxExteriorDim() const {
+    uint16_t ret = 3;
+    if (valAt(8) <= D2) ret = std::min(ret, valAt(8));
+    return static_cast<int16_t>(ret) - 1;
+  }
+
   std::string toString() const {
     std::string ret = "*********";
 
-    for (size_t i = 0; i < 8; i++) {
-      uint8_t eqMask = (_equalityMask & (3 << (i * 2))) >> (i * 2);
-      if (!eqMask) continue;
-      uint8_t v = (_equalityValues & (3 << (i * 2))) >> (i * 2);
-
-      if (v == F) ret[i] = 'F';
-      if (v == D0) ret[i] = '0';
-      if (v == D1) ret[i] = '1';
-      if (v == D2) ret[i] = '2';
+    for (size_t i = 0; i < 9; i++) {
+      if (valAt(i) == F) ret[i] = 'F';
+      if (valAt(i) == D0) ret[i] = '0';
+      if (valAt(i) == D1) ret[i] = '1';
+      if (valAt(i) == D2) ret[i] = '2';
+      if (valAt(i) == T) ret[i] = 'T';
     }
-
-    for (size_t i = 0; i < 8; i++) {
-      uint8_t trueMask = (_trueMask & (3 << (i * 2))) >> (i * 2);
-      if (!trueMask) continue;
-      ret[i] = 'T';
-    }
-
-    if (_eeVal == F) ret[8] = 'F';
-    if (_eeVal == D0) ret[8] = '0';
-    if (_eeVal == D1) ret[8] = '1';
-    if (_eeVal == D2) ret[8] = '2';
-    if (_eeVal == D2 + 1) ret[8] = 'T';
-    if (_eeVal == D2 + 2) ret[8] = '*';
 
     return ret;
+  }
+
+  bool operator==(const DE9IMFilter& other) const {
+    return _equalityMask == other._equalityMask &&
+           _trueMask == other._trueMask &&
+           _equalityValues == other._equalityValues && _eeVal == other._eeVal;
+  }
+
+  bool operator!=(const DE9IMFilter& other) const {
+    return !(operator==(other));
   }
 
  private:
   uint16_t _equalityMask = 0;
   uint16_t _trueMask = 0;
   uint16_t _equalityValues = 0;
-  uint8_t _eeVal = D2 + 2;
+  uint8_t _eeVal = STAR;
 };
+
+// often used filters
+static CONSTEXPR DE9IMFilter FANY("*********");
+static CONSTEXPR DE9IMFilter FDISJOINT("FF*FF****");
 
 // often used matrices
 static CONSTEXPR DE9IMatrix M0FFFFF102("0FFFFF102");
@@ -256,6 +353,9 @@ static CONSTEXPR DE9IMatrix M2FF1FF212("2FF1FF212");
 static CONSTEXPR DE9IMatrix M1FF0FF212("1FF0FF212");
 static CONSTEXPR DE9IMatrix M10FF0FFF2("10FF0FFF2");
 static CONSTEXPR DE9IMatrix MFF1FF0212("FF1FF0212");
+
+static CONSTEXPR DE9IMatrix M2F2FFF2F2("2F2FFF2F2");
+static CONSTEXPR DE9IMatrix M1F1FFFFF2("1F1FFFFF2");
 
 inline DE9IMatrix operator+(const DE9IMatrix a, const DE9IMatrix b) {
   DE9IMatrix ret;
