@@ -5844,8 +5844,36 @@ void GeoTest::run() {
     TEST(util::geo::withinDist(XSortedPolygon<double>(poly2),
                                XSortedPolygon<double>(polyWithInner), 0.25),
          ==, approx(0.25));
+
+    TEST(util::geo::withinDist(XSortedMultiPolygon<double>(MultiPolygon<double>{poly2}),
+                               XSortedMultiPolygon<double>(MultiPolygon<double>{polyWithInner}), 0.25),
+         ==, approx(0.25));
+
     TEST(util::geo::withinDist(XSortedPolygon<double>(polyWithInner),
                                XSortedPolygon<double>(poly2), 0.25),
          ==, approx(0.25));
+
+    TEST(util::geo::withinDist(XSortedMultiPolygon<double>(MultiPolygon<double>{polyWithInner}),
+                               XSortedMultiPolygon<double>(MultiPolygon<double>{poly2}), 0.25),
+         ==, approx(0.25));
+
+    TEST(util::geo::withinDist(XSortedMultiPolygon<double>(MultiPolygon<double>{polyWithInner}),
+                               XSortedMultiPolygon<double>(MultiPolygon<double>{polyWithInner}), 0.25),
+         ==, approx(0));
+
+    // complex geoms
+    std::ifstream germanyF(std::string(TEST_DATASETS) + "/germany.tsv", std::ios::binary);
+    std::string germanyWKT((std::istreambuf_iterator<char>(germanyF)), {});
+    auto germany = util::geo::multiPolygonFromWKT<double>(germanyWKT);
+
+    std::ifstream spainF(std::string(TEST_DATASETS) + "/spain.tsv", std::ios::binary);
+    std::string spainWKT((std::istreambuf_iterator<char>(spainF)), {});
+    auto spain = util::geo::multiPolygonFromWKT<double>(spainWKT);
+
+    auto spainX = XSortedMultiPolygon<double>(spain);
+    auto germanyX = XSortedMultiPolygon<double>(germany);
+
+    TEST(util::geo::withinDist(germanyX, spainX, 10),
+         ==, approx(6.5434));
   }
 }

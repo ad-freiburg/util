@@ -931,6 +931,128 @@ bool contains(const Point<T>& p, const Polygon<T>& poly) {
 
 // _____________________________________________________________________________
 template <typename T, typename PF, typename DF>
+void _withinDistCheck(const XSortedCollection<T>& a,
+                      const XSortedCollection<T>& b, double& minDist,
+                      PF&& paddingFunc, double maxEuclideanDist, DF&& distFunc,
+                      const BoxVal& boxVal,
+                      const util::geo::IntervalIdx<T, BoxVal>& actives) {
+  for (const auto& other : actives.overlap_find_all({boxVal.loY, boxVal.upY})) {
+    if (boxVal.type == SWEEP_POLYGON && other.v.type == SWEEP_POLYGON) {
+      minDist = std::min(
+          minDist,
+          withinDist(a.getPolygon(boxVal.id), b.getPolygon(other.v.id), minDist,
+                     paddingFunc, maxEuclideanDist, distFunc));
+
+    }
+  }
+}
+
+// _____________________________________________________________________________
+template <typename T, typename PF, typename DF>
+double withinDist(const XSortedCollection<T>& a, const XSortedCollection<T>& b,
+                  double maxDist, PF&& paddingFunc, double maxEuclideanDist,
+                  DF&& distFunc) {
+  double minDist = nextafter(maxDist, std::numeric_limits<double>::infinity());
+
+  const auto& boxA = a.boundingBox();
+  const auto& boxB = b.boundingBox();
+
+  const auto& ea = a.sweepEvents();
+  auto eb = b.sweepEvents();
+
+  double euclideanDistUpperBound = maxEuclideanDist;
+  double distanceUpperBound = maxDist;
+
+  // minimum euclidean X dist based on bounding boxes for better y padding
+  double euclideanXDistLowerBound =
+      dist(LineSegment<T>{Point<T>{boxA.getLowerLeft().getX(), 0},
+                          Point<T>{boxA.getUpperRight().getX(), 0}},
+           LineSegment<T>{Point<T>{boxB.getLowerLeft().getX(), 0},
+                          Point<T>{boxB.getUpperRight().getX(), 0}});
+  double euclideanYDistLowerBound =
+      dist(LineSegment<T>{Point<T>{0, boxA.getLowerLeft().getY()},
+                          Point<T>{0, boxA.getUpperRight().getY()}},
+           LineSegment<T>{Point<T>{0, boxB.getLowerLeft().getY()},
+                          Point<T>{0, boxB.getUpperRight().getY()}});
+
+  T padding =
+      paddingFunc(euclideanDistUpperBound, distanceUpperBound, boxA, boxB);
+
+  T xPadding =
+      (sqrt(std::max(0.0, padding * padding - euclideanYDistLowerBound *
+                                                  euclideanYDistLowerBound)));
+  T yPadding =
+      (sqrt(std::max(0.0, padding * padding - euclideanXDistLowerBound *
+                                                  euclideanXDistLowerBound)));
+
+  // pad the bounding boxes of B
+  for (auto& b : eb) {
+    if (!b.out) {
+      b.x = b.x - xPadding;
+    } else {
+      b.x = b.x + xPadding;
+    }
+    b.loY = b.loY - yPadding;
+    b.upY = b.upY + yPadding;
+  }
+
+  std::sort(eb.begin(), eb.end());
+
+  util::geo::IntervalIdx<T, BoxVal> activesA;
+  util::geo::IntervalIdx<T, BoxVal> activesB;
+
+  size_t i = 0;
+  size_t j = 0;
+
+  while (i < ea.size() && j < eb.size()) {
+    if (ea[i] < eb[j]) {
+      if (!ea[i].out) {
+        activesA.insert({ea[i].loY, ea[i].upY}, ea[i]);
+      } else {
+        activesA.erase({ea[i].loY, ea[i].upY}, ea[i]);
+        _withinDistCheck(a, b, minDist, paddingFunc, maxEuclideanDist, distFunc,
+                         ea[i], activesB);
+      }
+
+      i++;
+    } else if (eb[j] < ea[i]) {
+      if (!eb[j].out) {
+        activesB.insert({eb[j].loY, eb[j].upY}, eb[j]);
+      } else {
+        activesB.erase({eb[j].loY, eb[j].upY}, eb[j]);
+        _withinDistCheck(b, a, minDist, paddingFunc, maxEuclideanDist, distFunc,
+                         eb[j], activesA);
+      }
+
+      j++;
+    } else {
+      // equal
+      if (!ea[i].out) {
+        activesA.insert({ea[i].loY, ea[i].upY}, ea[i]);
+      } else {
+        activesA.erase({ea[i].loY, ea[i].upY}, ea[i]);
+        _withinDistCheck(a, b, minDist, paddingFunc, maxEuclideanDist, distFunc,
+                         ea[i], activesB);
+      }
+
+      if (!eb[j].out) {
+        activesB.insert({eb[j].loY, eb[j].upY}, eb[j]);
+      } else {
+        activesB.erase({eb[j].loY, eb[j].upY}, eb[j]);
+        _withinDistCheck(b, a, minDist, paddingFunc, maxEuclideanDist, distFunc,
+                         eb[j], activesA);
+      }
+
+      i++;
+      j++;
+    }
+  }
+
+  return minDist;
+}
+
+// _____________________________________________________________________________
+template <typename T, typename PF, typename DF>
 std::pair<double, bool> withinDist(const Point<T>& p, const XSortedRing<T>& ph,
                                    double maxDist, PF&& paddingFunc,
                                    double maxEuclideanDist, DF&& distFunc) {
@@ -5946,6 +6068,16 @@ double withinDist(const XSortedPolygon<T>& p1, const XSortedPolygon<T>& p2,
                   double maxDist) {
   return withinDist(
       p1, p2, maxDist, defaultPaddingFunc<T>, maxDist,
+      std::function<double(const Point<T>&, const Point<T>&, double)>(
+          euclideanDistFunc<T>));
+}
+
+// _____________________________________________________________________________
+template <typename T>
+double withinDist(const XSortedCollection<T>& c1,
+                  const XSortedCollection<T>& c2, double maxDist) {
+  return withinDist(
+      c1, c2, maxDist, defaultPaddingFunc<T>, maxDist,
       std::function<double(const Point<T>&, const Point<T>&, double)>(
           euclideanDistFunc<T>));
 }
