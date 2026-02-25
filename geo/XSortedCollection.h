@@ -29,20 +29,32 @@ class XSortedCollection {
  public:
   XSortedCollection(){};
   XSortedCollection(const MultiPolygon<T>& mp);
+  XSortedCollection(const MultiLine<T>& mp);
+  XSortedCollection(const MultiPoint<T>& mp);
 
   const std::vector<BoxVal>& sweepEvents() const { return _sweepEvents; }
   const XSortedPolygon<T>& getPolygon(size_t i) const { return _polygons[i]; }
+  const XSortedLine<T>& getLine(size_t i) const { return _lines[i]; }
+  const Point<T>& getPoint(size_t i) const { return _points[i]; }
 
   const util::geo::Box<T>& boundingBox() const { return _bbox; }
 
  private:
   std::vector<XSortedPolygon<T>> _polygons;
+  std::vector<XSortedLine<T>> _lines;
+  std::vector<Point<T>> _points;
   std::vector<BoxVal> _sweepEvents;
 
   util::geo::Box<T> _bbox;
 
   void add(const MultiPolygon<T>& mp);
   void add(const Polygon<T>& mp);
+
+  void add(const MultiLine<T>& mp);
+  void add(const Line<T>& mp);
+
+  void add(const MultiPoint<T>& mp);
+  void add(const Point<T>& mp);
 
   void finalize();
 };

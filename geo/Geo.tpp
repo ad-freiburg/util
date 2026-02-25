@@ -944,6 +944,57 @@ void _withinDistCheck(const XSortedCollection<T>& a,
                      paddingFunc, maxEuclideanDist, distFunc));
 
     }
+    if (boxVal.type == SWEEP_LINESTRING && other.v.type == SWEEP_LINESTRING) {
+      minDist = std::min(
+          minDist,
+          withinDist(a.getLine(boxVal.id), b.getLine(other.v.id), minDist,
+                     paddingFunc, maxEuclideanDist, distFunc));
+
+    }
+    if (boxVal.type == SWEEP_POINT && other.v.type == SWEEP_POINT) {
+      minDist = std::min(
+          minDist,
+          dist(a.getPoint(boxVal.id), b.getPoint(other.v.id)));
+
+    }
+    if (boxVal.type == SWEEP_POINT && other.v.type == SWEEP_LINESTRING) {
+      minDist = std::min(
+          minDist,
+          withinDist(a.getPoint(boxVal.id), b.getLine(other.v.id), minDist,
+                     paddingFunc, maxEuclideanDist, distFunc));
+    }
+    if (boxVal.type == SWEEP_LINESTRING && other.v.type == SWEEP_POINT) {
+      minDist = std::min(
+          minDist,
+          withinDist(a.getLine(boxVal.id), b.getPoint(other.v.id), minDist,
+                     paddingFunc, maxEuclideanDist, distFunc));
+    }
+    if (boxVal.type == SWEEP_POLYGON && other.v.type == SWEEP_LINESTRING) {
+      minDist = std::min(
+          minDist,
+          withinDist(a.getPolygon(boxVal.id), b.getLine(other.v.id), minDist,
+                     paddingFunc, maxEuclideanDist, distFunc));
+
+    }
+    if (boxVal.type == SWEEP_LINESTRING && other.v.type == SWEEP_POLYGON) {
+      minDist = std::min(
+          minDist,
+          withinDist(a.getLine(boxVal.id), b.getPolygon(other.v.id), minDist,
+                     paddingFunc, maxEuclideanDist, distFunc));
+
+    }
+    if (boxVal.type == SWEEP_POINT && other.v.type == SWEEP_POLYGON) {
+      minDist = std::min(
+          minDist,
+          withinDist(a.getPoint(boxVal.id), b.getPolygon(other.v.id), minDist,
+                     paddingFunc, maxEuclideanDist, distFunc));
+    }
+    if (boxVal.type == SWEEP_POLYGON && other.v.type == SWEEP_POINT) {
+      minDist = std::min(
+          minDist,
+          withinDist(a.getPolygon(boxVal.id), b.getPoint(other.v.id), minDist,
+                     paddingFunc, maxEuclideanDist, distFunc));
+    }
   }
 }
 
@@ -1272,7 +1323,7 @@ double withinDist(const Point<T>& p, const XSortedLine<T>& line, double maxDist,
 template <typename T, typename PF, typename DF>
 double withinDist(const XSortedLine<T>& line, const Point<T>& p, double maxDist,
                   PF&& paddingFunc, double maxEuclideanDist, DF&& distFunc) {
-  return withinDist(p, line, maxEuclideanDist, maxDist, paddingFunc,
+  return withinDist(p, line, maxDist, paddingFunc,
                     maxEuclideanDist, distFunc);
 }
 

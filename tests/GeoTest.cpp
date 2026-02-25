@@ -5703,6 +5703,10 @@ void GeoTest::run() {
     TEST(util::geo::dist(poly, point2), ==, approx(sqrt(2)));
     TEST(util::geo::dist(line, poly), ==, 0);
     TEST(util::geo::dist(poly, line), ==, 0);
+    TEST(util::geo::dist(line, line2), ==, 5.25);
+    TEST(util::geo::dist(line, line3), ==, 5.73);
+
+    TEST(util::geo::dist(MultiLine<double>{line}, MultiLine<double>{line2, line3}), ==, approx(std::min(util::geo::dist(line, line2), util::geo::dist(line, line3))));
 
     TEST(util::geo::dist(point, point), ==, 0);
     TEST(util::geo::dist(line, line), ==, 0);
@@ -5860,6 +5864,13 @@ void GeoTest::run() {
     TEST(util::geo::withinDist(XSortedMultiPolygon<double>(MultiPolygon<double>{polyWithInner}),
                                XSortedMultiPolygon<double>(MultiPolygon<double>{polyWithInner}), 0.25),
          ==, approx(0));
+
+    TEST(util::geo::withinDist(XSortedMultiLine<double>(MultiLine<double>{line}), XSortedMultiLine<double>(MultiLine<double>{line2, line3}), 10), ==, approx(std::min(util::geo::dist(line, line2), util::geo::dist(line, line3))));
+    TEST(util::geo::withinDist(XSortedMultiPolygon<double>(MultiPolygon<double>{polyWithInner}), XSortedMultiLine<double>(MultiLine<double>{line2, line3}), 10), ==, approx(std::min(util::geo::dist(polyWithInner, line2), util::geo::dist(polyWithInner, line3))));
+    TEST(util::geo::withinDist(XSortedMultiLine<double>(MultiLine<double>{line2, line3}), XSortedMultiPolygon<double>(MultiPolygon<double>{polyWithInner}), 10), ==, approx(std::min(util::geo::dist(polyWithInner, line2), util::geo::dist(polyWithInner, line3))));
+    TEST(util::geo::withinDist(XSortedCollection<double>(MultiPoint<double>{point, point2}), XSortedCollection<double>(MultiPoint<double>{point3}), 20), ==, approx(std::min(util::geo::dist(point, point3), util::geo::dist(point2, point3))));
+    TEST(util::geo::withinDist(XSortedCollection<double>(MultiLine<double>{line}), XSortedCollection<double>(MultiPoint<double>{point, point2}), 20), ==, approx(std::min(util::geo::dist(MultiLine<double>{line}, point), util::geo::dist(MultiLine<double>{line}, point2))));
+    TEST(util::geo::withinDist(XSortedMultiPolygon<double>(MultiPolygon<double>{polyWithInner}), XSortedCollection<double>(MultiPoint<double>{point, point2}), 20), ==, approx(std::min(util::geo::dist(MultiPolygon<double>{polyWithInner}, point), util::geo::dist(MultiPolygon<double>{polyWithInner}, point2))));
 
     // complex geoms
     std::ifstream germanyF(std::string(TEST_DATASETS) + "/germany.tsv", std::ios::binary);

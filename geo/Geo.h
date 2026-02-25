@@ -98,6 +98,9 @@ typedef Collection<int64_t> I64Collection;
 template <typename T>
 using XSortedMultiPolygon = XSortedCollection<T>;
 
+template <typename T>
+using XSortedMultiLine = XSortedCollection<T>;
+
 typedef XSortedMultiPolygon<double> DXSortedMultiPolygon;
 typedef XSortedMultiPolygon<float> FXSortedMultiPolygon;
 typedef XSortedMultiPolygon<int> IXSortedMultiPolygon;
@@ -1243,6 +1246,13 @@ template <typename T, typename PF, typename DF>
 double withinDist(const XSortedLine<T>& a, const XSortedPolygon<T>& b,
                   double maxDist, PF&& paddingFunc, double maxEuclideanDist,
                   DF&& distFunc);
+
+template <typename T, typename PF, typename DF>
+double withinDist(const XSortedPolygon<T>& a, const XSortedLine<T>& b,
+                  double maxDist, PF&& paddingFunc, double maxEuclideanDist,
+                  DF&& distFunc) {
+  return withinDist(b, a, maxDist, paddingFunc, maxEuclideanDist, distFunc);
+}
 
 template <typename T, typename PF, typename DF>
 double withinDist(const XSortedPolygon<T>& p1, const XSortedPolygon<T>& p2,

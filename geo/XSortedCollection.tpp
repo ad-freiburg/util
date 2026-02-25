@@ -12,11 +12,73 @@ XSortedCollection<T>::XSortedCollection(const MultiPolygon<T>& mp) {
 
 // _____________________________________________________________________________
 template <typename T>
+XSortedCollection<T>::XSortedCollection(const MultiLine<T>& ml) {
+  add(ml);
+
+  finalize();
+}
+
+// _____________________________________________________________________________
+template <typename T>
+XSortedCollection<T>::XSortedCollection(const MultiPoint<T>& mp) {
+  add(mp);
+
+  finalize();
+}
+
+// _____________________________________________________________________________
+template <typename T>
 void XSortedCollection<T>::add(const MultiPolygon<T>& mp) {
   _polygons.reserve(mp.size());
-  for (const auto& p : mp) {
-    add(p);
-  }
+  for (const auto& p : mp) add(p);
+}
+
+// _____________________________________________________________________________
+template <typename T>
+void XSortedCollection<T>::add(const MultiLine<T>& ml) {
+  _lines.reserve(ml.size());
+  for (const auto& l : ml) add(l);
+}
+
+// _____________________________________________________________________________
+template <typename T>
+void XSortedCollection<T>::add(const MultiPoint<T>& mp) {
+  _points.reserve(mp.size());
+  for (const auto& p : mp) add(p);
+}
+
+// _____________________________________________________________________________
+template <typename T>
+void XSortedCollection<T>::add(const Point<T>& p) {
+  _points.push_back(p);
+  _bbox = util::geo::extendBox(p, _bbox);
+  _sweepEvents.push_back({p.getX(),
+                          _points.size() - 1,
+                          p.getY(),
+                          p.getY(),
+                          false, 0, SWEEP_POINT});
+  _sweepEvents.push_back({p.getX(),
+                          _points.size() - 1,
+                          p.getY(),
+                          p.getY(),
+                          true, 0, SWEEP_POINT});
+}
+
+// _____________________________________________________________________________
+template <typename T>
+void XSortedCollection<T>::add(const Line<T>& l) {
+  _lines.push_back(l);
+  _bbox = util::geo::extendBox(_lines.back().boundingBox(), _bbox);
+  _sweepEvents.push_back({_lines.back().boundingBox().getLowerLeft().getX(),
+                          _lines.size() - 1,
+                          _lines.back().boundingBox().getLowerLeft().getY(),
+                          _lines.back().boundingBox().getUpperRight().getY(),
+                          false, _lines.back().length(), SWEEP_LINESTRING});
+  _sweepEvents.push_back({_lines.back().boundingBox().getUpperRight().getX(),
+                          _lines.size() - 1,
+                          _lines.back().boundingBox().getLowerLeft().getY(),
+                          _lines.back().boundingBox().getUpperRight().getY(),
+                          true, _lines.back().length(), SWEEP_LINESTRING});
 }
 
 // _____________________________________________________________________________
