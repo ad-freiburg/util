@@ -28,6 +28,36 @@ XSortedCollection<T>::XSortedCollection(const MultiPoint<T>& mp) {
 
 // _____________________________________________________________________________
 template <typename T>
+XSortedCollection<T>::XSortedCollection(const Collection<T>& c) {
+  add(c);
+
+  finalize();
+}
+
+// _____________________________________________________________________________
+template <typename T>
+void XSortedCollection<T>::add(const Collection<T>& c) {
+  for (const auto& a : c) {
+    if (a.getType() == 0) add(a.getPoint());
+    if (a.getType() == 1) add(a.getLine());
+    if (a.getType() == 2) add(a.getPolygon());
+    if (a.getType() == 3) {
+      for (const auto& l : a.getMultiLine()) add(l);
+    }
+    if (a.getType() == 4) {
+      for (const auto& p : a.getMultiPolygon()) add(p);
+    }
+    if (a.getType() == 5) {
+      for (const auto& c : a.getCollection()) add(c);
+    }
+    if (a.getType() == 6) {
+      for (const auto& p : a.getMultiPoint()) add(p);
+    }
+  }
+}
+
+// _____________________________________________________________________________
+template <typename T>
 void XSortedCollection<T>::add(const MultiPolygon<T>& mp) {
   _polygons.reserve(mp.size());
   for (const auto& p : mp) add(p);
@@ -52,16 +82,10 @@ template <typename T>
 void XSortedCollection<T>::add(const Point<T>& p) {
   _points.push_back(p);
   _bbox = util::geo::extendBox(p, _bbox);
-  _sweepEvents.push_back({p.getX(),
-                          _points.size() - 1,
-                          p.getY(),
-                          p.getY(),
+  _sweepEvents.push_back({p.getX(), _points.size() - 1, p.getY(), p.getY(),
                           false, 0, SWEEP_POINT});
-  _sweepEvents.push_back({p.getX(),
-                          _points.size() - 1,
-                          p.getY(),
-                          p.getY(),
-                          true, 0, SWEEP_POINT});
+  _sweepEvents.push_back(
+      {p.getX(), _points.size() - 1, p.getY(), p.getY(), true, 0, SWEEP_POINT});
 }
 
 // _____________________________________________________________________________

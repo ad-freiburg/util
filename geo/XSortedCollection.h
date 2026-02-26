@@ -31,6 +31,7 @@ class XSortedCollection {
   XSortedCollection(const MultiPolygon<T>& mp);
   XSortedCollection(const MultiLine<T>& mp);
   XSortedCollection(const MultiPoint<T>& mp);
+  XSortedCollection(const Collection<T>& c);
 
   const std::vector<BoxVal>& sweepEvents() const { return _sweepEvents; }
   const XSortedPolygon<T>& getPolygon(size_t i) const { return _polygons[i]; }
@@ -50,11 +51,13 @@ class XSortedCollection {
   void add(const MultiPolygon<T>& mp);
   void add(const Polygon<T>& mp);
 
-  void add(const MultiLine<T>& mp);
-  void add(const Line<T>& mp);
+  void add(const MultiLine<T>& ml);
+  void add(const Line<T>& l);
 
   void add(const MultiPoint<T>& mp);
   void add(const Point<T>& mp);
+
+  void add(const Collection<T>& c);
 
   void finalize();
 };
@@ -95,7 +98,9 @@ inline bool operator<(const BoxVal& boxa, const BoxVal& boxb) {
   return false;
 }
 
-inline bool operator>(const BoxVal& boxa, const BoxVal& boxb) { return boxb < boxa; }
+inline bool operator>(const BoxVal& boxa, const BoxVal& boxb) {
+  return boxb < boxa;
+}
 
 inline bool operator==(const BoxVal& boxa, const BoxVal& boxb) {
   return !(boxb < boxa) && !(boxa < boxb);

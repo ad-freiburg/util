@@ -5878,16 +5878,25 @@ void GeoTest::run() {
     // complex geoms
     std::ifstream germanyF(std::string(TEST_DATASETS) + "/germany.tsv", std::ios::binary);
     std::string germanyWKT((std::istreambuf_iterator<char>(germanyF)), {});
-    auto germany = util::geo::multiPolygonFromWKT<double>(germanyWKT);
+    auto germany = util::geo::multiPolygonFromWKT<float>(germanyWKT);
 
     std::ifstream spainF(std::string(TEST_DATASETS) + "/spain.tsv", std::ios::binary);
     std::string spainWKT((std::istreambuf_iterator<char>(spainF)), {});
-    auto spain = util::geo::multiPolygonFromWKT<double>(spainWKT);
+    auto spain = util::geo::multiPolygonFromWKT<float>(spainWKT);
 
-    auto spainX = XSortedMultiPolygon<double>(spain);
-    auto germanyX = XSortedMultiPolygon<double>(germany);
+    auto spainX = XSortedMultiPolygon<float>(spain);
+    auto germanyX = XSortedMultiPolygon<float>(germany);
 
     TEST(util::geo::withinDist(germanyX, spainX, 10),
          ==, approx(6.5434));
+
+    // with haversine, but without any search padding
+    TEST(std::round(util::geo::withinDist(germanyX, spainX, 1000000, defaultPaddingFunc<float>, 100, [](const Point<float> a, const Point<float> b, double) -> double { return haversine(a, b); }) * 10.0) / 10.0,
+         ==, approx(655421.6));
+
+    // with haversine, but with search padding
+    TEST(std::round(util::geo::withinDist(germanyX, spainX, 1000000, [](double d, double, const Box<float>&,
+                            const Box<float>&) -> double { return 1.02 * d; }, 100, [](const Point<float> a, const Point<float> b, double) -> double { return haversine(a, b); }) * 10.0) / 10.0,
+         ==, approx(653276.5));
   }
 }

@@ -942,20 +942,16 @@ void _withinDistCheck(const XSortedCollection<T>& a,
           minDist,
           withinDist(a.getPolygon(boxVal.id), b.getPolygon(other.v.id), minDist,
                      paddingFunc, maxEuclideanDist, distFunc));
-
     }
     if (boxVal.type == SWEEP_LINESTRING && other.v.type == SWEEP_LINESTRING) {
       minDist = std::min(
           minDist,
           withinDist(a.getLine(boxVal.id), b.getLine(other.v.id), minDist,
                      paddingFunc, maxEuclideanDist, distFunc));
-
     }
     if (boxVal.type == SWEEP_POINT && other.v.type == SWEEP_POINT) {
-      minDist = std::min(
-          minDist,
-          dist(a.getPoint(boxVal.id), b.getPoint(other.v.id)));
-
+      minDist = std::min(minDist,
+                         dist(a.getPoint(boxVal.id), b.getPoint(other.v.id)));
     }
     if (boxVal.type == SWEEP_POINT && other.v.type == SWEEP_LINESTRING) {
       minDist = std::min(
@@ -974,14 +970,12 @@ void _withinDistCheck(const XSortedCollection<T>& a,
           minDist,
           withinDist(a.getPolygon(boxVal.id), b.getLine(other.v.id), minDist,
                      paddingFunc, maxEuclideanDist, distFunc));
-
     }
     if (boxVal.type == SWEEP_LINESTRING && other.v.type == SWEEP_POLYGON) {
       minDist = std::min(
           minDist,
           withinDist(a.getLine(boxVal.id), b.getPolygon(other.v.id), minDist,
                      paddingFunc, maxEuclideanDist, distFunc));
-
     }
     if (boxVal.type == SWEEP_POINT && other.v.type == SWEEP_POLYGON) {
       minDist = std::min(
@@ -1054,6 +1048,8 @@ double withinDist(const XSortedCollection<T>& a, const XSortedCollection<T>& b,
 
   size_t i = 0;
   size_t j = 0;
+
+  auto t = TIME();
 
   while (i < ea.size() && j < eb.size()) {
     if (ea[i] < eb[j]) {
@@ -1204,7 +1200,8 @@ double withinDist(const Point<T>& p, const XSortedPolygon<T>& poly,
       if (poly.getInnerBoxes()[i].getLowerLeft().getX() > p.getX()) break;
       if (!util::geo::contains(p, poly.getInnerBoxes()[i])) continue;
 
-      auto r = withinDist(p, poly.getInners()[i], maxDist, paddingFunc, maxEuclideanDist, distFunc);
+      auto r = withinDist(p, poly.getInners()[i], maxDist, paddingFunc,
+                          maxEuclideanDist, distFunc);
 
       // if we are contained in the inner ring, directly return the distance to
       // its border. We can safely abort has as we assume that inner rings never
@@ -1323,8 +1320,7 @@ double withinDist(const Point<T>& p, const XSortedLine<T>& line, double maxDist,
 template <typename T, typename PF, typename DF>
 double withinDist(const XSortedLine<T>& line, const Point<T>& p, double maxDist,
                   PF&& paddingFunc, double maxEuclideanDist, DF&& distFunc) {
-  return withinDist(p, line, maxDist, paddingFunc,
-                    maxEuclideanDist, distFunc);
+  return withinDist(p, line, maxDist, paddingFunc, maxEuclideanDist, distFunc);
 }
 
 // _____________________________________________________________________________
@@ -5639,6 +5635,10 @@ double withinDist(const std::vector<XSortedTuple<T>>& ls1,
                   T maxSegLenB, const Box<T>& boxA, const Box<T>& boxB,
                   double maxDist, PF&& paddingFunc, double maxEuclideanDist,
                   DF&& distFunc) {
+  if (util::geo::dist(boxA, boxB) > maxEuclideanDist) {
+    return std::numeric_limits<double>::max();
+  }
+
   // always ensure that ls2 is smaller, because ls2 is padded
   if (ls1.size() < ls2.size())
     return withinDist(ls2, ls1, maxSegLenB, maxSegLenA, boxB, boxA, maxDist,
@@ -5647,14 +5647,14 @@ double withinDist(const std::vector<XSortedTuple<T>>& ls1,
   if (ls1.size() == 0 || ls2.size() == 0)
     return std::numeric_limits<double>::max();
 
-  if (util::geo::dist(boxA, boxB) > maxEuclideanDist) {
-    return std::numeric_limits<double>::max();
-  }
-
-  auto probeDists = probeDistanceUpperBound(1000, ls1, ls2, distFunc);
+  auto probeDists = probeDistanceUpperBound(100, ls1, ls2, distFunc);
 
   double minDist = std::get<0>(probeDists);
   double euclideanDistUpperBound = std::get<1>(probeDists);
+
+  if (util::geo::dist(boxA, boxB) > euclideanDistUpperBound) {
+    return std::numeric_limits<double>::max();
+  }
 
   // if we already have to correct distance from probing, return
   if (std::get<2>(probeDists)) return minDist;
