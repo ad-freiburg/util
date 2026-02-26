@@ -5778,6 +5778,9 @@ void GeoTest::run() {
     TEST(util::geo::withinDist(XSortedPolygon<double>(polyWithInner),
                                XSortedLine<double>(line2), 10.0),
          ==, approx(0.25));
+    TEST(util::geo::withinDist(XSortedPolygon<double>(polyWithInner),
+                               point, 10.0),
+         ==, approx(0.5));
 
     TEST(util::geo::withinDist(XSortedPolygon<double>(poly2),
                                XSortedPolygon<double>(polyWithInner), 10.0),

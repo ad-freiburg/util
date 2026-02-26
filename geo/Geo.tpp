@@ -1204,7 +1204,7 @@ double withinDist(const Point<T>& p, const XSortedPolygon<T>& poly,
       if (poly.getInnerBoxes()[i].getLowerLeft().getX() > p.getX()) break;
       if (!util::geo::contains(p, poly.getInnerBoxes()[i])) continue;
 
-      auto r = ringContains(p, poly.getInners()[i], 0);
+      auto r = withinDist(p, poly.getInners()[i], maxDist, paddingFunc, maxEuclideanDist, distFunc);
 
       // if we are contained in the inner ring, directly return the distance to
       // its border. We can safely abort has as we assume that inner rings never
