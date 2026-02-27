@@ -48,7 +48,7 @@ void XSortedCollection<T>::add(const Collection<T>& c) {
       for (const auto& p : a.getMultiPolygon()) add(p);
     }
     if (a.getType() == 5) {
-      for (const auto& c : a.getCollection()) add(c);
+      add(a.getCollection());
     }
     if (a.getType() == 6) {
       for (const auto& p : a.getMultiPoint()) add(p);

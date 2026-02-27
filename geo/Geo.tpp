@@ -1049,8 +1049,6 @@ double withinDist(const XSortedCollection<T>& a, const XSortedCollection<T>& b,
   size_t i = 0;
   size_t j = 0;
 
-  auto t = TIME();
-
   while (i < ea.size() && j < eb.size()) {
     if (ea[i] < eb[j]) {
       if (!ea[i].out) {
