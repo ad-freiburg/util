@@ -31,6 +31,11 @@ class XSortedCollection {
   XSortedCollection(const MultiPolygon<T>& mp);
   XSortedCollection(const MultiLine<T>& mp);
   XSortedCollection(const MultiPoint<T>& mp);
+  XSortedCollection(const Polygon<T>& mp);
+  XSortedCollection(const Line<T>& mp);
+  XSortedCollection(const Point<T>& mp);
+  XSortedCollection(const XSortedPolygon<T>& xp);
+  XSortedCollection(const XSortedLine<T>& xl);
   XSortedCollection(const Collection<T>& c);
 
   const std::vector<BoxVal>& sweepEvents() const { return _sweepEvents; }
@@ -49,10 +54,10 @@ class XSortedCollection {
   util::geo::Box<T> _bbox;
 
   void add(const MultiPolygon<T>& mp);
-  void add(const Polygon<T>& mp);
+  void add(const XSortedPolygon<T>& mp);
 
   void add(const MultiLine<T>& ml);
-  void add(const Line<T>& l);
+  void add(const XSortedLine<T>& l);
 
   void add(const MultiPoint<T>& mp);
   void add(const Point<T>& mp);

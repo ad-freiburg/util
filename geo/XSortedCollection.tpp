@@ -28,6 +28,46 @@ XSortedCollection<T>::XSortedCollection(const MultiPoint<T>& mp) {
 
 // _____________________________________________________________________________
 template <typename T>
+XSortedCollection<T>::XSortedCollection(const Polygon<T>& mp) {
+  add(mp);
+
+  finalize();
+}
+
+// _____________________________________________________________________________
+template <typename T>
+XSortedCollection<T>::XSortedCollection(const Line<T>& ml) {
+  add(ml);
+
+  finalize();
+}
+
+// _____________________________________________________________________________
+template <typename T>
+XSortedCollection<T>::XSortedCollection(const Point<T>& mp) {
+  add(mp);
+
+  finalize();
+}
+
+// _____________________________________________________________________________
+template <typename T>
+XSortedCollection<T>::XSortedCollection(const XSortedPolygon<T>& mp) {
+  add(mp);
+
+  finalize();
+}
+
+// _____________________________________________________________________________
+template <typename T>
+XSortedCollection<T>::XSortedCollection(const XSortedLine<T>& mp) {
+  add(mp);
+
+  finalize();
+}
+
+// _____________________________________________________________________________
+template <typename T>
 XSortedCollection<T>::XSortedCollection(const Collection<T>& c) {
   add(c);
 
@@ -90,7 +130,7 @@ void XSortedCollection<T>::add(const Point<T>& p) {
 
 // _____________________________________________________________________________
 template <typename T>
-void XSortedCollection<T>::add(const Line<T>& l) {
+void XSortedCollection<T>::add(const XSortedLine<T>& l) {
   _lines.push_back(l);
   _bbox = util::geo::extendBox(_lines.back().boundingBox(), _bbox);
   _sweepEvents.push_back({_lines.back().boundingBox().getLowerLeft().getX(),
@@ -107,7 +147,7 @@ void XSortedCollection<T>::add(const Line<T>& l) {
 
 // _____________________________________________________________________________
 template <typename T>
-void XSortedCollection<T>::add(const Polygon<T>& p) {
+void XSortedCollection<T>::add(const XSortedPolygon<T>& p) {
   _polygons.push_back(p);
   _bbox = util::geo::extendBox(_polygons.back().boundingBox(), _bbox);
   _sweepEvents.push_back({_polygons.back().boundingBox().getLowerLeft().getX(),

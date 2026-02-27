@@ -5906,6 +5906,12 @@ void GeoTest::run() {
     TEST(std::round(util::geo::withinDist(XSortedCollection<float>(MultiPolygon<float>{germany}), XSortedCollection<float>(Collection<float>{spain, saimaa}), 10000000, defaultPaddingFunc<float>, 100, [](const Point<float> a, const Point<float> b, double) -> double { return haversine(a, b); }) * 10.0) / 10.0,
          ==, approx(655421.6));
 
+    TEST(std::round(util::geo::withinDist(germanyX, XSortedCollection<float>(Collection<float>{spain, saimaa}), 10000000, defaultPaddingFunc<float>, 100, [](const Point<float> a, const Point<float> b, double) -> double { return haversine(a, b); }) * 10.0) / 10.0,
+         ==, approx(655421.6));
+
+    TEST(std::round(util::geo::withinDist(XSortedCollection<float>(Collection<float>{spain, saimaa}), germanyX, 10000000, defaultPaddingFunc<float>, 100, [](const Point<float> a, const Point<float> b, double) -> double { return haversine(a, b); }) * 10.0) / 10.0,
+         ==, approx(655421.6));
+
     // with haversine, but with small search padding
     TEST(std::round(util::geo::withinDist(germanyX, spainX, 1000000, [](double d, double, const Box<float>&,
                             const Box<float>&) -> double { return 1.02 * d; }, 100, [](const Point<float> a, const Point<float> b, double) -> double { return haversine(a, b); }) * 10.0) / 10.0,
@@ -5932,5 +5938,12 @@ void GeoTest::run() {
     TEST(util::geo::withinDist(XSortedCollection<double>(col2), XSortedCollection<double>(col2), 20), ==, approx(0));
     TEST(util::geo::withinDist(XSortedCollection<double>(col3), XSortedCollection<double>(col3), 20), ==, approx(0));
     TEST(util::geo::withinDist(XSortedCollection<double>(col4), XSortedCollection<double>(col4), 20), ==, approx(0));
+
+    TEST(util::geo::withinDist(XSortedCollection<double>(col), XSortedLine<double>(line3), 20), ==, approx(.23));
+    TEST(util::geo::withinDist(XSortedLine<double>(line3), XSortedCollection<double>(col), 20), ==, approx(.23));
+    TEST(util::geo::withinDist(XSortedCollection<double>(col), XSortedPolygon<double>(poly), 20), ==, approx(0));
+    TEST(util::geo::withinDist(XSortedPolygon<double>(poly), XSortedCollection<double>(col), 20), ==, approx(0));
+    TEST(util::geo::withinDist(XSortedCollection<double>(col), point, 20), ==, approx(0));
+    TEST(util::geo::withinDist(point, XSortedCollection<double>(col), 20), ==, approx(0));
   }
 }

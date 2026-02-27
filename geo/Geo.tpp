@@ -993,6 +993,17 @@ void _withinDistCheck(const XSortedCollection<T>& a,
 }
 
 // _____________________________________________________________________________
+template <typename T, typename PF, typename DF,
+          template <typename> class XSORTED>
+double withinDist(const XSortedCollection<T>& a, const XSORTED<T>& b,
+                  double maxDist, PF&& paddingFunc, double maxEuclideanDist,
+                  DF&& distFunc) {
+  // TODO: might be faster to avoid the Collection construction here
+  return withinDist(a, XSortedCollection<T>(b), maxDist, paddingFunc,
+                    maxEuclideanDist, distFunc);
+}
+
+// _____________________________________________________________________________
 template <typename T, typename PF, typename DF>
 double withinDist(const XSortedCollection<T>& a, const XSortedCollection<T>& b,
                   double maxDist, PF&& paddingFunc, double maxEuclideanDist,
@@ -5637,6 +5648,10 @@ double withinDist(const std::vector<XSortedTuple<T>>& ls1,
     return std::numeric_limits<double>::max();
   }
 
+  // if (util::geo::dist(boxA, boxB, distFunc) > maxDist) {
+  // return std::numeric_limits<double>::max();
+  // }
+
   // always ensure that ls2 is smaller, because ls2 is padded
   if (ls1.size() < ls2.size())
     return withinDist(ls2, ls1, maxSegLenB, maxSegLenA, boxB, boxA, maxDist,
@@ -6112,26 +6127,6 @@ double withinDist(const XSortedPolygon<T>& p1, const XSortedPolygon<T>& p2,
 }
 
 // _____________________________________________________________________________
-template <typename T>
-double withinDist(const XSortedPolygon<T>& p1, const XSortedPolygon<T>& p2,
-                  double maxDist) {
-  return withinDist(
-      p1, p2, maxDist, defaultPaddingFunc<T>, maxDist,
-      std::function<double(const Point<T>&, const Point<T>&, double)>(
-          euclideanDistFunc<T>));
-}
-
-// _____________________________________________________________________________
-template <typename T>
-double withinDist(const XSortedCollection<T>& c1,
-                  const XSortedCollection<T>& c2, double maxDist) {
-  return withinDist(
-      c1, c2, maxDist, defaultPaddingFunc<T>, maxDist,
-      std::function<double(const Point<T>&, const Point<T>&, double)>(
-          euclideanDistFunc<T>));
-}
-
-// _____________________________________________________________________________
 template <typename T, typename PF, typename DF>
 double withinDist(const XSortedLine<T>& ls1, const XSortedLine<T>& ls2,
                   double maxDist, PF&& paddingFunc, double maxEuclideanDist,
@@ -6139,62 +6134,6 @@ double withinDist(const XSortedLine<T>& ls1, const XSortedLine<T>& ls2,
   return withinDist(ls1.rawLine(), ls2.rawLine(), ls1.getMaxSegLen(),
                     ls2.getMaxSegLen(), ls1.boundingBox(), ls2.boundingBox(),
                     maxDist, paddingFunc, maxEuclideanDist, distFunc);
-}
-
-// _____________________________________________________________________________
-template <typename T>
-double withinDist(const XSortedLine<T>& ls1, const XSortedLine<T>& ls2,
-                  double maxDist) {
-  return withinDist(
-      ls1.rawLine(), ls2.rawLine(), ls1.getMaxSegLen(), ls2.getMaxSegLen(),
-      ls1.boundingBox(), ls2.boundingBox(), maxDist, defaultPaddingFunc<T>,
-      maxDist,
-      std::function<double(const Point<T>&, const Point<T>&, double)>(
-          euclideanDistFunc<T>));
-}
-
-// _____________________________________________________________________________
-template <typename T>
-double withinDist(const Point<T>& p, const XSortedLine<T>& line,
-                  double maxDist) {
-  return withinDist(
-      p, line, maxDist, defaultPaddingFunc<T>, maxDist,
-      std::function<double(const Point<T>&, const Point<T>&, double)>(
-          euclideanDistFunc<T>));
-}
-
-// _____________________________________________________________________________
-template <typename T>
-double withinDist(const XSortedLine<T>& line, const Point<T>& p,
-                  double maxDist) {
-  return withinDist(p, line, maxDist);
-}
-
-// _____________________________________________________________________________
-template <typename T>
-double withinDist(const XSortedPolygon<T>& poly, const Point<T>& p,
-                  double maxDist) {
-  return withinDist(
-      poly, p, maxDist, defaultPaddingFunc<T>, maxDist,
-      std::function<double(const Point<T>&, const Point<T>&, double)>(
-          euclideanDistFunc<T>));
-}
-
-// _____________________________________________________________________________
-template <typename T>
-double withinDist(const Point<T>& p, const XSortedPolygon<T>& poly,
-                  double maxDist) {
-  return withinDist(poly, p, maxDist);
-}
-
-// _____________________________________________________________________________
-template <typename T>
-double withinDist(const XSortedLine<T>& a, const XSortedPolygon<T>& b,
-                  double maxDist) {
-  return withinDist(
-      a, b, maxDist, defaultPaddingFunc<T>, maxDist,
-      std::function<double(const Point<T>&, const Point<T>&, double)>(
-          euclideanDistFunc<T>));
 }
 
 // _____________________________________________________________________________
@@ -6235,13 +6174,6 @@ std::tuple<double, double, bool> probeDistanceUpperBound(
   }
 
   return {upperBound, euclideanUpperBound, stepA == 1 && stepB == 1};
-}
-
-// _____________________________________________________________________________
-template <typename T>
-double withinDist(const XSortedPolygon<T>& a, const XSortedLine<T>& b,
-                  double maxDist) {
-  return withinDist(b, a, maxDist);
 }
 
 // _____________________________________________________________________________
