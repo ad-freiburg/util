@@ -952,8 +952,10 @@ std::pair<double, bool> withinDist(
           p.getX() - ph.getMaxSegLen() - maxEuclideanDist) {
     i = std::lower_bound(
             ph.rawRing().begin() + i, ph.rawRing().end(),
-            XSortedTuple<T>{
-                {p.getX() - ph.getMaxSegLen() - maxEuclideanDist, 0}, false}) -
+            XSortedTuple<T>{{static_cast<T>(p.getX() - ph.getMaxSegLen() -
+                                            maxEuclideanDist),
+                             0},
+                            false}) -
         ph.rawRing().begin();
   }
 
@@ -1080,9 +1082,10 @@ double withinDist(
       i < line.rawLine().size()) {
     i = std::lower_bound(
             line.rawLine().begin() + i, line.rawLine().end(),
-            XSortedTuple<T>{
-                {p.getX() - line.getMaxSegLen() - maxEuclideanDist, 0},
-                false}) -
+            XSortedTuple<T>{{static_cast<T>(p.getX() - line.getMaxSegLen() -
+                                            maxEuclideanDist),
+                             0},
+                            false}) -
         line.rawLine().begin();
   }
 
@@ -3433,8 +3436,7 @@ template <template <typename> class GeometryA,
           template <typename> class GeometryB, typename T>
 double dist(const std::vector<GeometryA<T>>& multigeom, const GeometryB<T>& b) {
   double d = std::numeric_limits<double>::infinity();
-  for (const auto& geom : multigeom)
-    d = std::min(d, dist(geom, b));
+  for (const auto& geom : multigeom) d = std::min(d, dist(geom, b));
   return d;
 }
 
@@ -3445,15 +3447,13 @@ double dist(const GeometryB<T>& b, const std::vector<GeometryA<T>>& multigeom) {
   return dist(multigeom, b);
 }
 
-
 // _____________________________________________________________________________
 template <template <typename> class GeometryA,
           template <typename> class GeometryB, typename T>
 double dist(const std::vector<GeometryA<T>>& multigeomA,
             const std::vector<GeometryB<T>>& multigeomB) {
   double d = std::numeric_limits<double>::infinity();
-  for (const auto& geom : multigeomB)
-     d = std::min(d, dist(geom, multigeomA));
+  for (const auto& geom : multigeomB) d = std::min(d, dist(geom, multigeomA));
   return d;
 }
 
