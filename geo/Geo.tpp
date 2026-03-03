@@ -934,8 +934,8 @@ template <typename T, typename PF, typename DF>
 void _withinDistCheck(const XSortedCollection<T>& a,
                       const XSortedCollection<T>& b, double& minDist,
                       PF&& paddingFunc, double maxEuclideanDist, DF&& distFunc,
-                      const BoxVal& boxVal,
-                      const util::geo::IntervalIdx<T, BoxVal>& actives) {
+                      const BoxVal<T>& boxVal,
+                      const util::geo::IntervalIdx<T, BoxVal<T>>& actives) {
   for (const auto& other : actives.overlap_find_all({boxVal.loY, boxVal.upY})) {
     if (boxVal.type == SWEEP_POLYGON && other.v.type == SWEEP_POLYGON) {
       minDist = std::min(
@@ -1054,8 +1054,8 @@ double withinDist(const XSortedCollection<T>& a, const XSortedCollection<T>& b,
 
   std::sort(eb.begin(), eb.end());
 
-  util::geo::IntervalIdx<T, BoxVal> activesA;
-  util::geo::IntervalIdx<T, BoxVal> activesB;
+  util::geo::IntervalIdx<T, BoxVal<T>> activesA;
+  util::geo::IntervalIdx<T, BoxVal<T>> activesB;
 
   size_t i = 0;
   size_t j = 0;

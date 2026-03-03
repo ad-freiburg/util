@@ -14,11 +14,12 @@ enum GeomType : uint8_t {
   SWEEP_POLYGON = 3,
 };
 
+template <typename T>
 struct BoxVal {
-  int32_t x;
+  T x;
   size_t id;
-  int32_t loY;
-  int32_t upY;
+  T loY;
+  T upY;
   bool out;
   double areaOrLen;
   GeomType type;
@@ -38,7 +39,7 @@ class XSortedCollection {
   XSortedCollection(const XSortedLine<T>& xl);
   XSortedCollection(const Collection<T>& c);
 
-  const std::vector<BoxVal>& sweepEvents() const { return _sweepEvents; }
+  const std::vector<BoxVal<T>>& sweepEvents() const { return _sweepEvents; }
   const XSortedPolygon<T>& getPolygon(size_t i) const { return _polygons[i]; }
   const XSortedLine<T>& getLine(size_t i) const { return _lines[i]; }
   const Point<T>& getPoint(size_t i) const { return _points[i]; }
@@ -49,7 +50,7 @@ class XSortedCollection {
   std::vector<XSortedPolygon<T>> _polygons;
   std::vector<XSortedLine<T>> _lines;
   std::vector<Point<T>> _points;
-  std::vector<BoxVal> _sweepEvents;
+  std::vector<BoxVal<T>> _sweepEvents;
 
   util::geo::Box<T> _bbox;
 
@@ -67,7 +68,8 @@ class XSortedCollection {
   void finalize();
 };
 
-inline bool operator<(const BoxVal& boxa, const BoxVal& boxb) {
+template <typename T>
+inline bool operator<(const BoxVal<T>& boxa, const BoxVal<T>& boxb) {
   if (boxa.x < boxb.x) return true;
   if (boxa.x > boxb.x) return false;
 
@@ -103,11 +105,13 @@ inline bool operator<(const BoxVal& boxa, const BoxVal& boxb) {
   return false;
 }
 
-inline bool operator>(const BoxVal& boxa, const BoxVal& boxb) {
+template <typename T>
+inline bool operator>(const BoxVal<T>& boxa, const BoxVal<T>& boxb) {
   return boxb < boxa;
 }
 
-inline bool operator==(const BoxVal& boxa, const BoxVal& boxb) {
+template <typename T>
+inline bool operator==(const BoxVal<T>& boxa, const BoxVal<T>& boxb) {
   return !(boxb < boxa) && !(boxa < boxb);
 }
 
