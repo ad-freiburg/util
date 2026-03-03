@@ -1141,8 +1141,9 @@ std::pair<double, bool> withinDist(const Point<T>& p, const XSortedRing<T>& ph,
       ph.rawRing()[i].p.getX() < p.getX() - ph.getMaxSegLen() - padding) {
     i = std::lower_bound(
             ph.rawRing().begin() + i, ph.rawRing().end(),
-            XSortedTuple<T>{{p.getX() - ph.getMaxSegLen() - padding, 0},
-                            false}) -
+            XSortedTuple<T>{
+                {static_cast<T>(p.getX() - ph.getMaxSegLen() - padding), 0},
+                false}) -
         ph.rawRing().begin();
   }
 
@@ -1293,8 +1294,9 @@ double withinDist(const Point<T>& p, const XSortedLine<T>& line, double maxDist,
       i < line.rawLine().size()) {
     i = std::lower_bound(
             line.rawLine().begin() + i, line.rawLine().end(),
-            XSortedTuple<T>{{p.getX() - line.getMaxSegLen() - padding, 0},
-                            false}) -
+            XSortedTuple<T>{
+                {static_cast<T>(p.getX() - line.getMaxSegLen() - padding), 0},
+                false}) -
         line.rawLine().begin();
   }
 
