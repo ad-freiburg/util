@@ -6152,14 +6152,9 @@ std::tuple<double, double, bool> probeDistanceUpperBound(
   if (stepA == 0) stepA = 1;
   if (stepB == 0) stepB = 1;
 
-  size_t checks = 0;
-  size_t checksA = 0;
-  size_t checksB = 0;
-
   // overshoot by one step ensure that we always check against the last element
   for (size_t i = 0; i < ls1.size() + stepA; i += stepA) {
     for (size_t j = 0; j < ls2.size() + stepB; j += stepB) {
-      if (checksA == 0) checksB++;
       double d = dist(ls1[std::min(i, ls1.size() - 1)].seg(),
                       ls2[std::min(j, ls2.size() - 1)].seg(), distFunc);
       double euD = dist(ls1[std::min(i, ls1.size() - 1)].seg(),
@@ -6170,9 +6165,7 @@ std::tuple<double, double, bool> probeDistanceUpperBound(
       // early abort
       if (d == 0 && euD == 0) return {0, 0, true};
 
-      checks++;
     }
-    checksA++;
   }
 
   return {upperBound, euclideanUpperBound, stepA == 1 && stepB == 1};
