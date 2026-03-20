@@ -4368,7 +4368,8 @@ double parallelity(const Box<T>& box, const MultiLine<T>& multiline) {
 
 // _____________________________________________________________________________
 template <template <typename> class Geometry, typename T>
-RotatedBox<T> getOrientedEnvelope(const std::vector<Geometry<T>>& pol, const std::vector<double>& angles) {
+RotatedBox<T> getOrientedEnvelope(const std::vector<Geometry<T>>& pol,
+                                  const std::vector<double>& angles) {
   const Point<T> center = centroid(pol);
   Box<T> tmpBox = getBoundingBox(pol);
   double tmpArea = area(tmpBox);
@@ -4392,7 +4393,8 @@ RotatedBox<T> getOrientedEnvelope(const std::vector<Geometry<T>>& pol, const std
 
 // _____________________________________________________________________________
 template <template <typename> class Geometry, typename T>
-RotatedBox<T> getOrientedEnvelope(const std::vector<Geometry<T>>& pol, double step) {
+RotatedBox<T> getOrientedEnvelope(const std::vector<Geometry<T>>& pol,
+                                  double step) {
   std::vector<double> angles;
   double i = 0;
   while (i < 360) {
@@ -4443,7 +4445,8 @@ RotatedBox<T> getOrientedEnvelope(const Geometry<T>& pol) {
 
 // _____________________________________________________________________________
 template <template <typename> class Geometry, typename T>
-RotatedBox<T> getOrientedEnvelope(const Geometry<T>& pol, const std::vector<double>& angles) {
+RotatedBox<T> getOrientedEnvelope(const Geometry<T>& pol,
+                                  const std::vector<double>& angles) {
   return getOrientedEnvelope(std::vector<Geometry<T>>{pol}, angles);
 }
 
