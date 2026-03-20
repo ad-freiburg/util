@@ -115,7 +115,7 @@ class XmlWriter {
 #ifdef PBUTIL_ZLIB_FOUND
   gzFile _gzfile;
 #else
-  int _gzfile;
+  uintptr_t _gzfile;
 #endif
 
 #ifdef PBUTIL_BZLIB_FOUND
@@ -124,7 +124,7 @@ class XmlWriter {
   BZFILE* _bzfile;
   FILE* _bzfhandle = nullptr;
 #else
-  int _bzfile;
+  uintptr_t _bzfile;
 #endif
 
 
