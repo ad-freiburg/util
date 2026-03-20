@@ -4368,13 +4368,45 @@ double parallelity(const Box<T>& box, const MultiLine<T>& multiline) {
 
 // _____________________________________________________________________________
 template <template <typename> class Geometry, typename T>
-RotatedBox<T> getOrientedEnvelope(const std::vector<Geometry<T>>& pol) {
+RotatedBox<T> getOrientedEnvelope(const std::vector<Geometry<T>>& pol, const std::vector<double>& angles) {
   const Point<T> center = centroid(pol);
   Box<T> tmpBox = getBoundingBox(pol);
   double tmpArea = area(tmpBox);
-  Line<T> hull = convexHull(pol).getOuter();
   double rotateAngle = 0;
 
+  // check each segment
+  for (size_t i = 0; i < angles.size(); i++) {
+    // rotate segment such that it is parallel to the x axis
+    const auto p = rotateRAD(pol, angles[i], center);
+    const Box<T>& e = getBoundingBox(p);
+    const double newArea = area(e);
+    if (tmpArea > newArea) {
+      tmpBox = e;
+      tmpArea = newArea;
+      rotateAngle = angles[i];
+    }
+  }
+
+  return RotatedBox<T>(tmpBox, -rotateAngle * -IRAD, center);
+}
+
+// _____________________________________________________________________________
+template <template <typename> class Geometry, typename T>
+RotatedBox<T> getOrientedEnvelope(const std::vector<Geometry<T>>& pol, double step) {
+  std::vector<double> angles;
+  double i = 0;
+  while (i < 360) {
+    angles.push_back(i * RAD);
+    i += step;
+  }
+
+  return getOrientedEnvelope(pol, angles);
+}
+
+// _____________________________________________________________________________
+template <template <typename> class Geometry, typename T>
+RotatedBox<T> getOrientedEnvelope(const std::vector<Geometry<T>>& pol) {
+  Line<T> hull = convexHull(pol).getOuter();
   std::vector<double> angles;
 
   angles.reserve(hull.size());
@@ -4400,26 +4432,25 @@ RotatedBox<T> getOrientedEnvelope(const std::vector<Geometry<T>>& pol) {
   std::sort(angles.begin(), angles.end());
   end = std::unique(angles.begin(), angles.end());
 
-  // check each segment
-  for (auto i = angles.begin(); i != end; i++) {
-    // rotate segment such that it is parallel to the x axis
-    const auto p = rotateRAD(pol, *i, center);
-    const Box<T>& e = getBoundingBox(p);
-    const double newArea = area(e);
-    if (tmpArea > newArea) {
-      tmpBox = e;
-      tmpArea = newArea;
-      rotateAngle = *i;
-    }
-  }
-
-  return RotatedBox<T>(tmpBox, -rotateAngle * -IRAD, center);
+  return getOrientedEnvelope(pol, angles);
 }
 
 // _____________________________________________________________________________
 template <template <typename> class Geometry, typename T>
 RotatedBox<T> getOrientedEnvelope(const Geometry<T>& pol) {
   return getOrientedEnvelope(std::vector<Geometry<T>>{pol});
+}
+
+// _____________________________________________________________________________
+template <template <typename> class Geometry, typename T>
+RotatedBox<T> getOrientedEnvelope(const Geometry<T>& pol, const std::vector<double>& angles) {
+  return getOrientedEnvelope(std::vector<Geometry<T>>{pol}, angles);
+}
+
+// _____________________________________________________________________________
+template <template <typename> class Geometry, typename T>
+RotatedBox<T> getOrientedEnvelope(const Geometry<T>& pol, double step) {
+  return getOrientedEnvelope(std::vector<Geometry<T>>{pol}, step);
 }
 
 // _____________________________________________________________________________
