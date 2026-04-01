@@ -143,9 +143,28 @@ inline void writeVarUInt(uint64_t val, unsigned char*& c) {
 }
 
 // _____________________________________________________________________________
+inline void writeVarUInt(uint64_t val, std::ostream& out) {
+  while (val >= 128) {  // as long as we have a value that doesnt fit in 7 bits
+    // take one byte, ignore highest bit and set to 1 (continue)
+    out.put(static_cast<uint8_t>(val) | 128);
+    // shift by the written 7 bits
+    val = val >> 7;
+  }
+
+  // remaining last byte, with unset continuation bit
+  out.put(static_cast<uint8_t>(val));
+}
+
+// _____________________________________________________________________________
 inline void writeVarInt(int64_t val, unsigned char*& c) {
   writeVarUInt(
       (static_cast<uint64_t>(val) << 1) ^ static_cast<uint64_t>(val >> 63), c);
+}
+
+// _____________________________________________________________________________
+inline void writeVarInt(int64_t val, std::ostream& out) {
+  writeVarUInt(
+      (static_cast<uint64_t>(val) << 1) ^ static_cast<uint64_t>(val >> 63), out);
 }
 
 // _____________________________________________________________________________
@@ -153,6 +172,12 @@ inline void writeString(const std::string& str, unsigned char*& c) {
   writeVarUInt(str.size(), c);
   memcpy(c, str.c_str(), str.size());
   c += str.size();
+}
+
+// _____________________________________________________________________________
+inline void writeString(const std::string& str, std::ostream& out) {
+  writeVarUInt(str.size(), out);
+  out.write(str.data(), str.size());
 }
 
 // _____________________________________________________________________________
@@ -171,6 +196,17 @@ inline void writeTypeAndId(const std::pair<VarType, uint8_t>& typeId,
   byte |= (static_cast<uint64_t>(typeId.second) << 3);
 
   writeVarUInt(byte, c);
+}
+
+// _____________________________________________________________________________
+inline void writeTypeAndId(const std::pair<VarType, uint8_t>& typeId, std::ostream& out) {
+  uint64_t byte = 0;
+  // set type
+  byte |= typeId.first;
+  // set id
+  byte |= (static_cast<uint64_t>(typeId.second) << 3);
+
+  writeVarUInt(byte, out);
 }
 
 }  // namespace protobuf
