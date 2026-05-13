@@ -5945,5 +5945,19 @@ void GeoTest::run() {
     TEST(util::geo::withinDist(XSortedPolygon<double>(poly), XSortedCollection<double>(col), 20), ==, approx(0));
     TEST(util::geo::withinDist(XSortedCollection<double>(col), point, 20), ==, approx(0));
     TEST(util::geo::withinDist(point, XSortedCollection<double>(col), 20), ==, approx(0));
+
+    // standard point/point
+    TEST(util::geo::withinDist(point, point2, 1), ==, approx(9.19239));
+    TEST(util::geo::withinDist(point2, point, 1), ==, approx(9.19239));
+
+    TEST(util::geo::dist(point, point2), ==, approx(9.19239));
+    TEST(util::geo::dist(point2, point), ==, approx(9.19239));
+
+    // standard point/polygon
+    TEST(util::geo::withinDist(point, polyWithInner, 1), ==, approx(0.5));
+    TEST(util::geo::withinDist(polyWithInner, point, 1), ==, approx(0.5));
+
+    TEST(util::geo::dist(point, polyWithInner), ==, approx(0.5));
+    TEST(util::geo::dist(polyWithInner, point), ==, approx(0.5));
   }
 }

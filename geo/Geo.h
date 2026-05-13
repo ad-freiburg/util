@@ -713,55 +713,172 @@ double angBetween(const Point<T>& p1, const MultiPoint<T>& points);
 
 double dist(double x1, double y1, double x2, double y2);
 
+template <typename T, typename DF>
+double dist(const LineSegment<T>& ls, const Point<T>& p, DF&& distFunc);
+
 template <typename T>
-double dist(const AnyGeometry<T>& any1, const AnyGeometry<T>& any2);
+double dist(const Point<T>& p1, const Point<T>& p2) {
+  return dist(p1.getX(), p1.getY(), p2.getX(), p2.getY());
+}
+
+// standard dist function
+template <typename T>
+double euclideanDistFunc(const Point<T>& a, const Point<T>& b, double) {
+  return util::geo::dist(a, b);
+}
+
+// standard max euclidean dist function
+template <typename T>
+const static std::function<double(double, double, const Box<T>&, const Box<T>&)>
+    defaultPaddingFunc = [](double d, double, const Box<T>&,
+                            const Box<T>&) -> double { return d; };
+
+template <typename T>
+double dist(const AnyGeometry<T>& any1, const AnyGeometry<T>& any2) {
+  return dist(any1, any2,
+              std::function<double(const Point<T>&, const Point<T>&, double)>(
+                  euclideanDistFunc<T>));
+}
 
 template <template <typename> class GeometryB, typename T>
-double dist(const AnyGeometry<T>& any1, const GeometryB<T>& geomB);
+double dist(const AnyGeometry<T>& any1, const GeometryB<T>& geomB) {
+  return dist(any1, geomB,
+              std::function<double(const Point<T>&, const Point<T>&, double)>(
+                  euclideanDistFunc<T>));
+}
 
 template <template <typename> class GeometryB, typename T>
-double dist(const GeometryB<T>& geomB, const AnyGeometry<T>& any2);
+double dist(const GeometryB<T>& geomB, const AnyGeometry<T>& any2) {
+  return dist(geomB, any2,
+              std::function<double(const Point<T>&, const Point<T>&, double)>(
+                  euclideanDistFunc<T>));
+}
 
 template <typename T>
-double dist(const LineSegment<T>& ls, const Point<T>& p);
+double dist(const Box<T>& a, const Box<T>& b) {
+  return dist(a, b,
+              std::function<double(const Point<T>&, const Point<T>&, double)>(
+                  euclideanDistFunc<T>));
+}
 
 template <typename T>
-double dist(const Point<T>& p, const LineSegment<T>& ls);
+double dist(const LineSegment<T>& ls, const Point<T>& p) {
+  return dist(ls, p,
+              std::function<double(const Point<T>&, const Point<T>&, double)>(
+                  euclideanDistFunc<T>));
+}
+
+template <typename T, typename DF>
+double dist(const Point<T>& p, const LineSegment<T>& ls, DF&& distFunc);
 
 template <typename T>
-double dist(const LineSegment<T>& ls1, const LineSegment<T>& ls2);
+double dist(const Point<T>& p, const LineSegment<T>& ls) {
+  return dist(p, ls,
+              std::function<double(const Point<T>&, const Point<T>&, double)>(
+                  euclideanDistFunc<T>));
+}
 
 template <typename T, typename DF>
 double dist(const LineSegment<T>& ls1, const LineSegment<T>& ls2,
             DF&& distFunc);
 
 template <typename T>
-double dist(const Point<T>& p, const Line<T>& l);
+double dist(const LineSegment<T>& ls1, const LineSegment<T>& ls2);
+
+template <typename T, typename DF>
+double dist(const Point<T>& p, const Line<T>& l, DF&& distFunc);
 
 template <typename T>
-double dist(const Line<T>& l, const Point<T>& p);
+double dist(const Point<T>& p, const Line<T>& l) {
+  return dist(p, l,
+              std::function<double(const Point<T>&, const Point<T>&, double)>(
+                  euclideanDistFunc<T>));
+}
+
+template <typename T, typename DF>
+double dist(const Line<T>& l, const Point<T>& p, DF&& distFunc);
 
 template <typename T>
-double dist(const LineSegment<T>& ls, const Line<T>& l);
+double dist(const Line<T>& l, const Point<T>& p) {
+  return dist(l, p,
+              std::function<double(const Point<T>&, const Point<T>&, double)>(
+                  euclideanDistFunc<T>));
+}
+
+template <typename T, typename DF>
+double dist(const LineSegment<T>& ls, const Line<T>& l, DF&& distFunc);
 
 template <typename T>
-double dist(const Line<T>& l, const LineSegment<T>& ls);
+double dist(const LineSegment<T>& ls, const Line<T>& l) {
+  return dist(ls, l,
+              std::function<double(const Point<T>&, const Point<T>&, double)>(
+                  euclideanDistFunc<T>));
+}
+
+template <typename T, typename DF>
+double dist(const Line<T>& l, const LineSegment<T>& ls, DF&& distFunc);
 
 template <typename T>
-double dist(const Line<T>& la, const Line<T>& lb);
+double dist(const Line<T>& l, const LineSegment<T>& ls) {
+  return dist(l, ls,
+              std::function<double(const Point<T>&, const Point<T>&, double)>(
+                  euclideanDistFunc<T>));
+}
+
+template <typename T, typename DF>
+double dist(const Line<T>& la, const Line<T>& lb, DF&& distFunc);
+
+template <typename T>
+double dist(const Line<T>& la, const Line<T>& lb) {
+  return dist(la, lb,
+              std::function<double(const Point<T>&, const Point<T>&, double)>(
+                  euclideanDistFunc<T>));
+}
+
+template <template <typename> class GeometryA,
+          template <typename> class GeometryB, typename T, typename DF>
+double dist(const std::vector<GeometryA<T>>& multigeom, const GeometryB<T>& b,
+            DF&& distFunc);
 
 template <template <typename> class GeometryA,
           template <typename> class GeometryB, typename T>
-double dist(const std::vector<GeometryA<T>>& multigeom, const GeometryB<T>& b);
+double dist(const std::vector<GeometryA<T>>& multigeom, const GeometryB<T>& b) {
+  return dist(multigeom, b,
+              std::function<double(const Point<T>&, const Point<T>&, double)>(
+                  euclideanDistFunc<T>));
+}
+
+template <template <typename> class GeometryA,
+          template <typename> class GeometryB, typename T, typename DF>
+double dist(const GeometryB<T>& b, const std::vector<GeometryA<T>>& multigeom,
+            DF&& distFunc);
 
 template <template <typename> class GeometryA,
           template <typename> class GeometryB, typename T>
-double dist(const GeometryB<T>& b, const std::vector<GeometryA<T>>& multigeom);
+double dist(const GeometryB<T>& b, const std::vector<GeometryA<T>>& multigeom) {
+  return dist(b, multigeom,
+              std::function<double(const Point<T>&, const Point<T>&, double)>(
+                  euclideanDistFunc<T>));
+}
+
+template <template <typename> class GeometryA,
+          template <typename> class GeometryB, typename T, typename DF>
+double dist(const GeometryB<T>& b, const std::vector<GeometryA<T>>& multigeom,
+            DF&& distFunc);
+
+template <template <typename> class GeometryA,
+          template <typename> class GeometryB, typename T, typename DF>
+double dist(const std::vector<GeometryA<T>>& multigeomA,
+            const std::vector<GeometryB<T>>& multigeomB, DF&& distFunc);
 
 template <template <typename> class GeometryA,
           template <typename> class GeometryB, typename T>
 double dist(const std::vector<GeometryA<T>>& multigeomA,
-            const std::vector<GeometryB<T>>& multigeomB);
+            const std::vector<GeometryB<T>>& multigeomB) {
+  return dist(multigeomA, multigeomB,
+              std::function<double(const Point<T>&, const Point<T>&, double)>(
+                  euclideanDistFunc<T>));
+}
 
 double innerProd(double x1, double y1, double x2, double y2, double x3,
                  double y3);
@@ -778,22 +895,39 @@ template <typename T>
 double crossProd(const Point<T>& p, const LineSegment<T>& ls);
 
 template <typename T>
-double dist(const Polygon<T>& poly1, const Polygon<T>& poly2);
+double dist(const Polygon<T>& poly1, const Polygon<T>& poly2) {
+  return dist(poly1, poly2,
+              std::function<double(const Point<T>&, const Point<T>&, double)>(
+                  euclideanDistFunc<T>));
+}
 
 template <typename T>
-double dist(const Line<T>& l, const Polygon<T>& poly);
+double dist(const Line<T>& l, const Polygon<T>& poly) {
+  return dist(l, poly,
+              std::function<double(const Point<T>&, const Point<T>&, double)>(
+                  euclideanDistFunc<T>));
+}
 
 template <typename T>
-double dist(const Polygon<T>& poly, const Line<T>& l);
+double dist(const Polygon<T>& poly, const Line<T>& l) {
+  return dist(poly, l,
+              std::function<double(const Point<T>&, const Point<T>&, double)>(
+                  euclideanDistFunc<T>));
+}
 
 template <typename T>
-double dist(const Point<T>& p, const Polygon<T>& poly);
+double dist(const Point<T>& p, const Polygon<T>& poly) {
+  return dist(p, poly,
+              std::function<double(const Point<T>&, const Point<T>&, double)>(
+                  euclideanDistFunc<T>));
+}
 
 template <typename T>
-double dist(const Polygon<T>& poly, const Point<T>& p);
-
-template <typename T>
-double dist(const Point<T>& p1, const Point<T>& p2);
+double dist(const Polygon<T>& poly, const Point<T>& p) {
+  return dist(poly, p,
+              std::function<double(const Point<T>&, const Point<T>&, double)>(
+                  euclideanDistFunc<T>));
+}
 
 template <typename T>
 size_t numPoints(const Point<T>&);
@@ -976,11 +1110,23 @@ std::vector<Geometry<T>> simplify(const std::vector<Geometry<T>>& pol,
 template <typename T>
 Collection<T> simplify(const Collection<T>& collection, double d);
 
+template <typename T, typename DF>
+double distToSegment(T lax, T lay, T lbx, T lby, T px, T py, DF&& distFunc);
+
+template <typename T, typename DF>
+double distToSegment(const Point<T>& la, const Point<T>& lb, const Point<T>& p,
+                     DF&& distFunc);
+
+template <typename T, typename DF>
+double distToSegment(const LineSegment<T>& ls, const Point<T>& p,
+                     DF&& distFunc);
+
 double distToSegment(double lax, double lay, double lbx, double lby, double px,
                      double py);
 
 template <typename T>
-double distToSegment(const Point<T>& la, const Point<T>& lb, const Point<T>& p);
+double distToSegment(const Point<T>& la, const Point<T>& lb,
+                     const Point<T>& p);
 
 template <typename T>
 double distToSegment(const LineSegment<T>& ls, const Point<T>& p);
@@ -1311,18 +1457,6 @@ double withinDist(const XSORTED<T>& b, const XSortedCollection<T>& a,
   return withinDist(a, b, maxDist, paddingFunc, maxEuclideanDist, distFunc);
 }
 
-// standard dist function
-template <typename T>
-double euclideanDistFunc(const Point<T>& a, const Point<T>& b, double) {
-  return util::geo::dist(a, b);
-}
-
-// standard max euclidean dist function
-template <typename T>
-const static std::function<double(double, double, const Box<T>&, const Box<T>&)>
-    defaultPaddingFunc = [](double d, double, const Box<T>&,
-                            const Box<T>&) -> double { return d; };
-
 template <typename T>
 double withinDist(const XSortedPolygon<T>& a, const XSortedPolygon<T>& b,
                   double maxDist) {
@@ -1452,6 +1586,37 @@ double withinDist(const Point<T>& a, const XSortedPolygon<T>& b,
                   double maxDist) {
   return withinDist(
       a, b, maxDist, defaultPaddingFunc<T>, maxDist,
+      std::function<double(const Point<T>&, const Point<T>&, double)>(
+          euclideanDistFunc<T>));
+}
+
+template <typename T, typename PF, typename DF>
+double withinDist(const Polygon<T>& poly, const Point<T>& p, double maxDist,
+                  PF&& paddingFunc, double maxEuclideanDist, DF&& distFunc) {
+  return withinDist(p, poly, maxDist, paddingFunc, maxEuclideanDist, distFunc);
+}
+
+template <typename T>
+double withinDist(const Point<T>& a, const Polygon<T>& b, double maxDist) {
+  return withinDist(
+      a, b, maxDist, defaultPaddingFunc<T>, maxDist,
+      std::function<double(const Point<T>&, const Point<T>&, double)>(
+          euclideanDistFunc<T>));
+}
+
+template <typename T>
+double withinDist(const Polygon<T>& b, const Point<T>& a, double maxDist) {
+  return withinDist(a, b, maxDist);
+}
+
+template <typename T, typename PF, typename DF>
+double withinDist(const Point<T>& p1, const Point<T>& p2, double maxDist,
+                  PF&& paddingFunc, double maxEuclideanDist, DF&& distFunc);
+
+template <typename T>
+double withinDist(const Point<T>& p1, const Point<T>& p2, double maxDist) {
+  return withinDist(
+      p1, p2, maxDist, defaultPaddingFunc<T>, maxDist,
       std::function<double(const Point<T>&, const Point<T>&, double)>(
           euclideanDistFunc<T>));
 }

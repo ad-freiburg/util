@@ -3418,49 +3418,52 @@ double angBetween(const Point<T>& p1, const MultiPoint<T>& points) {
 }
 
 // _____________________________________________________________________________
-template <typename T>
-double dist(const AnyGeometry<T>& any1, const AnyGeometry<T>& any2) {
-  if (any1.getType() == 0) return dist(any1.getPoint(), any2);
-  if (any1.getType() == 1) return dist(any1.getLine(), any2);
-  if (any1.getType() == 2) return dist(any1.getPolygon(), any2);
-  if (any1.getType() == 3) return dist(any1.getMultiLine(), any2);
-  if (any1.getType() == 4) return dist(any1.getMultiPolygon(), any2);
-  if (any1.getType() == 5) return dist(any1.getCollection(), any2);
-  if (any1.getType() == 6) return dist(any1.getMultiPoint(), any2);
+template <typename T, typename DF>
+double dist(const AnyGeometry<T>& any1, const AnyGeometry<T>& any2,
+            DF&& distFunc) {
+  if (any1.getType() == 0) return dist(any1.getPoint(), any2, distFunc);
+  if (any1.getType() == 1) return dist(any1.getLine(), any2, distFunc);
+  if (any1.getType() == 2) return dist(any1.getPolygon(), any2, distFunc);
+  if (any1.getType() == 3) return dist(any1.getMultiLine(), any2, distFunc);
+  if (any1.getType() == 4) return dist(any1.getMultiPolygon(), any2, distFunc);
+  if (any1.getType() == 5) return dist(any1.getCollection(), any2, distFunc);
+  if (any1.getType() == 6) return dist(any1.getMultiPoint(), any2, distFunc);
 
   return std::numeric_limits<double>::infinity();
 }
 
 // _____________________________________________________________________________
-template <template <typename> class GeometryB, typename T>
-double dist(const AnyGeometry<T>& any, const GeometryB<T>& geomB) {
-  if (any.getType() == 0) return dist(any.getPoint(), geomB);
-  if (any.getType() == 1) return dist(any.getLine(), geomB);
-  if (any.getType() == 2) return dist(any.getPolygon(), geomB);
-  if (any.getType() == 3) return dist(any.getMultiLine(), geomB);
-  if (any.getType() == 4) return dist(any.getMultiPolygon(), geomB);
-  if (any.getType() == 5) return dist(any.getCollection(), geomB);
-  if (any.getType() == 6) return dist(any.getMultiPoint(), geomB);
+template <template <typename> class GeometryB, typename T, typename DF>
+double dist(const AnyGeometry<T>& any, const GeometryB<T>& geomB,
+            DF&& distFunc) {
+  if (any.getType() == 0) return dist(any.getPoint(), geomB, distFunc);
+  if (any.getType() == 1) return dist(any.getLine(), geomB, distFunc);
+  if (any.getType() == 2) return dist(any.getPolygon(), geomB, distFunc);
+  if (any.getType() == 3) return dist(any.getMultiLine(), geomB, distFunc);
+  if (any.getType() == 4) return dist(any.getMultiPolygon(), geomB, distFunc);
+  if (any.getType() == 5) return dist(any.getCollection(), geomB, distFunc);
+  if (any.getType() == 6) return dist(any.getMultiPoint(), geomB, distFunc);
 
   return std::numeric_limits<double>::infinity();
 }
 
 // _____________________________________________________________________________
-template <template <typename> class GeometryB, typename T>
-double dist(const GeometryB<T>& geomB, const AnyGeometry<T>& any) {
-  return dist(any, geomB);
+template <template <typename> class GeometryB, typename T, typename DF>
+double dist(const GeometryB<T>& geomB, const AnyGeometry<T>& any,
+            DF&& distFunc) {
+  return dist(any, geomB, distFunc);
 }
 
 // _____________________________________________________________________________
-template <typename T>
-double dist(const LineSegment<T>& ls, const Point<T>& p) {
-  return distToSegment(ls, p);
+template <typename T, typename DF>
+double dist(const LineSegment<T>& ls, const Point<T>& p, DF&& distFunc) {
+  return distToSegment(ls, p, distFunc);
 }
 
 // _____________________________________________________________________________
-template <typename T>
-double dist(const Point<T>& p, const LineSegment<T>& ls) {
-  return dist(ls, p);
+template <typename T, typename DF>
+double dist(const Point<T>& p, const LineSegment<T>& ls, DF&& distFunc) {
+  return dist(ls, p, distFunc);
 }
 
 // _____________________________________________________________________________
@@ -3533,11 +3536,11 @@ double dist(const LineSegment<T>& ls1, const LineSegment<T>& ls2,
 }
 
 // _____________________________________________________________________________
-template <typename T>
-double dist(const Point<T>& p, const Line<T>& l) {
+template <typename T, typename DF>
+double dist(const Point<T>& p, const Line<T>& l, DF&& distFunc) {
   double d = std::numeric_limits<double>::infinity();
   for (size_t i = 1; i < l.size(); i++) {
-    double dTmp = distToSegment(l[i - 1], l[i], p);
+    double dTmp = distToSegment(l[i - 1], l[i], p, distFunc);
     if (dTmp < EPSILON) return 0;
     if (dTmp < d) d = dTmp;
   }
@@ -3545,17 +3548,17 @@ double dist(const Point<T>& p, const Line<T>& l) {
 }
 
 // _____________________________________________________________________________
-template <typename T>
-double dist(const Line<T>& l, const Point<T>& p) {
-  return dist(p, l);
+template <typename T, typename DF>
+double dist(const Line<T>& l, const Point<T>& p, DF&& distFunc) {
+  return dist(p, l, distFunc);
 }
 
 // _____________________________________________________________________________
-template <typename T>
-double dist(const LineSegment<T>& ls, const Line<T>& l) {
+template <typename T, typename DF>
+double dist(const LineSegment<T>& ls, const Line<T>& l, DF&& distFunc) {
   double d = std::numeric_limits<double>::infinity();
   for (size_t i = 1; i < l.size(); i++) {
-    double dTmp = dist(ls, LineSegment<T>(l[i - 1], l[i]));
+    double dTmp = dist(ls, LineSegment<T>(l[i - 1], l[i]), distFunc);
     if (dTmp < EPSILON) return 0;
     if (dTmp < d) d = dTmp;
   }
@@ -3563,17 +3566,17 @@ double dist(const LineSegment<T>& ls, const Line<T>& l) {
 }
 
 // _____________________________________________________________________________
-template <typename T>
-double dist(const Line<T>& l, const LineSegment<T>& ls) {
-  return dist(ls, l);
+template <typename T, typename DF>
+double dist(const Line<T>& l, const LineSegment<T>& ls, DF&& distFunc) {
+  return dist(ls, l, distFunc);
 }
 
 // _____________________________________________________________________________
-template <typename T>
-double dist(const Line<T>& la, const Line<T>& lb) {
+template <typename T, typename DF>
+double dist(const Line<T>& la, const Line<T>& lb, DF&& distFunc) {
   double d = std::numeric_limits<double>::infinity();
   for (size_t i = 1; i < la.size(); i++) {
-    double dTmp = dist(LineSegment<T>(la[i - 1], la[i]), lb);
+    double dTmp = dist(LineSegment<T>(la[i - 1], la[i]), lb, distFunc);
     if (dTmp < EPSILON) return 0;
     if (dTmp < d) d = dTmp;
   }
@@ -3680,89 +3683,108 @@ double withinDist(const Box<T>& a, const Box<T>& b, DF&& distF, double dMax) {
 }
 
 // _____________________________________________________________________________
-template <typename T>
-double dist(const Box<T>& a, const Box<T>& b) {
+template <typename T, typename DF>
+double dist(const Box<T>& a, const Box<T>& b, DF&& distFunc) {
   if (util::geo::intersects(a, b)) return 0;
 
   double d = std::numeric_limits<double>::infinity();
   d = std::min(
       d, util::geo::dist(LineSegment<T>{a.getLowerLeft(), a.getUpperLeft()},
-                         LineSegment<T>{b.getLowerLeft(), b.getUpperLeft()}));
+                         LineSegment<T>{b.getLowerLeft(), b.getUpperLeft()},
+                         distFunc));
   d = std::min(
       d, util::geo::dist(LineSegment<T>{a.getLowerLeft(), a.getUpperLeft()},
-                         LineSegment<T>{b.getUpperLeft(), b.getUpperRight()}));
+                         LineSegment<T>{b.getUpperLeft(), b.getUpperRight()},
+                         distFunc));
   d = std::min(
       d, util::geo::dist(LineSegment<T>{a.getLowerLeft(), a.getUpperLeft()},
-                         LineSegment<T>{b.getUpperRight(), b.getLowerRight()}));
+                         LineSegment<T>{b.getUpperRight(), b.getLowerRight()},
+                         distFunc));
   d = std::min(
       d, util::geo::dist(LineSegment<T>{a.getLowerLeft(), a.getUpperLeft()},
-                         LineSegment<T>{b.getLowerRight(), b.getLowerLeft()}));
+                         LineSegment<T>{b.getLowerRight(), b.getLowerLeft()},
+                         distFunc));
 
   d = std::min(
       d, util::geo::dist(LineSegment<T>{a.getUpperLeft(), a.getUpperRight()},
-                         LineSegment<T>{b.getLowerLeft(), b.getUpperLeft()}));
+                         LineSegment<T>{b.getLowerLeft(), b.getUpperLeft()},
+                         distFunc));
   d = std::min(
       d, util::geo::dist(LineSegment<T>{a.getUpperLeft(), a.getUpperRight()},
-                         LineSegment<T>{b.getUpperLeft(), b.getUpperRight()}));
+                         LineSegment<T>{b.getUpperLeft(), b.getUpperRight()},
+                         distFunc));
   d = std::min(
       d, util::geo::dist(LineSegment<T>{a.getUpperLeft(), a.getUpperRight()},
-                         LineSegment<T>{b.getUpperRight(), b.getLowerRight()}));
+                         LineSegment<T>{b.getUpperRight(), b.getLowerRight()},
+                         distFunc));
   d = std::min(
       d, util::geo::dist(LineSegment<T>{a.getUpperLeft(), a.getUpperRight()},
-                         LineSegment<T>{b.getLowerRight(), b.getLowerLeft()}));
+                         LineSegment<T>{b.getLowerRight(), b.getLowerLeft()},
+                         distFunc));
 
   d = std::min(
       d, util::geo::dist(LineSegment<T>{a.getUpperRight(), a.getLowerRight()},
-                         LineSegment<T>{b.getLowerLeft(), b.getUpperLeft()}));
+                         LineSegment<T>{b.getLowerLeft(), b.getUpperLeft()},
+                         distFunc));
   d = std::min(
       d, util::geo::dist(LineSegment<T>{a.getUpperRight(), a.getLowerRight()},
-                         LineSegment<T>{b.getUpperLeft(), b.getUpperRight()}));
+                         LineSegment<T>{b.getUpperLeft(), b.getUpperRight()},
+                         distFunc));
   d = std::min(
       d, util::geo::dist(LineSegment<T>{a.getUpperRight(), a.getLowerRight()},
-                         LineSegment<T>{b.getUpperRight(), b.getLowerRight()}));
+                         LineSegment<T>{b.getUpperRight(), b.getLowerRight()},
+                         distFunc));
   d = std::min(
       d, util::geo::dist(LineSegment<T>{a.getUpperRight(), a.getLowerRight()},
-                         LineSegment<T>{b.getLowerRight(), b.getLowerLeft()}));
+                         LineSegment<T>{b.getLowerRight(), b.getLowerLeft()},
+                         distFunc));
 
   d = std::min(
       d, util::geo::dist(LineSegment<T>{a.getLowerRight(), a.getLowerLeft()},
-                         LineSegment<T>{b.getLowerLeft(), b.getUpperLeft()}));
+                         LineSegment<T>{b.getLowerLeft(), b.getUpperLeft()},
+                         distFunc));
   d = std::min(
       d, util::geo::dist(LineSegment<T>{a.getLowerRight(), a.getLowerLeft()},
-                         LineSegment<T>{b.getUpperLeft(), b.getUpperRight()}));
+                         LineSegment<T>{b.getUpperLeft(), b.getUpperRight()},
+                         distFunc));
   d = std::min(
       d, util::geo::dist(LineSegment<T>{a.getLowerRight(), a.getLowerLeft()},
-                         LineSegment<T>{b.getUpperRight(), b.getLowerRight()}));
+                         LineSegment<T>{b.getUpperRight(), b.getLowerRight()},
+                         distFunc));
   d = std::min(
       d, util::geo::dist(LineSegment<T>{a.getLowerRight(), a.getLowerLeft()},
-                         LineSegment<T>{b.getLowerRight(), b.getLowerLeft()}));
+                         LineSegment<T>{b.getLowerRight(), b.getLowerLeft()},
+                         distFunc));
 
   return d;
 }
 
 // _____________________________________________________________________________
 template <template <typename> class GeometryA,
-          template <typename> class GeometryB, typename T>
-double dist(const std::vector<GeometryA<T>>& multigeom, const GeometryB<T>& b) {
+          template <typename> class GeometryB, typename T, typename DF>
+double dist(const std::vector<GeometryA<T>>& multigeom, const GeometryB<T>& b,
+            DF&& distFunc) {
   double d = std::numeric_limits<double>::infinity();
-  for (const auto& geom : multigeom) d = std::min(d, dist(geom, b));
+  for (const auto& geom : multigeom) d = std::min(d, dist(geom, b, distFunc));
   return d;
 }
 
 // _____________________________________________________________________________
 template <template <typename> class GeometryA,
-          template <typename> class GeometryB, typename T>
-double dist(const GeometryB<T>& b, const std::vector<GeometryA<T>>& multigeom) {
-  return dist(multigeom, b);
+          template <typename> class GeometryB, typename T, typename DF>
+double dist(const GeometryB<T>& b, const std::vector<GeometryA<T>>& multigeom,
+            DF&& distFunc) {
+  return dist(multigeom, b, distFunc);
 }
 
 // _____________________________________________________________________________
 template <template <typename> class GeometryA,
-          template <typename> class GeometryB, typename T>
+          template <typename> class GeometryB, typename T, typename DF>
 double dist(const std::vector<GeometryA<T>>& multigeomA,
-            const std::vector<GeometryB<T>>& multigeomB) {
+            const std::vector<GeometryB<T>>& multigeomB, DF&& distFunc) {
   double d = std::numeric_limits<double>::infinity();
-  for (const auto& geom : multigeomB) d = std::min(d, dist(geom, multigeomA));
+  for (const auto& geom : multigeomB)
+    d = std::min(d, dist(geom, multigeomA, distFunc));
   return d;
 }
 
@@ -3788,23 +3810,23 @@ double crossProd(const Point<T>& p, const LineSegment<T>& ls) {
 }
 
 // _____________________________________________________________________________
-template <typename T>
-double dist(const Polygon<T>& poly1, const Polygon<T>& poly2) {
+template <typename T, typename DF>
+double dist(const Polygon<T>& poly1, const Polygon<T>& poly2, DF&& distFunc) {
   if (intersects(poly1, poly2) || intersects(poly2, poly1)) return 0;
 
-  double d = dist(poly1.getOuter(), poly2.getOuter());
+  double d = dist(poly1.getOuter(), poly2.getOuter(), distFunc);
 
   for (const auto& inner1 : poly1.getInners()) {
-    d = std::min(d, dist(poly2.getOuter(), inner1));
+    d = std::min(d, dist(poly2.getOuter(), inner1, distFunc));
   }
 
   for (const auto& inner2 : poly2.getInners()) {
-    d = std::min(d, dist(poly1.getOuter(), inner2));
+    d = std::min(d, dist(poly1.getOuter(), inner2, distFunc));
   }
 
   for (const auto& inner1 : poly1.getInners()) {
     for (const auto& inner2 : poly2.getInners()) {
-      d = std::min(d, dist(inner1, inner2));
+      d = std::min(d, dist(inner1, inner2, distFunc));
     }
   }
 
@@ -3812,47 +3834,68 @@ double dist(const Polygon<T>& poly1, const Polygon<T>& poly2) {
 }
 
 // _____________________________________________________________________________
-template <typename T>
-double dist(const Line<T>& l, const Polygon<T>& poly) {
+template <typename T, typename DF>
+double dist(const Line<T>& l, const Polygon<T>& poly, DF&& distFunc) {
   if (intersects(l, poly)) return 0;
-  double d = dist(l, poly.getOuter());
+  double d = dist(l, poly.getOuter(), distFunc);
 
   for (const auto& inner : poly.getInners()) {
-    d = std::min(d, dist(l, inner));
+    d = std::min(d, dist(l, inner, distFunc));
   }
 
   return d;
 }
 
 // _____________________________________________________________________________
-template <typename T>
-double dist(const Polygon<T>& poly, const Line<T>& l) {
-  return dist(l, poly);
+template <typename T, typename DF>
+double dist(const Polygon<T>& poly, const Line<T>& l, DF&& distFunc) {
+  return dist(l, poly, distFunc);
 }
 
 // _____________________________________________________________________________
-template <typename T>
-double dist(const Point<T>& p, const Polygon<T>& poly) {
+template <typename T, typename DF>
+double dist(const Point<T>& p, const Polygon<T>& poly, DF&& distFunc) {
   if (contains(p, poly)) return 0;
-  double d = dist(p, poly.getOuter());
+  double d = dist(p, poly.getOuter(), distFunc);
 
   for (const auto& inner : poly.getInners()) {
-    d = std::min(d, dist(p, inner));
+    d = std::min(d, dist(p, inner, distFunc));
   }
 
   return d;
 }
 
 // _____________________________________________________________________________
-template <typename T>
-double dist(const Polygon<T>& poly, const Point<T>& p) {
-  return dist(p, poly);
+template <typename T, typename DF>
+double dist(const Polygon<T>& poly, const Point<T>& p, DF&& distFunc) {
+  return dist(p, poly, distFunc);
 }
 
 // _____________________________________________________________________________
-template <typename T>
-double dist(const Point<T>& p1, const Point<T>& p2) {
-  return dist(p1.getX(), p1.getY(), p2.getX(), p2.getY());
+template <typename T, typename PF, typename DF>
+double withinDist(const Point<T>& p, const Polygon<T>& poly, double, PF&&,
+                  double, DF&& distFunc) {
+  if (contains(p, poly)) return 0;
+  double d = dist(p, poly.getOuter(), distFunc);
+
+  for (const auto& inner : poly.getInners()) {
+    d = std::min(d, dist(p, inner, distFunc));
+  }
+
+  return d;
+}
+
+// _____________________________________________________________________________
+template <typename T, typename DF>
+double dist(const Point<T>& p1, const Point<T>& p2, DF&& distFunc) {
+  return distFunc(p1, p2, std::numeric_limits<T>::max());
+}
+
+// _____________________________________________________________________________
+template <typename T, typename PF, typename DF>
+double withinDist(const Point<T>& p1, const Point<T>& p2, double, PF&&,
+                  double, DF&& distFunc) {
+  return distFunc(p1, p2, std::numeric_limits<T>::max());
 }
 
 // _____________________________________________________________________________
@@ -4577,9 +4620,52 @@ Collection<T> simplify(const Collection<T>& collection, double d) {
 }
 
 // _____________________________________________________________________________
+template <typename T, typename DF>
+double util::geo::distToSegment(T lax, T lay, T lbx, T lby, T px, T py,
+                                DF&& distFunc) {
+  double d = distFunc(Point<T>{lax, lay}, Point<T>{lbx, lby},
+                      std::numeric_limits<double>::max()) *
+             distFunc(Point<T>{lax, lay}, Point<T>{lbx, lby},
+                      std::numeric_limits<double>::max());
+  if (d == 0)
+    return distFunc(Point<T>{px, py}, Point<T>{lax, lay},
+                    std::numeric_limits<double>::max());
+
+  double t = ((px - lax) * (lbx - lax) + (py - lay) * (lby - lay)) / d;
+
+  if (t < 0) {
+    return distFunc(Point<T>{px, py}, Point<T>{lax, lay},
+                    std::numeric_limits<double>::max());
+  } else if (t > 1) {
+    return distFunc(Point<T>{px, py}, Point<T>{lbx, lby},
+                    std::numeric_limits<double>::max());
+  }
+
+  return distFunc(Point<T>{px, py},
+                  Point<T>{static_cast<T>(lax + t * (lbx - lax)),
+                           static_cast<T>(lay + t * (lby - lay))},
+                  std::numeric_limits<double>::max());
+}
+
+// _____________________________________________________________________________
+template <typename T, typename DF>
+double distToSegment(const Point<T>& la, const Point<T>& lb, const Point<T>& p,
+                     DF&& distFunc) {
+  return distToSegment(la.getX(), la.getY(), lb.getX(), lb.getY(), p.getX(),
+                       p.getY(), distFunc);
+}
+
+// _____________________________________________________________________________
+template <typename T, typename DF>
+double distToSegment(const LineSegment<T>& ls, const Point<T>& p,
+                     DF&& distFunc) {
+  return distToSegment(ls.first.getX(), ls.first.getY(), ls.second.getX(),
+                       ls.second.getY(), p.getX(), p.getY(), distFunc);
+}
+
+// _____________________________________________________________________________
 template <typename T>
-double distToSegment(const Point<T>& la, const Point<T>& lb,
-                     const Point<T>& p) {
+double distToSegment(const Point<T>& la, const Point<T>& lb, const Point<T>& p) {
   return distToSegment(la.getX(), la.getY(), lb.getX(), lb.getY(), p.getX(),
                        p.getY());
 }
@@ -6164,7 +6250,6 @@ std::tuple<double, double, bool> probeDistanceUpperBound(
 
       // early abort
       if (d == 0 && euD == 0) return {0, 0, true};
-
     }
   }
 
