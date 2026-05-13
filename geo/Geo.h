@@ -1590,6 +1590,39 @@ double withinDist(const Point<T>& p1, const Point<T>& p2, double maxDist) {
           euclideanDistFunc<T>));
 }
 
+template <typename T, typename PF, typename DF>
+double withinDist(const Line<T>& line, const Point<T>& p, double maxDist,
+                  PF&& paddingFunc, double maxEuclideanDist, DF&& distFunc) {
+  return withinDist(p, line, maxDist, paddingFunc, maxEuclideanDist, distFunc);
+}
+
+template <typename T>
+double withinDist(const Point<T>& a, const Line<T>& b, double maxDist);
+
+template <typename T>
+double withinDist(const Line<T>& b, const Point<T>& a, double maxDist) {
+  return withinDist(a, b, maxDist);
+}
+
+template <typename T, typename PF, typename DF>
+double withinDist(const Line<T>& l, const Polygon<T>& poly, double maxDist,
+                  PF&& paddingFunc, double maxEuclideanDist, DF&& distFunc) {
+  return withinDist(poly, l, maxDist, paddingFunc, maxEuclideanDist, distFunc);
+}
+
+template <typename T>
+double withinDist(const Line<T>& a, const Polygon<T>& b, double maxDist) {
+  return withinDist(
+      a, b, maxDist, defaultPaddingFunc<T>, maxDist,
+      std::function<double(const Point<T>&, const Point<T>&, double)>(
+          euclideanDistFunc<T>));
+}
+
+template <typename T>
+double withinDist(const Polygon<T>& b, const Line<T>& a, double maxDist) {
+  return withinDist(a, b, maxDist);
+}
+
 }  // namespace geo
 }  // namespace util
 

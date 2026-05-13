@@ -3532,9 +3532,21 @@ double dist(const LineSegment<T>& ls1, const LineSegment<T>& ls2,
 // _____________________________________________________________________________
 template <typename T, typename DF>
 double dist(const Point<T>& p, const Line<T>& l, DF&& distFunc) {
-  double d = std::numeric_limits<double>::infinity();
+  return withinDist(p, l, std::numeric_limits<double>::infinity(), defaultPaddingFunc<T>, std::numeric_limits<double>::infinity(), distFunc);
+}
+
+// _____________________________________________________________________________
+template <typename T>
+double dist(const Point<T>& p, const Line<T>& l) {
+  return withinDist(p, l, std::numeric_limits<double>::max());
+}
+
+// _____________________________________________________________________________
+template <typename T>
+double withinDist(const Point<T>& p, const Line<T>& l, double maxD) {
+  double d = maxD;
   for (size_t i = 1; i < l.size(); i++) {
-    double dTmp = distToSegment(l[i - 1], l[i], p, distFunc);
+    double dTmp = distToSegment(l[i - 1], l[i], p);
     if (dTmp < EPSILON) return 0;
     if (dTmp < d) d = dTmp;
   }
@@ -3542,11 +3554,12 @@ double dist(const Point<T>& p, const Line<T>& l, DF&& distFunc) {
 }
 
 // _____________________________________________________________________________
-template <typename T>
-double dist(const Point<T>& p, const Line<T>& l) {
-  double d = std::numeric_limits<double>::infinity();
+template <typename T, typename PF, typename DF>
+double withinDist(const Point<T>& p, const Line<T>& l, double maxDist, PF&&,
+                  double, DF&& distFunc) {
+  double d = maxDist;
   for (size_t i = 1; i < l.size(); i++) {
-    double dTmp = distToSegment(l[i - 1], l[i], p);
+    double dTmp = distToSegment(l[i - 1], l[i], p, distFunc);
     if (dTmp < EPSILON) return 0;
     if (dTmp < d) d = dTmp;
   }
@@ -3890,27 +3903,13 @@ double dist(const Polygon<T>& poly1, const Polygon<T>& poly2) {
 // _____________________________________________________________________________
 template <typename T, typename DF>
 double dist(const Line<T>& l, const Polygon<T>& poly, DF&& distFunc) {
-  if (intersects(l, poly)) return 0;
-  double d = dist(l, poly.getOuter(), distFunc);
-
-  for (const auto& inner : poly.getInners()) {
-    d = std::min(d, dist(l, inner, distFunc));
-  }
-
-  return d;
+  return withinDist(l, poly, std::numeric_limits<double>::max(), defaultPaddingFunc<T>, std::numeric_limits<double>::max(), distFunc);
 }
 
 // _____________________________________________________________________________
 template <typename T>
 double dist(const Line<T>& l, const Polygon<T>& poly) {
-  if (intersects(l, poly)) return 0;
-  double d = dist(l, poly.getOuter());
-
-  for (const auto& inner : poly.getInners()) {
-    d = std::min(d, dist(l, inner));
-  }
-
-  return d;
+  return withinDist(l, poly, std::numeric_limits<double>::max());
 }
 
 // _____________________________________________________________________________
@@ -3920,29 +3919,29 @@ double dist(const Polygon<T>& poly, const Line<T>& l, DF&& distFunc) {
 }
 
 // _____________________________________________________________________________
-template <typename T, typename DF>
-double dist(const Point<T>& p, const Polygon<T>& poly, DF&& distFunc) {
-  if (contains(p, poly)) return 0;
-  double d = dist(p, poly.getOuter(), distFunc);
+template <typename T, typename PF, typename DF>
+double withinDist(const Polygon<T>& poly, const Line<T>& l, double maxDist,
+                  PF&&, double, DF&& distFunc) {
+  if (intersects(l, poly)) return 0;
+  double d = dist(l, poly.getOuter());
 
   for (const auto& inner : poly.getInners()) {
-    d = std::min(d, dist(p, inner, distFunc));
+    d = std::min(d, dist(l, inner, distFunc));
   }
 
   return d;
 }
 
 // _____________________________________________________________________________
+template <typename T, typename DF>
+double dist(const Point<T>& p, const Polygon<T>& poly, DF&& distFunc) {
+  return withinDist(p, poly, std::numeric_limits<double>::max(), defaultPaddingFunc<T>, std::numeric_limits<double>::max(), distFunc);
+}
+
+// _____________________________________________________________________________
 template <typename T>
 double dist(const Point<T>& p, const Polygon<T>& poly) {
-  if (contains(p, poly)) return 0;
-  double d = dist(p, poly.getOuter());
-
-  for (const auto& inner : poly.getInners()) {
-    d = std::min(d, dist(p, inner));
-  }
-
-  return d;
+  return withinDist(p, poly, std::numeric_limits<double>::max());
 }
 
 // _____________________________________________________________________________

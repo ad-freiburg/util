@@ -5953,11 +5953,25 @@ void GeoTest::run() {
     TEST(util::geo::dist(point, point2), ==, approx(9.19239));
     TEST(util::geo::dist(point2, point), ==, approx(9.19239));
 
+    // standard point/line
+    TEST(util::geo::withinDist(point2, line2, 100), ==, approx(9.01734));
+    TEST(util::geo::withinDist(line, point, 100), ==, approx(5.5));
+
+    TEST(util::geo::dist(point2, line2), ==, approx(9.01734));
+    TEST(util::geo::dist(line, point), ==, approx(5.5));
+
     // standard point/polygon
     TEST(util::geo::withinDist(point, polyWithInner, 1), ==, approx(0.5));
     TEST(util::geo::withinDist(polyWithInner, point, 1), ==, approx(0.5));
 
     TEST(util::geo::dist(point, polyWithInner), ==, approx(0.5));
     TEST(util::geo::dist(polyWithInner, point), ==, approx(0.5));
+
+    // standard line/polygon
+    TEST(util::geo::withinDist(line2, polyWithInner, 100), ==, approx(0.25));
+    TEST(util::geo::withinDist(polyWithInner, line2, 100), ==, approx(0.25));
+
+    TEST(util::geo::dist(line2, polyWithInner), ==, approx(0.25));
+    TEST(util::geo::dist(polyWithInner, line2), ==, approx(0.25));
   }
 }
