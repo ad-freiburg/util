@@ -712,6 +712,7 @@ template <typename T>
 double angBetween(const Point<T>& p1, const MultiPoint<T>& points);
 
 double dist(double x1, double y1, double x2, double y2);
+double distSquared(double x1, double y1, double x2, double y2);
 
 template <typename T, typename DF>
 double dist(const LineSegment<T>& ls, const Point<T>& p, DF&& distFunc);
@@ -773,9 +774,7 @@ double dist(const Point<T>& p, const LineSegment<T>& ls, DF&& distFunc);
 
 template <typename T>
 double dist(const Point<T>& p, const LineSegment<T>& ls) {
-  return dist(p, ls,
-              std::function<double(const Point<T>&, const Point<T>&, double)>(
-                  euclideanDistFunc<T>));
+  return distToSegment(ls, p);
 }
 
 template <typename T, typename DF>
@@ -789,51 +788,35 @@ template <typename T, typename DF>
 double dist(const Point<T>& p, const Line<T>& l, DF&& distFunc);
 
 template <typename T>
-double dist(const Point<T>& p, const Line<T>& l) {
-  return dist(p, l,
-              std::function<double(const Point<T>&, const Point<T>&, double)>(
-                  euclideanDistFunc<T>));
-}
+double dist(const Point<T>& p, const Line<T>& l);
 
 template <typename T, typename DF>
 double dist(const Line<T>& l, const Point<T>& p, DF&& distFunc);
 
 template <typename T>
 double dist(const Line<T>& l, const Point<T>& p) {
-  return dist(l, p,
-              std::function<double(const Point<T>&, const Point<T>&, double)>(
-                  euclideanDistFunc<T>));
+  return dist(p, l);
 }
 
 template <typename T, typename DF>
 double dist(const LineSegment<T>& ls, const Line<T>& l, DF&& distFunc);
 
 template <typename T>
-double dist(const LineSegment<T>& ls, const Line<T>& l) {
-  return dist(ls, l,
-              std::function<double(const Point<T>&, const Point<T>&, double)>(
-                  euclideanDistFunc<T>));
-}
+double dist(const LineSegment<T>& ls, const Line<T>& l);
 
 template <typename T, typename DF>
 double dist(const Line<T>& l, const LineSegment<T>& ls, DF&& distFunc);
 
 template <typename T>
 double dist(const Line<T>& l, const LineSegment<T>& ls) {
-  return dist(l, ls,
-              std::function<double(const Point<T>&, const Point<T>&, double)>(
-                  euclideanDistFunc<T>));
+  return dist(ls, l);
 }
 
 template <typename T, typename DF>
 double dist(const Line<T>& la, const Line<T>& lb, DF&& distFunc);
 
 template <typename T>
-double dist(const Line<T>& la, const Line<T>& lb) {
-  return dist(la, lb,
-              std::function<double(const Point<T>&, const Point<T>&, double)>(
-                  euclideanDistFunc<T>));
-}
+double dist(const Line<T>& la, const Line<T>& lb);
 
 template <template <typename> class GeometryA,
           template <typename> class GeometryB, typename T, typename DF>
@@ -895,38 +878,22 @@ template <typename T>
 double crossProd(const Point<T>& p, const LineSegment<T>& ls);
 
 template <typename T>
-double dist(const Polygon<T>& poly1, const Polygon<T>& poly2) {
-  return dist(poly1, poly2,
-              std::function<double(const Point<T>&, const Point<T>&, double)>(
-                  euclideanDistFunc<T>));
-}
+double dist(const Polygon<T>& poly1, const Polygon<T>& poly2);
 
 template <typename T>
-double dist(const Line<T>& l, const Polygon<T>& poly) {
-  return dist(l, poly,
-              std::function<double(const Point<T>&, const Point<T>&, double)>(
-                  euclideanDistFunc<T>));
-}
+double dist(const Line<T>& l, const Polygon<T>& poly);
 
 template <typename T>
 double dist(const Polygon<T>& poly, const Line<T>& l) {
-  return dist(poly, l,
-              std::function<double(const Point<T>&, const Point<T>&, double)>(
-                  euclideanDistFunc<T>));
+  return dist(l, poly);
 }
 
 template <typename T>
-double dist(const Point<T>& p, const Polygon<T>& poly) {
-  return dist(p, poly,
-              std::function<double(const Point<T>&, const Point<T>&, double)>(
-                  euclideanDistFunc<T>));
-}
+double dist(const Point<T>& p, const Polygon<T>& poly);
 
 template <typename T>
 double dist(const Polygon<T>& poly, const Point<T>& p) {
-  return dist(poly, p,
-              std::function<double(const Point<T>&, const Point<T>&, double)>(
-                  euclideanDistFunc<T>));
+  return dist(p, poly);
 }
 
 template <typename T>
@@ -1124,9 +1091,11 @@ double distToSegment(const LineSegment<T>& ls, const Point<T>& p,
 double distToSegment(double lax, double lay, double lbx, double lby, double px,
                      double py);
 
+double distToSegmentSquared(double lax, double lay, double lbx, double lby, double px,
+                     double py);
+
 template <typename T>
-double distToSegment(const Point<T>& la, const Point<T>& lb,
-                     const Point<T>& p);
+double distToSegment(const Point<T>& la, const Point<T>& lb, const Point<T>& p);
 
 template <typename T>
 double distToSegment(const LineSegment<T>& ls, const Point<T>& p);

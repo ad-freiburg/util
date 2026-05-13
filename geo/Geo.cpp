@@ -82,13 +82,28 @@ double util::geo::distToSegment(double lax, double lay, double lbx, double lby,
 
   double t = ((px - lax) * (lbx - lax) + (py - lay) * (lby - lay)) / d;
 
-  if (t < 0) {
+  if (t < 0)
     return dist(px, py, lax, lay);
-  } else if (t > 1) {
+  else if (t > 1)
     return dist(px, py, lbx, lby);
-  }
 
   return dist(px, py, (lax + t * (lbx - lax)), (lay + t * (lby - lay)));
+}
+
+// _____________________________________________________________________________
+double util::geo::distToSegmentSquared(double lax, double lay, double lbx,
+                                       double lby, double px, double py) {
+  double d = distSquared(lax, lay, lbx, lby);
+  if (d == 0) return distSquared(px, py, lax, lay);
+
+  double t = ((px - lax) * (lbx - lax) + (py - lay) * (lby - lay)) / d;
+
+  if (t < 0)
+    return distSquared(px, py, lax, lay);
+  else if (t > 1)
+    return distSquared(px, py, lbx, lby);
+
+  return distSquared(px, py, (lax + t * (lbx - lax)), (lay + t * (lby - lay)));
 }
 
 // _____________________________________________________________________________
@@ -99,6 +114,11 @@ util::geo::WKTType util::geo::getWKTType(const char* c) {
 // _____________________________________________________________________________
 util::geo::WKTType util::geo::getWKTType(const std::string& str) {
   return util::geo::getWKTType(str.c_str(), 0);
+}
+
+// _____________________________________________________________________________
+double util::geo::distSquared(double x1, double y1, double x2, double y2) {
+  return (x2 - x1) * (x2 - x1) + (y2 - y1) * (y2 - y1);
 }
 
 // _____________________________________________________________________________

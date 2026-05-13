@@ -3470,11 +3470,19 @@ double dist(const Point<T>& p, const LineSegment<T>& ls, DF&& distFunc) {
 template <typename T>
 double dist(const LineSegment<T>& ls1, const LineSegment<T>& ls2) {
   if (intersects(ls1, ls2)) return 0;
-  double d1 = dist(ls1.first, ls2);
-  double d2 = dist(ls1.second, ls2);
-  double d3 = dist(ls2.first, ls1);
-  double d4 = dist(ls2.second, ls1);
-  return std::min(d1, std::min(d2, (std::min(d3, d4))));
+  double d1 = distToSegmentSquared(ls2.first.getX(), ls2.first.getY(),
+                                   ls2.second.getX(), ls2.second.getY(),
+                                   ls1.first.getX(), ls1.first.getY());
+  double d2 = distToSegmentSquared(ls2.first.getX(), ls2.first.getY(),
+                                   ls2.second.getX(), ls2.second.getY(),
+                                   ls1.second.getX(), ls1.second.getY());
+  double d3 = distToSegmentSquared(ls1.first.getX(), ls1.first.getY(),
+                                   ls1.second.getX(), ls1.second.getY(),
+                                   ls2.first.getX(), ls2.first.getY());
+  double d4 = distToSegmentSquared(ls1.first.getX(), ls1.first.getY(),
+                                   ls1.second.getX(), ls1.second.getY(),
+                                   ls2.second.getX(), ls2.second.getY());
+  return sqrt(std::min(d1, std::min(d2, (std::min(d3, d4)))));
 }
 
 // _____________________________________________________________________________
@@ -3482,10 +3490,18 @@ template <typename T, typename DF>
 double withinDist(const LineSegment<T>& ls1, const LineSegment<T>& ls2,
                   DF&& distFunc, double maxD) {
   if (intersects(ls1, ls2)) return 0;
-  double d1 = dist(ls1.first, ls2);
-  double d2 = dist(ls1.second, ls2);
-  double d3 = dist(ls2.first, ls1);
-  double d4 = dist(ls2.second, ls1);
+  double d1 = distToSegmentSquared(ls2.first.getX(), ls2.first.getY(),
+                                   ls2.second.getX(), ls2.second.getY(),
+                                   ls1.first.getX(), ls1.first.getY());
+  double d2 = distToSegmentSquared(ls2.first.getX(), ls2.first.getY(),
+                                   ls2.second.getX(), ls2.second.getY(),
+                                   ls1.second.getX(), ls1.second.getY());
+  double d3 = distToSegmentSquared(ls1.first.getX(), ls1.first.getY(),
+                                   ls1.second.getX(), ls1.second.getY(),
+                                   ls2.first.getX(), ls2.first.getY());
+  double d4 = distToSegmentSquared(ls1.first.getX(), ls1.first.getY(),
+                                   ls1.second.getX(), ls1.second.getY(),
+                                   ls2.second.getX(), ls2.second.getY());
 
   if (d1 <= d2 && d1 <= d3 && d1 <= d4) {
     auto p2 = projectOn(ls2.first, ls1.first, ls2.second);
@@ -3510,29 +3526,7 @@ double withinDist(const LineSegment<T>& ls1, const LineSegment<T>& ls2,
 template <typename T, typename DF>
 double dist(const LineSegment<T>& ls1, const LineSegment<T>& ls2,
             DF&& distFunc) {
-  if (intersects(ls1, ls2)) return 0;
-  double d1 = dist(ls1.first, ls2);
-  double d2 = dist(ls1.second, ls2);
-  double d3 = dist(ls2.first, ls1);
-  double d4 = dist(ls2.second, ls1);
-
-  if (d1 <= d2 && d1 <= d3 && d1 <= d4) {
-    auto p2 = projectOn(ls2.first, ls1.first, ls2.second);
-    return distFunc(ls1.first, p2, std::numeric_limits<double>::max());
-  }
-
-  if (d2 <= d1 && d2 <= d3 && d2 <= d4) {
-    auto p2 = projectOn(ls2.first, ls1.second, ls2.second);
-    return distFunc(ls1.second, p2, std::numeric_limits<double>::max());
-  }
-
-  if (d3 <= d1 && d3 <= d2 && d3 <= d4) {
-    auto p2 = projectOn(ls1.first, ls2.first, ls1.second);
-    return distFunc(ls2.first, p2, std::numeric_limits<double>::max());
-  }
-
-  auto p2 = projectOn(ls1.first, ls2.second, ls1.second);
-  return distFunc(ls2.second, p2, std::numeric_limits<double>::max());
+  return withinDist(ls1, ls2, distFunc, std::numeric_limits<double>::max());
 }
 
 // _____________________________________________________________________________
@@ -3541,6 +3535,18 @@ double dist(const Point<T>& p, const Line<T>& l, DF&& distFunc) {
   double d = std::numeric_limits<double>::infinity();
   for (size_t i = 1; i < l.size(); i++) {
     double dTmp = distToSegment(l[i - 1], l[i], p, distFunc);
+    if (dTmp < EPSILON) return 0;
+    if (dTmp < d) d = dTmp;
+  }
+  return d;
+}
+
+// _____________________________________________________________________________
+template <typename T>
+double dist(const Point<T>& p, const Line<T>& l) {
+  double d = std::numeric_limits<double>::infinity();
+  for (size_t i = 1; i < l.size(); i++) {
+    double dTmp = distToSegment(l[i - 1], l[i], p);
     if (dTmp < EPSILON) return 0;
     if (dTmp < d) d = dTmp;
   }
@@ -3566,6 +3572,18 @@ double dist(const LineSegment<T>& ls, const Line<T>& l, DF&& distFunc) {
 }
 
 // _____________________________________________________________________________
+template <typename T>
+double dist(const LineSegment<T>& ls, const Line<T>& l) {
+  double d = std::numeric_limits<double>::infinity();
+  for (size_t i = 1; i < l.size(); i++) {
+    double dTmp = dist(ls, LineSegment<T>(l[i - 1], l[i]));
+    if (dTmp < EPSILON) return 0;
+    if (dTmp < d) d = dTmp;
+  }
+  return d;
+}
+
+// _____________________________________________________________________________
 template <typename T, typename DF>
 double dist(const Line<T>& l, const LineSegment<T>& ls, DF&& distFunc) {
   return dist(ls, l, distFunc);
@@ -3577,6 +3595,18 @@ double dist(const Line<T>& la, const Line<T>& lb, DF&& distFunc) {
   double d = std::numeric_limits<double>::infinity();
   for (size_t i = 1; i < la.size(); i++) {
     double dTmp = dist(LineSegment<T>(la[i - 1], la[i]), lb, distFunc);
+    if (dTmp < EPSILON) return 0;
+    if (dTmp < d) d = dTmp;
+  }
+  return d;
+}
+
+// _____________________________________________________________________________
+template <typename T>
+double dist(const Line<T>& la, const Line<T>& lb) {
+  double d = std::numeric_limits<double>::infinity();
+  for (size_t i = 1; i < la.size(); i++) {
+    double dTmp = dist(LineSegment<T>(la[i - 1], la[i]), lb);
     if (dTmp < EPSILON) return 0;
     if (dTmp < d) d = dTmp;
   }
@@ -3834,6 +3864,30 @@ double dist(const Polygon<T>& poly1, const Polygon<T>& poly2, DF&& distFunc) {
 }
 
 // _____________________________________________________________________________
+template <typename T>
+double dist(const Polygon<T>& poly1, const Polygon<T>& poly2) {
+  if (intersects(poly1, poly2) || intersects(poly2, poly1)) return 0;
+
+  double d = dist(poly1.getOuter(), poly2.getOuter());
+
+  for (const auto& inner1 : poly1.getInners()) {
+    d = std::min(d, dist(poly2.getOuter(), inner1));
+  }
+
+  for (const auto& inner2 : poly2.getInners()) {
+    d = std::min(d, dist(poly1.getOuter(), inner2));
+  }
+
+  for (const auto& inner1 : poly1.getInners()) {
+    for (const auto& inner2 : poly2.getInners()) {
+      d = std::min(d, dist(inner1, inner2));
+    }
+  }
+
+  return d;
+}
+
+// _____________________________________________________________________________
 template <typename T, typename DF>
 double dist(const Line<T>& l, const Polygon<T>& poly, DF&& distFunc) {
   if (intersects(l, poly)) return 0;
@@ -3841,6 +3895,19 @@ double dist(const Line<T>& l, const Polygon<T>& poly, DF&& distFunc) {
 
   for (const auto& inner : poly.getInners()) {
     d = std::min(d, dist(l, inner, distFunc));
+  }
+
+  return d;
+}
+
+// _____________________________________________________________________________
+template <typename T>
+double dist(const Line<T>& l, const Polygon<T>& poly) {
+  if (intersects(l, poly)) return 0;
+  double d = dist(l, poly.getOuter());
+
+  for (const auto& inner : poly.getInners()) {
+    d = std::min(d, dist(l, inner));
   }
 
   return d;
@@ -3860,6 +3927,19 @@ double dist(const Point<T>& p, const Polygon<T>& poly, DF&& distFunc) {
 
   for (const auto& inner : poly.getInners()) {
     d = std::min(d, dist(p, inner, distFunc));
+  }
+
+  return d;
+}
+
+// _____________________________________________________________________________
+template <typename T>
+double dist(const Point<T>& p, const Polygon<T>& poly) {
+  if (contains(p, poly)) return 0;
+  double d = dist(p, poly.getOuter());
+
+  for (const auto& inner : poly.getInners()) {
+    d = std::min(d, dist(p, inner));
   }
 
   return d;
@@ -3893,8 +3973,8 @@ double dist(const Point<T>& p1, const Point<T>& p2, DF&& distFunc) {
 
 // _____________________________________________________________________________
 template <typename T, typename PF, typename DF>
-double withinDist(const Point<T>& p1, const Point<T>& p2, double, PF&&,
-                  double, DF&& distFunc) {
+double withinDist(const Point<T>& p1, const Point<T>& p2, double, PF&&, double,
+                  DF&& distFunc) {
   return distFunc(p1, p2, std::numeric_limits<T>::max());
 }
 
@@ -4665,7 +4745,8 @@ double distToSegment(const LineSegment<T>& ls, const Point<T>& p,
 
 // _____________________________________________________________________________
 template <typename T>
-double distToSegment(const Point<T>& la, const Point<T>& lb, const Point<T>& p) {
+double distToSegment(const Point<T>& la, const Point<T>& lb,
+                     const Point<T>& p) {
   return distToSegment(la.getX(), la.getY(), lb.getX(), lb.getY(), p.getX(),
                        p.getY());
 }
@@ -6285,7 +6366,7 @@ inline bool processActives(util::geo::IntervalIdx<T, LineSegment<T>>& actives,
 
   for (const auto& seg : segs) {
     if (minDistUpdated) {
-      // clear activesB on the way
+      // clear activesB along the way
       if (withinDist(seg.v, thisBox, distFunc, minDist) > minDist) {
         const auto& segBox = util::geo::getBoundingBox(seg.v);
         actives.erase(
