@@ -137,6 +137,9 @@ const static double AVERAGING_STEP = 20;
 
 const static double M_PER_DEG = 111319.4;
 
+const static double EQUATORIAL_RAD = 6378137.0;
+const static double MIN_METERS_PER_LAT_RAD = 6356752.314245;
+
 enum WKTType : uint8_t {
   NONE = 0,
   POINT = 1,

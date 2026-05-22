@@ -5536,7 +5536,7 @@ double haversine(T lat1, T lon1, T lat2, T lon2) {
   const double sDLon = sin(dLon / 2);
 
   const double a = (sDLat * sDLat) + (sDLon * sDLon) * cos(lat1) * cos(lat2);
-  return 6378137.0 * 2.0 * atan2(sqrt(a), sqrt(1.0 - a));
+  return EQUATORIAL_RAD * 2.0 * atan2(sqrt(a), sqrt(1.0 - a));
 }
 
 // _____________________________________________________________________________
@@ -5723,7 +5723,7 @@ double accFrechetDistCHav(const Line<T>& a, const Line<T>& b, double d) {
 // _____________________________________________________________________________
 template <typename T>
 Point<T> latLngToWebMerc(double lat, double lng) {
-  double x = 6378137.0 * lng * 0.017453292519943295;
+  double x = EQUATORIAL_RAD * lng * 0.017453292519943295;
   double sina = sin(lat * 0.017453292519943295);
 
   double y = 3189068.5 * log((1.0 + sina) / (1.0 - sina));
@@ -5741,7 +5741,7 @@ Point<T> latLngToWebMerc(Point<T> lngLat) {
 template <typename T>
 Point<T> webMercToLatLng(double x, double y) {
   const double lat =
-      (1.5707963267948966 - (2.0 * atan(exp(-y / 6378137.0)))) * IRAD;
+      (1.5707963267948966 - (2.0 * atan(exp(-y / EQUATORIAL_RAD)))) * IRAD;
   const double lon = x / 111319.4907932735677;
   return Point<T>(lon, lat);
 }
@@ -5792,7 +5792,7 @@ template <typename G>
 double webMercDistFactor(const G& a) {
   // euclidean distance on web mercator is in meters on equator,
   // and proportional to cos(lat) in both y directions
-  double et = exp(a.getY() / 6378137.0);
+  double et = exp(a.getY() / EQUATORIAL_RAD);
   return 2 * et / (et * et + 1);
 }
 
@@ -5837,7 +5837,7 @@ double withinDist(const std::vector<XSortedTuple<T>>& ls1,
     return std::numeric_limits<double>::max();
   }
 
-  // if we already have to correct distance from probing, return
+  // if we already have the correct distance from probing, return
   if (std::get<2>(probeDists)) return minDist;
 
   // minimum euclidean X dist based on bounding boxes for better y padding
@@ -6312,11 +6312,12 @@ std::tuple<double, double, bool> probeDistanceUpperBound(
   double upperBound = std::numeric_limits<double>::infinity();
   double euclideanUpperBound = std::numeric_limits<double>::infinity();
 
-  double percToCheck = sqrt(maxComps * 1.0 / (ls1.size() * 1.0 * ls2.size()));
-  size_t stepA = 1.0 / percToCheck;
-  size_t stepB = 1.0 / percToCheck;
-  if (stepA == 0) stepA = 1;
-  if (stepB == 0) stepB = 1;
+  size_t samplesA = std::max(static_cast<size_t>(1), std::min(ls1.size(), static_cast<size_t>(sqrt(maxComps * 1.0 * ((ls1.size() * 1.0) / (ls2.size() * 1.0))))));
+  size_t samplesB = std::max(static_cast<size_t>(1), std::min(ls2.size(), static_cast<size_t>((maxComps * 1.0) / (samplesA * 1.0))));
+  samplesA = std::max(static_cast<size_t>(1), std::min(ls1.size(), static_cast<size_t>((maxComps * 1.0) / (samplesB * 1.0))));
+
+  size_t stepA = ls1.size() / samplesA;
+  size_t stepB = ls2.size() / samplesB;
 
   // overshoot by one step ensure that we always check against the last element
   for (size_t i = 0; i < ls1.size() + stepA; i += stepA) {
