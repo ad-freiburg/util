@@ -1349,7 +1349,7 @@ double withinDist(const std::vector<XSortedTuple<T>>& ls1,
                   DF&& distFunc);
 
 template <typename T, typename PF, typename DF>
-std::pair<double, bool> withinDist(const XSortedRing<T>& p1,
+std::pair<double, std::pair<bool, bool>> withinDist(const XSortedRing<T>& p1,
                                    const XSortedRing<T>& p2, double maxDist,
                                    PF&& paddingFunc, double maxEuclideanDist,
                                    DF&& distFunc);
