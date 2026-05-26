@@ -3551,7 +3551,9 @@ double dist(const LineSegment<T>& ls1, const LineSegment<T>& ls2,
 // _____________________________________________________________________________
 template <typename T, typename DF>
 double dist(const Point<T>& p, const Line<T>& l, DF&& distFunc) {
-  return withinDist(p, l, std::numeric_limits<double>::infinity(), defaultPaddingFunc<T>, std::numeric_limits<double>::infinity(), distFunc);
+  return withinDist(p, l, std::numeric_limits<double>::infinity(),
+                    defaultPaddingFunc<T>,
+                    std::numeric_limits<double>::infinity(), distFunc);
 }
 
 // _____________________________________________________________________________
@@ -3747,21 +3749,15 @@ double withinDist(const Box<T>& a, const Box<T>& b, DF&& distF, double dMax) {
 // _____________________________________________________________________________
 template <typename T>
 double distSquared(const LineSegment<T>& a, const Box<T>& b) {
-
   double d = std::numeric_limits<double>::infinity();
-  d = std::min(
-      d, util::geo::distSquared(a,
-                         LineSegment<T>{b.getLowerLeft(), b.getUpperLeft()}));
-  d = std::min(
-      d, util::geo::distSquared(a,
-                         LineSegment<T>{b.getUpperLeft(), b.getUpperRight()}));
-  d = std::min(
-      d, util::geo::distSquared(a,
-                         LineSegment<T>{b.getUpperRight(), b.getLowerRight()}));
-  d = std::min(
-      d, util::geo::distSquared(a,
-                         LineSegment<T>{b.getLowerRight(), b.getLowerLeft()}));
-
+  d = std::min(d, util::geo::distSquared(
+                      a, LineSegment<T>{b.getLowerLeft(), b.getUpperLeft()}));
+  d = std::min(d, util::geo::distSquared(
+                      a, LineSegment<T>{b.getUpperLeft(), b.getUpperRight()}));
+  d = std::min(d, util::geo::distSquared(
+                      a, LineSegment<T>{b.getUpperRight(), b.getLowerRight()}));
+  d = std::min(d, util::geo::distSquared(
+                      a, LineSegment<T>{b.getLowerRight(), b.getLowerLeft()}));
 
   return d;
 }
@@ -3769,21 +3765,15 @@ double distSquared(const LineSegment<T>& a, const Box<T>& b) {
 // _____________________________________________________________________________
 template <typename T>
 double dist(const LineSegment<T>& a, const Box<T>& b) {
-
   double d = std::numeric_limits<double>::infinity();
-  d = std::min(
-      d, util::geo::dist(a,
-                         LineSegment<T>{b.getLowerLeft(), b.getUpperLeft()}));
-  d = std::min(
-      d, util::geo::dist(a,
-                         LineSegment<T>{b.getUpperLeft(), b.getUpperRight()}));
-  d = std::min(
-      d, util::geo::dist(a,
-                         LineSegment<T>{b.getUpperRight(), b.getLowerRight()}));
-  d = std::min(
-      d, util::geo::dist(a,
-                         LineSegment<T>{b.getLowerRight(), b.getLowerLeft()}));
-
+  d = std::min(d, util::geo::dist(
+                      a, LineSegment<T>{b.getLowerLeft(), b.getUpperLeft()}));
+  d = std::min(d, util::geo::dist(
+                      a, LineSegment<T>{b.getUpperLeft(), b.getUpperRight()}));
+  d = std::min(d, util::geo::dist(
+                      a, LineSegment<T>{b.getUpperRight(), b.getLowerRight()}));
+  d = std::min(d, util::geo::dist(
+                      a, LineSegment<T>{b.getLowerRight(), b.getLowerLeft()}));
 
   return d;
 }
@@ -3966,7 +3956,9 @@ double dist(const Polygon<T>& poly1, const Polygon<T>& poly2) {
 // _____________________________________________________________________________
 template <typename T, typename DF>
 double dist(const Line<T>& l, const Polygon<T>& poly, DF&& distFunc) {
-  return withinDist(l, poly, std::numeric_limits<double>::max(), defaultPaddingFunc<T>, std::numeric_limits<double>::max(), distFunc);
+  return withinDist(l, poly, std::numeric_limits<double>::max(),
+                    defaultPaddingFunc<T>, std::numeric_limits<double>::max(),
+                    distFunc);
 }
 
 // _____________________________________________________________________________
@@ -3998,7 +3990,9 @@ double withinDist(const Polygon<T>& poly, const Line<T>& l, double maxDist,
 // _____________________________________________________________________________
 template <typename T, typename DF>
 double dist(const Point<T>& p, const Polygon<T>& poly, DF&& distFunc) {
-  return withinDist(p, poly, std::numeric_limits<double>::max(), defaultPaddingFunc<T>, std::numeric_limits<double>::max(), distFunc);
+  return withinDist(p, poly, std::numeric_limits<double>::max(),
+                    defaultPaddingFunc<T>, std::numeric_limits<double>::max(),
+                    distFunc);
 }
 
 // _____________________________________________________________________________
@@ -5887,7 +5881,9 @@ double withinDist(const std::vector<XSortedTuple<T>>& ls1,
   if (ls1.size() == 0 || ls2.size() == 0)
     return std::numeric_limits<double>::max();
 
-  auto probeDists = probeDistanceUpperBound(100, ls1, ls2,  boxA, boxB,maxSegLenB, maxSegLenA, maxEuclideanDist, distFunc);
+  auto probeDists =
+      probeDistanceUpperBound(100, ls1, ls2, boxA, boxB, maxSegLenB, maxSegLenA,
+                              maxEuclideanDist, distFunc);
 
   // if we already have the correct distance from probing, return
   if (std::get<2>(probeDists)) {
@@ -6288,8 +6284,8 @@ double withinDist(const XSortedPolygon<T>& p1, const XSortedPolygon<T>& p2,
 
   // rationale: if we are contained in the outer ring, the distance can only be
   // nonzero if we are inside an inner ring. But the distance to this inner ring
-  // cannot be greater than the distance to the outer ring, because otherwise the
-  // inner ring would lie outside the outer ring, which we do not support
+  // cannot be greater than the distance to the outer ring, because otherwise
+  // the inner ring would lie outside the outer ring, which we do not support
   maxDist = std::min(maxDist, outerR.first);
 
   const Box<T>& boxA = p1.boundingBox();
@@ -6371,14 +6367,25 @@ double withinDist(const XSortedLine<T>& ls1, const XSortedLine<T>& ls2,
 template <typename T, typename DF>
 std::tuple<double, double, bool> probeDistanceUpperBound(
     size_t maxComps, const std::vector<XSortedTuple<T>>& ls1,
-    const std::vector<XSortedTuple<T>>& ls2, const Box<T>& boxA, const Box<T>& boxB, T maxSegLenA, T maxSegLenB, double euclideanUpperBound, DF&& distFunc) {
-
+    const std::vector<XSortedTuple<T>>& ls2, const Box<T>& boxA,
+    const Box<T>& boxB, T maxSegLenA, T maxSegLenB, double euclideanUpperBound,
+    DF&& distFunc) {
   double upperBound = std::numeric_limits<double>::infinity();
   double eucSquared = euclideanUpperBound * euclideanUpperBound;
 
-  size_t samplesA = std::max(static_cast<size_t>(1), std::min(ls1.size(), static_cast<size_t>(sqrt(maxComps * 1.0 * ((ls1.size() * 1.0) / (ls2.size() * 1.0))))));
-  size_t samplesB = std::max(static_cast<size_t>(1), std::min(ls2.size(), static_cast<size_t>((maxComps * 1.0) / (samplesA * 1.0))));
-  samplesA = std::max(static_cast<size_t>(1), std::min(ls1.size(), static_cast<size_t>((maxComps * 1.0) / (samplesB * 1.0))));
+  size_t samplesA = std::max(
+      static_cast<size_t>(1),
+      std::min(ls1.size(), static_cast<size_t>(sqrt(
+                               maxComps * 1.0 *
+                               ((ls1.size() * 1.0) / (ls2.size() * 1.0))))));
+  size_t samplesB = std::max(
+      static_cast<size_t>(1),
+      std::min(ls2.size(),
+               static_cast<size_t>((maxComps * 1.0) / (samplesA * 1.0))));
+  samplesA = std::max(
+      static_cast<size_t>(1),
+      std::min(ls1.size(),
+               static_cast<size_t>((maxComps * 1.0) / (samplesB * 1.0))));
 
   size_t stepA = ls1.size() / samplesA;
   size_t stepB = ls2.size() / samplesB;
@@ -6386,14 +6393,20 @@ std::tuple<double, double, bool> probeDistanceUpperBound(
   // overshoot by one step ensure that we always check against the last element
   for (size_t i = 0; i < ls1.size(); i += stepA) {
     if (ls1[i].out()) continue;
-    if (ls1[i].p.getX() + maxSegLenA + euclideanUpperBound < boxB.getLowerLeft().getX()) continue;
-    if (ls1[i].p.getX() - euclideanUpperBound > boxB.getUpperRight().getX()) break;
+    if (ls1[i].p.getX() + maxSegLenA + euclideanUpperBound <
+        boxB.getLowerLeft().getX())
+      continue;
+    if (ls1[i].p.getX() - euclideanUpperBound > boxB.getUpperRight().getX())
+      break;
     if (distSquared(ls1[i].seg(), boxB) > eucSquared) continue;
 
     for (size_t j = 0; j < ls2.size(); j += stepB) {
       if (ls2[j].out()) continue;
-      if (ls2[j].p.getX() + maxSegLenB + euclideanUpperBound < boxA.getLowerLeft().getX()) continue;
-      if (ls2[j].p.getX() - euclideanUpperBound > boxA.getUpperRight().getX()) break;
+      if (ls2[j].p.getX() + maxSegLenB + euclideanUpperBound <
+          boxA.getLowerLeft().getX())
+        continue;
+      if (ls2[j].p.getX() - euclideanUpperBound > boxA.getUpperRight().getX())
+        break;
       double euD = distSquared(ls1[i].seg(), ls2[j].seg());
 
       // early abort
