@@ -5891,6 +5891,7 @@ double withinDist(const std::vector<XSortedTuple<T>>& ls1,
     return std::get<0>(probeDists);
   }
 
+
   double minDist = std::get<0>(probeDists);
   double euclideanDistUpperBound = std::get<1>(probeDists);
 
@@ -5955,6 +5956,9 @@ double withinDist(const std::vector<XSortedTuple<T>>& ls1,
   // segments active by their padded bounding box
   util::geo::IntervalIdx<T, LineSegment<T>> activesA, activesB;
 
+  // return buffer for interval idx
+  std::vector<util::geo::IntervalVal<T, LineSegment<T>>> segs;
+
   // ls2 is always padded
 
   std::queue<XSortedTuple<T>> deferredOutLs2;
@@ -5999,7 +6003,7 @@ double withinDist(const std::vector<XSortedTuple<T>>& ls1,
         if (processActives(activesA, ls2DefSeg, euclideanDistUpperBound,
                            minDist, maxDist, padding, xPadding, yPadding,
                            euclideanXDistLowerBound, euclideanYDistLowerBound,
-                           box, boxA, boxB, paddingFunc, distFunc))
+                           box, boxA, boxB, segs, paddingFunc, distFunc))
           return minDist;
       }
 
@@ -6044,7 +6048,7 @@ double withinDist(const std::vector<XSortedTuple<T>>& ls1,
         if (processActives(activesB, ls1seg, euclideanDistUpperBound,
                            minDist, maxDist, padding, xPadding, yPadding,
                            euclideanXDistLowerBound, euclideanYDistLowerBound,
-                           box, boxB, boxA, paddingFunc, distFunc))
+                           box, boxB, boxA, segs, paddingFunc, distFunc))
           return minDist;
       }
 
@@ -6073,7 +6077,7 @@ double withinDist(const std::vector<XSortedTuple<T>>& ls1,
           if (processActives(activesA, deferredOutLs2.front().seg(),
                              euclideanDistUpperBound, minDist, maxDist, padding,
                              xPadding, yPadding, euclideanXDistLowerBound,
-                             euclideanYDistLowerBound, box, boxA, boxB,
+                             euclideanYDistLowerBound, box, boxA, boxB, segs,
                              paddingFunc, distFunc))
             return minDist;
 
@@ -6237,6 +6241,7 @@ template <typename T, typename PF, typename DF>
 double withinDist(const XSortedLine<T>& a, const XSortedPolygon<T>& b,
                   double maxDist, PF&& paddingFunc, double maxEuclideanDist,
                   DF&& distFunc) {
+  if (b.getInners().size() == 0 && util::geo::ringContains(a.rawLine().front().seg().second, b.getOuter(), 0).second) return 0;
   auto r = withinDist(a, b.getOuter(), maxDist, paddingFunc, maxEuclideanDist,
                       distFunc);
   if (!r.second) return r.first;
@@ -6283,6 +6288,9 @@ double withinDist(const XSortedPolygon<T>& p1, const XSortedPolygon<T>& p2,
                   DF&& distFunc) {
   if (p1.getOuter().rawRing().size() == 0) return maxDist + 1;
   if (p2.getOuter().rawRing().size() == 0) return maxDist + 1;
+
+  if (p1.getInners().size() == 0 && util::geo::ringContains(p2.getOuter().rawRing().front().seg().second, p1.getOuter(), 0).second) return 0;
+  if (p2.getInners().size() == 0 && util::geo::ringContains(p1.getOuter().rawRing().front().seg().second, p2.getOuter(), 0).second) return 0;
 
   auto outerR = withinDist(p1.getOuter(), p2.getOuter(), maxDist, paddingFunc,
                            maxEuclideanDist, distFunc);
@@ -6409,7 +6417,6 @@ std::tuple<double, double, bool> probeDistanceUpperBound(
   size_t stepA = ls1.size() / samplesA;
   size_t stepB = ls2.size() / samplesB;
 
-  // overshoot by one step ensure that we always check against the last element
   for (size_t i = 0; i < ls1.size(); i += stepA) {
     if (ls1[i].out()) continue;
     if (ls1[i].p.getX() + maxSegLenA + euclideanUpperBound <
@@ -6433,7 +6440,7 @@ std::tuple<double, double, bool> probeDistanceUpperBound(
       // early abort
       if (euD == 0) return {0, 0, true};
 
-      if (euD >= eucSquared) continue;
+      if (euD > eucSquared) continue;
 
       eucSquared = euD;
       euclideanUpperBound = sqrt(eucSquared);
@@ -6455,7 +6462,9 @@ inline bool processActives(util::geo::IntervalIdx<T, LineSegment<T>>& actives,
                            const double euclideanXDistLowerBound,
                            const double euclideanYDistLowerBound,
                            const Box<T>& box, const util::geo::Box<T>& otherBox,
-                           const Box<T>& thisBox, PF&& paddingFunc,
+                           const Box<T>& thisBox,
+                           std::vector<IntervalVal<T, LineSegment<T>>>& segs,
+                           PF&& paddingFunc,
                            DF&& distFunc) {
   double locMinEuclideanXDist =
       dist(LineSegment<T>{Point<T>{curSeg.first.getX(), 0},
@@ -6465,10 +6474,9 @@ inline bool processActives(util::geo::IntervalIdx<T, LineSegment<T>>& actives,
 
   double locYPadding = (sqrt(std::max(
       0.0, padding * padding - locMinEuclideanXDist * locMinEuclideanXDist)));
-  auto padBox = pad(box, xPadding, locYPadding);
 
-  const auto& segs = actives.overlap_find_all(
-      {padBox.getLowerLeft().getY(), padBox.getUpperRight().getY()});
+  actives.overlap_find_all(
+      {box.getLowerLeft().getY() - locYPadding, box.getUpperRight().getY() + locYPadding}, segs);
 
   bool minDistUpdated = false;
 
@@ -6482,6 +6490,7 @@ inline bool processActives(util::geo::IntervalIdx<T, LineSegment<T>>& actives,
             seg.v);
         continue;
       }
+      minDistUpdated = false;
     }
 
     bool localUpdated = false;

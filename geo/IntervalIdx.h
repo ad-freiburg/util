@@ -81,6 +81,19 @@ class IntervalIdx {
     return ret;
   }
 
+  // find all intervals, with their values, which overlap s= [a, b]
+  void overlap_find_all(
+      const std::pair<K, K> s, std::vector<IntervalVal<K, V>>& ret) const {
+    ret.clear();
+    ret.reserve(15);
+
+    // retrieve from each sub-list
+    for (size_t j = 0; j < _ts.size(); j++) get(s, _ivals[j], _ts[j], ret);
+
+    // also retrieve from largest sub-list
+    get(s, _ivals.back(), _maxSpan, ret);
+  }
+
   // find all intervals, with their values, which overlap s= [a, b], call
   // callback with each
   bool overlap_find_all(const std::pair<K, K> s,
