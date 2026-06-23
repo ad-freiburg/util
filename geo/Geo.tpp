@@ -5274,6 +5274,13 @@ double accFrechetDistCHav(const Line<T>& a, const Line<T>& b, double d) {
 // _____________________________________________________________________________
 template <typename T>
 Point<T> latLngToWebMerc(double lat, double lng) {
+  // clamp latitudes to web mercator range
+  if (lat > 85.05112878) lat = 85.05112878;
+  if (lat < -85.05112878) lat = -85.05112878;
+
+  // restrict longitude to [-180, 180], wrap around at boundaries
+  lng = std::remainder(lng, 360.0);
+
   double x = 6378137.0 * lng * 0.017453292519943295;
   double sina = sin(lat * 0.017453292519943295);
 
