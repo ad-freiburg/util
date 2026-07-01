@@ -5101,8 +5101,17 @@ template <typename T>
 Line<T> densify(const Line<T>& l, double d) {
   if (!l.size()) return l;
 
+  // compute number of required points
+  size_t exp = l.size();
+  for (size_t i = 1; i < l.size(); i++) {
+    exp += dist(l[i - 1], l[i]) / d;
+  }
+
+  // shortcut
+  if (exp == l.size()) return l;
+
   Line<T> ret;
-  ret.reserve(l.size());
+  ret.reserve(exp);
   ret.push_back(l.front());
 
   for (size_t i = 1; i < l.size(); i++) {
