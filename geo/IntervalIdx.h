@@ -150,10 +150,7 @@ class IntervalIdx {
     // than the right bound of val (from then on, no intersects are possible
     // any more)
     while (i != idx.end() && i->l <= val.second) {
-      if ((val.first >= i->l && val.first <= i->r) || (val.second <= i->r) ||
-          (i->l >= val.first) || (i->r >= val.first && i->r <= val.second)) {
-        ret.push_back(*i);
-      }
+      if (i->r >= val.first) ret.push_back(*i);
       i++;
     }
   }
@@ -164,10 +161,7 @@ class IntervalIdx {
     auto i = idx.lower_bound({val.first - t, 0, {}});
 
     while (i != idx.end() && i->l <= val.second) {
-      if ((val.first >= i->l && val.first <= i->r) || (val.second <= i->r) ||
-          (i->l >= val.first) || (i->r >= val.first && i->r <= val.second)) {
-        if (cb(*i)) return true;
-      }
+      if (i->r >= val.first && cb(*i)) return true;
       i++;
     }
     return false;

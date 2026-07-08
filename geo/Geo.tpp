@@ -3544,6 +3544,53 @@ double withinDist(const LineSegment<T>& ls1, const LineSegment<T>& ls2,
 
 // _____________________________________________________________________________
 template <typename T, typename DF>
+double dist(const LineSegment<T>& ls1, const LineSegment<T>& ls2, double padding,
+            DF&& distFunc, double maxD, double& euclideanDist) {
+  if (intersects(ls1, ls2)) {
+    euclideanDist = 0;
+    return 0;
+  }
+
+  double d1 = distToSegmentSquared(ls2.first.getX(), ls2.first.getY(),
+                                   ls2.second.getX(), ls2.second.getY(),
+                                   ls1.first.getX(), ls1.first.getY());
+  double d2 = distToSegmentSquared(ls2.first.getX(), ls2.first.getY(),
+                                   ls2.second.getX(), ls2.second.getY(),
+                                   ls1.second.getX(), ls1.second.getY());
+  double d3 = distToSegmentSquared(ls1.first.getX(), ls1.first.getY(),
+                                   ls1.second.getX(), ls1.second.getY(),
+                                   ls2.first.getX(), ls2.first.getY());
+  double d4 = distToSegmentSquared(ls1.first.getX(), ls1.first.getY(),
+                                   ls1.second.getX(), ls1.second.getY(),
+                                   ls2.second.getX(), ls2.second.getY());
+
+  double minSq = std::min(d1, std::min(d2, std::min(d3, d4)));
+  euclideanDist = sqrt(minSq);
+
+  // skip costly computation entirely
+  if (euclideanDist > padding) return std::numeric_limits<double>::max();
+
+  if (d1 <= d2 && d1 <= d3 && d1 <= d4) {
+    auto p2 = projectOn(ls2.first, ls1.first, ls2.second);
+    return distFunc(ls1.first, p2, maxD);
+  }
+
+  if (d2 <= d1 && d2 <= d3 && d2 <= d4) {
+    auto p2 = projectOn(ls2.first, ls1.second, ls2.second);
+    return distFunc(ls1.second, p2, maxD);
+  }
+
+  if (d3 <= d1 && d3 <= d2 && d3 <= d4) {
+    auto p2 = projectOn(ls1.first, ls2.first, ls1.second);
+    return distFunc(ls2.first, p2, maxD);
+  }
+
+  auto p2 = projectOn(ls1.first, ls2.second, ls1.second);
+  return distFunc(ls2.second, p2, maxD);
+}
+
+// _____________________________________________________________________________
+template <typename T, typename DF>
 double dist(const LineSegment<T>& ls1, const LineSegment<T>& ls2,
             DF&& distFunc) {
   return withinDist(ls1, ls2, distFunc, std::numeric_limits<double>::max());
@@ -5010,10 +5057,10 @@ Box<T> getBoundingBox(const Polygon<T>& pol) {
 // _____________________________________________________________________________
 template <typename T>
 Box<T> getBoundingBox(const LineSegment<T>& ls) {
-  Box<T> b;
-  b = extendBox(ls.first, b);
-  b = extendBox(ls.second, b);
-  return b;
+  return Box<T>({std::min(ls.first.getX(), ls.second.getX()),
+                 std::min(ls.first.getY(), ls.second.getY())},
+                {std::max(ls.first.getX(), ls.second.getX()),
+                 std::max(ls.first.getY(), ls.second.getY())});
 }
 
 // _____________________________________________________________________________
@@ -6022,7 +6069,6 @@ double withinDist(const std::vector<XSortedTuple<T>>& ls1,
       }
 
       i++;
-
     } else if ((ls2X < ls1X || (ls2X == ls1X && (!ls2Out || ls1Out))) &&
                (ls2X <= ls2OutX)) {
       // advance ls2
@@ -6446,6 +6492,9 @@ inline bool processActives(util::geo::IntervalIdx<T, LineSegment<T>>& actives,
   double locYPadding = (sqrt(std::max(
       0.0, padding * padding - locMinEuclideanXDist * locMinEuclideanXDist)));
 
+  double lowerY = box.getLowerLeft().getY();
+  double upperY = box.getUpperRight().getY();
+
   actives.overlap_find_all({box.getLowerLeft().getY() - locYPadding,
                             box.getUpperRight().getY() + locYPadding},
                            segs);
@@ -6464,12 +6513,12 @@ inline bool processActives(util::geo::IntervalIdx<T, LineSegment<T>>& actives,
 
     bool localUpdated = false;
 
-    double euclideanDist = dist(curSeg, seg.v);
+    double euclideanDist;
+    double segD = util::geo::dist(curSeg, seg.v, padding, distFunc,
+                                  std::min(minDist, maxDist), euclideanDist);
     if (euclideanDist <= padding) {
-      double dist = util::geo::withinDist(curSeg, seg.v, distFunc,
-                                          std::min(minDist, maxDist));
-      if (dist < minDist) {
-        minDist = dist;
+      if (segD < minDist) {
+        minDist = segD;
         minDistUpdated = true;
         localUpdated = true;
       }
