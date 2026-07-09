@@ -1,3 +1,9 @@
+# temporary
+cmake_minimum_required(VERSION 3.16)
+project(util_standalone_test CXX)
+enable_testing()
+# -----
+
 file(GLOB util_SRC *.cpp 3rdparty/*.cpp log/*.cpp)
 add_library(pb_util ${util_SRC})
 target_include_directories(pb_util PUBLIC

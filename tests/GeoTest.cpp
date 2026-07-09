@@ -428,6 +428,38 @@ void GeoTest::run() {
   }
 
   {
+    // Test with IRI in front of WKT.
+    
+    TEST(util::geo::getWKTType("<http://www.opengis.net/def/crs/OGC/1.3/CRS84> MULTIPOINT(0 0, 1 1)", 0), ==,
+         WKTType::MULTIPOINT);
+    TEST(util::geo::getWKTType("<http://www.opengis.net/def/crs/OGC/1.3/CRS84>MULTIPOINT(0 0, 1 1)", 0), ==,
+         WKTType::MULTIPOINT);
+    TEST(util::geo::getWKTType(" <http://www.opengis.net/def/crs/OGC/1.3/CRS84> MULTIPOINT(0 0, 1 1)", 0), ==,
+         WKTType::MULTIPOINT);
+    TEST(util::geo::getWKTType("<http://www.opengis.net/def/crs/OGC/1.3/CRS84> MMULTIPOINT(0 0, 1 1)", 0), ==,
+         WKTType::MULTIPOINT);
+    TEST(util::geo::getWKTType("<http://www.opengis.net/def/crs/OGC/1.3/CRS84>MMULTIPOINT(0 0, 1 1)", 0), ==,
+         WKTType::MULTIPOINT);
+    TEST(util::geo::getWKTType("<http://www.opengis.net/def/crs/OGC/1.3/CRS84>  MMULTIPOINT (0 0, 1 1)", 0), ==,
+         WKTType::MULTIPOINT);
+    TEST(util::geo::getWKTType("<http://www.opengis.net/def/crs/OGC/1.3/CRS84>  MMULTIPOINT Z(0 0, 1 1)", 0), ==,
+         WKTType::MULTIPOINT);
+    TEST(util::geo::getWKTType("<http://www.opengis.net/def/crs/OGC/1.3/CRS84>  MULTIPOINT Z(0 0, 1 1)", 0), ==,
+         WKTType::MULTIPOINT);
+
+    TEST(util::geo::getWKTType("<http://www.opengis.net/def/crs/EPSG/0/4326> POINT(1 1)", 0), ==, WKTType::POINT);
+    TEST(util::geo::getWKTType("<http://www.opengis.net/def/crs/EPSG/0/4326> POIN (1 1)", 0), ==, WKTType::NONE);
+    TEST(util::geo::getWKTType("<http://www.opengis.net/def/crs/EPSG/0/4326> POINT (1 1)", 0), ==, WKTType::POINT);
+    TEST(util::geo::getWKTType("<http://www.opengis.net/def/crs/EPSG/0/4326> Point (1 1)", 0), ==, WKTType::POINT);
+    TEST(util::geo::getWKTType("<http://www.opengis.net/def/crs/EPSG/0/4326> POINT Z(1 1)", 0), ==, WKTType::POINT);
+    TEST(util::geo::getWKTType("<http://www.opengis.net/def/crs/EPSG/0/4326>   POINT Z (1 1)", 0), ==, WKTType::POINT);
+    TEST(util::geo::getWKTType("<http://www.opengis.net/def/crs/EPSG/0/4326> POINT ZM(1 1)", 0), ==, WKTType::POINT);
+    TEST(util::geo::getWKTType("<http://www.opengis.net/def/crs/EPSG/0/4326> Point MZ (1 1)", 0), ==, WKTType::POINT);
+    TEST(util::geo::getWKTType("<http://www.opengis.net/def/crs/EPSG/0/4326> mPoint MZ (1 1)", 0), ==, WKTType::POINT);
+    TEST(util::geo::getWKTType("<http://www.opengis.net/def/crs/EPSG/0/4326> oint MZ (1 1)", 0), ==, WKTType::NONE);
+  }
+
+  {
     auto a =
         polygonFromWKT<int>("POLYGON((0 0, 1 0, 1 3, 3 3, 3 5, 0 5, 0 0))");
     auto b = polygonFromWKT<int>("POLYGON((1 3, 2 3, 3 4, 1 4, 1 3))");

@@ -35,12 +35,31 @@ double util::geo::crossProd(double x1, double y1, double x2, double y2) {
 
 // _____________________________________________________________________________
 util::geo::WKTType util::geo::getWKTType(const char* c, const char** endr) {
-  while ((*c == ' ' || *c == '\n' || *c == '\t' || *c == '\r') ||
-         ((*c) == '"') || ((*c) == '\'') ||
-         (tolower(*c) == 'm' && ((*(c + 1) == ' ' || *(c + 1) == '\n' ||
-                                  *(c + 1) == '\t' || *(c + 1) == '\r') ||
-                                 tolower(*(c + 1)) != 'u')))
-    c++;  // skip possible whitespace and/or measurement M
+  bool measurement = false;
+  while(true) {
+
+    // TODO: how do we handle another <, is there need for further checks?
+
+    // Check for possible IRI and skip it.
+    if (*c == '<') {
+      if (measurement) break; // Measurement M cannot be in front of IRI.
+      while (*c && *c != '>') c++;
+      if (*c == '>') c++; // Also skip '>'.
+      continue;
+    }
+    if ((*c == ' ' || *c == '\n' || *c == '\t' || *c == '\r') ||
+         ((*c) == '"') || ((*c) == '\'')) {
+      c++; // skip possible whitespace
+      continue;
+    }
+    if ((tolower(*c) == 'm' && ((*(c + 1) == ' ' || *(c + 1) == '\n' || *(c + 1) == '\t' || 
+          *(c + 1) == '\r') || tolower(*(c + 1)) != 'u'))) {
+      c++; // skip possible measurement M
+      measurement = true;
+      continue;
+    }
+    break;
+  }
   if (strncicmp("POINT", c, 5) == 0) {
     if (endr) (*endr) = c + 5;
     return POINT;
