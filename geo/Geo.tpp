@@ -5294,7 +5294,7 @@ Point<T> latLngToWebMerc(double lat, double lng) {
   double sina = sin(lat * 0.017453292519943295);
 
   double y = 3189068.5 * log((1.0 + sina) / (1.0 - sina));
-  return Point<T>(x, y);
+  return Point<T>(x, y, WEB_MERCATOR);
 }
 
 // _____________________________________________________________________________
@@ -5322,15 +5322,17 @@ Point<T> swapCoords(double x, double y) {
 // _____________________________________________________________________________
 template <typename T>
 Point<T> lngLatToLatLng(Point<T> lngLat) {
-  // TODO: need change CRS of point?
-  return swapCoords<T>(lngLat.getX(), lngLat.getY());
+  Point<T> result = swapCoords<T>(lngLat.getX(), lngLat.getY());
+  result.setCRS(WGS84); // Change from CRS84 to WGS84.
+  return result;
 }
 
 // _____________________________________________________________________________
 template <typename T>
 Point<T> latLngToLngLat(Point<T> latLng) {
-  // TODO: need change CRS of point?
-  return swapCoords<T>(latLng.getX(), latLng.getY());
+  Point<T> result = swapCoords<T>(latLng.getX(), latLng.getY());
+  result.setCRS(CRS84); // Change from WGS84 to CRS84.
+  return result;
 }
 
 // _____________________________________________________________________________

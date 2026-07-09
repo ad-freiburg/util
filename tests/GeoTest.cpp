@@ -6797,12 +6797,16 @@ void GeoTest::run() {
 
   {
     // Test transformations.
-    util::geo::Point<double> lngLatPoint = Point<double>(4.0, 5.0);
+    util::geo::Point<double> lngLatPoint = Point<double>(4.0, 5.0); // CRS84
     TEST(util::geo::lngLatToLatLng(lngLatPoint).getX(), ==, 5.0);
     TEST(util::geo::lngLatToLatLng(lngLatPoint).getY(), ==, 4.0);
+    TEST(util::geo::lngLatToLatLng(lngLatPoint).getCRS(), ==, 2); // WGS84
 
-    util::geo::Point<double> latLngPoint = Point<double>(5.0, 4.0);
+    util::geo::Point<double> latLngPoint = Point<double>(5.0, 4.0); // WGS84
     TEST(util::geo::latLngToLngLat(latLngPoint).getX(), ==, 4.0);
     TEST(util::geo::latLngToLngLat(latLngPoint).getY(), ==, 5.0);
+    TEST(util::geo::latLngToLngLat(latLngPoint).getCRS(), ==, 1); // CRS84
+
+    TEST(util::geo::latLngToWebMerc(lngLatPoint).getCRS(), ==, 3) // WEB_MERCATOR
   }
 }
