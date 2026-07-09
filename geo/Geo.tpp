@@ -5315,6 +5315,26 @@ Point<T> webMercToLatLng(double x, double y) {
 
 // _____________________________________________________________________________
 template <typename T>
+Point<T> swapCoords(double x, double y) {
+  return Point<T>(y, x);
+}
+
+// _____________________________________________________________________________
+template <typename T>
+Point<T> lngLatToLatLng(Point<T> lngLat) {
+  // TODO: need change CRS of point?
+  return swapCoords<T>(lngLat.getX(), lngLat.getY());
+}
+
+// _____________________________________________________________________________
+template <typename T>
+Point<T> latLngToLngLat(Point<T> latLng) {
+  // TODO: need change CRS of point?
+  return swapCoords<T>(latLng.getX(), latLng.getY());
+}
+
+// _____________________________________________________________________________
+template <typename T>
 double webMercMeterDist(const Point<T>& a, const Point<T>& b) {
   const auto llA = webMercToLatLng<T>(a.getX(), a.getY());
   const auto llB = webMercToLatLng<T>(b.getX(), b.getY());

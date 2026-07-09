@@ -1248,6 +1248,15 @@ template <typename T>
 Point<T> webMercToLatLng(double x, double y);
 
 template <typename T>
+Point<T> swapCoords(double x, double y);
+
+template <typename T>
+Point<T> lngLatToLatLng(Point<T> lngLat);
+
+template <typename T>
+Point<T> latLngToLngLat(Point<T> latLng);
+
+template <typename T>
 double webMercMeterDist(const Point<T>& a, const Point<T>& b);
 
 template <typename G1, typename G2>

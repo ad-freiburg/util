@@ -6794,4 +6794,15 @@ void GeoTest::run() {
     TEST(util::geo::dist(collection2, collection3), ==, approx(sqrt(2)));
     TEST(util::geo::dist(collection3, collection2), ==, approx(sqrt(2)));
   }
+
+  {
+    // Test transformations.
+    util::geo::Point<double> lngLatPoint = Point<double>(4.0, 5.0);
+    TEST(util::geo::lngLatToLatLng(lngLatPoint).getX(), ==, 5.0);
+    TEST(util::geo::lngLatToLatLng(lngLatPoint).getY(), ==, 4.0);
+
+    util::geo::Point<double> latLngPoint = Point<double>(5.0, 4.0);
+    TEST(util::geo::latLngToLngLat(latLngPoint).getX(), ==, 4.0);
+    TEST(util::geo::latLngToLngLat(latLngPoint).getY(), ==, 5.0);
+  }
 }
