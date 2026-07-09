@@ -141,6 +141,17 @@ enum WKTType : uint8_t {
   COLLECTION = 7
 };
 
+enum CRSType : uint8_t {
+  UNSUPPORTED = 0,
+  CRS84 = 1,
+  WGS84 = 2,
+  WEB_MERCATOR = 3,
+  PLACEHOLDER1 = 4,
+  PLACEHOLDER2 = 5,
+  PLACEHOLDER3 = 6,
+  PLACEHOLDER4 = 7
+};
+
 uint8_t boolArrToInt8(const std::array<bool, 8> arr);
 
 template <typename T>
@@ -903,6 +914,12 @@ WKTType getWKTType(const char* c, const char** endr);
 WKTType getWKTType(const char* c);
 
 WKTType getWKTType(const std::string& str);
+
+CRSType getCRSType(const char* c, const char** endr);
+
+CRSType getCRSType(const char* c);
+
+CRSType getCRSType(const std::string& str);
 
 template <typename T, typename F>
 Collection<T> collectionFromWKTProj(const char* c, const char** endr,

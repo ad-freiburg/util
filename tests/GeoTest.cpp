@@ -429,7 +429,7 @@ void GeoTest::run() {
 
   {
     // Test with IRI in front of WKT.
-    
+
     TEST(util::geo::getWKTType("<http://www.opengis.net/def/crs/OGC/1.3/CRS84> MULTIPOINT(0 0, 1 1)", 0), ==,
          WKTType::MULTIPOINT);
     TEST(util::geo::getWKTType("<http://www.opengis.net/def/crs/OGC/1.3/CRS84>MULTIPOINT(0 0, 1 1)", 0), ==,
@@ -457,6 +457,26 @@ void GeoTest::run() {
     TEST(util::geo::getWKTType("<http://www.opengis.net/def/crs/EPSG/0/4326> Point MZ (1 1)", 0), ==, WKTType::POINT);
     TEST(util::geo::getWKTType("<http://www.opengis.net/def/crs/EPSG/0/4326> mPoint MZ (1 1)", 0), ==, WKTType::POINT);
     TEST(util::geo::getWKTType("<http://www.opengis.net/def/crs/EPSG/0/4326> oint MZ (1 1)", 0), ==, WKTType::NONE);
+  }
+
+  {
+    // Test CRS Type
+    TEST(util::geo::getCRSType("<http://www.opengis.net/def/crs/OGC/1.3/CRS84> MULTIPOINT(0 0, 1 1)", 0), ==,
+         CRSType::CRS84);
+    TEST(util::geo::getCRSType("<http://www.opengis.net/def/crs/OGC/1.3/CRS84>MULTIPOINT(0 0, 1 1)", 0), ==,
+         CRSType::CRS84);
+
+    TEST(util::geo::getCRSType("<http://www.opengis.net/def/crs/EPSG/0/4326> POINT(1 1)", 0), ==, CRSType::WGS84);
+    TEST(util::geo::getCRSType("<http://www.opengis.net/def/crs/EPSG/0/4326> POINT (1 1)", 0), ==, CRSType::WGS84);
+
+    TEST(util::geo::getCRSType("<http://www.opengis.net/def/crs/EPSG/0/3857>LINESTRING(0 0, 1 1)", 0), ==, CRSType::WEB_MERCATOR);
+    TEST(util::geo::getCRSType("<http://www.opengis.net/def/crs/EPSG/0/3857>MLINESTRING(0 0, 1 1)", 0), ==, CRSType::WEB_MERCATOR);
+
+    TEST(util::geo::getCRSType("MULTIPOINT(0 0, 1 1)", 0), ==, CRSType::CRS84);
+    TEST(util::geo::getCRSType("MMULTIPOINT(0 0, 1 1)", 0), ==, CRSType::CRS84);
+
+    TEST(util::geo::getCRSType("<http://www.opengis.net/def/crs/EPSG/0/28992> LINESTRING(0 0, 1 1)", 0), ==, CRSType::UNSUPPORTED);
+    TEST(util::geo::getCRSType("<http://www.opengis.net/def/crs/EPSG/0/28992> MLINESTRING(0 0, 1 1)", 0), ==, CRSType::UNSUPPORTED);
   }
 
   {

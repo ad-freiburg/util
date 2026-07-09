@@ -93,6 +93,32 @@ util::geo::WKTType util::geo::getWKTType(const char* c, const char** endr) {
   return NONE;
 }
 
+
+// _____________________________________________________________________________
+util::geo::CRSType util::geo::getCRSType(const char* c, const char** endr) {
+  while ((*c == ' ' || *c == '\n' || *c == '\t' || *c == '\r') ||
+         ((*c) == '"') || ((*c) == '\''))
+    c++; // Skip possible whitespace.
+
+  if (*c != '<') return CRS84;  // Default.
+
+  if (strncicmp("<http://www.opengis.net/def/crs/OGC/1.3/CRS84>", c, 46) == 0) {
+    if (endr) (*endr) = c + 46;
+    return CRS84;
+  }
+  if (strncicmp("<http://www.opengis.net/def/crs/EPSG/0/4326>", c, 44) == 0) {
+    if (endr) (*endr) = c + 44;
+    return WGS84;
+  }
+  if (strncicmp("<http://www.opengis.net/def/crs/EPSG/0/3857>", c, 44) == 0) {
+    if (endr) (*endr) = c + 44;
+    return WEB_MERCATOR;
+  }
+
+  if (endr) (*endr) = 0;
+  return UNSUPPORTED;
+}
+
 // _____________________________________________________________________________
  double util::geo::distToSegment(double lax, double lay, double lbx, double lby,
                             double px, double py) {
@@ -114,8 +140,16 @@ util::geo::WKTType util::geo::getWKTType(const char* c, const char** endr) {
 util::geo::WKTType util::geo::getWKTType(const char* c) { return util::geo::getWKTType(c, 0); }
 
 // _____________________________________________________________________________
+util::geo::CRSType util::geo::getCRSType(const char* c) { return util::geo::getCRSType(c, 0); }
+
+// _____________________________________________________________________________
 util::geo::WKTType util::geo::getWKTType(const std::string& str) {
   return util::geo::getWKTType(str.c_str(), 0);
+}
+
+// _____________________________________________________________________________
+util::geo::CRSType util::geo::getCRSType(const std::string& str) {
+  return util::geo::getCRSType(str.c_str(), 0);
 }
 
 // _____________________________________________________________________________
