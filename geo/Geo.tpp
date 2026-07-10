@@ -5310,7 +5310,13 @@ Point<T> webMercToLatLng(double x, double y) {
   const double lat =
       (1.5707963267948966 - (2.0 * atan(exp(-y / 6378137.0)))) * IRAD;
   const double lon = x / 111319.4907932735677;
-  return Point<T>(lon, lat);
+  return Point<T>(lon, lat, CRS84);
+}
+
+// _____________________________________________________________________________
+template <typename T>
+Point<T> webMercToLatLng(Point<T> webMerc) {
+  return webMercToLatLng<T>(webMerc.getX(), webMerc.getY());
 }
 
 // _____________________________________________________________________________
@@ -5333,6 +5339,64 @@ Point<T> latLngToLngLat(Point<T> latLng) {
   Point<T> result = swapCoords<T>(latLng.getX(), latLng.getY());
   result.setCRS(CRS84); // Change from WGS84 to CRS84.
   return result;
+}
+
+// _____________________________________________________________________________
+// This function can be used to transform a `Point` with any valid `CRSType` into 
+// a `Point` of a desired valid `CRSType` `crs`.
+template <typename T>
+Point<T> convertToCRS(Point<T> p, CRSType goalCRS) {
+  CRSType ownCRS = CRSType{p.getCRS()};
+  if (ownCRS == goalCRS) return p;
+  if (goalCRS == UNSUPPORTED) assert(false); // TODO
+  
+  // TODO: what happens in default assert(false)?
+  switch (ownCRS)
+  {
+  case CRS84:
+    switch (goalCRS)
+    {
+    case WGS84:
+      return lngLatToLatLng(p);
+      break;
+    case WEB_MERCATOR:
+      return latLngToWebMerc(p);
+      break;
+    default:
+      break;
+    }
+    break;
+  case WGS84:
+    switch (goalCRS)
+    {
+    case CRS84:
+      return latLngToLngLat(p);
+      break;
+    case WEB_MERCATOR:
+      return latLngToWebMerc(latLngToLngLat(p));
+      break;
+    default:
+      break;
+    }
+    break;
+  case WEB_MERCATOR:
+    switch (goalCRS)
+    {
+    case CRS84:
+      return webMercToLatLng(p);
+      break;
+    case WGS84:
+      return lngLatToLatLng(webMercToLatLng(p));
+      break;
+    default:
+      break;
+    }
+    break;
+  
+  default:
+    break;
+  }
+  return p; // TODO:
 }
 
 // _____________________________________________________________________________
