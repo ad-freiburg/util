@@ -6848,4 +6848,17 @@ void GeoTest::run() {
     TEST(util::geo::convertToCRS(webMercPoint, util::geo::WEB_MERCATOR).getY(), ==, approx(557305.2572745768));
     TEST(util::geo::convertToCRS(webMercPoint, util::geo::WEB_MERCATOR).getCRS(), ==, util::geo::WEB_MERCATOR);
   }
+
+  {
+    // Test Proj
+    auto projCRS84 = util::geo::pointFromWKT<double>("<http://www.opengis.net/def/crs/OGC/1.3/CRS84> POINT(2 3)");
+    TEST(projCRS84.getCRS(), ==, CRS84);
+    TEST(util::geo::getWKT(projCRS84), ==, "POINT(2 3)");
+    auto projWGS84 = util::geo::pointFromWKT<double>("<http://www.opengis.net/def/crs/EPSG/0/4326> POINT(3 2)");
+    TEST(projWGS84.getCRS(), ==, WGS84);
+    TEST(util::geo::getWKT(projWGS84), ==, "<http://www.opengis.net/def/crs/EPSG/0/4326> POINT(3 2)");
+    auto projWebMerc = util::geo::pointFromWKT<double>("<http://www.opengis.net/def/crs/EPSG/0/3857> POINT(222638.98 334111.17)");
+    TEST(projWebMerc.getCRS(), ==, WEB_MERCATOR);
+    TEST(util::geo::getWKT(projWebMerc), ==, "<http://www.opengis.net/def/crs/EPSG/0/3857> POINT(222638.98 334111.17)");
+  }
 }

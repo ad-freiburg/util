@@ -505,7 +505,22 @@ RotatedBox<T> shrink(const RotatedBox<T>& b, double d) {
 // _____________________________________________________________________________
 template <typename T>
 std::string getWKT(const Point<T>& p, uint16_t prec) {
-  std::string ret = "POINT(";
+  std::string ret;
+  uint8_t crs = p.getCRS();
+  // Reattach IRI if CRS of point is not default (CRS84).
+  switch (crs)
+  {
+  case 2:
+    ret = "<http://www.opengis.net/def/crs/EPSG/0/4326> POINT(";
+    break;
+  case 3:
+    ret = "<http://www.opengis.net/def/crs/EPSG/0/3857> POINT(";
+    break;
+  
+  default:
+    ret = "POINT(";
+    break;
+  }
   ret.reserve(6 + prec + 3 + prec + 3 + 1);
   ret.append(formatFloat(p.getX(), prec));
   ret.push_back(' ');
@@ -3767,7 +3782,13 @@ Point<T> pointFromWKT(const char* c, const char** endr) {
 // _____________________________________________________________________________
 template <typename T>
 Point<T> pointFromWKT(std::string wkt) {
-  return pointFromWKT<T>(wkt.c_str(), 0);
+  // First extract CRS and make according proj function.
+  auto crs = getCRSType(wkt);
+  auto proj = [crs](const Point<double>& p) {
+    return Point<T>{static_cast<T>(p.getX()), static_cast<T>(p.getY()), crs};
+  };
+  // Directly call the function with the proj function.
+  return pointFromWKTProj<T>(wkt.c_str(), 0, proj);
 }
 
 // _____________________________________________________________________________
