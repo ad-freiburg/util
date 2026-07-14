@@ -13,15 +13,13 @@ namespace geo {
 template <typename T>
 class Point {
  public:
-  Point() : _x(0), _y(0), _crs(1) {}
-  Point(T x, T y, uint8_t crs = 1) : _x(x), _y(y), _crs(crs) {}
+  Point() : _x(0), _y(0) {}
+  Point(T x, T y) : _x(x), _y(y) {}
   const T& getX() const { return _x; }
   const T& getY() const { return _y; }
-  const uint8_t& getCRS() const { return _crs; }
 
   void setX(T x) { _x = x; }
   void setY(T y) { _y = y; }
-  void setCRS(uint8_t crs) { _crs = crs; }
 
   Point<T> operator+(const Point<T>& p) const {
     return Point<T>(_x + p.getX(), _y + p.getY());
@@ -43,9 +41,6 @@ class Point {
 
  private:
   T _x, _y;
-  // As defined in `Geo.h` as `CRSType` enum.
-  // `_crs = 1` is default `CRS84`.
-  uint8_t _crs; 
 };
 
 template <typename T>

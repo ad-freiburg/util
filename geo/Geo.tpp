@@ -506,8 +506,8 @@ RotatedBox<T> shrink(const RotatedBox<T>& b, double d) {
 template <typename T>
 std::string getWKT(const Point<T>& p, uint16_t prec) {
   std::string ret;
-  uint8_t crs = p.getCRS();
-  // Reattach IRI if CRS of point is not default (CRS84).
+  // TODO: Reattach IRI if CRS of point is not default (CRS84).
+  /*
   switch (crs)
   {
   case 2:
@@ -521,6 +521,8 @@ std::string getWKT(const Point<T>& p, uint16_t prec) {
     ret = "POINT(";
     break;
   }
+  */
+  ret = "POINT(";
   ret.reserve(6 + prec + 3 + prec + 3 + 1);
   ret.append(formatFloat(p.getX(), prec));
   ret.push_back(' ');
@@ -3782,10 +3784,10 @@ Point<T> pointFromWKT(const char* c, const char** endr) {
 // _____________________________________________________________________________
 template <typename T>
 Point<T> pointFromWKT(std::string wkt) {
-  // First extract CRS and make according proj function.
-  auto crs = getCRSType(wkt);
+  CRSType crs = getCRSType(wkt);
   auto proj = [crs](const Point<double>& p) {
-    return Point<T>{static_cast<T>(p.getX()), static_cast<T>(p.getY()), crs};
+    auto converted = convertToCRS<double>(p, crs, WEB_MERCATOR);
+    return Point<T>{static_cast<T>(converted.getX()), static_cast<T>(converted.getY())};
   };
   // Directly call the function with the proj function.
   return pointFromWKTProj<T>(wkt.c_str(), 0, proj);
@@ -5315,7 +5317,7 @@ Point<T> latLngToWebMerc(double lat, double lng) {
   double sina = sin(lat * 0.017453292519943295);
 
   double y = 3189068.5 * log((1.0 + sina) / (1.0 - sina));
-  return Point<T>(x, y, WEB_MERCATOR);
+  return Point<T>(x, y);
 }
 
 // _____________________________________________________________________________
@@ -5331,7 +5333,7 @@ Point<T> webMercToLatLng(double x, double y) {
   const double lat =
       (1.5707963267948966 - (2.0 * atan(exp(-y / 6378137.0)))) * IRAD;
   const double lon = x / 111319.4907932735677;
-  return Point<T>(lon, lat, CRS84);
+  return Point<T>(lon, lat);
 }
 
 // _____________________________________________________________________________
@@ -5349,30 +5351,25 @@ Point<T> swapCoords(double x, double y) {
 // _____________________________________________________________________________
 template <typename T>
 Point<T> lngLatToLatLng(Point<T> lngLat) {
-  Point<T> result = swapCoords<T>(lngLat.getX(), lngLat.getY());
-  result.setCRS(WGS84); // Change from CRS84 to WGS84.
-  return result;
+  return swapCoords<T>(lngLat.getX(), lngLat.getY());
 }
 
 // _____________________________________________________________________________
 template <typename T>
 Point<T> latLngToLngLat(Point<T> latLng) {
-  Point<T> result = swapCoords<T>(latLng.getX(), latLng.getY());
-  result.setCRS(CRS84); // Change from WGS84 to CRS84.
-  return result;
+  return swapCoords<T>(latLng.getX(), latLng.getY());
 }
 
 // _____________________________________________________________________________
 // This function can be used to transform a `Point` with any valid `CRSType` into 
 // a `Point` of a desired valid `CRSType` `crs`.
 template <typename T>
-Point<T> convertToCRS(Point<T> p, CRSType goalCRS) {
-  CRSType ownCRS = CRSType{p.getCRS()};
-  if (ownCRS == goalCRS) return p;
+Point<T> convertToCRS(const Point<T>& p, CRSType baseCRS, CRSType goalCRS) {
+  if (baseCRS == goalCRS) return p;
   if (goalCRS == UNSUPPORTED) assert(false); // TODO
   
   // TODO: what happens in default assert(false)?
-  switch (ownCRS)
+  switch (baseCRS)
   {
   case CRS84:
     switch (goalCRS)

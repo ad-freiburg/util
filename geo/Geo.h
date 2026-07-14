@@ -1257,10 +1257,10 @@ template <typename T>
 Point<T> lngLatToLatLng(Point<T> lngLat);
 
 template <typename T>
-Point<T> latLngToLngLat(Point<T> latLng);
+Point<T> latLngToLngLat(Point<T> latLng);<
 
 template <typename T>
-Point<T> convertToCRS(Point<T> p, CRSType crs);
+Point<T> convertToCRS(const Point<T>& p, CRSType baseCrs, CRSType goalCrs);
 
 template <typename T>
 double webMercMeterDist(const Point<T>& a, const Point<T>& b);
