@@ -55,7 +55,7 @@ class Polygon {
   const std::vector<Ring<T>>& getInners() const { return _inners; }
   std::vector<Ring<T>>& getInners() { return _inners; }
 
-  size_t getSize() const {
+  size_t size() const {
     size_t ret = _outer.size();
     for (const auto& inner : _inners) ret += inner.size();
     return ret;
@@ -434,8 +434,12 @@ class XSortedPolygon {
   bool empty() const { return _outer.rawRing().size() == 0; };
 
   size_t size() const {
-    // TODO: also count inner sizes!
-    return _outer.rawRing().size();
+    size_t size = _outer.rawRing().size();
+
+    for (const auto& inner : _inners) {
+      size += inner.rawRing().size();
+    }
+    return size;
   }
 
   const XSortedRing<T>& getOuter() const { return _outer; }

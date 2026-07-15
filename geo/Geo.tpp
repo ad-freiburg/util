@@ -29,6 +29,9 @@
 namespace util {
 namespace geo {
 
+const static size_t EST_CHECKS_THRESHOLD_XSORTED = 1000;
+const static size_t EST_MULTI_CHECKS_THRESHOLD_XSORTED = 16;
+
 // _____________________________________________________________________________
 template <typename T>
 Box<T> pad(const Box<T>& box, double xPadding, double yPadding) {
@@ -1105,6 +1108,44 @@ double withinDist(const XSortedCollection<T>& a, const XSortedCollection<T>& b,
   }
 
   return minDist;
+}
+
+// _____________________________________________________________________________
+template <typename T, typename PF, typename DF,
+          template <typename> class Geometry>
+double withinDist(const Collection<T>& a, const Geometry<T>& b, double maxDist,
+                  PF&& paddingFunc, double maxEuclideanDist, DF&& distFunc) {
+  return withinDist(b, XSortedCollection<T>(a), maxDist, paddingFunc,
+                    maxEuclideanDist, distFunc);
+}
+
+// _____________________________________________________________________________
+template <typename T, typename PF, typename DF,
+          template <typename> class Geometry>
+double withinDist(const Collection<T>& a, const std::vector<Geometry<T>>& b,
+                  double maxDist, PF&& paddingFunc, double maxEuclideanDist,
+                  DF&& distFunc) {
+  return withinDist(XSortedCollection<T>(b), XSortedCollection<T>(a), maxDist,
+                    paddingFunc, maxEuclideanDist, distFunc);
+}
+
+// _____________________________________________________________________________
+template <typename T, typename PF, typename DF,
+          template <typename> class Geometry>
+double withinDist(const std::vector<Geometry<T>>& b, const Collection<T>& a,
+                  double maxDist, PF&& paddingFunc, double maxEuclideanDist,
+                  DF&& distFunc) {
+  return withinDist(XSortedCollection<T>(b), XSortedCollection<T>(a), maxDist,
+                    paddingFunc, maxEuclideanDist, distFunc);
+}
+
+// _____________________________________________________________________________
+template <typename T, typename PF, typename DF>
+double withinDist(const Collection<T>& a, const Collection<T>& b,
+                  double maxDist, PF&& paddingFunc, double maxEuclideanDist,
+                  DF&& distFunc) {
+  return withinDist(XSortedCollection<T>(a), XSortedCollection<T>(b), maxDist,
+                    paddingFunc, maxEuclideanDist, distFunc);
 }
 
 // _____________________________________________________________________________
@@ -3544,8 +3585,8 @@ double withinDist(const LineSegment<T>& ls1, const LineSegment<T>& ls2,
 
 // _____________________________________________________________________________
 template <typename T, typename DF>
-double dist(const LineSegment<T>& ls1, const LineSegment<T>& ls2, double padding,
-            DF&& distFunc, double maxD, double& euclideanDist) {
+double dist(const LineSegment<T>& ls1, const LineSegment<T>& ls2,
+            double padding, DF&& distFunc, double maxD, double& euclideanDist) {
   if (intersects(ls1, ls2)) {
     euclideanDist = 0;
     return 0;
@@ -3613,6 +3654,10 @@ double dist(const Point<T>& p, const Line<T>& l) {
 // _____________________________________________________________________________
 template <typename T>
 double withinDist(const Point<T>& p, const Line<T>& l, double maxD) {
+  if (l.size() > 1000) {
+    return withinDist(p, XSortedLine<T>(l), maxD);
+  }
+
   double d = maxD;
   for (size_t i = 1; i < l.size(); i++) {
     double dTmp = distToSegment(l[i - 1], l[i], p);
@@ -3624,8 +3669,13 @@ double withinDist(const Point<T>& p, const Line<T>& l, double maxD) {
 
 // _____________________________________________________________________________
 template <typename T, typename PF, typename DF>
-double withinDist(const Point<T>& p, const Line<T>& l, double maxDist, PF&&,
-                  double, DF&& distFunc) {
+double withinDist(const Point<T>& p, const Line<T>& l, double maxDist,
+                  PF&& paddingFunc, double maxEuclideanDist, DF&& distFunc) {
+  if (l.size() > 1000) {
+    return withinDist(p, XSortedLine<T>(l), maxDist, paddingFunc,
+                      maxEuclideanDist, distFunc);
+  }
+
   double d = maxDist;
   for (size_t i = 1; i < l.size(); i++) {
     double dTmp = distToSegment(l[i - 1], l[i], p, distFunc);
@@ -3954,8 +4004,15 @@ double crossProd(const Point<T>& p, const LineSegment<T>& ls) {
 }
 
 // _____________________________________________________________________________
-template <typename T, typename DF>
-double dist(const Polygon<T>& poly1, const Polygon<T>& poly2, DF&& distFunc) {
+template <typename T, typename DF, typename PF>
+double withinDist(const Polygon<T>& poly1, const Polygon<T>& poly2,
+                  double maxDist, PF&& paddingFunc, double maxEuclideanDist,
+                  DF&& distFunc) {
+  if (poly1.size() * poly2.size() > EST_CHECKS_THRESHOLD_XSORTED) {
+    return withinDist(XSortedPolygon<T>(poly1), XSortedPolygon<T>(poly2),
+                      maxDist, paddingFunc, maxEuclideanDist, distFunc);
+  }
+
   if (intersects(poly1, poly2) || intersects(poly2, poly1)) return 0;
 
   double d = dist(poly1.getOuter(), poly2.getOuter(), distFunc);
@@ -3978,27 +4035,72 @@ double dist(const Polygon<T>& poly1, const Polygon<T>& poly2, DF&& distFunc) {
 }
 
 // _____________________________________________________________________________
-template <typename T>
-double dist(const Polygon<T>& poly1, const Polygon<T>& poly2) {
-  if (intersects(poly1, poly2) || intersects(poly2, poly1)) return 0;
+template <template <typename> class Geometry, typename T, typename DF,
+          typename PF>
+double withinDist(const Geometry<T>& geom,
+                  const std::vector<Geometry<T>>& multi, double maxDist,
+                  PF&& paddingFunc, double maxEuclideanDist, DF&& distFunc) {
+  return withinDist(multi, geom, maxDist, paddingFunc, maxEuclideanDist,
+                    distFunc);
+}
 
-  double d = dist(poly1.getOuter(), poly2.getOuter());
+// _____________________________________________________________________________
+template <template <typename> class Geometry, typename T, typename DF,
+          typename PF>
+double withinDist(const std::vector<Geometry<T>>& multi,
+                  const Geometry<T>& geom, double maxDist, PF&& paddingFunc,
+                  double maxEuclideanDist, DF&& distFunc) {
+  // for larger multigeometries, fall back to pre-sorted implementation to avoid
+  // unnecessary checks
+  if (multi.size() > EST_MULTI_CHECKS_THRESHOLD_XSORTED)
+    return withinDist(XSortedCollection<T>(multi), XSortedCollection<T>(geom),
+                      maxDist, paddingFunc, maxEuclideanDist, distFunc);
 
-  for (const auto& inner1 : poly1.getInners()) {
-    d = std::min(d, dist(poly2.getOuter(), inner1));
+  double minD = nextafter(maxDist, std::numeric_limits<double>::infinity());
+  for (const auto& g1 : multi) {
+    minD = std::min(minD, withinDist(g1, geom, minD, paddingFunc,
+                                     maxEuclideanDist, distFunc));
   }
 
-  for (const auto& inner2 : poly2.getInners()) {
-    d = std::min(d, dist(poly1.getOuter(), inner2));
-  }
+  return minD;
+}
 
-  for (const auto& inner1 : poly1.getInners()) {
-    for (const auto& inner2 : poly2.getInners()) {
-      d = std::min(d, dist(inner1, inner2));
+// _____________________________________________________________________________
+template <template <typename> class Geometry, typename T, typename DF,
+          typename PF>
+double withinDist(const std::vector<Geometry<T>>& multi1,
+                  const std::vector<Geometry<T>>& multi2, double maxDist,
+                  PF&& paddingFunc, double maxEuclideanDist, DF&& distFunc) {
+  // for larger multigeometries, fall back to pre-sorted implementation to avoid
+  // quadratic pairwise checks
+  if (multi1.size() * multi2.size() > EST_MULTI_CHECKS_THRESHOLD_XSORTED)
+    return withinDist(XSortedCollection<T>(multi1),
+                      XSortedCollection<T>(multi2), maxDist, paddingFunc,
+                      maxEuclideanDist, distFunc);
+
+  double minD = nextafter(maxDist, std::numeric_limits<double>::infinity());
+  for (const auto& g1 : multi1) {
+    for (const auto& g2 : multi2) {
+      minD = std::min(minD, withinDist(g1, g2, minD, paddingFunc,
+                                       maxEuclideanDist, distFunc));
     }
   }
 
-  return d;
+  return minD;
+}
+
+// _____________________________________________________________________________
+template <typename T, typename DF>
+double dist(const Polygon<T>& poly1, const Polygon<T>& poly2, DF&& distFunc) {
+  return withinDist(poly1, poly2, std::numeric_limits<double>::max(),
+                    defaultPaddingFunc<T>, std::numeric_limits<double>::max(),
+                    distFunc);
+}
+
+// _____________________________________________________________________________
+template <typename T>
+double dist(const Polygon<T>& poly1, const Polygon<T>& poly2) {
+  return withinDist(poly1, poly2, std::numeric_limits<double>::max());
 }
 
 // _____________________________________________________________________________
@@ -4023,8 +4125,13 @@ double dist(const Polygon<T>& poly, const Line<T>& l, DF&& distFunc) {
 
 // _____________________________________________________________________________
 template <typename T, typename PF, typename DF>
-double withinDist(const Polygon<T>& poly, const Line<T>& l, double,
-                  PF&&, double, DF&& distFunc) {
+double withinDist(const Polygon<T>& poly, const Line<T>& l, double maxDist,
+                  PF&& paddingFunc, double maxEuclideanDist, DF&& distFunc) {
+  if (l.size() * poly.size() > EST_CHECKS_THRESHOLD_XSORTED) {
+    return withinDist(XSortedPolygon<T>(poly), XSortedLine<T>(l), maxDist,
+                      paddingFunc, maxEuclideanDist, distFunc);
+  }
+
   if (intersects(l, poly)) return 0;
   double d = dist(l, poly.getOuter());
 
@@ -4057,8 +4164,13 @@ double dist(const Polygon<T>& poly, const Point<T>& p, DF&& distFunc) {
 
 // _____________________________________________________________________________
 template <typename T, typename PF, typename DF>
-double withinDist(const Point<T>& p, const Polygon<T>& poly, double, PF&&,
-                  double, DF&& distFunc) {
+double withinDist(const Point<T>& p, const Polygon<T>& poly, double maxDist,
+                  PF&& paddingFunc, double maxEuclideanDist, DF&& distFunc) {
+  if (poly.size() > EST_CHECKS_THRESHOLD_XSORTED) {
+    return withinDist(p, XSortedPolygon<T>(poly), maxDist, paddingFunc,
+                      maxEuclideanDist, distFunc);
+  }
+
   if (contains(p, poly)) return 0;
   double d = dist(p, poly.getOuter(), distFunc);
 
@@ -4735,27 +4847,48 @@ RotatedBox<T> simplify(const RotatedBox<T>& g, double) {
 
 // _____________________________________________________________________________
 template <typename T>
-Line<T> simplify(const Line<T>& g, double d) {
+void simplifyInPlaceHelper(Line<T>* g, size_t from, size_t to, double d) {
   // douglas peucker
   double maxd = 0;
   size_t maxi = 0;
-  for (size_t i = 1; i < g.size() - 1; i++) {
-    double dt = distToSegment(g.front(), g.back(), g[i]);
+  for (size_t i = from + 1; i < to - 1; i++) {
+    double dt = distToSegmentSquared((*g)[from], (*g)[to - 1], (*g)[i]);
     if (dt > maxd) {
       maxi = i;
       maxd = dt;
     }
   }
 
-  if (maxd > d) {
-    auto a = simplify(Line<T>(g.begin(), g.begin() + maxi + 1), d);
-    const auto& b = simplify(Line<T>(g.begin() + maxi, g.end()), d);
-    a.insert(a.end(), b.begin() + 1, b.end());
+  if (maxd > d * d && maxi != 0) {
+    // maxi is kept, simplify lower and upper half
+    simplifyInPlaceHelper(g, from, maxi + 1, d);
+    simplifyInPlaceHelper(g, maxi, to, d);
+  } else {
+    // no distance exceeds d, delete all (by setting it to the first,
+    // will be deleted later on)
+    for (size_t i = from + 1; i + 1 < to; i++) (*g)[i] = (*g)[from];
+  }
+}
 
-    return a;
+// _____________________________________________________________________________
+template <typename T>
+Line<T> simplify(Line<T> g, double d) {
+  if (g.size() < 3) return g;
+
+  simplifyInPlaceHelper(&g, 0, g.size(), d);
+
+  // deleted points have been stored in-place by setting them to their
+  // previous point, remove them in-place
+  size_t w = 1;
+  for (size_t i = 1; i < g.size(); i++) {
+    if (g[i] == g[w - 1]) continue;
+    if (w != i) g[w] = g[i];
+    w++;
   }
 
-  return Line<T>{g.front(), g.back()};
+  g.resize(w);
+
+  return g;
 }
 
 // _____________________________________________________________________________
@@ -4763,14 +4896,14 @@ template <typename T>
 Polygon<T> simplify(const Polygon<T>& g, double d) {
   auto simple = simplify(g.getOuter(), d);
   std::rotate(simple.begin(), simple.begin() + simple.size() / 2, simple.end());
-  simple = simplify(simple, d);
+  simple = simplify(std::move(simple), d);
   Polygon<T> ret(simple);
 
   for (const auto& inner : g.getInners()) {
     auto simple = simplify(inner, d);
     std::rotate(simple.begin(), simple.begin() + simple.size() / 2,
                 simple.end());
-    simple = simplify(simple, d);
+    simple = simplify(std::move(simple), d);
     ret.getInners().push_back(simple);
   }
 
@@ -4783,7 +4916,7 @@ std::vector<Geometry<T>> simplify(const std::vector<Geometry<T>>& pol,
                                   double d) {
   std::vector<Geometry<T>> ret;
   ret.reserve(pol.size());
-  for (const auto& g : pol) ret.push_back(simplify(g, d));
+  for (const auto& g : pol) ret.push_back(std::move(simplify(g, d)));
   return ret;
 }
 
@@ -4792,12 +4925,15 @@ template <typename T>
 Collection<T> simplify(const Collection<T>& collection, double d) {
   Collection<T> ret;
   for (const auto& g : collection) {
-    if (g.getType() == 0) ret.push_back(simplify(g.getPoint(), d));
-    if (g.getType() == 1) ret.push_back(simplify(g.getLine(), d));
-    if (g.getType() == 2) ret.push_back(simplify(g.getPolygon(), d));
-    if (g.getType() == 3) ret.push_back(simplify(g.getMultiLine(), d));
-    if (g.getType() == 4) ret.push_back(simplify(g.getMultiPolygon(), d));
-    if (g.getType() == 5) ret.push_back(simplify(g.getCollection(), d));
+    if (g.getType() == 0) ret.push_back(std::move(simplify(g.getPoint(), d)));
+    if (g.getType() == 1) ret.push_back(std::move(simplify(g.getLine(), d)));
+    if (g.getType() == 2) ret.push_back(std::move(simplify(g.getPolygon(), d)));
+    if (g.getType() == 3)
+      ret.push_back(std::move(simplify(g.getMultiLine(), d)));
+    if (g.getType() == 4)
+      ret.push_back(std::move(simplify(g.getMultiPolygon(), d)));
+    if (g.getType() == 5)
+      ret.push_back(std::move(simplify(g.getCollection(), d)));
   }
 
   return ret;
@@ -4860,6 +4996,31 @@ template <typename T>
 double distToSegment(const LineSegment<T>& ls, const Point<T>& p) {
   return distToSegment(ls.first.getX(), ls.first.getY(), ls.second.getX(),
                        ls.second.getY(), p.getX(), p.getY());
+}
+
+// _____________________________________________________________________________
+template <typename T, typename DF>
+double distToSegmentSquared(const LineSegment<T>& ls, const Point<T>& p,
+                            DF&& distFunc) {
+  return distToSegmentSquared(ls.first.getX(), ls.first.getY(),
+                              ls.second.getX(), ls.second.getY(), p.getX(),
+                              p.getY(), distFunc);
+}
+
+// _____________________________________________________________________________
+template <typename T>
+double distToSegmentSquared(const Point<T>& la, const Point<T>& lb,
+                            const Point<T>& p) {
+  return distToSegmentSquared(la.getX(), la.getY(), lb.getX(), lb.getY(),
+                              p.getX(), p.getY());
+}
+
+// _____________________________________________________________________________
+template <typename T>
+double distToSegmentSquared(const LineSegment<T>& ls, const Point<T>& p) {
+  return distToSegmentSquared(ls.first.getX(), ls.first.getY(),
+                              ls.second.getX(), ls.second.getY(), p.getX(),
+                              p.getY());
 }
 
 // _____________________________________________________________________________
@@ -6285,8 +6446,14 @@ template <typename T, typename PF, typename DF>
 double withinDist(const XSortedPolygon<T>& p1, const XSortedPolygon<T>& p2,
                   double maxDist, PF&& paddingFunc, double maxEuclideanDist,
                   DF&& distFunc) {
-  if (p1.getOuter().rawRing().size() == 0) return maxDist + 1;
-  if (p2.getOuter().rawRing().size() == 0) return maxDist + 1;
+  if (p1.getOuter().rawRing().size() == 0)
+    return nextafter(maxDist, std::numeric_limits<double>::infinity());
+  if (p2.getOuter().rawRing().size() == 0)
+    return nextafter(maxDist, std::numeric_limits<double>::infinity());
+
+  if (withinDist(p1.boundingBox(), p2.boundingBox(), distFunc, maxDist) >
+      maxDist)
+    return nextafter(maxDist, std::numeric_limits<double>::infinity());
 
   if (p1.getInners().size() == 0 &&
       util::geo::ringContains(p2.getOuter().rawRing().front().seg().second,
@@ -6491,9 +6658,6 @@ inline bool processActives(util::geo::IntervalIdx<T, LineSegment<T>>& actives,
 
   double locYPadding = (sqrt(std::max(
       0.0, padding * padding - locMinEuclideanXDist * locMinEuclideanXDist)));
-
-  double lowerY = box.getLowerLeft().getY();
-  double upperY = box.getUpperRight().getY();
 
   actives.overlap_find_all({box.getLowerLeft().getY() - locYPadding,
                             box.getUpperRight().getY() + locYPadding},

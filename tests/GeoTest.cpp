@@ -5886,14 +5886,59 @@ void GeoTest::run() {
 
     std::ifstream saimaaF(std::string(TEST_DATASETS) + "/saimaa.tsv", std::ios::binary);
     std::string saimaaWKT((std::istreambuf_iterator<char>(saimaaF)), {});
-    auto saimaa = util::geo::multiPolygonFromWKT<float>(saimaaWKT);
+    // careful, saimaa is not a MULTIPOLYGON
+    auto saimaa = util::geo::polygonFromWKT<float>(saimaaWKT);
+
+    std::ifstream flixbuxF(std::string(TEST_DATASETS) + "/flixbus.tsv", std::ios::binary);
+    std::string flixbusWKT((std::istreambuf_iterator<char>(spainF)), {});
+    auto flixbus = util::geo::collectionFromWKT<float>(flixbusWKT);
 
     auto spainX = XSortedMultiPolygon<float>(spain);
     auto germanyX = XSortedMultiPolygon<float>(germany);
     auto saimaaX = XSortedMultiPolygon<float>(saimaa);
+    auto flixbusX = XSortedCollection<float>(flixbus);
 
     TEST(util::geo::withinDist(germanyX, spainX, 10),
          ==, approx(6.5434));
+
+    TEST(util::geo::withinDist(germany, spain, 10),
+         ==, approx(6.5434));
+
+    TEST(util::geo::withinDist(germany, germany, 10),
+         ==, approx(0));
+
+    TEST(util::geo::withinDist(spain, spain, 10),
+         ==, approx(0));
+
+    TEST(util::geo::withinDist(germanyX, germanyX, 10),
+         ==, approx(0));
+
+    TEST(util::geo::withinDist(spainX, spainX, 10),
+         ==, approx(0));
+
+    TEST(util::geo::withinDist(germanyX, flixbusX, 10),
+         ==, approx(0));
+
+    TEST(util::geo::withinDist(germany, flixbus, 10),
+         ==, approx(0));
+
+    TEST(util::geo::withinDist(flixbus, flixbus, 10),
+         ==, approx(0));
+
+    TEST(util::geo::withinDist(flixbusX, flixbusX, 10),
+         ==, approx(0));
+
+    TEST(util::geo::withinDist(spainX, flixbusX, 10),
+         ==, approx(0));
+
+    TEST(util::geo::withinDist(spain, flixbus, 10),
+         ==, approx(0));
+
+    TEST(util::geo::withinDist(saimaa, flixbus, 10),
+         ==, approx(0));
+
+    TEST(util::geo::withinDist(saimaaX, flixbusX, 10),
+         ==, approx(0));
 
     // with haversine, but without any search padding
     TEST(std::round(util::geo::withinDist(germanyX, spainX, 1000000, defaultPaddingFunc<float>, 100, [](const Point<float> a, const Point<float> b, double) -> double { return haversine(a, b); }) * 10.0) / 10.0,
@@ -5901,7 +5946,7 @@ void GeoTest::run() {
     TEST(std::round(util::geo::withinDist(germanyX, germanyX, 1000000, defaultPaddingFunc<float>, 100, [](const Point<float> a, const Point<float> b, double) -> double { return haversine(a, b); }) * 10.0) / 10.0,
          ==, approx(0));
     TEST(std::round(util::geo::withinDist(germanyX, saimaaX, 10000000, defaultPaddingFunc<float>, 100, [](const Point<float> a, const Point<float> b, double) -> double { return haversine(a, b); }) * 10.0) / 10.0,
-         ==, approx(1083987.10000));
+         ==, approx(1087168.4));
 
     TEST(std::round(util::geo::withinDist(XSortedCollection<float>(MultiPolygon<float>{germany}), XSortedCollection<float>(Collection<float>{spain, saimaa}), 10000000, defaultPaddingFunc<float>, 100, [](const Point<float> a, const Point<float> b, double) -> double { return haversine(a, b); }) * 10.0) / 10.0,
          ==, approx(655421.6));
@@ -5938,6 +5983,8 @@ void GeoTest::run() {
     TEST(util::geo::withinDist(XSortedCollection<double>(col2), XSortedCollection<double>(col2), 20), ==, approx(0));
     TEST(util::geo::withinDist(XSortedCollection<double>(col3), XSortedCollection<double>(col3), 20), ==, approx(0));
     TEST(util::geo::withinDist(XSortedCollection<double>(col4), XSortedCollection<double>(col4), 20), ==, approx(0));
+
+    TEST(util::geo::withinDist(col4, col4, 20), ==, approx(0));
 
     TEST(util::geo::withinDist(XSortedCollection<double>(col), XSortedLine<double>(line3), 20), ==, approx(.23));
     TEST(util::geo::withinDist(XSortedLine<double>(line3), XSortedCollection<double>(col), 20), ==, approx(.23));
