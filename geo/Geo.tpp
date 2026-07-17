@@ -3786,7 +3786,7 @@ template <typename T>
 Point<T> pointFromWKT(std::string wkt) {
   CRSType crs = getCRSType(wkt);
   auto proj = [crs](const Point<double>& p) {
-    auto converted = convertToCRS<double>(p, crs, WEB_MERCATOR);
+    auto converted = convertToCRS<double>(p, crs, CRS84);
     return Point<T>{static_cast<T>(converted.getX()), static_cast<T>(converted.getY())};
   };
   // Directly call the function with the proj function.
@@ -3856,7 +3856,12 @@ Polygon<T> polygonFromWKT(const char* c, const char** endr) {
 // _____________________________________________________________________________
 template <typename T>
 Polygon<T> polygonFromWKT(std::string wkt) {
-  return polygonFromWKT<T>(wkt.c_str(), 0);
+  CRSType crs = getCRSType(wkt);
+  auto proj = [crs](const Point<double>& p) {
+    auto converted = convertToCRS<double>(p, crs, CRS84);
+    return Point<T>{static_cast<T>(converted.getX()), static_cast<T>(converted.getY())};
+  };
+  return polygonFromWKTProj<T>(wkt.c_str(), 0, proj);
 }
 
 // _____________________________________________________________________________
@@ -5369,52 +5374,78 @@ Point<T> convertToCRS(const Point<T>& p, CRSType baseCRS, CRSType goalCRS) {
   if (goalCRS == UNSUPPORTED) assert(false); // TODO
   
   // TODO: what happens in default assert(false)?
-  switch (baseCRS)
+  switch (goalCRS)
   {
   case CRS84:
-    switch (goalCRS)
-    {
-    case WGS84:
-      return lngLatToLatLng(p);
-      break;
-    case WEB_MERCATOR:
-      return latLngToWebMerc(p);
-      break;
-    default:
-      break;
-    }
+    return convertToCRS84(p, baseCRS);
     break;
   case WGS84:
-    switch (goalCRS)
-    {
-    case CRS84:
-      return latLngToLngLat(p);
-      break;
-    case WEB_MERCATOR:
-      return latLngToWebMerc(latLngToLngLat(p));
-      break;
-    default:
-      break;
-    }
+    return convertToWGS84(p, baseCRS);
     break;
   case WEB_MERCATOR:
-    switch (goalCRS)
-    {
-    case CRS84:
-      return webMercToLatLng(p);
-      break;
-    case WGS84:
-      return lngLatToLatLng(webMercToLatLng(p));
-      break;
-    default:
-      break;
-    }
+    return convertToWebMerc(p, baseCRS);
     break;
-  
   default:
     break;
   }
-  return p; // TODO:
+  return p;
+}
+
+// _____________________________________________________________________________
+template <typename T>
+Point<T> convertToCRS84(const Point<T>& p, CRSType baseCRS) {
+  switch (baseCRS)
+  {
+  case CRS84:
+    return p;
+  case WGS84:
+    return latLngToLngLat(p);
+    break;
+  case WEB_MERCATOR:
+    return webMercToLatLng(p);
+    break;
+  default:
+    return p; // TODO<yarox-1>
+    break;
+  }
+}
+
+// _____________________________________________________________________________
+template <typename T>
+Point<T> convertToWGS84(const Point<T>& p, CRSType baseCRS) {
+  switch (baseCRS)
+  {
+  case CRS84:
+    return lngLatToLatLng(p);
+  case WGS84:
+    return p;
+    break;
+  case WEB_MERCATOR:
+    return lngLatToLatLng(webMercToLatLng(p));
+    break;
+  default:
+    return p; // TODO<yarox-1>
+    break;
+  }
+}
+
+// _____________________________________________________________________________
+template <typename T>
+Point<T> convertToWebMerc(const Point<T>& p, CRSType baseCRS) {
+  switch (baseCRS)
+  {
+  case CRS84:
+    return latLngToWebMerc(p);
+  case WGS84:
+    return latLngToWebMerc(latLngToLngLat(p));
+    break;
+  case WEB_MERCATOR:
+    return p;
+    break;
+  default:
+    return p; // TODO<yarox-1>
+    break;
+  }
 }
 
 // _____________________________________________________________________________

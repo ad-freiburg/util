@@ -6797,60 +6797,80 @@ void GeoTest::run() {
 
   {
     // Test transformations between different CRSs.
-    /*
-    util::geo::Point<double> lngLatPoint = Point<double>(4.0, 5.0, util::geo::CRS84);
+    util::geo::Point<double> lngLatPoint = Point<double>(4.0, 5.0);
     TEST(util::geo::lngLatToLatLng(lngLatPoint).getX(), ==, 5.0);
     TEST(util::geo::lngLatToLatLng(lngLatPoint).getY(), ==, 4.0);
-    TEST(util::geo::lngLatToLatLng(lngLatPoint).getCRS(), ==, util::geo::WGS84);
 
-    util::geo::Point<double> latLngPoint = Point<double>(5.0, 4.0, util::geo::WGS84);
+    util::geo::Point<double> latLngPoint = Point<double>(5.0, 4.0);
     TEST(util::geo::latLngToLngLat(latLngPoint).getX(), ==, 4.0);
     TEST(util::geo::latLngToLngLat(latLngPoint).getY(), ==, 5.0);
-    TEST(util::geo::latLngToLngLat(latLngPoint).getCRS(), ==, util::geo::CRS84);
-
-    TEST(util::geo::latLngToWebMerc(lngLatPoint).getCRS(), ==, util::geo::WEB_MERCATOR);
 
     // Test convert function.
-    util::geo::Point<double> webMercPoint = Point<double>(445277.96317309426, 557305.2572745768, util::geo::WEB_MERCATOR);
+    util::geo::Point<double> webMercPoint = Point<double>(445277.96317309426, 557305.2572745768);
     // CRS84 to CRS84
-    TEST(util::geo::convertToCRS(lngLatPoint, util::geo::CRS84).getX(), ==, 4.0);
-    TEST(util::geo::convertToCRS(lngLatPoint, util::geo::CRS84).getY(), ==, 5.0);
-    TEST(util::geo::convertToCRS(lngLatPoint, util::geo::CRS84).getCRS(), ==, util::geo::CRS84);
+    TEST(util::geo::convertToCRS(lngLatPoint, util::geo::CRS84, util::geo::CRS84).getX(), ==, 4.0);
+    TEST(util::geo::convertToCRS(lngLatPoint, util::geo::CRS84, util::geo::CRS84).getY(), ==, 5.0);
     // CRS84 to WGS84
-    TEST(util::geo::convertToCRS(lngLatPoint, util::geo::WGS84).getX(), ==, 5.0);
-    TEST(util::geo::convertToCRS(lngLatPoint, util::geo::WGS84).getY(), ==, 4.0);
-    TEST(util::geo::convertToCRS(lngLatPoint, util::geo::WGS84).getCRS(), ==, util::geo::WGS84);
+    TEST(util::geo::convertToCRS(lngLatPoint, util::geo::CRS84, util::geo::WGS84).getX(), ==, 5.0);
+    TEST(util::geo::convertToCRS(lngLatPoint, util::geo::CRS84, util::geo::WGS84).getY(), ==, 4.0);
     // CRS84 to WEB_MERCATOR
-    TEST(util::geo::convertToCRS(lngLatPoint, util::geo::WEB_MERCATOR).getX(), ==, approx(445277.96317309426));
-    TEST(util::geo::convertToCRS(lngLatPoint, util::geo::WEB_MERCATOR).getY(), ==, approx(557305.2572745768));
-    TEST(util::geo::convertToCRS(lngLatPoint, util::geo::WEB_MERCATOR).getCRS(), ==, util::geo::WEB_MERCATOR);
+    TEST(util::geo::convertToCRS(lngLatPoint, util::geo::CRS84, util::geo::WEB_MERCATOR).getX(), ==, approx(445277.96317309426));
+    TEST(util::geo::convertToCRS(lngLatPoint, util::geo::CRS84, util::geo::WEB_MERCATOR).getY(), ==, approx(557305.2572745768));
     // WGS84 to CRS84
-    TEST(util::geo::convertToCRS(latLngPoint, util::geo::CRS84).getX(), ==, 4.0);
-    TEST(util::geo::convertToCRS(latLngPoint, util::geo::CRS84).getY(), ==, 5.0);
-    TEST(util::geo::convertToCRS(latLngPoint, util::geo::CRS84).getCRS(), ==, util::geo::CRS84);
+    TEST(util::geo::convertToCRS(latLngPoint, util::geo::WGS84, util::geo::CRS84).getX(), ==, 4.0);
+    TEST(util::geo::convertToCRS(latLngPoint, util::geo::WGS84, util::geo::CRS84).getY(), ==, 5.0);
     // WGS84 to WGS84
-    TEST(util::geo::convertToCRS(latLngPoint, util::geo::WGS84).getX(), ==, 5.0);
-    TEST(util::geo::convertToCRS(latLngPoint, util::geo::WGS84).getY(), ==, 4.0);
-    TEST(util::geo::convertToCRS(latLngPoint, util::geo::WGS84).getCRS(), ==, util::geo::WGS84);
+    TEST(util::geo::convertToCRS(latLngPoint, util::geo::WGS84, util::geo::WGS84).getX(), ==, 5.0);
+    TEST(util::geo::convertToCRS(latLngPoint, util::geo::WGS84, util::geo::WGS84).getY(), ==, 4.0);
     // WGS84 to WEB_MERCATOR
-    TEST(util::geo::convertToCRS(latLngPoint, util::geo::WEB_MERCATOR).getX(), ==, approx(445277.96317309426));
-    TEST(util::geo::convertToCRS(latLngPoint, util::geo::WEB_MERCATOR).getY(), ==, approx(557305.2572745768));
-    TEST(util::geo::convertToCRS(latLngPoint, util::geo::WEB_MERCATOR).getCRS(), ==, util::geo::WEB_MERCATOR);
+    TEST(util::geo::convertToCRS(latLngPoint, util::geo::WGS84, util::geo::WEB_MERCATOR).getX(), ==, approx(445277.96317309426));
+    TEST(util::geo::convertToCRS(latLngPoint, util::geo::WGS84, util::geo::WEB_MERCATOR).getY(), ==, approx(557305.2572745768));
     // WEB_MERCATOR to CRS84
-    TEST(util::geo::convertToCRS(webMercPoint, util::geo::CRS84).getX(), ==, approx(4.0));
-    TEST(util::geo::convertToCRS(webMercPoint, util::geo::CRS84).getY(), ==, approx(5.0));
-    TEST(util::geo::convertToCRS(webMercPoint, util::geo::CRS84).getCRS(), ==, util::geo::CRS84);
+    TEST(util::geo::convertToCRS(webMercPoint, util::geo::WEB_MERCATOR, util::geo::CRS84).getX(), ==, approx(4.0));
+    TEST(util::geo::convertToCRS(webMercPoint, util::geo::WEB_MERCATOR, util::geo::CRS84).getY(), ==, approx(5.0));
     // WEB_MERCATOR to WGS84
-    TEST(util::geo::convertToCRS(webMercPoint, util::geo::WGS84).getX(), ==, approx(5.0));
-    TEST(util::geo::convertToCRS(webMercPoint, util::geo::WGS84).getY(), ==, approx(4.0));
-    TEST(util::geo::convertToCRS(webMercPoint, util::geo::WGS84).getCRS(), ==, util::geo::WGS84);
+    TEST(util::geo::convertToCRS(webMercPoint, util::geo::WEB_MERCATOR, util::geo::WGS84).getX(), ==, approx(5.0));
+    TEST(util::geo::convertToCRS(webMercPoint, util::geo::WEB_MERCATOR, util::geo::WGS84).getY(), ==, approx(4.0));
     // WEB_MERCATOR to WEB_MERCATOR
-    TEST(util::geo::convertToCRS(webMercPoint, util::geo::WEB_MERCATOR).getX(), ==, approx(445277.96317309426));
-    TEST(util::geo::convertToCRS(webMercPoint, util::geo::WEB_MERCATOR).getY(), ==, approx(557305.2572745768));
-    TEST(util::geo::convertToCRS(webMercPoint, util::geo::WEB_MERCATOR).getCRS(), ==, util::geo::WEB_MERCATOR);
-    */
+    TEST(util::geo::convertToCRS(webMercPoint, util::geo::WEB_MERCATOR, util::geo::WEB_MERCATOR).getX(), ==, approx(445277.96317309426));
+    TEST(util::geo::convertToCRS(webMercPoint, util::geo::WEB_MERCATOR, util::geo::WEB_MERCATOR).getY(), ==, approx(557305.2572745768));
   }
+  {
+    // Test already specified convert functions
+    util::geo::Point<double> lngLatPoint = Point<double>(4.0, 5.0);
+    util::geo::Point<double> latLngPoint = Point<double>(5.0, 4.0);
+    util::geo::Point<double> webMercPoint = Point<double>(445277.96317309426, 557305.2572745768);
 
+    // CRS84 to CRS84
+    TEST(util::geo::convertToCRS84(lngLatPoint, util::geo::CRS84).getX(), ==, 4.0);
+    TEST(util::geo::convertToCRS84(lngLatPoint, util::geo::CRS84).getY(), ==, 5.0);
+    // WGS84 to CRS84
+    TEST(util::geo::convertToCRS84(latLngPoint, util::geo::WGS84).getX(), ==, 4.0);
+    TEST(util::geo::convertToCRS84(latLngPoint, util::geo::WGS84).getY(), ==, 5.0);
+    // WEB_MERCATOR to CRS84
+    TEST(util::geo::convertToCRS84(webMercPoint, util::geo::WEB_MERCATOR).getX(), ==, approx(4.0));
+    TEST(util::geo::convertToCRS84(webMercPoint, util::geo::WEB_MERCATOR).getY(), ==, approx(5.0));
+
+    // CRS84 to WGS84
+    TEST(util::geo::convertToWGS84(lngLatPoint, util::geo::CRS84).getX(), ==, 5.0);
+    TEST(util::geo::convertToWGS84(lngLatPoint, util::geo::CRS84).getY(), ==, 4.0);
+    // WGS84 to WGS84
+    TEST(util::geo::convertToWGS84(latLngPoint, util::geo::WGS84).getX(), ==, 5.0);
+    TEST(util::geo::convertToWGS84(latLngPoint, util::geo::WGS84).getY(), ==, 4.0);
+    //  WEB_MERCATOR to WGS84
+    TEST(util::geo::convertToWGS84(webMercPoint, util::geo::WEB_MERCATOR).getX(), ==, approx(5.0));
+    TEST(util::geo::convertToWGS84(webMercPoint, util::geo::WEB_MERCATOR).getY(), ==, approx(4.0));
+
+    // CRS84 to WEB_MERCATOR
+    TEST(util::geo::convertToWebMerc(lngLatPoint, util::geo::CRS84).getX(), ==, approx(445277.96317309426));
+    TEST(util::geo::convertToWebMerc(lngLatPoint, util::geo::CRS84).getY(), ==, approx(557305.2572745768));
+    // WGS84 to WEB_MERCATOR
+    TEST(util::geo::convertToWebMerc(latLngPoint, util::geo::WGS84).getX(), ==, approx(445277.96317309426));
+    TEST(util::geo::convertToWebMerc(latLngPoint, util::geo::WGS84).getY(), ==, approx(557305.2572745768));
+    // WEB_MERCATOR to WEB_MERCATOR
+    TEST(util::geo::convertToWebMerc(webMercPoint, util::geo::WEB_MERCATOR).getX(), ==, approx(445277.96317309426));
+    TEST(util::geo::convertToWebMerc(webMercPoint, util::geo::WEB_MERCATOR).getY(), ==, approx(557305.2572745768));
+  }
   {
     // Test Proj
     /*
