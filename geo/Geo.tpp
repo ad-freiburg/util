@@ -3641,6 +3641,15 @@ bool empty(const Collection<T>& g) {
 
 // _____________________________________________________________________________
 template <typename T, typename F>
+std::function<Point<T>(const Point<double>&)> makeProjFunc(CRSType baseCRS, CRSType goalCRS, F projFunc) {
+  // 'goalCRS' specifies which 'CRSType' is assumed by 'projFunc' to work correctly.
+  return [baseCRS, goalCRS, projFunc](const Point<double>& p) {
+    return projFunc(convertToCRS(p, baseCRS, goalCRS));
+  };
+}
+
+// _____________________________________________________________________________
+template <typename T, typename F>
 Line<T> lineFromWKTProj(const char* c, const char** endr, F projFunc) {
   Line<T> line;
 
@@ -3784,13 +3793,7 @@ Point<T> pointFromWKT(const char* c, const char** endr) {
 // _____________________________________________________________________________
 template <typename T>
 Point<T> pointFromWKT(std::string wkt) {
-  CRSType crs = getCRSType(wkt);
-  auto proj = [crs](const Point<double>& p) {
-    auto converted = convertToCRS<double>(p, crs, CRS84);
-    return Point<T>{static_cast<T>(converted.getX()), static_cast<T>(converted.getY())};
-  };
-  // Directly call the function with the proj function.
-  return pointFromWKTProj<T>(wkt.c_str(), 0, proj);
+  return pointFromWKT<T>(wkt.c_str(), 0);
 }
 
 // _____________________________________________________________________________

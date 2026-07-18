@@ -852,6 +852,9 @@ template <typename T>
 bool empty(const Collection<T>& g);
 
 template <typename T, typename F>
+std::function<Point<T>(const Point<double>&)> makeProjFunc(CRSType baseCRS, CRSType goalCRS, F projFunc);
+
+template <typename T, typename F>
 Line<T> lineFromWKTProj(const char* c, const char** endr, F projFunc);
 
 template <typename T>
@@ -885,7 +888,7 @@ template <typename T>
 Point<T> pointFromWKT(std::string wkt);
 
 template <typename T, typename F>
-Point<T> pointFromWKTProj(std::string wkt, std::function<F> projFunc);
+Point<T> pointFromWKTProj(std::string wkt, F projFunc);
 
 template <typename T, typename F>
 Polygon<T> polygonFromWKTProj(const char* c, const char** endr, F projFunc);
