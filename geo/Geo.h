@@ -873,7 +873,7 @@ MultiPoint<T> multiPointFromWKT(const char* c, const char** endr);
 template <typename T>
 MultiPoint<T> multiPointFromWKT(const std::string& wkt);
 
-template <typename T, typename F>
+template <typename T>
 MultiPoint<T> multiPointFromWKTProj(
     const std::string& wkt,
     std::function<Point<T>(const Point<double>& p1)> projFunc);

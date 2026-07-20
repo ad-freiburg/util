@@ -3706,6 +3706,14 @@ Line<T> lineFromWKT(const char* c, const char** endr) {
 
 // _____________________________________________________________________________
 template <typename T>
+Line<T> lineFromWKTProj(
+    const std::string& wkt,
+    std::function<Point<T>(const Point<double>& p1)> projFunc) {
+  return lineFromWKTProj<T>(wkt.c_str(), 0, projFunc);
+}
+
+// _____________________________________________________________________________
+template <typename T>
 MultiLine<T> multiLineFromWKT(const char* c, const char** endr) {
   return multiLineFromWKTProj<T>(c, endr, [](const Point<double>& p) {
     return Point<T>{static_cast<T>(p.getX()), static_cast<T>(p.getY())};
@@ -3748,7 +3756,7 @@ MultiPoint<T> multiPointFromWKT(const std::string& wkt) {
 }
 
 // _____________________________________________________________________________
-template <typename T, typename F>
+template <typename T>
 MultiPoint<T> multiPointFromWKTProj(
     const std::string& wkt,
     std::function<Point<T>(const Point<double>& p1)> projFunc) {
@@ -4072,7 +4080,7 @@ MultiLine<T> multiLineFromWKT(const std::string& wkt) {
 
 // _____________________________________________________________________________
 template <typename T>
-MultiLine<T> multiLineFromWKT(
+MultiLine<T> multiLineFromWKTProj(
     const std::string& wkt,
     std::function<Point<T>(const Point<double>& p1)> projFunc) {
   return multiLineFromWKTProj<T>(wkt.c_str(), 0, projFunc);
@@ -4086,7 +4094,7 @@ MultiPolygon<T> multiPolygonFromWKT(const std::string& wkt) {
 
 // _____________________________________________________________________________
 template <typename T>
-MultiPolygon<T> multiPolygonFromWKT(
+MultiPolygon<T> multiPolygonFromWKTProj(
     const std::string& wkt,
     std::function<Point<T>(const Point<double>& p1)> projFunc) {
   return multiPolygonFromWKTProj<T>(wkt.c_str(), 0, projFunc);
@@ -4100,7 +4108,7 @@ Collection<T> collectionFromWKT(const std::string& wkt) {
 
 // _____________________________________________________________________________
 template <typename T>
-Collection<T> collectionFromWKT(
+Collection<T> collectionFromWKTProj(
     const std::string& wkt,
     std::function<Point<T>(const Point<double>& p1)> projFunc) {
   return collectionFromWKTProj<T>(wkt.c_str(), 0, projFunc);
