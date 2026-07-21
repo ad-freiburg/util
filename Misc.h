@@ -289,6 +289,57 @@ ssize_t writeAll(int file, const unsigned char* buf, size_t count);
 double atof(const char* p);
 
 // _____________________________________________________________________________
+inline float boundedSub(const float a, const float b) {
+  return a - b;
+}
+
+// _____________________________________________________________________________
+inline float boundedAdd(const float a, const float b) {
+  return a + b;
+}
+
+// _____________________________________________________________________________
+inline double boundedSub(const double a, const double b) {
+  return a - b;
+}
+
+// _____________________________________________________________________________
+inline double boundedAdd(const double a, const double b) {
+  return a + b;
+}
+
+// _____________________________________________________________________________
+template <typename T>
+inline T boundedSub(const T a, const double b) {
+  return a < std::numeric_limits<T>::lowest() * 1.0 + b
+             ? std::numeric_limits<T>::lowest()
+             : static_cast<T>(a - b);
+}
+
+// _____________________________________________________________________________
+template <typename T>
+inline T boundedAdd(const T a, const double b) {
+  return a > std::numeric_limits<T>::max() * 1.0 - b ? std::numeric_limits<T>::max()
+                                               : static_cast<T>(a + b);
+}
+
+
+// _____________________________________________________________________________
+template <typename T>
+inline T boundedSub(const T a, const T b) {
+  return a < std::numeric_limits<T>::lowest() + b
+             ? std::numeric_limits<T>::lowest()
+             : a - b;
+}
+
+// _____________________________________________________________________________
+template <typename T>
+inline T boundedAdd(const T a, const T b) {
+  return a > std::numeric_limits<T>::max() - b ? std::numeric_limits<T>::max()
+                                               : a + b;
+}
+
+// _____________________________________________________________________________
 template <typename V>
 int merge(V* lst, V* tmpLst, size_t l, size_t m, size_t r) {
   size_t ret = 0;

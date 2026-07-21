@@ -10,6 +10,7 @@
 #include <memory>
 #include <set>
 #include <unordered_map>
+#include "util/Misc.h"
 
 namespace util {
 namespace geo {
@@ -31,7 +32,11 @@ template <typename K, typename V>
 class IntervalIdx {
  public:
   IntervalIdx() {
-    _ts = {10, 100, 1000, 10000, 100000, 1000000, 10000000, 100000000};
+    K cur = 1;
+    while (cur * 1.0 * 10 <= std::numeric_limits<K>::max() && cur * 10 <= 100000000) {
+      cur *= 10;
+      _ts.push_back(cur);
+    }
     _ivals.resize(_ts.size() + 1);
   }
 
@@ -143,8 +148,8 @@ class IntervalIdx {
     // search for the first interval that might overlap with the queried one
     // we can do binary search here by exploiting the fact that we know that
     // no interval in the set is longer than t, so each interval with a
-    // left bound < val[0] - t canno overlap with val
-    auto i = idx.lower_bound({val.first - t, 0, {}});
+    // left bound < val[0] - t cannot overlap with val
+    auto i = idx.lower_bound({boundedSub(val.first, t), 0, {}});
 
     // explicitly check for overlaps as long as the left bound is not larger
     // than the right bound of val (from then on, no intersects are possible

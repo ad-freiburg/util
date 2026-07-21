@@ -39,6 +39,11 @@ class Point {
     return _x < p.getX() || (_x == p.getX() && _y < p.getY());
   }
 
+  // return point in full precision
+  Point<double> asDPoint() const {
+    return {static_cast<double>(_x), static_cast<double>(_y)};
+  }
+
  private:
   T _x, _y;
 };

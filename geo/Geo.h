@@ -10,6 +10,8 @@
 #include <array>
 #include <functional>
 #include <sstream>
+#include <math.h>
+#include <algorithm>
 
 #include "util/geo/Box.h"
 #include "util/geo/Collection.h"
@@ -19,6 +21,8 @@
 #include "util/geo/Point.h"
 #include "util/geo/Polygon.h"
 #include "util/geo/XSortedCollection.h"
+#include "util/Misc.h"
+#include "util/String.h"
 
 // -------------------
 // Geometry stuff
@@ -396,7 +400,7 @@ double withinDist(const Point<T>& p, const XSortedLine<T>& line, double maxDist,
 
 template <typename T>
 double withinDist(const Point<T>& p, const XSortedLine<T>& line,
-                  double maxDist = std::numeric_limits<double>::infinity());
+                  double maxDist);
 
 template <typename T>
 std::tuple<bool, bool> intersectsContains(const Point<T>& p,
@@ -1144,7 +1148,22 @@ template <typename T>
 Box<T> getBoundingBox(const Line<T>& l);
 
 template <typename T>
+Box<T> getBoundingBox(const XSortedLine<T>& l) {
+  return l.boundingBox();
+}
+
+template <typename T>
 Box<T> getBoundingBox(const Polygon<T>& pol);
+
+template <typename T>
+Box<T> getBoundingBox(const XSortedPolygon<T>& p) {
+  return p.boundingBox();
+}
+
+template <typename T>
+Box<T> getBoundingBox(const XSortedRing<T>& r) {
+  return r.boundingBox();
+}
 
 template <typename T>
 Box<T> getBoundingBox(const LineSegment<T>& ls);
@@ -1157,6 +1176,11 @@ Box<T> getBoundingBox(const std::vector<Geometry<T>>& multigeo);
 
 template <typename T>
 Box<T> getBoundingBox(const Collection<T>& coll);
+
+template <typename T>
+Box<T> getBoundingBox(const XSortedCollection<T>& coll) {
+  return coll.boundingBox();
+}
 
 template <typename T>
 Box<T> getBoundingRect(const Box<T>& b);
@@ -1378,7 +1402,7 @@ double withinDist(const XSortedPolygon<T>& p1, const XSortedPolygon<T>& p2,
 
 template <typename T>
 double withinDist(const XSortedPolygon<T>& p1, const XSortedPolygon<T>& p2,
-                  double maxDist = std::numeric_limits<double>::infinity());
+                  double maxDist);
 
 template <typename T, typename PF, typename DF>
 double withinDist(const XSortedLine<T>& ls1, const XSortedLine<T>& ls2,
@@ -1387,27 +1411,27 @@ double withinDist(const XSortedLine<T>& ls1, const XSortedLine<T>& ls2,
 
 template <typename T>
 double withinDist(const XSortedLine<T>& ls1, const XSortedLine<T>& ls2,
-                  double maxDist = std::numeric_limits<double>::infinity());
+                  double maxDist);
 
 template <typename T>
 double withinDist(const XSortedPolygon<T>& ls1, const XSortedLine<T>& ls2,
-                  double maxDist = std::numeric_limits<double>::infinity());
+                  double maxDist);
 
 template <typename T>
 double withinDist(const XSortedLine<T>& ls1, const XSortedPolygon<T>& ls2,
-                  double maxDist = std::numeric_limits<double>::infinity());
+                  double maxDist);
 
 template <typename T>
 double withinDist(const XSortedPolygon<T>& poly, const Point<T>& p,
-                  double maxDist = std::numeric_limits<double>::infinity());
+                  double maxDist);
 
 template <typename T>
 double withinDist(const Point<T>& p, const XSortedPolygon<T>& poly,
-                  double maxDist = std::numeric_limits<double>::infinity());
+                  double maxDist);
 
 template <typename T>
 double withinDist(const XSortedLine<T>& line, const Point<T>& p,
-                  double maxDist = std::numeric_limits<double>::infinity());
+                  double maxDist);
 
 template <typename T, typename PF, typename DF>
 double withinDist(const XSortedCollection<T>& a, const XSortedCollection<T>& b,
@@ -1685,6 +1709,73 @@ double withinDist(const Polygon<T>& a, const Polygon<T>& b, double maxD) {
 template <typename T>
 double withinDist(const Polygon<T>& b, const Line<T>& a, double maxDist) {
   return withinDist(a, b, maxDist);
+}
+
+template <typename GeomA, typename GeomB>
+double dist(const GeomA& a, const GeomB& b) {
+  return withinDist(a, b, std::numeric_limits<double>::infinity());
+}
+
+template <typename GeomA, typename GeomB, typename DF, typename PF>
+double dist(const GeomA& a, const GeomB& b, PF&& paddingFunc, DF&& distFunc) {
+  return withinDist(a, b, std::numeric_limits<double>::infinity(), paddingFunc,
+                    std::numeric_limits<double>::infinity(), distFunc);
+}
+
+template <typename T>
+double meterDistLocalSearchPadding(double euclideanDistanceUpperBound,
+                                   double distanceUpperBound,
+                                   const util::geo::Box<T>& boxA,
+                                   const util::geo::Box<T>& boxB);
+
+template <typename T>
+double withinMeterDist(const XSortedCollection<T>& a,
+                       const XSortedCollection<T>& b, double maxD) {
+  auto scale = getMinMaxLocalScaleFactors(util::geo::getBoundingBox(a),
+                                          util::geo::getBoundingBox(b), maxD);
+
+  double maxEuclideanDist = maxD / scale.first;
+  return withinDist(a, b, maxD, &meterDistLocalSearchPadding<T>,
+                    maxEuclideanDist,
+                    [](const Point<T> a, const Point<T> b, double) -> double {
+                      return haversine(a, b);
+                    });
+}
+
+template <template <typename> class GeomA, template <typename> class GeomB,
+          typename T>
+double withinMeterDist(const GeomA<T>& a, const GeomB<T>& b, double maxD) {
+  auto scale = getMinMaxLocalScaleFactors(util::geo::getBoundingBox(a),
+                                          util::geo::getBoundingBox(b), maxD);
+
+  double maxEuclideanDist = maxD / scale.first;
+  return withinDist(a, b, maxD, &meterDistLocalSearchPadding<T>,
+                    maxEuclideanDist,
+                    [](const Point<T> a, const Point<T> b, double) -> double {
+                      return haversine(a, b);
+                    });
+}
+
+template <template <typename> class GeomA, template <typename> class GeomB,
+          typename T>
+double withinMeterDist(const std::vector<GeomA<T>>& a, const GeomB<T>& b,
+                       double maxD);
+
+template <template <typename> class GeomA, template <typename> class GeomB,
+          typename T>
+double withinMeterDist(const GeomA<T>& a, const std::vector<GeomB<T>>& b,
+                       double maxD) {
+  return withinDist(b, a, maxD);
+}
+
+template <template <typename> class GeomA, template <typename> class GeomB,
+          typename T>
+double withinMeterDist(const std::vector<GeomA<T>>& a,
+                       const std::vector<GeomB<T>>& b, double maxD);
+
+template <typename GeomA, typename GeomB>
+double meterDist(const GeomA& a, const GeomB& b) {
+  return withinMeterDist(a, b, std::numeric_limits<double>::infinity());
 }
 
 }  // namespace geo

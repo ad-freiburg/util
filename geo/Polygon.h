@@ -215,7 +215,7 @@ class XSortedRing {
       T len = fabs(ring[i - 1].getX() - ring[i].getX());
       if (len > _maxSegLen) _maxSegLen = len;
 
-      _bbox = extendBox(LineSegment<T>{ring[i-1], ring[i]}, _bbox);
+      _bbox = extendBox(LineSegment<T>{ring[i - 1], ring[i]}, _bbox);
 
       double prevAng = 0;
       double nextAng = 0;
@@ -236,9 +236,11 @@ class XSortedRing {
       }
 
       prevAng = util::geo::angBetween(
-          ring[i], ring[i - 1],
-          {ring[prev].getX() - (ring[i - 1].getX() - ring[i].getX()),
-           ring[prev].getY() - (ring[i - 1].getY() - ring[i].getY())});
+          ring[i].asDPoint(), ring[i - 1].asDPoint(),
+          {ring[prev].getX() * 1.0 -
+               (ring[i - 1].getX() * 1.0 - ring[i].getX() * 1.0),
+           ring[prev].getY() * 1.0 -
+               (ring[i - 1].getY() * 1.0 - ring[i].getY() * 1.0)});
 
       size_t next = (i + 1) % ring.size();
 
@@ -248,9 +250,11 @@ class XSortedRing {
       }
 
       nextAng = util::geo::angBetween(
-          ring[i - 1], ring[i],
-          {ring[next].getX() - (ring[i].getX() - ring[i - 1].getX()),
-           ring[next].getY() - (ring[i].getY() - ring[i - 1].getY())});
+          ring[i - 1].asDPoint(), ring[i].asDPoint(),
+          {ring[next].getX() * 1.0 -
+               (ring[i].getX() * 1.0 - ring[i - 1].getX() * 1.0),
+           ring[next].getY() * 1.0 -
+               (ring[i].getY() * 1.0 - ring[i - 1].getY() * 1.0)});
 
       if (len > _maxSegLen) _maxSegLen = len;
 
@@ -297,9 +301,11 @@ class XSortedRing {
       }
 
       double prevAng = util::geo::angBetween(
-          ring[0], ring[i - 1],
-          {ring[prev].getX() - (ring[i - 1].getX() - ring[0].getX()),
-           ring[prev].getY() - (ring[i - 1].getY() - ring[0].getY())});
+          ring[0].asDPoint(), ring[i - 1].asDPoint(),
+          {ring[prev].getX() * 1.0 -
+               (ring[i - 1].getX() * 1.0 - ring[0].getX() * 1.0),
+           ring[prev].getY() * 1.0 -
+               (ring[i - 1].getY() * 1.0 - ring[0].getY() * 1.0)});
 
       size_t next = 1;
 
@@ -309,9 +315,11 @@ class XSortedRing {
       }
 
       double nextAng = util::geo::angBetween(
-          ring[i - 1], ring[0],
-          {ring[next].getX() - (ring[0].getX() - ring[i - 1].getX()),
-           ring[next].getY() - (ring[0].getY() - ring[i - 1].getY())});
+          ring[i - 1].asDPoint(), ring[0].asDPoint(),
+          {ring[next].getX() * 1.0 -
+               (ring[0].getX() * 1.0 - ring[i - 1].getX() * 1.0),
+           ring[next].getY() * 1.0 -
+               (ring[0].getY() * 1.0 - ring[i - 1].getY() * 1.0)});
 
       if (ring[i - 1].getX() < ring[0].getX()) {
         _ring.push_back({ring[i - 1],

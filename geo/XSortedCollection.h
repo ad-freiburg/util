@@ -5,6 +5,11 @@
 #ifndef UTIL_GEO_XSORTEDCOLLECTION_H_
 #define UTIL_GEO_XSORTEDCOLLECTION_H_
 
+#include "util/geo/Line.h"
+#include "util/geo/Point.h"
+#include "util/geo/Polygon.h"
+#include "util/geo/Box.h"
+
 namespace util {
 namespace geo {
 
@@ -44,7 +49,24 @@ class XSortedCollection {
   const XSortedLine<T>& getLine(size_t i) const { return _lines[i]; }
   const Point<T>& getPoint(size_t i) const { return _points[i]; }
 
+  Box<T> boundingBox(GeomType type, size_t i) const {
+    switch (type) {
+      case SWEEP_POINT:
+        return util::geo::Box<T>(getPoint(i), getPoint(i));
+      case SWEEP_LINESTRING:
+        return getLine(i).boundingBox();
+      case SWEEP_POLYGON:
+        return getPolygon(i).boundingBox();
+    }
+
+    return {};
+  }
+
   const util::geo::Box<T>& boundingBox() const { return _bbox; }
+
+  size_t size() const {
+    return _polygons.size() + _lines.size() + _points.size();
+  }
 
  private:
   std::vector<XSortedPolygon<T>> _polygons;
