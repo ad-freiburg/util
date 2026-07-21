@@ -1,6 +1,3 @@
-# build with -O0, we dont need optimizations for the glue code there
-add_compile_options(-O0)
-
 file(GLOB_RECURSE utilTest_SRC *.cpp)
 
 add_library(pb_utilTest ${utilTest_SRC})
