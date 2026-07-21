@@ -10,6 +10,7 @@
 #include <array>
 #include <functional>
 #include <sstream>
+#include <type_traits>
 
 #include "util/geo/Box.h"
 #include "util/geo/Collection.h"
@@ -151,6 +152,10 @@ enum CRSType : uint8_t {
   PLACEHOLDER3 = 6,
   PLACEHOLDER4 = 7
 };
+
+template <typename Fn, typename Ret, typename... Args>
+inline constexpr bool InvocableWithExactReturnType = 
+    std::is_invocable_r_v<Ret, Fn, Args...>;
 
 uint8_t boolArrToInt8(const std::array<bool, 8> arr);
 

@@ -3766,6 +3766,7 @@ MultiPoint<T> multiPointFromWKTProj(
 // _____________________________________________________________________________
 template <typename T, typename F>
 Point<T> pointFromWKTProj(const char* c, const char** endr, F projFunc) {
+  CRSType sourceCRS = getCRSType(c, endr);
   c = strchr(c, '(');
   if (!c) {
     if (endr) (*endr) = 0;
@@ -3786,8 +3787,14 @@ Point<T> pointFromWKTProj(const char* c, const char** endr, F projFunc) {
   double y = util::atof(next, 10);
 
   if (endr) (*endr) = strchr(next, ')');
-
-  return projFunc(util::geo::DPoint(x, y));
+  
+  if constexpr(InvocableWithExactReturnType<F, Point<T>, const Point<double>&>) {
+    // If the 'projFunc' does not take CRS types into account, transform to default 'CRS84'.
+    return projFunc(convertToCRS84(util::geo::DPoint(x, y), sourceCRS));
+  } else {
+    static_assert(InvocableWithExactReturnType<F, Point<T>, const Point<double>&, CRSType>);
+    return projFunc(util::geo::DPoint(x, y), sourceCRS);
+  }
 }
 
 // _____________________________________________________________________________
