@@ -862,6 +862,9 @@ std::function<Point<T>(const Point<double>&)> makeProjFunc(CRSType baseCRS, CRST
 template <typename T, typename F>
 Line<T> lineFromWKTProj(const char* c, const char** endr, F projFunc);
 
+template <typename T, typename F>
+Line<T> lineFromWKTProj(const char* c, const char** endr, F projFunc, CRSType sourceCRS);
+
 template <typename T>
 Line<T> lineFromWKT(const char* c, const char** endr);
 
@@ -878,13 +881,14 @@ MultiPoint<T> multiPointFromWKT(const char* c, const char** endr);
 template <typename T>
 MultiPoint<T> multiPointFromWKT(const std::string& wkt);
 
-template <typename T>
-MultiPoint<T> multiPointFromWKTProj(
-    const std::string& wkt,
-    std::function<Point<T>(const Point<double>& p1)> projFunc);
+template <typename T, typename F>
+MultiPoint<T> multiPointFromWKTProj(const std::string& wkt, F projFunc);
 
 template <typename T, typename F>
 Point<T> pointFromWKTProj(const char* c, const char** endr, F projFunc);
+
+template <typename T, typename F>
+Point<T> pointFromWKTProj(const char* c, const char** endr, F projFunc, CRSType sourceCRS);
 
 template <typename T>
 Point<T> pointFromWKT(const char* c, const char** endr);
@@ -897,6 +901,9 @@ Point<T> pointFromWKTProj(std::string wkt, F projFunc);
 
 template <typename T, typename F>
 Polygon<T> polygonFromWKTProj(const char* c, const char** endr, F projFunc);
+
+template <typename T, typename F>
+Polygon<T> polygonFromWKTProj(const char* c, const char** endr, F projFunc, CRSType sourceCRS);
 
 template <typename T>
 Polygon<T> polygonFromWKT(const char* c, const char** endr);
@@ -911,8 +918,15 @@ template <typename T, typename F>
 MultiLine<T> multiLineFromWKTProj(const char* c, const char** endr, F projFunc);
 
 template <typename T, typename F>
+MultiLine<T> multiLineFromWKTProj(const char* c, const char** endr, F projFunc, CRSType sourceCRS);
+
+template <typename T, typename F>
 MultiPolygon<T> multiPolygonFromWKTProj(const char* c, const char** endr,
                                         F projFunc);
+
+template <typename T, typename F>
+MultiPolygon<T> multiPolygonFromWKTProj(const char* c, const char** endr,
+                                        F projFunc, CRSType sourceCRS);
 
 template <typename T>
 MultiPolygon<T> multiPolygonFromWKT(const char* c, const char** endr);
@@ -939,26 +953,20 @@ Collection<T> collectionFromWKT(const char* c, const char** endr);
 template <typename T>
 Line<T> lineFromWKT(const std::string& wkt);
 
-template <typename T>
-Line<T> lineFromWKTProj(
-    const std::string& wkt,
-    std::function<Point<T>(const Point<double>& p1)> projFunc);
+template <typename T, typename F>
+Line<T> lineFromWKTProj(const std::string& wkt, F projFunc);
 
 template <typename T>
 MultiLine<T> multiLineFromWKT(const std::string& wkt);
 
-template <typename T>
-MultiLine<T> multiLineFromWKTProj(
-    const std::string& wkt,
-    std::function<Point<T>(const Point<double>& p1)> projFunc);
+template <typename T, typename F>
+MultiLine<T> multiLineFromWKTProj(const std::string& wkt, F projFunc);
 
 template <typename T>
 MultiPolygon<T> multiPolygonFromWKT(const std::string& wkt);
 
-template <typename T>
-MultiPolygon<T> multiPolygonFromWKTProj(
-    const std::string& wkt,
-    std::function<Point<T>(const Point<double>& p1)> projFunc);
+template <typename T, typename F>
+MultiPolygon<T> multiPolygonFromWKTProj(const std::string& wkt, F projFunc);
 
 template <typename T>
 Collection<T> collectionFromWKT(const std::string& wkt);

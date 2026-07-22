@@ -3651,8 +3651,14 @@ std::function<Point<T>(const Point<double>&)> makeProjFunc(CRSType baseCRS, CRST
 // _____________________________________________________________________________
 template <typename T, typename F>
 Line<T> lineFromWKTProj(const char* c, const char** endr, F projFunc) {
-  Line<T> line;
+  CRSType sourceCRS = getCRSType(c, endr);
+  return lineFromWKTProj<T, F>(c, endr, projFunc, sourceCRS);
+}
 
+// _____________________________________________________________________________
+template <typename T, typename F>
+Line<T> lineFromWKTProj(const char* c, const char** endr, F projFunc, CRSType sourceCRS) {
+  Line<T> line;
   c = strchr(c, '(');
   if (!c) {
     if (endr) (*endr) = 0;
@@ -3686,13 +3692,18 @@ Line<T> lineFromWKTProj(const char* c, const char** endr, F projFunc) {
 
     double y = util::atof(next, 10);
 
-    line.push_back(projFunc(util::geo::DPoint(x, y)));
+    if constexpr(InvocableWithExactReturnType<F, Point<T>, const Point<double>&>) {
+      // If the 'projFunc' does not take CRS types into account, transform to default 'CRS84'.
+      line.push_back(projFunc(convertToCRS84(util::geo::DPoint(x, y), sourceCRS)));
+    } else {
+      static_assert(InvocableWithExactReturnType<F, Point<T>, const Point<double>&, CRSType>);
+      line.push_back(projFunc(util::geo::DPoint(x, y), sourceCRS));
+    }
 
     auto n = strchr(next, ',');
     if (!n || n > end) break;
     c = n + 1;
   }
-
   return line;
 }
 
@@ -3705,10 +3716,8 @@ Line<T> lineFromWKT(const char* c, const char** endr) {
 }
 
 // _____________________________________________________________________________
-template <typename T>
-Line<T> lineFromWKTProj(
-    const std::string& wkt,
-    std::function<Point<T>(const Point<double>& p1)> projFunc) {
+template <typename T, typename F>
+Line<T> lineFromWKTProj(const std::string& wkt, F projFunc) {
   return lineFromWKTProj<T>(wkt.c_str(), 0, projFunc);
 }
 
@@ -3724,6 +3733,7 @@ MultiLine<T> multiLineFromWKT(const char* c, const char** endr) {
 template <typename T, typename F>
 MultiPoint<T> multiPointFromWKTProj(const char* c, const char** endr,
                                     F projFunc) {
+  CRSType sourceCRS = getCRSType(c, endr);
   // try MULTIPOINT((1 1), (2 2)) syntax
   const auto& mline = multiLineFromWKTProj<T, F>(c, endr, projFunc);
 
@@ -3735,7 +3745,7 @@ MultiPoint<T> multiPointFromWKTProj(const char* c, const char** endr,
   if (ret.size()) return ret;
 
   // try MULTIPOINT(1 1, 2 2) syntax
-  const auto& line = lineFromWKTProj<T, F>(c, endr, projFunc);
+  const auto& line = lineFromWKTProj<T, F>(c, endr, projFunc, sourceCRS);
   if (line.size() > 0) return MultiPoint<T>(std::move(line));
 
   return ret;
@@ -3756,10 +3766,8 @@ MultiPoint<T> multiPointFromWKT(const std::string& wkt) {
 }
 
 // _____________________________________________________________________________
-template <typename T>
-MultiPoint<T> multiPointFromWKTProj(
-    const std::string& wkt,
-    std::function<Point<T>(const Point<double>& p1)> projFunc) {
+template <typename T, typename F>
+MultiPoint<T> multiPointFromWKTProj(const std::string& wkt, F projFunc) {
   return multiPointFromWKTProj<T>(wkt.c_str(), 0, projFunc);
 }
 
@@ -3767,6 +3775,12 @@ MultiPoint<T> multiPointFromWKTProj(
 template <typename T, typename F>
 Point<T> pointFromWKTProj(const char* c, const char** endr, F projFunc) {
   CRSType sourceCRS = getCRSType(c, endr);
+  return pointFromWKTProj<T, F>(c, endr, projFunc, sourceCRS);
+}
+
+// _____________________________________________________________________________
+template <typename T, typename F>
+Point<T> pointFromWKTProj(const char* c, const char** endr, F projFunc, CRSType sourceCRS) {
   c = strchr(c, '(');
   if (!c) {
     if (endr) (*endr) = 0;
@@ -3820,6 +3834,13 @@ Point<T> pointFromWKTProj(std::string wkt, F projFunc) {
 // _____________________________________________________________________________
 template <typename T, typename F>
 Polygon<T> polygonFromWKTProj(const char* c, const char** endr, F projFunc) {
+  CRSType sourceCRS = getCRSType(c, endr);
+  return polygonFromWKTProj<T, F>(c, endr, projFunc, sourceCRS);
+}
+
+// _____________________________________________________________________________
+template <typename T, typename F>
+Polygon<T> polygonFromWKTProj(const char* c, const char** endr, F projFunc, CRSType sourceCRS) {
   c = strchr(c, '(');
   if (!c) {
     if (endr) (*endr) = 0;
@@ -3831,7 +3852,7 @@ Polygon<T> polygonFromWKTProj(const char* c, const char** endr, F projFunc) {
   Polygon<T> poly;
   while ((c = strchr(c, '('))) {
     const char* end = 0;
-    const auto& line = lineFromWKTProj<T, F>(c, &end, projFunc);
+    const auto& line = lineFromWKTProj<T, F>(c, &end, projFunc, sourceCRS);
 
     if (!end) {
       if (endr) (*endr) = 0;
@@ -3874,12 +3895,7 @@ Polygon<T> polygonFromWKT(const char* c, const char** endr) {
 // _____________________________________________________________________________
 template <typename T>
 Polygon<T> polygonFromWKT(std::string wkt) {
-  CRSType crs = getCRSType(wkt);
-  auto proj = [crs](const Point<double>& p) {
-    auto converted = convertToCRS<double>(p, crs, CRS84);
-    return Point<T>{static_cast<T>(converted.getX()), static_cast<T>(converted.getY())};
-  };
-  return polygonFromWKTProj<T>(wkt.c_str(), 0, proj);
+  return polygonFromWKT<T>(wkt.c_str(), 0);
 }
 
 // _____________________________________________________________________________
@@ -3892,6 +3908,13 @@ Polygon<T> polygonFromWKTProj(std::string wkt, F projFunc) {
 template <typename T, typename F>
 MultiLine<T> multiLineFromWKTProj(const char* c, const char** endr,
                                   F projFunc) {
+  CRSType sourceCRS = getCRSType(c, endr);
+  return multiLineFromWKTProj<T, F>(c, endr, projFunc, sourceCRS);
+}
+
+// _____________________________________________________________________________
+template <typename T, typename F>
+MultiLine<T> multiLineFromWKTProj(const char* c, const char** endr, F projFunc, CRSType sourceCRS) {
   c = strchr(c, '(');
   if (!c) {
     if (endr) (*endr) = 0;
@@ -3902,7 +3925,7 @@ MultiLine<T> multiLineFromWKTProj(const char* c, const char** endr,
   MultiLine<T> ml;
   while ((c = strchr(c, '('))) {
     const char* end = 0;
-    const auto& line = lineFromWKTProj<T, F>(c, &end, projFunc);
+    const auto& line = lineFromWKTProj<T, F>(c, &end, projFunc, sourceCRS);
     if (!end) break;
     if (line.size() != 0) ml.push_back(std::move(line));
 
@@ -3925,6 +3948,14 @@ MultiLine<T> multiLineFromWKTProj(const char* c, const char** endr,
 template <typename T, typename F>
 MultiPolygon<T> multiPolygonFromWKTProj(const char* c, const char** endr,
                                         F projFunc) {
+  CRSType sourceCRS = getCRSType(c, endr);
+  return multiPolygonFromWKTProj<T, F>(c, endr, projFunc, sourceCRS);
+}
+
+// _____________________________________________________________________________
+template <typename T, typename F>
+MultiPolygon<T> multiPolygonFromWKTProj(const char* c, const char** endr,
+                                        F projFunc, CRSType sourceCRS) {
   c = strchr(c, '(');
   if (!c) {
     if (endr) (*endr) = 0;
@@ -3937,7 +3968,7 @@ MultiPolygon<T> multiPolygonFromWKTProj(const char* c, const char** endr,
     c = strchr(c, '(');
     if (!c) break;
     const char* end = 0;
-    const auto& poly = polygonFromWKTProj<T, F>(c, &end, projFunc);
+    const auto& poly = polygonFromWKTProj<T, F>(c, &end, projFunc, sourceCRS);
 
     if (!end) break;
 
@@ -3970,6 +4001,7 @@ MultiPolygon<T> multiPolygonFromWKT(const char* c, const char** endr) {
 template <typename T, typename F>
 Collection<T> collectionFromWKTProj(const char* c, const char** endr,
                                     F projFunc) {
+  CRSType sourceCRS = getCRSType(c, endr);
   Collection<T> col;
 
   c = strchr(c, '(');
@@ -3991,7 +4023,7 @@ Collection<T> collectionFromWKTProj(const char* c, const char** endr,
 
     if (wktType == POINT) {
       const char* end = 0;
-      const auto& point = pointFromWKTProj<T, F>(c, &end, projFunc);
+      const auto& point = pointFromWKTProj<T, F>(c, &end, projFunc, sourceCRS);
 
       if (!end) {
         if (endr) (*endr) = 0;
@@ -4002,7 +4034,7 @@ Collection<T> collectionFromWKTProj(const char* c, const char** endr,
       c = const_cast<char*>(strchr(end, ','));
     } else if (wktType == POLYGON) {
       const char* end = 0;
-      const auto& poly = polygonFromWKTProj<T, F>(c, &end, projFunc);
+      const auto& poly = polygonFromWKTProj<T, F>(c, &end, projFunc, sourceCRS);
 
       if (!end) {
         if (endr) (*endr) = 0;
@@ -4012,7 +4044,7 @@ Collection<T> collectionFromWKTProj(const char* c, const char** endr,
       c = const_cast<char*>(strchr(end, ','));
     } else if (wktType == LINESTRING) {
       const char* end = 0;
-      const auto& line = lineFromWKTProj<T, F>(c, &end, projFunc);
+      const auto& line = lineFromWKTProj<T, F>(c, &end, projFunc, sourceCRS);
 
       if (!end) {
         if (endr) (*endr) = 0;
@@ -4022,7 +4054,7 @@ Collection<T> collectionFromWKTProj(const char* c, const char** endr,
       c = const_cast<char*>(strchr(end, ','));
     } else if (wktType == MULTIPOINT) {
       const char* end = 0;
-      const auto& line = lineFromWKTProj<T, F>(c, &end, projFunc);
+      const auto& line = lineFromWKTProj<T, F>(c, &end, projFunc, sourceCRS);
 
       if (!end) {
         if (endr) (*endr) = 0;
@@ -4032,7 +4064,7 @@ Collection<T> collectionFromWKTProj(const char* c, const char** endr,
       c = const_cast<char*>(strchr(end, ','));
     } else if (wktType == MULTIPOLYGON) {
       const char* end = 0;
-      const auto& mp = multiPolygonFromWKTProj<T, F>(c, &end, projFunc);
+      const auto& mp = multiPolygonFromWKTProj<T, F>(c, &end, projFunc, sourceCRS);
 
       if (!end) {
         if (endr) (*endr) = 0;
@@ -4042,7 +4074,7 @@ Collection<T> collectionFromWKTProj(const char* c, const char** endr,
       c = const_cast<char*>(strchr(end, ','));
     } else if (wktType == MULTILINESTRING) {
       const char* end = 0;
-      const auto& ml = multiLineFromWKTProj<T, F>(c, &end, projFunc);
+      const auto& ml = multiLineFromWKTProj<T, F>(c, &end, projFunc, sourceCRS);
 
       if (!end) {
         if (endr) (*endr) = 0;
@@ -4086,10 +4118,8 @@ MultiLine<T> multiLineFromWKT(const std::string& wkt) {
 }
 
 // _____________________________________________________________________________
-template <typename T>
-MultiLine<T> multiLineFromWKTProj(
-    const std::string& wkt,
-    std::function<Point<T>(const Point<double>& p1)> projFunc) {
+template <typename T, typename F>
+MultiLine<T> multiLineFromWKTProj(const std::string& wkt, F projFunc) {
   return multiLineFromWKTProj<T>(wkt.c_str(), 0, projFunc);
 }
 
@@ -4100,10 +4130,8 @@ MultiPolygon<T> multiPolygonFromWKT(const std::string& wkt) {
 }
 
 // _____________________________________________________________________________
-template <typename T>
-MultiPolygon<T> multiPolygonFromWKTProj(
-    const std::string& wkt,
-    std::function<Point<T>(const Point<double>& p1)> projFunc) {
+template <typename T, typename F>
+MultiPolygon<T> multiPolygonFromWKTProj(const std::string& wkt, F projFunc) {
   return multiPolygonFromWKTProj<T>(wkt.c_str(), 0, projFunc);
 }
 

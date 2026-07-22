@@ -6872,61 +6872,7 @@ void GeoTest::run() {
     TEST(util::geo::convertToWebMerc(webMercPoint, util::geo::WEB_MERCATOR).getY(), ==, approx(557305.2572745768));
   }
   {
-    // Test Proj
-
-    /* old version
-    auto baseProj = [](const util::geo::Point<double>& p) {
-        return util::geo::Point<double>{p.getX(), p.getY()};
-    };
-
-    // to CRS84
-    auto CRS84toCRS84 = util::geo::makeProjFunc<double>(util::geo::CRS84, util::geo::CRS84, baseProj);
-    auto projCRS84 = util::geo::pointFromWKTProj<double>("<http://www.opengis.net/def/crs/OGC/1.3/CRS84> POINT(2 3)", CRS84toCRS84);
-    TEST(projCRS84.getX(), ==, 2.0);
-    TEST(projCRS84.getY(), ==, 3.0);
-
-    auto WGS84toCRS84 = util::geo::makeProjFunc<double>(util::geo::WGS84, util::geo::CRS84, baseProj);
-    auto projWGS84 = util::geo::pointFromWKTProj<double>("<http://www.opengis.net/def/crs/EPSG/0/4326> POINT(3 2)", WGS84toCRS84);
-    TEST(projWGS84.getX(), ==, 2.0);
-    TEST(projWGS84.getY(), ==, 3.0);
-
-    auto WebMerctoCRS84 = util::geo::makeProjFunc<double>(util::geo::WEB_MERCATOR, util::geo::CRS84, baseProj);
-    auto projWebMerc = util::geo::pointFromWKTProj<double>("<http://www.opengis.net/def/crs/EPSG/0/3857> POINT(222638.98158654 334111.17140195)", WebMerctoCRS84);
-    TEST(projWebMerc.getX(), ==, approx(2.0));
-    TEST(projWebMerc.getY(), ==, approx(3.0));
-
-    // to WGS84
-    auto CRS84toWGS84 = util::geo::makeProjFunc<double>(util::geo::CRS84, util::geo::WGS84, baseProj);
-    auto projCRS842 = util::geo::pointFromWKTProj<double>("<http://www.opengis.net/def/crs/OGC/1.3/CRS84> POINT(2 3)", CRS84toWGS84);
-    TEST(projCRS842.getX(), ==, 3.0);
-    TEST(projCRS842.getY(), ==, 2.0);
-
-    auto WGS84toWGS84 = util::geo::makeProjFunc<double>(util::geo::WGS84, util::geo::WGS84, baseProj);
-    auto projWGS842 = util::geo::pointFromWKTProj<double>("<http://www.opengis.net/def/crs/EPSG/0/4326> POINT(3 2)", WGS84toWGS84);
-    TEST(projWGS842.getX(), ==, 3.0);
-    TEST(projWGS842.getY(), ==, 2.0);
-
-    auto WebMerctoWGS84 = util::geo::makeProjFunc<double>(util::geo::WEB_MERCATOR, util::geo::WGS84, baseProj);
-    auto projWebMerc2 = util::geo::pointFromWKTProj<double>("<http://www.opengis.net/def/crs/EPSG/0/3857> POINT(222638.98158654 334111.17140195)", WebMerctoWGS84);
-    TEST(projWebMerc2.getX(), ==, approx(3.0));
-    TEST(projWebMerc2.getY(), ==, approx(2.0));
-
-    // to WebMerc
-    auto CRS84toWebMerc = util::geo::makeProjFunc<double>(util::geo::CRS84, util::geo::WEB_MERCATOR, baseProj);
-    auto projCRS843 = util::geo::pointFromWKTProj<double>("<http://www.opengis.net/def/crs/OGC/1.3/CRS84> POINT(2 3)", CRS84toWebMerc);
-    TEST(projCRS843.getX(), ==, approx(222638.98158654));
-    TEST(projCRS843.getY(), ==, approx(334111.17140195));
-
-    auto WGS84toWebMerc = util::geo::makeProjFunc<double>(util::geo::WGS84, util::geo::WEB_MERCATOR, baseProj);
-    auto projWGS843 = util::geo::pointFromWKTProj<double>("<http://www.opengis.net/def/crs/EPSG/0/4326> POINT(3 2)", WGS84toWebMerc);
-    TEST(projWGS843.getX(), ==, approx(222638.98158654));
-    TEST(projWGS843.getY(), ==, approx(334111.17140195));
-
-    auto WebMerctoWebMerc = util::geo::makeProjFunc<double>(util::geo::WEB_MERCATOR, util::geo::WEB_MERCATOR, baseProj);
-    auto projWebMerc3 = util::geo::pointFromWKTProj<double>("<http://www.opengis.net/def/crs/EPSG/0/3857> POINT(222638.98158654 334111.17140195)", WebMerctoWebMerc);
-    TEST(projWebMerc3.getX(), ==, approx(222638.98158654));
-    TEST(projWebMerc3.getY(), ==, approx(334111.17140195));
-    */
+    // Test PointProjection
 
     // TO CRS84
     auto projCRS84 = util::geo::pointFromWKTProj<double>("<http://www.opengis.net/def/crs/OGC/1.3/CRS84> POINT(2 3)", util::geo::convertToCRS84<double>);
@@ -6966,5 +6912,176 @@ void GeoTest::run() {
     auto projWebMerc3 = util::geo::pointFromWKTProj<double>("<http://www.opengis.net/def/crs/EPSG/0/3857> POINT(222638.98158654 334111.17140195)", util::geo::convertToWebMerc<double>);
     TEST(projWebMerc3.getX(), ==, approx(222638.98158654));
     TEST(projWebMerc3.getY(), ==, approx(334111.17140195));
+
+
+    // Without projection function.
+    auto projCRS844 = util::geo::pointFromWKT<double>("<http://www.opengis.net/def/crs/OGC/1.3/CRS84> POINT(2 3)");
+    TEST(projCRS844.getX(), ==, 2.0);
+    TEST(projCRS844.getY(), ==, 3.0);
+
+    auto projWGS844 = util::geo::pointFromWKT<double>("<http://www.opengis.net/def/crs/EPSG/0/4326> POINT(3 2)");
+    TEST(projWGS844.getX(), ==, 2.0);
+    TEST(projWGS844.getY(), ==, 3.0);
+
+    auto projWebMerc4 = util::geo::pointFromWKT<double>("<http://www.opengis.net/def/crs/EPSG/0/3857> POINT(222638.98158654 334111.17140195)");
+    TEST(projWebMerc4.getX(), ==, approx(2.0));
+    TEST(projWebMerc4.getY(), ==, approx(3.0));
+  }
+  {
+    // Test LineProjection
+
+    // TO CRS84
+    auto projCRS84 = util::geo::lineFromWKTProj<double>("<http://www.opengis.net/def/crs/OGC/1.3/CRS84> LINESTRING(7 47, 7 48)", util::geo::convertToCRS84<double>);
+    TEST(projCRS84.size(), ==, 2);
+    TEST(projCRS84[0].getX(), ==, 7.0);
+    TEST(projCRS84[0].getY(), ==, 47.0);
+    TEST(projCRS84[1].getX(), ==, 7.0);
+    TEST(projCRS84[1].getY(), ==, 48.0);
+
+    auto projWGS84 = util::geo::lineFromWKTProj<double>("<http://www.opengis.net/def/crs/EPSG/0/4326> LINESTRING(47 7, 48 7)", util::geo::convertToCRS84<double>);
+    TEST(projWGS84.size(), ==, 2);
+    TEST(projWGS84[0].getX(), ==, 7.0);
+    TEST(projWGS84[0].getY(), ==, 47.0);
+    TEST(projWGS84[1].getX(), ==, 7.0);
+    TEST(projWGS84[1].getY(), ==, 48.0);
+
+    auto projWebMerc = util::geo::lineFromWKTProj<double>("<http://www.opengis.net/def/crs/EPSG/0/3857> LINESTRING(779236.435552915 5942074.072431109, 779236.435552915 6106854.834885074)", util::geo::convertToCRS84<double>);
+    TEST(projWebMerc.size(), ==, 2);
+    TEST(projWebMerc[0].getX(), ==, approx(7.0));
+    TEST(projWebMerc[0].getY(), ==, approx(47.0));
+    TEST(projWebMerc[1].getX(), ==, approx(7.0));
+    TEST(projWebMerc[1].getY(), ==, approx(48.0));
+
+    // to WGS84
+    auto projCRS842 = util::geo::lineFromWKTProj<double>("<http://www.opengis.net/def/crs/OGC/1.3/CRS84> LINESTRING(7 47, 7 48)", util::geo::convertToWGS84<double>);
+    TEST(projCRS842.size(), ==, 2);
+    TEST(projCRS842[0].getX(), ==, approx(47.0));
+    TEST(projCRS842[0].getY(), ==, approx(7.0));
+    TEST(projCRS842[1].getX(), ==, approx(48.0));
+    TEST(projCRS842[1].getY(), ==, approx(7.0));
+
+    auto projWGS842 = util::geo::lineFromWKTProj<double>("<http://www.opengis.net/def/crs/EPSG/0/4326> LINESTRING(47 7, 48 7)", util::geo::convertToWGS84<double>);
+    TEST(projWGS842.size(), ==, 2);
+    TEST(projWGS842[0].getX(), ==, approx(47.0));
+    TEST(projWGS842[0].getY(), ==, approx(7.0));
+    TEST(projWGS842[1].getX(), ==, approx(48.0));
+    TEST(projWGS842[1].getY(), ==, approx(7.0));
+
+    auto projWebMerc2 = util::geo::lineFromWKTProj<double>("<http://www.opengis.net/def/crs/EPSG/0/3857> LINESTRING(779236.435552915 5942074.072431109, 779236.435552915 6106854.834885074)", util::geo::convertToWGS84<double>);
+    TEST(projWebMerc2.size(), ==, 2);
+    TEST(projWebMerc2[0].getX(), ==, approx(47.0));
+    TEST(projWebMerc2[0].getY(), ==, approx(7.0));
+    TEST(projWebMerc2[1].getX(), ==, approx(48.0));
+    TEST(projWebMerc2[1].getY(), ==, approx(7.0));
+
+    // to WebMerc
+    auto projCRS843 = util::geo::lineFromWKTProj<double>("<http://www.opengis.net/def/crs/OGC/1.3/CRS84> LINESTRING(7 47, 7 48)", util::geo::convertToWebMerc<double>);
+    TEST(projCRS843.size(), ==, 2);
+    TEST(projCRS843[0].getX(), ==, approx(779236.435552915));
+    TEST(projCRS843[0].getY(), ==, approx(5942074.072431109));
+    TEST(projCRS843[1].getX(), ==, approx(779236.435552915));
+    TEST(projCRS843[1].getY(), ==, approx(6106854.834885074));
+
+    auto projWGS843 = util::geo::lineFromWKTProj<double>("<http://www.opengis.net/def/crs/EPSG/0/4326> LINESTRING(47 7, 48 7)", util::geo::convertToWebMerc<double>);
+    TEST(projWGS843.size(), ==, 2);
+    TEST(projWGS843[0].getX(), ==, approx(779236.435552915));
+    TEST(projWGS843[0].getY(), ==, approx(5942074.072431109));
+    TEST(projWGS843[1].getX(), ==, approx(779236.435552915));
+    TEST(projWGS843[1].getY(), ==, approx(6106854.834885074));
+
+    auto projWebMerc3 = util::geo::lineFromWKTProj<double>("<http://www.opengis.net/def/crs/EPSG/0/3857> LINESTRING(779236.435552915 5942074.072431109, 779236.435552915 6106854.834885074)", util::geo::convertToWebMerc<double>);
+    TEST(projWebMerc3.size(), ==, 2);
+    TEST(projWebMerc3[0].getX(), ==, approx(779236.435552915));
+    TEST(projWebMerc3[0].getY(), ==, approx(5942074.072431109));
+    TEST(projWebMerc3[1].getX(), ==, approx(779236.435552915));
+    TEST(projWebMerc3[1].getY(), ==, approx(6106854.834885074));
+
+
+    // Without projection function.
+    auto projCRS844 = util::geo::lineFromWKT<double>("<http://www.opengis.net/def/crs/OGC/1.3/CRS84> LINESTRING(7 47, 7 48)");
+    TEST(projCRS844.size(), ==, 2);
+    TEST(projCRS844[0].getX(), ==, 7.0);
+    TEST(projCRS844[0].getY(), ==, 47.0);
+    TEST(projCRS844[1].getX(), ==, 7.0);
+    TEST(projCRS844[1].getY(), ==, 48.0);
+
+    auto projWGS844 = util::geo::lineFromWKT<double>("<http://www.opengis.net/def/crs/EPSG/0/4326> LINESTRING(47 7, 48 7)");
+    TEST(projWGS844.size(), ==, 2);
+    TEST(projWGS844[0].getX(), ==, 7.0);
+    TEST(projWGS844[0].getY(), ==, 47.0);
+    TEST(projWGS844[1].getX(), ==, 7.0);
+    TEST(projWGS844[1].getY(), ==, 48.0);
+
+    auto projWebMerc4 = util::geo::lineFromWKT<double>("<http://www.opengis.net/def/crs/EPSG/0/3857> LINESTRING(779236.435552915 5942074.072431109, 779236.435552915 6106854.834885074)");
+    TEST(projWebMerc4.size(), ==, 2);
+    TEST(projWebMerc4[0].getX(), ==, approx(7.0));
+    TEST(projWebMerc4[0].getY(), ==, approx(47.0));
+    TEST(projWebMerc4[1].getX(), ==, approx(7.0));
+    TEST(projWebMerc4[1].getY(), ==, approx(48.0));
+  }
+  {
+    // Test PolygonProjection
+
+    // Without projection function.
+    auto projCRS84 = util::geo::polygonFromWKT<double>("<http://www.opengis.net/def/crs/OGC/1.3/CRS84> POLYGON((7 47, 8 47, 8 48, 7 48, 7 47))");
+    TEST(getWKT(projCRS84), ==, "POLYGON((7 47,8 47,8 48,7 48,7 47))");
+
+    auto projWGS84 = util::geo::polygonFromWKT<double>("<http://www.opengis.net/def/crs/EPSG/0/4326> POLYGON((47 7, 47 8, 48 8, 48 7, 47 7))");
+    TEST(getWKT(projWGS84), ==, "POLYGON((7 47,8 47,8 48,7 48,7 47))");
+
+    auto projWebMerc = util::geo::polygonFromWKT<double>("<http://www.opengis.net/def/crs/EPSG/0/3857> POLYGON((779236.435552915 5942074.072431109, 890555.9263461885 5942074.072431109, 890555.9263461885 6106854.834885074, 779236.435552915 6106854.834885074, 779236.435552915 5942074.072431109))");
+    TEST(getWKT(projWebMerc), ==, "POLYGON((7 47,8 47,8 48,7 48,7 47))");
+  }
+  {
+    // Test MultiLineProjection
+    
+    // Without projection function.
+    auto projCRS84 = util::geo::multiLineFromWKT<double>("<http://www.opengis.net/def/crs/OGC/1.3/CRS84> MULTILINESTRING((7 47, 8 47), (8 48, 7 48))");
+    TEST(getWKT(projCRS84), ==, "MULTILINESTRING((7 47,8 47),(8 48,7 48))");
+
+    auto projWGS84 = util::geo::multiLineFromWKT<double>("<http://www.opengis.net/def/crs/EPSG/0/4326> MULTILINESTRING((47 7, 47 8), (48 8, 48 7))");
+    TEST(getWKT(projWGS84), ==, "MULTILINESTRING((7 47,8 47),(8 48,7 48))");
+
+    auto projWebMerc = util::geo::multiLineFromWKT<double>("<http://www.opengis.net/def/crs/EPSG/0/3857> MULTILINESTRING((779236.435552915 5942074.072431109, 890555.9263461885 5942074.072431109), (890555.9263461885 6106854.834885074, 779236.435552915 6106854.834885074))");
+    TEST(getWKT(projWebMerc), ==, "MULTILINESTRING((7 47,8 47),(8 48,7 48))");
+  }
+  {
+    // Test MultiPointProjection
+
+    // Without projection function.
+    auto projCRS84 = util::geo::multiPointFromWKT<double>("<http://www.opengis.net/def/crs/OGC/1.3/CRS84> MULTIPOINT((7 47), (8 48))");
+    TEST(getWKT(projCRS84), ==, "MULTIPOINT(7 47,8 48)");
+
+    auto projWGS84 = util::geo::multiPointFromWKT<double>("<http://www.opengis.net/def/crs/EPSG/0/4326> MULTIPOINT((47 7), (48 8))");
+    TEST(getWKT(projWGS84), ==, "MULTIPOINT(7 47,8 48)");
+
+    auto projWebMerc = util::geo::multiPointFromWKT<double>("<http://www.opengis.net/def/crs/EPSG/0/3857> MULTIPOINT((779236.435552915 5942074.072431109), (890555.9263461885 6106854.834885074))");
+    TEST(getWKT(projWebMerc), ==, "MULTIPOINT(7 47,8 48)");
+  }
+  {
+    // Test MultiPolygonProjection
+
+    // Without projection function.
+    auto projCRS84 = util::geo::multiPolygonFromWKT<double>("<http://www.opengis.net/def/crs/OGC/1.3/CRS84> MULTIPOLYGON(((7 47, 8 47, 8 48, 7 48, 7 47)), ((8 48, 9 48, 9 49, 8 49, 8 48)))");
+    TEST(getWKT(projCRS84), ==, "MULTIPOLYGON(((7 47,8 47,8 48,7 48,7 47)),((8 48,9 48,9 49,8 49,8 48)))");
+
+    auto projWGS84 = util::geo::multiPolygonFromWKT<double>("<http://www.opengis.net/def/crs/EPSG/0/4326> MULTIPOLYGON(((47 7, 47 8, 48 8, 48 7, 47 7)), ((48 8, 48 9, 49 9, 49 8, 48 8)))");
+    TEST(getWKT(projWGS84), ==, "MULTIPOLYGON(((7 47,8 47,8 48,7 48,7 47)),((8 48,9 48,9 49,8 49,8 48)))");
+
+    auto projWebMerc = util::geo::multiPolygonFromWKT<double>("<http://www.opengis.net/def/crs/EPSG/0/3857> MULTIPOLYGON(((779236.435552915 5942074.072431109, 890555.9263461885 5942074.072431109, 890555.9263461885 6106854.834885074, 779236.435552915 6106854.834885074, 779236.435552915 5942074.072431109)), ((890555.9263461885 6106854.834885074, 1001875.4171394621 6106854.834885074, 1001875.4171394621 6274861.394006576, 890555.9263461885 6274861.394006576, 890555.9263461885 6106854.834885074)))");
+    TEST(getWKT(projWebMerc), ==, "MULTIPOLYGON(((7 47,8 47,8 48,7 48,7 47)),((8 48,9 48,9 49,8 49,8 48)))");
+  }
+  {
+    // Test CollectionProjection
+
+    // Without projection function.
+    auto projCRS84 = util::geo::collectionFromWKT<double>("<http://www.opengis.net/def/crs/OGC/1.3/CRS84> GEOMETRYCOLLECTION(POINT(7 47), LINESTRING(7 47, 8 48), POLYGON((7 47, 8 47, 8 48, 7 48, 7 47)))");
+    TEST(getWKT(projCRS84), ==, "GEOMETRYCOLLECTION(POINT(7 47),LINESTRING(7 47,8 48),POLYGON((7 47,8 47,8 48,7 48,7 47)))");
+
+    auto projWGS84 = util::geo::collectionFromWKT<double>("<http://www.opengis.net/def/crs/EPSG/0/4326> GEOMETRYCOLLECTION(POINT(47 7), LINESTRING(47 7, 48 8), POLYGON((47 7, 47 8, 48 8, 48 7, 47 7)))");
+    TEST(getWKT(projWGS84), ==, "GEOMETRYCOLLECTION(POINT(7 47),LINESTRING(7 47,8 48),POLYGON((7 47,8 47,8 48,7 48,7 47)))");
+
+    auto projWebMerc = util::geo::collectionFromWKT<double>("<http://www.opengis.net/def/crs/EPSG/0/3857> GEOMETRYCOLLECTION(POINT(779236.435552915 5942074.072431109), LINESTRING(779236.435552915 5942074.072431109, 890555.9263461885 6106854.834885074), POLYGON((779236.435552915 5942074.072431109, 890555.9263461885 5942074.072431109, 890555.9263461885 6106854.834885074, 779236.435552915 6106854.834885074, 779236.435552915 5942074.072431109)))");
+    TEST(getWKT(projWebMerc), ==, "GEOMETRYCOLLECTION(POINT(7 47),LINESTRING(7 47,8 48),POLYGON((7 47,8 47,8 48,7 48,7 47)))");
   }
 }
