@@ -5031,7 +5031,7 @@ Collection<T> simplify(const Collection<T>& collection, double d) {
 
 // _____________________________________________________________________________
 template <typename T, typename DF>
-double util::geo::distToSegment(T lax, T lay, T lbx, T lby, T px, T py,
+double distToSegment(T lax, T lay, T lbx, T lby, T px, T py,
                                 DF&& distFunc) {
   double d = distFunc(Point<T>{lax, lay}, Point<T>{lbx, lby},
                       std::numeric_limits<double>::max()) *
