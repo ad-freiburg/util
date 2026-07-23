@@ -940,8 +940,8 @@ void _withinDistCheck(const XSortedCollection<T>& a, util::geo::BoxVal<T> ab,
                             capturingPaddingFunc, maxEuclideanDist, distFunc));
   }
   if (ab.type == SWEEP_POINT && bb.type == SWEEP_POINT) {
-    // TODO!!!!! USE DISTANCE FUNCTION HERE
-    minDist = std::min(minDist, dist(a.getPoint(ab.id), b.getPoint(bb.id)));
+    minDist =
+        std::min(minDist, dist(a.getPoint(ab.id), b.getPoint(bb.id), distFunc));
   }
   if (ab.type == SWEEP_POINT && bb.type == SWEEP_LINESTRING) {
     minDist = std::min(
@@ -5031,8 +5031,7 @@ Collection<T> simplify(const Collection<T>& collection, double d) {
 
 // _____________________________________________________________________________
 template <typename T, typename DF>
-double distToSegment(T lax, T lay, T lbx, T lby, T px, T py,
-                                DF&& distFunc) {
+double distToSegment(T lax, T lay, T lbx, T lby, T px, T py, DF&& distFunc) {
   double d = distFunc(Point<T>{lax, lay}, Point<T>{lbx, lby},
                       std::numeric_limits<double>::max()) *
              distFunc(Point<T>{lax, lay}, Point<T>{lbx, lby},
@@ -5190,13 +5189,47 @@ double parallelity(const Box<T>& box, const MultiLine<T>& multiline) {
 
 // _____________________________________________________________________________
 template <template <typename> class Geometry, typename T>
-RotatedBox<T> getOrientedEnvelope(const std::vector<Geometry<T>>& pol) {
+RotatedBox<T> getOrientedEnvelope(const std::vector<Geometry<T>>& pol,
+                                  const std::vector<double>& angles) {
   const Point<T> center = centroid(pol);
   Box<T> tmpBox = getBoundingBox(pol);
   double tmpArea = area(tmpBox);
-  Line<T> hull = convexHull(pol).getOuter();
   double rotateAngle = 0;
 
+  // check each segment
+  for (size_t i = 0; i < angles.size(); i++) {
+    // rotate segment such that it is parallel to the x axis
+    const auto p = rotateRAD(pol, angles[i], center);
+    const Box<T>& e = getBoundingBox(p);
+    const double newArea = area(e);
+    if (tmpArea > newArea) {
+      tmpBox = e;
+      tmpArea = newArea;
+      rotateAngle = angles[i];
+    }
+  }
+
+  return RotatedBox<T>(tmpBox, -rotateAngle * -IRAD, center);
+}
+
+// _____________________________________________________________________________
+template <template <typename> class Geometry, typename T>
+RotatedBox<T> getOrientedEnvelope(const std::vector<Geometry<T>>& pol,
+                                  double step) {
+  std::vector<double> angles;
+  double i = 0;
+  while (i < 360) {
+    angles.push_back(i * RAD);
+    i += step;
+  }
+
+  return getOrientedEnvelope(pol, angles);
+}
+
+// _____________________________________________________________________________
+template <template <typename> class Geometry, typename T>
+RotatedBox<T> getOrientedEnvelope(const std::vector<Geometry<T>>& pol) {
+  Line<T> hull = convexHull(pol).getOuter();
   std::vector<double> angles;
 
   angles.reserve(hull.size());
@@ -5222,26 +5255,26 @@ RotatedBox<T> getOrientedEnvelope(const std::vector<Geometry<T>>& pol) {
   std::sort(angles.begin(), angles.end());
   end = std::unique(angles.begin(), angles.end());
 
-  // check each segment
-  for (auto i = angles.begin(); i != end; i++) {
-    // rotate segment such that it is parallel to the x axis
-    const auto p = rotateRAD(pol, *i, center);
-    const Box<T>& e = getBoundingBox(p);
-    const double newArea = area(e);
-    if (tmpArea > newArea) {
-      tmpBox = e;
-      tmpArea = newArea;
-      rotateAngle = *i;
-    }
-  }
-
-  return RotatedBox<T>(tmpBox, -rotateAngle * -IRAD, center);
+  return getOrientedEnvelope(pol, angles);
 }
 
 // _____________________________________________________________________________
 template <template <typename> class Geometry, typename T>
 RotatedBox<T> getOrientedEnvelope(const Geometry<T>& pol) {
   return getOrientedEnvelope(std::vector<Geometry<T>>{pol});
+}
+
+// _____________________________________________________________________________
+template <template <typename> class Geometry, typename T>
+RotatedBox<T> getOrientedEnvelope(const Geometry<T>& pol,
+                                  const std::vector<double>& angles) {
+  return getOrientedEnvelope(std::vector<Geometry<T>>{pol}, angles);
+}
+
+// _____________________________________________________________________________
+template <template <typename> class Geometry, typename T>
+RotatedBox<T> getOrientedEnvelope(const Geometry<T>& pol, double step) {
+  return getOrientedEnvelope(std::vector<Geometry<T>>{pol}, step);
 }
 
 // _____________________________________________________________________________
@@ -5888,8 +5921,17 @@ template <typename T>
 Line<T> densify(const Line<T>& l, double d) {
   if (!l.size()) return l;
 
+  // compute number of required points
+  size_t exp = l.size();
+  for (size_t i = 1; i < l.size(); i++) {
+    exp += dist(l[i - 1], l[i]) / d;
+  }
+
+  // shortcut
+  if (exp == l.size()) return l;
+
   Line<T> ret;
-  ret.reserve(l.size());
+  ret.reserve(exp);
   ret.push_back(l.front());
 
   for (size_t i = 1; i < l.size(); i++) {
@@ -6061,6 +6103,13 @@ double accFrechetDistCHav(const Line<T>& a, const Line<T>& b, double d) {
 // _____________________________________________________________________________
 template <typename T>
 Point<T> latLngToWebMerc(double lat, double lng) {
+  // clamp latitudes to web mercator range
+  if (lat > 85.05112878) lat = 85.05112878;
+  if (lat < -85.05112878) lat = -85.05112878;
+
+  // restrict longitude to [-180, 180], wrap around at boundaries
+  lng = std::remainder(lng, 360.0);
+
   double x = EQUATORIAL_RAD * lng * 0.017453292519943295;
   double sina = sin(lat * 0.017453292519943295);
 
@@ -6883,6 +6932,70 @@ double meterDistLocalSearchPadding(double euclideanDistanceUpperBound,
   if (factorNew2 < factorNew3) return factorNew2 * euclideanDistanceUpperBound;
 
   return factorNew3 * euclideanDistanceUpperBound;
+}
+
+// _____________________________________________________________________________
+template <typename T>
+std::vector<Point<T>> fillPolygon(const Polygon<T>& p, double d,
+                                  const Box<T>& bounds) {
+  // TODO: doesn't yet consider inner polygons!
+
+  std::vector<Point<T>> ret;
+
+  // y bounds
+  auto minY = bounds.getLowerLeft().getY();
+  auto maxY = bounds.getUpperRight().getY();
+
+  const size_t n = p.getOuter().size();
+  std::vector<double> xs;
+
+  const auto& outer = p.getOuter();
+
+  // scanline for each y, in res steps
+  for (double y = minY; y <= maxY; y += d) {
+    xs.clear();
+
+    size_t from = n - 1;
+    size_t to = 0;
+
+    // for each segment [from, to]...
+    while (to < n) {
+      int yFr = outer[from].getY();
+      int yTo = outer[to].getY();
+
+      // .. check if we intersect the y-scanline
+      if ((yTo > y) != (yFr > y)) {
+        double t = (y - yFr) / static_cast<double>(yTo - yFr);
+
+        // store the x intersection
+        double xIsect =
+            outer[from].getX() + t * (outer[to].getX() - outer[from].getX());
+        xs.push_back(xIsect);
+      }
+
+      from = to;
+      to++;
+    }
+
+    // if we have less than 2 intersections, the scanline didnt cut into the
+    // itnerior
+    if (xs.size() < 2) continue;
+
+    // now sort the intersection Xs, they are now pairs of IN,OUT events
+    std::sort(xs.begin(), xs.end());
+
+    // step over these pairs and fill in between in steps of AREA_FILL_RES
+    // but keep inside the visible bounds
+    for (size_t k = 0; k < xs.size() - 1; k += 2) {
+      T xFr = std::max(static_cast<T>(xs[k]), bounds.getLowerLeft().getX());
+      T xTo =
+          std::min(static_cast<T>(xs[k + 1]), bounds.getUpperRight().getX());
+
+      for (T x = xFr; x <= xTo; x += d) ret.push_back({x, y});
+    }
+  }
+
+  return ret;
 }
 
 // _____________________________________________________________________________

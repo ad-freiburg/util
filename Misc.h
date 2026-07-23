@@ -288,6 +288,58 @@ ssize_t writeAll(int file, const unsigned char* buf, size_t count);
 
 double atof(const char* p);
 
+// Taken from
+// https://stackoverflow.com/questions/41049143/
+template <typename T, typename A = std::allocator<T>>
+class default_init_allocator : public A {
+  typedef std::allocator_traits<A> a_t;
+
+ public:
+  using A::A;  // Inherit constructors from A
+
+  template <typename U>
+  struct rebind {
+    using other =
+        default_init_allocator<U, typename a_t::template rebind_alloc<U>>;
+  };
+
+  template <typename U>
+  void construct(U* ptr) noexcept(
+      std::is_nothrow_default_constructible<U>::value) {
+    ::new (static_cast<void*>(ptr)) U;
+  }
+
+  template <typename U, typename... Args>
+  void construct(U* ptr, Args&&... args) {
+    a_t::construct(static_cast<A&>(*this), ptr, std::forward<Args>(args)...);
+  }
+};
+
+template <typename T, typename A = std::allocator<T>>
+class no_init_allocator : public A {
+  typedef std::allocator_traits<A> a_t;
+
+ public:
+  using A::A;  // Inherit constructors from A
+
+  template <typename U>
+  struct rebind {
+    using other =
+        no_init_allocator<U, typename a_t::template rebind_alloc<U>>;
+  };
+
+  template <typename U>
+  void construct(U*) noexcept(
+      std::is_nothrow_default_constructible<U>::value) {
+		// empty
+  }
+
+  template <typename U, typename... Args>
+  void construct(U*, Args&&...) {
+		// empty
+  }
+};
+
 // _____________________________________________________________________________
 inline float boundedSub(const float a, const float b) {
   return a - b;
