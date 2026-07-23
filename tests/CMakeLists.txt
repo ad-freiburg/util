@@ -17,3 +17,9 @@ endif()
 
 add_executable(utilTest TestMain.cpp)
 target_link_libraries(utilTest pb_utilTest pb_util pb_util_geo pb_util_graph pb_util_json)
+
+# Register with ctest when building standalone; parent projects keep managing
+# their own test harness.
+if(PB_UTIL_STANDALONE)
+	add_test(NAME utilTest COMMAND utilTest)
+endif()

@@ -1372,11 +1372,10 @@ double withinDist(const Point<T>& p, const XSortedLine<T>& line, double maxDist,
       i < line.rawLine().size()) {
     i = std::lower_bound(
             line.rawLine().begin() + i, line.rawLine().end(),
-            XSortedTuple<T>{{boundedSub(boundedSub(p.getX(),
-                                                   line.getMaxSegLen()),
-                                        padding),
-                             0},
-                            false}) -
+            XSortedTuple<T>{
+                {boundedSub(boundedSub(p.getX(), line.getMaxSegLen()), padding),
+                 0},
+                false}) -
         line.rawLine().begin();
   }
 
@@ -3501,6 +3500,34 @@ double angBetween(const Point<T>& p1, const MultiPoint<T>& points) {
 
 // _____________________________________________________________________________
 template <typename T, typename DF>
+double dist(const AnyGeometry<T>& any1, const AnyGeometry<T>& any2) {
+  if (any1.getType() == 0) return dist(any1.getPoint(), any2);
+  if (any1.getType() == 1) return dist(any1.getLine(), any2);
+  if (any1.getType() == 2) return dist(any1.getPolygon(), any2);
+  if (any1.getType() == 3) return dist(any1.getMultiLine(), any2);
+  if (any1.getType() == 4) return dist(any1.getMultiPolygon(), any2);
+  if (any1.getType() == 5) return dist(any1.getCollection(), any2);
+  if (any1.getType() == 6) return dist(any1.getMultiPoint(), any2);
+
+  return std::numeric_limits<double>::infinity();
+}
+
+// _____________________________________________________________________________
+template <template <typename> class GeometryB, typename T, typename DF>
+double dist(const AnyGeometry<T>& any, const GeometryB<T>& geomB) {
+  if (any.getType() == 0) return dist(any.getPoint(), geomB);
+  if (any.getType() == 1) return dist(any.getLine(), geomB);
+  if (any.getType() == 2) return dist(any.getPolygon(), geomB);
+  if (any.getType() == 3) return dist(any.getMultiLine(), geomB);
+  if (any.getType() == 4) return dist(any.getMultiPolygon(), geomB);
+  if (any.getType() == 5) return dist(any.getCollection(), geomB);
+  if (any.getType() == 6) return dist(any.getMultiPoint(), geomB);
+
+  return std::numeric_limits<double>::infinity();
+}
+
+// _____________________________________________________________________________
+template <typename T, typename DF>
 double dist(const AnyGeometry<T>& any1, const AnyGeometry<T>& any2,
             DF&& distFunc) {
   if (any1.getType() == 0) return dist(any1.getPoint(), any2, distFunc);
@@ -3681,7 +3708,7 @@ double dist(const LineSegment<T>& ls1, const LineSegment<T>& ls2,
 template <typename T, typename DF>
 double dist(const Point<T>& p, const Line<T>& l, DF&& distFunc) {
   return withinDist(p, l, std::numeric_limits<double>::infinity(),
-                    defaultPaddingFunc<T>,
+                    defaultPaddingFunc<T>(),
                     std::numeric_limits<double>::infinity(), distFunc);
 }
 
@@ -3776,6 +3803,9 @@ double dist(const Line<T>& la, const Line<T>& lb, DF&& distFunc) {
 // _____________________________________________________________________________
 template <typename T>
 double dist(const Line<T>& la, const Line<T>& lb) {
+  if (la.size() * lb.size() > EST_CHECKS_THRESHOLD_XSORTED) {
+    return dist(XSortedLine<T>(la), XSortedLine<T>(lb));
+  }
   double d = std::numeric_limits<double>::infinity();
   for (size_t i = 1; i < la.size(); i++) {
     double dTmp = dist(LineSegment<T>(la[i - 1], la[i]), lb);
@@ -3996,10 +4026,10 @@ double dist(const Box<T>& a, const Box<T>& b, DF&& distFunc) {
 // _____________________________________________________________________________
 template <template <typename> class GeometryA,
           template <typename> class GeometryB, typename T, typename DF>
-double dist(const std::vector<GeometryA<T>>& multigeom, const GeometryB<T>& b,
+double dist(const std::vector<GeometryA<T>>& a, const GeometryB<T>& b,
             DF&& distFunc) {
   double d = std::numeric_limits<double>::infinity();
-  for (const auto& geom : multigeom) d = std::min(d, dist(geom, b, distFunc));
+  for (const auto& geom : a) d = std::min(d, dist(geom, b, distFunc));
   return d;
 }
 
@@ -4014,11 +4044,26 @@ double dist(const GeometryB<T>& b, const std::vector<GeometryA<T>>& multigeom,
 // _____________________________________________________________________________
 template <template <typename> class GeometryA,
           template <typename> class GeometryB, typename T, typename DF>
-double dist(const std::vector<GeometryA<T>>& multigeomA,
-            const std::vector<GeometryB<T>>& multigeomB, DF&& distFunc) {
+double dist(const std::vector<GeometryA<T>>& a,
+            const std::vector<GeometryB<T>>& b, DF&& distFunc) {
   double d = std::numeric_limits<double>::infinity();
-  for (const auto& geom : multigeomB)
-    d = std::min(d, dist(geom, multigeomA, distFunc));
+  for (const auto& geom : b) d = std::min(d, dist(geom, a, distFunc));
+  return d;
+}
+
+// _____________________________________________________________________________
+template <template <typename> class GeometryA,
+          template <typename> class GeometryB, typename T, typename DF,
+          typename PF>
+double dist(const std::vector<GeometryA<T>>& a,
+            const std::vector<GeometryB<T>>& b, PF&& paddingFunc,
+            DF&& distFunc) {
+  if (a.size() * b.size() > EST_MULTI_CHECKS_THRESHOLD_XSORTED)
+    return withinDist(XSortedCollection<T>(a), XSortedCollection<T>(b),
+                      std::numeric_limits<double>::infinity(), paddingFunc,
+                      std::numeric_limits<double>::infinity(), distFunc);
+  double d = std::numeric_limits<double>::infinity();
+  for (const auto& geom : b) d = std::min(d, dist(geom, a, distFunc));
   return d;
 }
 
@@ -4085,10 +4130,11 @@ double withinDist(const Geometry<T>& geom,
 }
 
 // _____________________________________________________________________________
-template <template <typename> class Geometry, typename T, typename DF,
+template <template <typename> class GeometryA,
+          template <typename> class GeometryB, typename T, typename DF,
           typename PF>
-double withinDist(const std::vector<Geometry<T>>& multi,
-                  const Geometry<T>& geom, double maxDist, PF&& paddingFunc,
+double withinDist(const std::vector<GeometryA<T>>& multi,
+                  const GeometryB<T>& geom, double maxDist, PF&& paddingFunc,
                   double maxEuclideanDist, DF&& distFunc) {
   // for larger multigeometries, fall back to pre-sorted implementation to avoid
   // unnecessary checks
@@ -4106,10 +4152,11 @@ double withinDist(const std::vector<Geometry<T>>& multi,
 }
 
 // _____________________________________________________________________________
-template <template <typename> class Geometry, typename T, typename DF,
+template <template <typename> class GeometryA,
+          template <typename> class GeometryB, typename T, typename DF,
           typename PF>
-double withinDist(const std::vector<Geometry<T>>& multi1,
-                  const std::vector<Geometry<T>>& multi2, double maxDist,
+double withinDist(const std::vector<GeometryA<T>>& multi1,
+                  const std::vector<GeometryB<T>>& multi2, double maxDist,
                   PF&& paddingFunc, double maxEuclideanDist, DF&& distFunc) {
   // for larger multigeometries, fall back to pre-sorted implementation to avoid
   // quadratic pairwise checks
@@ -4133,7 +4180,7 @@ double withinDist(const std::vector<Geometry<T>>& multi1,
 template <typename T, typename DF>
 double dist(const Polygon<T>& poly1, const Polygon<T>& poly2, DF&& distFunc) {
   return withinDist(poly1, poly2, std::numeric_limits<double>::max(),
-                    defaultPaddingFunc<T>, std::numeric_limits<double>::max(),
+                    defaultPaddingFunc<T>(), std::numeric_limits<double>::max(),
                     distFunc);
 }
 
@@ -4147,13 +4194,16 @@ double dist(const Polygon<T>& poly1, const Polygon<T>& poly2) {
 template <typename T, typename DF>
 double dist(const Line<T>& l, const Polygon<T>& poly, DF&& distFunc) {
   return withinDist(l, poly, std::numeric_limits<double>::max(),
-                    defaultPaddingFunc<T>, std::numeric_limits<double>::max(),
+                    defaultPaddingFunc<T>(), std::numeric_limits<double>::max(),
                     distFunc);
 }
 
 // _____________________________________________________________________________
 template <typename T>
 double dist(const Line<T>& l, const Polygon<T>& poly) {
+  if (l.size() * poly.size() > EST_CHECKS_THRESHOLD_XSORTED) {
+    return dist(XSortedLine<T>(l), XSortedPolygon<T>(poly));
+  }
   return withinDist(l, poly, std::numeric_limits<double>::max());
 }
 
@@ -4186,7 +4236,7 @@ double withinDist(const Polygon<T>& poly, const Line<T>& l, double maxDist,
 template <typename T, typename DF>
 double dist(const Point<T>& p, const Polygon<T>& poly, DF&& distFunc) {
   return withinDist(p, poly, std::numeric_limits<double>::max(),
-                    defaultPaddingFunc<T>, std::numeric_limits<double>::max(),
+                    defaultPaddingFunc<T>(), std::numeric_limits<double>::max(),
                     distFunc);
 }
 

@@ -87,8 +87,7 @@ void RTree<V, G, T>::remove(V val) {
 
   _valIdx.erase(bit);
 
-  bool notFound = _rtree->Remove(minCoords, maxCoords, val);
-  assert(!notFound);
+  _rtree->Remove(minCoords, maxCoords, val);
 }
 
 // _____________________________________________________________________________

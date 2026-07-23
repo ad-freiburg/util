@@ -36,6 +36,7 @@ struct CostFunc {
   virtual C operator()(const Edge<N, E>* from, const Node<N, E>* n,
                        const Edge<N, E>* to) const = 0;
   virtual C inf() const = 0;
+  virtual ~CostFunc() = default;
 };
 
 template <typename N, typename E, typename C>
@@ -44,6 +45,7 @@ struct HeurFunc {
                        const std::set<Node<N, E>*>& b) const = 0;
   virtual C operator()(const Edge<N, E>* a,
                        const std::set<Edge<N, E>*>& b) const = 0;
+  virtual ~HeurFunc() = default;
 };
 
 template <typename N, typename E, typename C>
