@@ -311,16 +311,19 @@ inline double boundedAdd(const double a, const double b) {
 // _____________________________________________________________________________
 template <typename T>
 inline T boundedSub(const T a, const double b) {
-  return a < std::numeric_limits<T>::lowest() * 1.0 + b
+  const double diff = static_cast<double>(a) - b;
+  return diff <= static_cast<double>(std::numeric_limits<T>::lowest())
              ? std::numeric_limits<T>::lowest()
-             : static_cast<T>(a - b);
+             : static_cast<T>(diff);
 }
 
 // _____________________________________________________________________________
 template <typename T>
 inline T boundedAdd(const T a, const double b) {
-  return a > std::numeric_limits<T>::max() * 1.0 - b ? std::numeric_limits<T>::max()
-                                               : static_cast<T>(a + b);
+  const double sum = static_cast<double>(a) + b;
+  return sum >= static_cast<double>(std::numeric_limits<T>::max())
+             ? std::numeric_limits<T>::max()
+             : static_cast<T>(sum);
 }
 
 

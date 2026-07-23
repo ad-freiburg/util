@@ -1752,8 +1752,16 @@ double withinMeterDist(const XSortedCollection<T>& a,
 }
 
 template <template <typename> class GeomA, template <typename> class GeomB,
-          typename T>
+          typename T,
+          typename std::enable_if<std::is_arithmetic<T>::value, int>::type = 0>
 double withinMeterDist(const GeomA<T>& a, const GeomB<T>& b, double maxD) {
+  // NOTE: we need to check for arithmetic types here because there is a
+  // variant of this function which accepts two multigeometries, and
+  // std::vector<Geom<something>> also matches this template, with
+  // Geom<something> as T. The whole reason we need to catch the multigeom
+  // separately is because we use a different size() threshhold for multigeoms
+  // (as size for multigeoms catches the number of members, not the number of
+  // geometric primitives)
   auto scale = getMinMaxLocalScaleFactors(util::geo::getBoundingBox(a),
                                           util::geo::getBoundingBox(b), maxD);
 
