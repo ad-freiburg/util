@@ -4378,23 +4378,6 @@ bool empty(const Collection<T>& g) {
 }
 
 // _____________________________________________________________________________
-// 'projFunc' either takes just the parsed point (and is applied to a point
-// already normalized to CRS84), or additionally takes the detected source
-// CRS. Overload resolution (rather than 'if constexpr', unavailable pre-C++17)
-// picks the matching call based on which signature 'F' actually supports.
-template <typename F>
-auto callProjFunc(F&& projFunc, const Point<double>& p, CRSType sourceCRS, int)
-    -> decltype(projFunc(projectToCRS84(p, sourceCRS))) {
-  return projFunc(projectToCRS84(p, sourceCRS));
-}
-
-template <typename F>
-auto callProjFunc(F&& projFunc, const Point<double>& p, CRSType sourceCRS, long)
-    -> decltype(projFunc(p, sourceCRS)) {
-  return projFunc(p, sourceCRS);
-}
-
-// _____________________________________________________________________________
 template <typename T, typename F>
 Line<T> lineFromWKTProj(const char* c, const char** endr, F projFunc) {
   // If any previous function was called with 'endr = 0' it first needs to be
@@ -4442,7 +4425,7 @@ Line<T> lineFromWKTProj(const char* c, const char** endr, F projFunc, CRSType so
 
     double y = util::atof(next, 10);
 
-    line.push_back(callProjFunc(projFunc, util::geo::DPoint(x, y), sourceCRS, 0));
+    line.push_back(projFunc(util::geo::DPoint(x, y), sourceCRS));
 
     auto n = strchr(next, ',');
     if (!n || n > end) break;
@@ -4454,16 +4437,16 @@ Line<T> lineFromWKTProj(const char* c, const char** endr, F projFunc, CRSType so
 // _____________________________________________________________________________
 template <typename T>
 Line<T> lineFromWKT(const char* c, const char** endr) {
-  return lineFromWKTProj<T>(c, endr, [](const Point<double>& p) {
-    return Point<T>{static_cast<T>(p.getX()), static_cast<T>(p.getY())};
+  return lineFromWKTProj<T>(c, endr, [](const Point<double>& p, CRSType sourceCRS) {
+    return projectToCRS84(Point<T>{static_cast<T>(p.getX()), static_cast<T>(p.getY())}, sourceCRS);
   });
 }
 
 // _____________________________________________________________________________
 template <typename T>
 MultiLine<T> multiLineFromWKT(const char* c, const char** endr) {
-  return multiLineFromWKTProj<T>(c, endr, [](const Point<double>& p) {
-    return Point<T>{static_cast<T>(p.getX()), static_cast<T>(p.getY())};
+  return multiLineFromWKTProj<T>(c, endr, [](const Point<double>& p, CRSType sourceCRS) {
+    return projectToCRS84(Point<T>{static_cast<T>(p.getX()), static_cast<T>(p.getY())}, sourceCRS);
   });
 }
 
@@ -4476,8 +4459,15 @@ MultiPoint<T> multiPointFromWKTProj(const char* c, const char** endr,
   const char* replacement = nullptr;
   endr = (endr != nullptr) ? endr : &replacement;
   CRSType sourceCRS = getCRSType(c, endr);
+  return multiPointFromWKTProj<T, F>(*endr, endr, projFunc, sourceCRS);
+}
+
+// _____________________________________________________________________________
+template <typename T, typename F>
+MultiPoint<T> multiPointFromWKTProj(const char* c, const char** endr,
+                                    F projFunc, CRSType sourceCRS) {
   // try MULTIPOINT((1 1), (2 2)) syntax
-  const auto& mline = multiLineFromWKTProj<T, F>(*endr, endr, projFunc, sourceCRS);
+  const auto& mline = multiLineFromWKTProj<T, F>(c, endr, projFunc, sourceCRS);
 
   MultiPoint<T> ret;
   for (const auto& l : mline) {
@@ -4487,7 +4477,7 @@ MultiPoint<T> multiPointFromWKTProj(const char* c, const char** endr,
   if (ret.size()) return ret;
 
   // try MULTIPOINT(1 1, 2 2) syntax
-  const auto& line = lineFromWKTProj<T, F>(*endr, endr, projFunc, sourceCRS);
+  const auto& line = lineFromWKTProj<T, F>(c, endr, projFunc, sourceCRS);
   if (line.size() > 0) return MultiPoint<T>(std::move(line));
 
   return ret;
@@ -4496,8 +4486,8 @@ MultiPoint<T> multiPointFromWKTProj(const char* c, const char** endr,
 // _____________________________________________________________________________
 template <typename T>
 MultiPoint<T> multiPointFromWKT(const char* c, const char** endr) {
-  return multiPointFromWKTProj<T>(c, endr, [](const Point<double>& p) {
-    return Point<T>{static_cast<T>(p.getX()), static_cast<T>(p.getY())};
+  return multiPointFromWKTProj<T>(c, endr, [](const Point<double>& p, CRSType sourceCRS) {
+    return projectToCRS84(Point<T>{static_cast<T>(p.getX()), static_cast<T>(p.getY())}, sourceCRS);
   });
 }
 
@@ -4548,14 +4538,14 @@ Point<T> pointFromWKTProj(const char* c, const char** endr, F projFunc, CRSType 
 
   if (endr) (*endr) = strchr(next, ')');
   
-  return callProjFunc(projFunc, util::geo::DPoint(x, y), sourceCRS, 0);
+  return projFunc(util::geo::DPoint(x, y), sourceCRS);
 }
 
 // _____________________________________________________________________________
 template <typename T>
 Point<T> pointFromWKT(const char* c, const char** endr) {
-  return pointFromWKTProj<T>(c, endr, [](const Point<double>& p) {
-    return Point<T>{static_cast<T>(p.getX()), static_cast<T>(p.getY())};
+  return pointFromWKTProj<T>(c, endr, [](const Point<double>& p, CRSType sourceCRS) {
+    return projectToCRS84(Point<T>{static_cast<T>(p.getX()), static_cast<T>(p.getY())}, sourceCRS);
   });
 }
 
@@ -4631,8 +4621,8 @@ Polygon<T> polygonFromWKTProj(const char* c, const char** endr, F projFunc, CRST
 // _____________________________________________________________________________
 template <typename T>
 Polygon<T> polygonFromWKT(const char* c, const char** endr) {
-  return polygonFromWKTProj<T>(c, endr, [](const Point<double>& p) {
-    return Point<T>{static_cast<T>(p.getX()), static_cast<T>(p.getY())};
+  return polygonFromWKTProj<T>(c, endr, [](const Point<double>& p, CRSType sourceCRS) {
+    return projectToCRS84(Point<T>{static_cast<T>(p.getX()), static_cast<T>(p.getY())}, sourceCRS);
   });
 }
 
@@ -4744,8 +4734,8 @@ MultiPolygon<T> multiPolygonFromWKTProj(const char* c, const char** endr,
 // _____________________________________________________________________________
 template <typename T>
 MultiPolygon<T> multiPolygonFromWKT(const char* c, const char** endr) {
-  return multiPolygonFromWKTProj<T>(c, endr, [](const Point<double>& p) {
-    return Point<T>{static_cast<T>(p.getX()), static_cast<T>(p.getY())};
+  return multiPolygonFromWKTProj<T>(c, endr, [](const Point<double>& p, CRSType sourceCRS) {
+    return projectToCRS84(Point<T>{static_cast<T>(p.getX()), static_cast<T>(p.getY())}, sourceCRS);
   });
 }
 
@@ -4754,8 +4744,14 @@ template <typename T, typename F>
 Collection<T> collectionFromWKTProj(const char* c, const char** endr,
                                     F&& projFunc) {
   CRSType sourceCRS = getCRSType(c, endr);
-  Collection<T> col;
+  return collectionFromWKTProj<T, F>(c, endr, projFunc, sourceCRS);
+}
 
+// _____________________________________________________________________________
+template <typename T, typename F>
+Collection<T> collectionFromWKTProj(const char* c, const char** endr,
+                                    F projFunc, CRSType sourceCRS) {
+  Collection<T> col;
   c = strchr(c, '(');
   if (!c) {
     if (endr) (*endr) = 0;
@@ -4845,8 +4841,8 @@ Collection<T> collectionFromWKTProj(const char* c, const char** endr,
 // _____________________________________________________________________________
 template <typename T>
 Collection<T> collectionFromWKT(const char* c, const char** endr) {
-  return collectionFromWKTProj<T>(c, endr, [](const Point<double>& p) {
-    return Point<T>{static_cast<T>(p.getX()), static_cast<T>(p.getY())};
+  return collectionFromWKTProj<T>(c, endr, [](const Point<double>& p, CRSType sourceCRS) {
+    return projectToCRS84(Point<T>{static_cast<T>(p.getX()), static_cast<T>(p.getY())}, sourceCRS);
   });
 }
 
