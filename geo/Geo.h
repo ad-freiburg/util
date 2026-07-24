@@ -153,10 +153,6 @@ enum CRSType : uint8_t {
   PLACEHOLDER4 = 7
 };
 
-template <typename Fn, typename Ret, typename... Args>
-inline constexpr bool InvocableWithExactReturnType = 
-    std::is_invocable_r_v<Ret, Fn, Args...>;
-
 uint8_t boolArrToInt8(const std::array<bool, 8> arr);
 
 template <typename T>
@@ -874,6 +870,12 @@ template <typename T, typename F>
 MultiPoint<T> multiPointFromWKTProj(const char* c, const char** endr,
                                     F projFunc);
 
+// Overload used internally by other geometry parsers (e.g. 'multiPointFromWKT'), which
+// detect their 'CRSType' and pass it down to this function. Otherwise the CRS IRI would be lost.
+template <typename T, typename F>
+MultiPoint<T> multiPointFromWKTProj(const char* c, const char** endr,
+                                    F projFunc, CRSType sourceCRS);
+
 template <typename T>
 MultiPoint<T> multiPointFromWKT(const char* c, const char** endr);
 
@@ -953,6 +955,12 @@ CRSType getCRSType(const std::string& str);
 template <typename T, typename F>
 Collection<T> collectionFromWKTProj(const char* c, const char** endr,
                                     F projFunc);
+
+// Overload used internally by other geometry parsers (e.g. 'collectionFromWKT'), which
+// detect their 'CRSType' and pass it down to this function. Otherwise the CRS IRI would be lost.
+template <typename T, typename F>
+Collection<T> collectionFromWKTProj(const char* c, const char** endr,
+                                    F projFunc, CRSType sourceCRS);
 
 template <typename T>
 Collection<T> collectionFromWKT(const char* c, const char** endr);
