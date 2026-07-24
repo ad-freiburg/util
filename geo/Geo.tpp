@@ -6938,43 +6938,50 @@ double meterDistLocalSearchPadding(double euclideanDistanceUpperBound,
 template <typename T>
 std::vector<Point<T>> fillPolygon(const Polygon<T>& p, double d,
                                   const Box<T>& bounds) {
-  // TODO: doesn't yet consider inner polygons!
-
   std::vector<Point<T>> ret;
 
   // y bounds
   auto minY = bounds.getLowerLeft().getY();
   auto maxY = bounds.getUpperRight().getY();
 
-  const size_t n = p.getOuter().size();
   std::vector<double> xs;
 
   const auto& outer = p.getOuter();
+
+  std::vector<const Ring<T>*> rings;
+  rings.reserve(p.getInners().size() + 1);
+  rings.push_back(&p.getOuter());
+  for (const auto& inner : p.getInners()) rings.push_back(&inner);
 
   // scanline for each y, in res steps
   for (double y = minY; y <= maxY; y += d) {
     xs.clear();
 
-    size_t from = n - 1;
-    size_t to = 0;
+    for (const auto* ring : rings) {
+      size_t from = ring->size() - 1;
+      size_t to = 0;
 
-    // for each segment [from, to]...
-    while (to < n) {
-      int yFr = outer[from].getY();
-      int yTo = outer[to].getY();
+      // for each segment [from, to]...
+      while (to < ring->size()) {
+        int yFr = (*ring)[from].getY();
+        int yTo = (*ring)[to].getY();
 
-      // .. check if we intersect the y-scanline
-      if ((yTo > y) != (yFr > y)) {
-        double t = (y - yFr) / static_cast<double>(yTo - yFr);
+        // .. check if we intersect the y-scanline, this is asymmetric (we
+        // intersect if yFr touches y (then yTo > y and yFr !> y) but not if
+        // yTo touches y (then yTo !> y and yFr !> y) to avoid counting
+        // points were line segments touch twice
+        if ((yTo > y) != (yFr > y)) {
+          double t = (y - yFr) / static_cast<double>(yTo - yFr);
 
-        // store the x intersection
-        double xIsect =
-            outer[from].getX() + t * (outer[to].getX() - outer[from].getX());
-        xs.push_back(xIsect);
+          // store the x intersection
+          double xIsect = (*ring)[from].getX() +
+                          t * ((*ring)[to].getX() - (*ring)[from].getX());
+          xs.push_back(xIsect);
+        }
+
+        from = to;
+        to++;
       }
-
-      from = to;
-      to++;
     }
 
     // if we have less than 2 intersections, the scanline didnt cut into the

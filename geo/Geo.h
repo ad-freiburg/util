@@ -1795,6 +1795,15 @@ double meterDist(const GeomA& a, const GeomB& b) {
   return withinMeterDist(a, b, std::numeric_limits<double>::infinity());
 }
 
+template <typename T>
+std::vector<Point<T>> fillPolygon(const Polygon<T>& p, double d,
+                                  const Box<T>& bounds);
+
+template <typename T>
+std::vector<Point<T>> fillPolygon(const Polygon<T>& p, double d) {
+  return fillPolygon(p, d, getBoundingBox(p));
+}
+
 }  // namespace geo
 }  // namespace util
 

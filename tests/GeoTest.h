@@ -28,6 +28,7 @@ class GeoTest {
     void testPolygonPolygonPredicates();
     void testSegmentOrdering();
     void testPolygonInternals();
+    void testPolygonFill();
     void testXSortedPolygons();
     void testFrechet();
     void testGrid();

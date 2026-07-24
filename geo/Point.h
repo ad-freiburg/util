@@ -51,6 +51,13 @@ class Point {
 template <typename T>
 using MultiPoint = std::vector<Point<T>>;
 
+template <typename T>
+std::ostream& operator<<(std::ostream& o, const Point<T>& p) {
+  o << "(" << p.getX() << "," << p.getY() << ")";
+  return o;
+}
+
+
 }  // namespace geo
 }  // namespace util
 

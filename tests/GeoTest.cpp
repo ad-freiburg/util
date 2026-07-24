@@ -30,6 +30,7 @@ void GeoTest::run() {
   testPolygonPolygonPredicates();
   testSegmentOrdering();
   testPolygonInternals();
+  testPolygonFill();
   testXSortedPolygons();
   testFrechet();
   testGrid();
