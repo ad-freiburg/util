@@ -13,7 +13,6 @@
 #include <array>
 #include <functional>
 #include <sstream>
-#include <type_traits>
 
 #include "util/Misc.h"
 #include "util/String.h"
