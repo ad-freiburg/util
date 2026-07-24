@@ -4776,7 +4776,7 @@ MultiLine<T> multiLineFromWKT(const std::string& wkt) {
 
 // _____________________________________________________________________________
 template <typename T, typename F>
-MultiLine<T> multiLineFromWKT(const std::string& wkt, F&& projFunc) {
+MultiLine<T> multiLineFromWKTProj(const std::string& wkt, F&& projFunc) {
   return multiLineFromWKTProj<T>(wkt.c_str(), 0, projFunc);
 }
 
@@ -4788,7 +4788,7 @@ MultiPolygon<T> multiPolygonFromWKT(const std::string& wkt) {
 
 // _____________________________________________________________________________
 template <typename T, typename F>
-MultiPolygon<T> multiPolygonFromWKT(const std::string& wkt, F&& projFunc) {
+MultiPolygon<T> multiPolygonFromWKTProj(const std::string& wkt, F&& projFunc) {
   return multiPolygonFromWKTProj<T>(wkt.c_str(), 0, projFunc);
 }
 
@@ -4800,7 +4800,7 @@ Collection<T> collectionFromWKT(const std::string& wkt) {
 
 // _____________________________________________________________________________
 template <typename T, typename F>
-Collection<T> collectionFromWKT(const std::string& wkt, F&& projFunc) {
+Collection<T> collectionFromWKTProj(const std::string& wkt, F&& projFunc) {
   return collectionFromWKTProj<T>(wkt.c_str(), 0, projFunc);
 }
 
