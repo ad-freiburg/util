@@ -33,13 +33,6 @@ int main(int argc, char** argv) {
 
 
 
-  QuadTreeTest quadTreeTest;
-  quadTreeTest.run();
-
-  GeoTest geoTest;
-  geoTest.run();
-
-
   // ___________________________________________________________________________
   {
     TEST(util::btsSimi("", ""), ==, approx(1));
@@ -976,7 +969,77 @@ int main(int argc, char** argv) {
 }
 }
 
+{
+  // bounded add and subtract
+  TEST(boundedSub(true, 2423423423), ==, false);
+  TEST(boundedSub(true, 0), ==, true);
 
+  TEST(boundedSub(uint8_t(120), 120), ==, 0);
+  TEST(boundedSub(uint8_t(120), 121), ==, 0);
+
+  TEST(boundedSub(uint16_t(120), 120), ==, 0);
+  TEST(boundedSub(uint16_t(120), 10), ==, 110);
+  TEST(boundedSub(uint16_t(120), 121), ==, 0);
+
+  TEST(boundedSub(uint32_t(120), 120), ==, 0);
+  TEST(boundedSub(uint32_t(120), 10), ==, 110);
+  TEST(boundedSub(uint32_t(120), 121), ==, 0);
+
+  TEST(boundedSub(uint64_t(120), 120), ==, 0);
+  TEST(boundedSub(uint64_t(120), 10), ==, 110);
+  TEST(boundedSub(uint64_t(120), 121), ==, 0);
+
+  TEST(boundedSub(int8_t(120), 120), ==, 0);
+  TEST(boundedSub(int8_t(120), 121), ==, -1);
+
+  TEST(boundedSub(int8_t(1), 140), ==, -128);
+  TEST(boundedSub(int8_t(120), 121), ==, -1);
+
+  TEST(boundedSub(int16_t(120), 120), ==, 0);
+  TEST(boundedSub(int16_t(120), 10), ==, 110);
+  TEST(boundedSub(int16_t(120), 121), ==, -1);
+
+  TEST(boundedSub(int32_t(120), 120), ==, 0);
+  TEST(boundedSub(int32_t(120), 10), ==, 110);
+  TEST(boundedSub(int32_t(120), 121), ==, -1);
+
+  TEST(boundedSub(int64_t(120), 120), ==, 0);
+  TEST(boundedSub(int64_t(120), 10), ==, 110);
+  TEST(boundedSub(int64_t(120), 121), ==, -1);
+
+  TEST(boundedSub(120.0, 240), ==, approx(-120));
+  TEST(boundedSub(120.0, 10), ==, approx(110));
+
+  TEST(boundedSub(true, 2423423423), ==, false);
+  TEST(boundedSub(true, 0), ==, true);
+
+  TEST(boundedAdd(false, 120), ==, true);
+  TEST(boundedAdd(false, 10), ==, true);
+  TEST(boundedAdd(false, 0), ==, false);
+
+  TEST(boundedAdd(uint8_t(120), 120), ==, 240);
+  TEST(boundedAdd(uint8_t(120), 140), ==, std::numeric_limits<uint8_t>::max());
+  TEST(boundedAdd(uint8_t(120), 10), ==, 130);
+  TEST(boundedAdd(uint8_t(120), std::numeric_limits<uint8_t>::max()), ==, std::numeric_limits<uint8_t>::max());
+
+  TEST(boundedAdd(uint16_t(120), 120), ==, 240);
+  TEST(boundedAdd(uint16_t(120), 10), ==, 130);
+  TEST(boundedAdd(uint16_t(120), std::numeric_limits<uint16_t>::max()), ==, std::numeric_limits<uint16_t>::max());
+
+  TEST(boundedAdd(uint32_t(120), 120), ==, 240);
+  TEST(boundedAdd(uint32_t(120), 10), ==, 130);
+  TEST(boundedAdd(uint32_t(120), std::numeric_limits<uint32_t>::max()), ==, std::numeric_limits<uint32_t>::max());
+
+  TEST(boundedAdd(uint64_t(120), 120), ==, 240);
+  TEST(boundedAdd(uint64_t(120), 10), ==, 130);
+  TEST(boundedAdd(uint64_t(120), std::numeric_limits<uint64_t>::max()), ==, std::numeric_limits<uint64_t>::max());
+
+  TEST(boundedAdd(120.0, 120), ==, approx(240));
+  TEST(boundedAdd(120.0, 10), ==, approx(130));
+}
+
+
+{
   // inversion count
   std::vector<int> test = {2, 1};
   TEST(inversions(test), ==, 1);
@@ -1022,5 +1085,13 @@ int main(int argc, char** argv) {
 	TEST(formatFloat(0.0000, 10), ==, "0");
 	TEST(formatFloat(-1.0000, 10), ==, "-1");
 	TEST(formatFloat(-15.000001, 10), ==, "-15.000001");
+}
+
+  QuadTreeTest quadTreeTest;
+  quadTreeTest.run();
+
+  GeoTest geoTest;
+  geoTest.run();
+
 
 }

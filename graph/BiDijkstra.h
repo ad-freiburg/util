@@ -56,6 +56,7 @@ class BiDijkstra : public ShortestPath<BiDijkstra> {
 
   template <typename N, typename E, typename C>
   struct CostFunc : public util::graph::CostFunc<N, E, C> {
+    using util::graph::CostFunc<N, E, C>::operator();
     virtual ~CostFunc() = default;
     virtual C operator()(const Edge<N, E>* from, const Node<N, E>* n,
                  const Edge<N, E>* to) const {

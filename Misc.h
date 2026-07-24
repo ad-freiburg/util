@@ -7,12 +7,12 @@
 
 #define FMT_HEADER_ONLY
 
-#include <map>
-
 #include <chrono>
-#include <cstring>
-#include <iostream>
 #include <cmath>
+#include <cstring>
+#include <iomanip>
+#include <iostream>
+#include <map>
 #include <vector>
 #ifdef PBUTIL_ZLIB_FOUND
 #include <zlib.h>
@@ -21,31 +21,48 @@
 #include <bzlib.h>
 #endif
 #include <sys/types.h>
+
 #include "JobQueue.h"
 
 static const size_t SORT_BUFFER_S = 64 * 128 * 1024;
 
-#define UNUSED(expr) do { (void)(expr); } while (0)
+#define UNUSED(expr) \
+  do {               \
+    (void)(expr);    \
+  } while (0)
 #define TIME() std::chrono::high_resolution_clock::now()
-#define TOOK_UNTIL(t1, t2) (std::chrono::duration_cast<std::chrono::nanoseconds>(t2 - t1).count())
-#define TOOK(t1) (std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::high_resolution_clock::now() - t1).count())
-#define T_START(n)  auto _tstart_##n = std::chrono::high_resolution_clock::now()
-#define T_STOP(n) (std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::high_resolution_clock::now() - _tstart_##n).count())
+#define TOOK_UNTIL(t1, t2) \
+  (std::chrono::duration_cast<std::chrono::nanoseconds>(t2 - t1).count())
+#define TOOK(t1)                                         \
+  (std::chrono::duration_cast<std::chrono::nanoseconds>( \
+       std::chrono::high_resolution_clock::now() - t1)   \
+       .count())
+#define T_START(n) auto _tstart_##n = std::chrono::high_resolution_clock::now()
+#define T_STOP(n)                                               \
+  (std::chrono::duration_cast<std::chrono::nanoseconds>(        \
+       std::chrono::high_resolution_clock::now() - _tstart_##n) \
+       .count())
 
-#define TODO(msg) std::cerr << "\n" __FILE__ << ":" << __LINE__ << ": TODO: " << #msg << std::endl;
+#define TODO(msg)                                                     \
+  std::cerr << "\n" __FILE__ << ":" << __LINE__ << ": TODO: " << #msg \
+            << std::endl;
 
 #if defined(_WIN32)
-#include <windows.h>
 #include <psapi.h>
-#elif defined(__unix__) || defined(__unix) || defined(unix) || (defined(__APPLE__) && defined(__MACH__))
-#include <unistd.h>
+#include <windows.h>
+#elif defined(__unix__) || defined(__unix) || defined(unix) || \
+    (defined(__APPLE__) && defined(__MACH__))
 #include <sys/resource.h>
+#include <unistd.h>
 #if defined(__APPLE__) && defined(__MACH__)
 #include <mach/mach.h>
-#elif (defined(_AIX) || defined(__TOS__AIX__)) || (defined(__sun__) || defined(__sun) || defined(sun) && (defined(__SVR4) || defined(__svr4__)))
+#elif (defined(_AIX) || defined(__TOS__AIX__)) || \
+    (defined(__sun__) || defined(__sun) ||        \
+     defined(sun) && (defined(__SVR4) || defined(__svr4__)))
 #include <fcntl.h>
 #include <procfs.h>
-#elif defined(__linux__) || defined(__linux) || defined(linux) || defined(__gnu_linux__)
+#elif defined(__linux__) || defined(__linux) || defined(linux) || \
+    defined(__gnu_linux__)
 #include <stdio.h>
 #endif
 #else
@@ -324,6 +341,60 @@ class no_init_allocator : public A {
 };
 
 // _____________________________________________________________________________
+inline float boundedSub(const float a, const float b) {
+  return a - b;
+}
+
+// _____________________________________________________________________________
+inline float boundedAdd(const float a, const float b) {
+  return a + b;
+}
+
+// _____________________________________________________________________________
+inline double boundedSub(const double a, const double b) {
+  return a - b;
+}
+
+// _____________________________________________________________________________
+inline double boundedAdd(const double a, const double b) {
+  return a + b;
+}
+
+// _____________________________________________________________________________
+template <typename T>
+inline T boundedSub(const T a, const double b) {
+  const double diff = static_cast<double>(a) - b;
+  return diff <= static_cast<double>(std::numeric_limits<T>::lowest())
+             ? std::numeric_limits<T>::lowest()
+             : static_cast<T>(diff);
+}
+
+// _____________________________________________________________________________
+template <typename T>
+inline T boundedAdd(const T a, const double b) {
+  const double sum = static_cast<double>(a) + b;
+  return sum >= static_cast<double>(std::numeric_limits<T>::max())
+             ? std::numeric_limits<T>::max()
+             : static_cast<T>(sum);
+}
+
+
+// _____________________________________________________________________________
+template <typename T>
+inline T boundedSub(const T a, const T b) {
+  return a < std::numeric_limits<T>::lowest() + b
+             ? std::numeric_limits<T>::lowest()
+             : a - b;
+}
+
+// _____________________________________________________________________________
+template <typename T>
+inline T boundedAdd(const T a, const T b) {
+  return a > std::numeric_limits<T>::max() - b ? std::numeric_limits<T>::max()
+                                               : a + b;
+}
+
+// _____________________________________________________________________________
 template <typename V>
 int merge(V* lst, V* tmpLst, size_t l, size_t m, size_t r) {
   size_t ret = 0;
@@ -472,7 +543,7 @@ class approx {
   }
 
   friend std::ostream& operator<<(std::ostream& out, const approx& a) {
-    out << "~" << a._magnitude;
+    out << "~" << std::fixed << std::setprecision(5) << a._magnitude;
     return out;
   }
 

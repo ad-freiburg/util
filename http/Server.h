@@ -80,6 +80,7 @@ struct Answer {
 class Handler {
  public:
   virtual Answer handle(const Req& request, int connection) const = 0;
+  virtual ~Handler() = default;
 };
 
 /*

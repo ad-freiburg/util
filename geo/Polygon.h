@@ -55,7 +55,7 @@ class Polygon {
   const std::vector<Ring<T>>& getInners() const { return _inners; }
   std::vector<Ring<T>>& getInners() { return _inners; }
 
-  size_t getSize() const {
+  size_t size() const {
     size_t ret = _outer.size();
     for (const auto& inner : _inners) ret += inner.size();
     return ret;
@@ -149,8 +149,9 @@ template <typename T>
 class XSortedRing {
  public:
   XSortedRing() {}
-  XSortedRing(const Box<T>& box) : _ring(8) {
+  XSortedRing(const Box<T>& box) : _ring(8), _bbox(box) {
     _maxSegLen = box.getUpperRight().getX() - box.getLowerLeft().getX();
+    _area = util::geo::area(box);
 
     _ring[0] = {box.getLowerLeft(),
                 {box.getLowerLeft(), box.getUpperLeft()},
@@ -204,6 +205,7 @@ class XSortedRing {
   }
 
   XSortedRing(const Ring<T>& ring) {
+    _area = ringArea(ring);
     _ring.reserve(ring.size());
 
     for (size_t i = 1; i < ring.size(); i++) {
@@ -212,6 +214,8 @@ class XSortedRing {
         continue;
       T len = fabs(ring[i - 1].getX() - ring[i].getX());
       if (len > _maxSegLen) _maxSegLen = len;
+
+      _bbox = extendBox(LineSegment<T>{ring[i - 1], ring[i]}, _bbox);
 
       double prevAng = 0;
       double nextAng = 0;
@@ -232,9 +236,11 @@ class XSortedRing {
       }
 
       prevAng = util::geo::angBetween(
-          ring[i], ring[i - 1],
-          {ring[prev].getX() - (ring[i - 1].getX() - ring[i].getX()),
-           ring[prev].getY() - (ring[i - 1].getY() - ring[i].getY())});
+          ring[i].asDPoint(), ring[i - 1].asDPoint(),
+          {ring[prev].getX() * 1.0 -
+               (ring[i - 1].getX() * 1.0 - ring[i].getX() * 1.0),
+           ring[prev].getY() * 1.0 -
+               (ring[i - 1].getY() * 1.0 - ring[i].getY() * 1.0)});
 
       size_t next = (i + 1) % ring.size();
 
@@ -244,9 +250,11 @@ class XSortedRing {
       }
 
       nextAng = util::geo::angBetween(
-          ring[i - 1], ring[i],
-          {ring[next].getX() - (ring[i].getX() - ring[i - 1].getX()),
-           ring[next].getY() - (ring[i].getY() - ring[i - 1].getY())});
+          ring[i - 1].asDPoint(), ring[i].asDPoint(),
+          {ring[next].getX() * 1.0 -
+               (ring[i].getX() * 1.0 - ring[i - 1].getX() * 1.0),
+           ring[next].getY() * 1.0 -
+               (ring[i].getY() * 1.0 - ring[i - 1].getY() * 1.0)});
 
       if (len > _maxSegLen) _maxSegLen = len;
 
@@ -293,9 +301,11 @@ class XSortedRing {
       }
 
       double prevAng = util::geo::angBetween(
-          ring[0], ring[i - 1],
-          {ring[prev].getX() - (ring[i - 1].getX() - ring[0].getX()),
-           ring[prev].getY() - (ring[i - 1].getY() - ring[0].getY())});
+          ring[0].asDPoint(), ring[i - 1].asDPoint(),
+          {ring[prev].getX() * 1.0 -
+               (ring[i - 1].getX() * 1.0 - ring[0].getX() * 1.0),
+           ring[prev].getY() * 1.0 -
+               (ring[i - 1].getY() * 1.0 - ring[0].getY() * 1.0)});
 
       size_t next = 1;
 
@@ -305,9 +315,11 @@ class XSortedRing {
       }
 
       double nextAng = util::geo::angBetween(
-          ring[i - 1], ring[0],
-          {ring[next].getX() - (ring[0].getX() - ring[i - 1].getX()),
-           ring[next].getY() - (ring[0].getY() - ring[i - 1].getY())});
+          ring[i - 1].asDPoint(), ring[0].asDPoint(),
+          {ring[next].getX() * 1.0 -
+               (ring[0].getX() * 1.0 - ring[i - 1].getX() * 1.0),
+           ring[next].getY() * 1.0 -
+               (ring[0].getY() * 1.0 - ring[i - 1].getY() * 1.0)});
 
       if (ring[i - 1].getX() < ring[0].getX()) {
         _ring.push_back({ring[i - 1],
@@ -336,6 +348,8 @@ class XSortedRing {
   bool operator==(const XSortedRing<T>& other) const {
     if (_ring.size() != other._ring.size()) return false;
     if (_maxSegLen != other._maxSegLen) return false;
+    if (_bbox != other._bbox) return false;
+    if (_area != other._area) return false;
 
     for (size_t i = 0; i < _ring.size(); i++) {
       if (_ring[i] != other._ring[i]) return false;
@@ -353,10 +367,16 @@ class XSortedRing {
 
   const std::vector<XSortedTuple<T>>& rawRing() const { return _ring; }
   std::vector<XSortedTuple<T>>& rawRing() { return _ring; }
+  Box<T> boundingBox() const { return _bbox; }
+  void setBoundingBox(const Box<T>& bbox) { _bbox = bbox; }
+  double area() const { return _area; }
+  void setArea(double area) { _area = area; }
 
  private:
   std::vector<XSortedTuple<T>> _ring;
   T _maxSegLen = -1;
+  Box<T> _bbox;
+  double _area = 0;
 };
 
 template <typename T>
@@ -422,8 +442,12 @@ class XSortedPolygon {
   bool empty() const { return _outer.rawRing().size() == 0; };
 
   size_t size() const {
-    // TODO: also count inner sizes!
-    return _outer.rawRing().size();
+    size_t size = _outer.rawRing().size();
+
+    for (const auto& inner : _inners) {
+      size += inner.rawRing().size();
+    }
+    return size;
   }
 
   const XSortedRing<T>& getOuter() const { return _outer; }
@@ -476,6 +500,12 @@ class XSortedPolygon {
 
   T getInnerMaxSegLen() const { return _innerMaxSegLen; }
   void setInnerMaxSegLen(T len) { _innerMaxSegLen = len; }
+  Box<T> boundingBox() const { return _outer.boundingBox(); }
+  double area() const {
+    double ret = _outer.area();
+    for (const auto& inner : _inners) ret -= inner.area();
+    return ret;
+  }
 
  private:
   XSortedRing<T> _outer;
@@ -485,9 +515,6 @@ class XSortedPolygon {
   std::vector<std::pair<T, size_t>> _boxIdx;
   T _innerMaxSegLen = 0;
 };
-
-template <typename T>
-using XSortedMultiPolygon = std::vector<XSortedPolygon<T>>;
 
 // _____________________________________________________________________________
 template <typename T>
@@ -525,4 +552,4 @@ inline double outerArea(const XSortedPolygon<T>& b) {
 }  // namespace geo
 }  // namespace util
 
-#endif  // UTIL_GEO_LINE_H_
+#endif  // UTIL_GEO_POLYGON_H_

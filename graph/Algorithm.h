@@ -28,6 +28,7 @@ class Algorithm {
       UNUSED(edge);
       return true;
     };
+    virtual ~EdgeCheckFunc() = default;
   };
 
   template <typename N, typename E>

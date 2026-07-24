@@ -5,9 +5,8 @@
 // _____________________________________________________________________________
 template <typename T>
 CircularSegment<T>::CircularSegment(const Point<T>& a, double ang,
-                            const Point<T>& c) : _a(a), _c(c), _renderD(0), _ang(ang)
-     {
-
+                                    const Point<T>& c)
+    : _a(a), _c(c), _renderD(0), _ang(ang) {
   _rad = dist(a, c);
   _s = fabs(_ang * _rad);
   _initAng = angBetween(c, a);
