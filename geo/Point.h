@@ -39,12 +39,24 @@ class Point {
     return _x < p.getX() || (_x == p.getX() && _y < p.getY());
   }
 
+  // return point in full precision
+  Point<double> asDPoint() const {
+    return {static_cast<double>(_x), static_cast<double>(_y)};
+  }
+
  private:
   T _x, _y;
 };
 
 template <typename T>
 using MultiPoint = std::vector<Point<T>>;
+
+template <typename T>
+std::ostream& operator<<(std::ostream& o, const Point<T>& p) {
+  o << "(" << p.getX() << "," << p.getY() << ")";
+  return o;
+}
+
 
 }  // namespace geo
 }  // namespace util

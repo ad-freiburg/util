@@ -1,8 +1,18 @@
-# temporary
-cmake_minimum_required(VERSION 3.16)
-project(util_standalone_test CXX)
-enable_testing()
-# -----
+# standalone builds
+cmake_minimum_required(VERSION 3.21)
+if(CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR)
+	project(pb_util CXX)
+	set(PB_UTIL_STANDALONE ON)
+
+	# we have several projects using this lib which are still on C++11
+	set(CMAKE_CXX_STANDARD 11)
+	set(CMAKE_CXX_STANDARD_REQUIRED ON)
+	set(CMAKE_BUILD_TYPE Release)
+
+	# be very strict here
+	add_compile_options(-O3 -fno-signed-zeros -fno-trapping-math -Wno-format-extra-args -Wformat-nonliteral -Wformat-security -Wno-implicit-fallthrough -Wnarrowing -Wall -Wextra -Werror -pedantic -pedantic-errors -Woverloaded-virtual -Wnon-virtual-dtor -Wformat=2)
+	enable_testing()
+endif()
 
 file(GLOB util_SRC *.cpp 3rdparty/*.cpp log/*.cpp)
 add_library(pb_util ${util_SRC})

@@ -128,24 +128,41 @@ util::geo::CRSType util::geo::getCRSType(const char* c, const char** endr) {
 }
 
 // _____________________________________________________________________________
- double util::geo::distToSegment(double lax, double lay, double lbx, double lby,
-                            double px, double py) {
-  double d = dist(lax, lay, lbx, lby) * dist(lax, lay, lbx, lby);
+double util::geo::distToSegment(double lax, double lay, double lbx, double lby,
+                                double px, double py) {
+  double dx = lbx - lax;
+  double dy = lby - lay;
+  double d = dx * dx + dy * dy;
   if (d == 0) return dist(px, py, lax, lay);
 
-  double t = ((px - lax) * (lbx - lax) + (py - lay) * (lby - lay)) / d;
+  double dot = (px - lax) * dx + (py - lay) * dy;
+  if (dot <= 0) return dist(px, py, lax, lay);
+  if (dot >= d) return dist(px, py, lbx, lby);
 
-  if (t < 0) {
-    return dist(px, py, lax, lay);
-  } else if (t > 1) {
-    return dist(px, py, lbx, lby);
-  }
-
-  return dist(px, py, lax + t * (lbx - lax), lay + t * (lby - lay));
+  double t = dot / d;
+  return dist(px, py, lax + t * dx, lay + t * dy);
 }
 
 // _____________________________________________________________________________
-util::geo::WKTType util::geo::getWKTType(const char* c) { return util::geo::getWKTType(c, 0); }
+double util::geo::distToSegmentSquared(double lax, double lay, double lbx,
+                                       double lby, double px, double py) {
+  double dx = lbx - lax;
+  double dy = lby - lay;
+  double d = dx * dx + dy * dy;
+  if (d == 0) return distSquared(px, py, lax, lay);
+
+  double dot = (px - lax) * dx + (py - lay) * dy;
+  if (dot <= 0) return distSquared(px, py, lax, lay);
+  if (dot >= d) return distSquared(px, py, lbx, lby);
+
+  double t = dot / d;
+  return distSquared(px, py, lax + t * dx, lay + t * dy);
+}
+
+// _____________________________________________________________________________
+util::geo::WKTType util::geo::getWKTType(const char* c) {
+  return util::geo::getWKTType(c, 0);
+}
 
 // _____________________________________________________________________________
 util::geo::CRSType util::geo::getCRSType(const char* c) { return util::geo::getCRSType(c, 0); }
@@ -161,10 +178,14 @@ util::geo::CRSType util::geo::getCRSType(const std::string& str) {
 }
 
 // _____________________________________________________________________________
- double util::geo::dist(double x1, double y1, double x2, double y2) {
+double util::geo::distSquared(double x1, double y1, double x2, double y2) {
+  return (x2 - x1) * (x2 - x1) + (y2 - y1) * (y2 - y1);
+}
+
+// _____________________________________________________________________________
+double util::geo::dist(double x1, double y1, double x2, double y2) {
   return sqrt((x2 - x1) * (x2 - x1) + (y2 - y1) * (y2 - y1));
 }
 
 // _____________________________________________________________________________
- double util::geo::angBetween(double p1x, double p1y) { return atan2(p1x, p1y); }
-
+double util::geo::angBetween(double p1x, double p1y) { return atan2(p1x, p1y); }

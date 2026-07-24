@@ -8,8 +8,9 @@
 #include <iostream>
 #include <list>
 #include <memory>
-#include <unordered_map>
 #include <set>
+#include <unordered_map>
+#include "util/Misc.h"
 
 namespace util {
 namespace geo {
@@ -31,7 +32,11 @@ template <typename K, typename V>
 class IntervalIdx {
  public:
   IntervalIdx() {
-    _ts = {10, 100, 1000, 10000, 100000, 1000000, 10000000, 100000000};
+    K cur = 1;
+    while (cur * 1.0 * 10 <= std::numeric_limits<K>::max() && cur * 10 <= 100000000) {
+      cur *= 10;
+      _ts.push_back(cur);
+    }
     _ivals.resize(_ts.size() + 1);
   }
 
@@ -81,6 +86,47 @@ class IntervalIdx {
     return ret;
   }
 
+  // find all intervals, with their values, which overlap s= [a, b]
+  void overlap_find_all(
+      const std::pair<K, K> s, std::vector<IntervalVal<K, V>>& ret) const {
+    ret.clear();
+    ret.reserve(15);
+
+    // retrieve from each sub-list
+    for (size_t j = 0; j < _ts.size(); j++) get(s, _ivals[j], _ts[j], ret);
+
+    // also retrieve from largest sub-list
+    get(s, _ivals.back(), _maxSpan, ret);
+  }
+
+  // find all intervals, with their values, which overlap s= [a, b], call
+  // callback with each
+  bool overlap_find_all(const std::pair<K, K> s,
+                        std::function<bool(IntervalVal<K, V>)> cb) const {
+    // retrieve from each sub-list
+    for (size_t j = 0; j < _ts.size(); j++) {
+      if (get(s, _ivals[j], _ts[j], cb)) return true;
+    }
+
+    // also retrieve from largest sub-list
+    bool r = get(s, _ivals.back(), _maxSpan, cb);
+
+    return r;
+  }
+
+  // returns true if a request would surely return the entire content of this
+  // index - but may contain false negatives for performance reasons!
+  bool is_full_scan(const std::pair<K, K> s) {
+    for (size_t j = 0; j < _ivals.size(); j++) {
+      if (_ivals[j].size() == 0) continue;
+      if (*_ivals[j].begin() < IntervalVal<K, V>{s.first, s.first, V()} ||
+          !(*_ivals[j].rbegin() < IntervalVal<K, V>{s.second, s.second, V()}))
+        return false;
+    }
+
+    return true;
+  }
+
   // returns the size of the interval index
   size_t size() {
     size_t res = 0;
@@ -102,19 +148,28 @@ class IntervalIdx {
     // search for the first interval that might overlap with the queried one
     // we can do binary search here by exploiting the fact that we know that
     // no interval in the set is longer than t, so each interval with a
-    // left bound < val[0] - t canno overlap with val
-    auto i = idx.lower_bound({val.first - t, 0, {}});
+    // left bound < val[0] - t cannot overlap with val
+    auto i = idx.lower_bound({boundedSub(val.first, t), 0, {}});
 
     // explicitly check for overlaps as long as the left bound is not larger
     // than the right bound of val (from then on, no intersects are possible
     // any more)
     while (i != idx.end() && i->l <= val.second) {
-      if ((val.first >= i->l && val.first <= i->r) || (val.second <= i->r) ||
-          (i->l >= val.first) || (i->r >= val.first && i->r <= val.second)) {
-        ret.push_back(*i);
-      }
+      if (i->r >= val.first) ret.push_back(*i);
       i++;
     }
+  }
+
+  // like above, but with callback
+  bool get(const std::pair<K, K>& val, const std::set<IntervalVal<K, V>>& idx,
+           K t, std::function<bool(IntervalVal<K, V>)> cb) const {
+    auto i = idx.lower_bound({val.first - t, 0, {}});
+
+    while (i != idx.end() && i->l <= val.second) {
+      if (i->r >= val.first && cb(*i)) return true;
+      i++;
+    }
+    return false;
   }
 };
 
