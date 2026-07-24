@@ -1796,12 +1796,48 @@ double meterDist(const GeomA& a, const GeomB& b) {
 }
 
 template <typename T>
-std::vector<Point<T>> fillPolygon(const Polygon<T>& p, double d,
+std::vector<Point<T>> fill(const Polygon<T>& p, double d,
                                   const Box<T>& bounds);
 
 template <typename T>
-std::vector<Point<T>> fillPolygon(const Polygon<T>& p, double d) {
-  return fillPolygon(p, d, getBoundingBox(p));
+std::vector<Point<T>> fill(const Point<T>&, double,
+                                  const Box<T>&) {
+  return {};
+}
+
+template <typename T>
+std::vector<Point<T>> fill(const Line<T>&, double,
+                                  const Box<T>&) {
+  // TODO: strictly speaking a line has an interior
+  return {};
+}
+
+template <typename T>
+std::vector<Point<T>> fill(const Box<T>& b, double d,
+                                  const Box<T>& bounds) {
+  return fill(convexHull(b), d, bounds);
+}
+
+template <template <typename> class Geom, typename T>
+std::vector<Point<T>> fill(const std::vector<Geom<T>>& multi, double d,
+                                  const Box<T>& bounds) {
+  std::vector<Point<T>> ret;
+  for (const auto& geom : multi) {
+    const auto& points = fill(geom, d, bounds);
+    ret.insert(ret.end(), points.begin(), points.end());
+  }
+
+  return ret;
+}
+
+template <template <typename> class Geom, typename T>
+std::vector<Point<T>> fill(const Geom<T>& p, double d) {
+  return fill(p, d, getBoundingBox(p));
+}
+
+template <template <typename> class Geom, typename T>
+std::vector<Point<T>> fill(const std::vector<Geom<T>>& p, double d) {
+  return fill(p, d, getBoundingBox(p));
 }
 
 }  // namespace geo

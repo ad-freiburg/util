@@ -17,7 +17,7 @@ using namespace util::geo;
 void GeoTest::testPolygonFill() {
   {
     auto a = polygonFromWKT<int>("POLYGON((0 0, 2 0, 2 2, 0 2, 0 0))");
-    auto fillPoints = fillPolygon(a, 1);
+    auto fillPoints = fill(a, 1);
 
     //  4
     //
@@ -37,7 +37,7 @@ void GeoTest::testPolygonFill() {
 
   {
     auto a = polygonFromWKT<int>("POLYGON((0 0, 3 0, 3 3, 0 3, 0 0))");
-    auto fillPoints = fillPolygon(a, 1);
+    auto fillPoints = fill(a, 1);
 
     //  4
     //
@@ -56,7 +56,7 @@ void GeoTest::testPolygonFill() {
   {
     auto a = polygonFromWKT<int>(
         "POLYGON((0 0, 3 0, 3 3, 0 3, 0 0), (1 1, 2 1, 2 2, 1 2, 1 1))");
-    auto fillPoints = fillPolygon(a, 1);
+    auto fillPoints = fill(a, 1);
 
     //  4
     //
@@ -74,7 +74,7 @@ void GeoTest::testPolygonFill() {
 
   {
     auto a = polygonFromWKT<int>("POLYGON((0 0, 4 0, 4 4, 0 4, 0 0))");
-    auto fillPoints = fillPolygon(a, 1);
+    auto fillPoints = fill(a, 1);
 
     //  4 -----------------
     //    |               |
@@ -93,7 +93,7 @@ void GeoTest::testPolygonFill() {
   {
     auto a = polygonFromWKT<int>(
         "POLYGON((0 0, 4 0, 4 4, 0 4, 0 0), (1 1, 3 1, 3 3, 1 3, 1 1))");
-    auto fillPoints = fillPolygon(a, 1);
+    auto fillPoints = fill(a, 1);
 
     //  4 -----------------
     //    |               |
@@ -132,5 +132,21 @@ void GeoTest::testPolygonFill() {
     TEST(fillPoints[15], ==, (Point<int>(4, 1)));
     TEST(fillPoints[16], ==, (Point<int>(4, 2)));
     TEST(fillPoints[17], ==, (Point<int>(4, 3)));
+  }
+
+  {
+    auto a = multiPolygonFromWKT<int>(
+        "MULTIPOLYGON(((0 0, 4 0, 4 4, 0 4, 0 0)), ((10 0, 14 0, 14 4, 10 4, 10 0)))");
+    auto fillPoints = fill(a, 1);
+
+    TEST(fillPoints.size(), ==, 40);
+  }
+
+  {
+    auto a = polygonFromWKT<int>(
+        "POLYGON((0 0, 4 0, 4 4, 0 4, 0 0))");
+    auto fillPoints = fill(getBoundingBox(a), 1);
+
+    TEST(fillPoints.size(), ==, 20);
   }
 }

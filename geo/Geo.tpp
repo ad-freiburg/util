@@ -6936,7 +6936,7 @@ double meterDistLocalSearchPadding(double euclideanDistanceUpperBound,
 
 // _____________________________________________________________________________
 template <typename T>
-std::vector<Point<T>> fillPolygon(const Polygon<T>& p, double d,
+std::vector<Point<T>> fill(const Polygon<T>& p, double d,
                                   const Box<T>& bounds) {
   std::vector<Point<T>> ret;
 
