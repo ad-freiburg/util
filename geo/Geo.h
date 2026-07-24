@@ -857,11 +857,10 @@ template <typename T>
 bool empty(const Collection<T>& g);
 
 template <typename T, typename F>
-std::function<Point<T>(const Point<double>&)> makeProjFunc(CRSType baseCRS, CRSType goalCRS, F projFunc);
-
-template <typename T, typename F>
 Line<T> lineFromWKTProj(const char* c, const char** endr, F projFunc);
 
+// Overload used internally by other geometry parsers (e.g. 'multiPointFromWKTProj'), which
+// detect their 'CRSType' and pass it down to this function. Otherwise the CRS IRI would be lost.
 template <typename T, typename F>
 Line<T> lineFromWKTProj(const char* c, const char** endr, F projFunc, CRSType sourceCRS);
 
@@ -887,6 +886,8 @@ MultiPoint<T> multiPointFromWKTProj(const std::string& wkt, F projFunc);
 template <typename T, typename F>
 Point<T> pointFromWKTProj(const char* c, const char** endr, F projFunc);
 
+// Overload used internally by other geometry parsers (e.g. 'collectionFromWKTProj'), which
+// detect their 'CRSType' and pass it down to this function. Otherwise the CRS IRI would be lost.
 template <typename T, typename F>
 Point<T> pointFromWKTProj(const char* c, const char** endr, F projFunc, CRSType sourceCRS);
 
@@ -902,6 +903,8 @@ Point<T> pointFromWKTProj(std::string wkt, F projFunc);
 template <typename T, typename F>
 Polygon<T> polygonFromWKTProj(const char* c, const char** endr, F projFunc);
 
+// Overload used internally by other geometry parsers (e.g. 'multiPolygonFromWKTProj'), which
+// detect their 'CRSType' and pass it down to this function. Otherwise the CRS IRI would be lost.
 template <typename T, typename F>
 Polygon<T> polygonFromWKTProj(const char* c, const char** endr, F projFunc, CRSType sourceCRS);
 
@@ -917,6 +920,8 @@ Polygon<T> polygonFromWKTProj(std::string wkt, F projFunc);
 template <typename T, typename F>
 MultiLine<T> multiLineFromWKTProj(const char* c, const char** endr, F projFunc);
 
+// Overload used internally by other geometry parsers (e.g. 'multiPointFromWKTProj'), which
+// detect their 'CRSType' and pass it down to this function. Otherwise the CRS IRI would be lost.
 template <typename T, typename F>
 MultiLine<T> multiLineFromWKTProj(const char* c, const char** endr, F projFunc, CRSType sourceCRS);
 
@@ -924,6 +929,8 @@ template <typename T, typename F>
 MultiPolygon<T> multiPolygonFromWKTProj(const char* c, const char** endr,
                                         F projFunc);
 
+// Overload used internally by other geometry parsers (e.g. 'collectionFromWKTProj'), which
+// detect their 'CRSType' and pass it down to this function. Otherwise the CRS IRI would be lost.
 template <typename T, typename F>
 MultiPolygon<T> multiPolygonFromWKTProj(const char* c, const char** endr,
                                         F projFunc, CRSType sourceCRS);
@@ -971,10 +978,8 @@ MultiPolygon<T> multiPolygonFromWKTProj(const std::string& wkt, F projFunc);
 template <typename T>
 Collection<T> collectionFromWKT(const std::string& wkt);
 
-template <typename T>
-Collection<T> collectionFromWKTProj(
-    const std::string& wkt,
-    std::function<Point<T>(const Point<double>& p1)> projFunc);
+template <typename T, typename F>
+Collection<T> collectionFromWKTProj(const std::string& wkt, F projFunc);
 
 template <typename T>
 double len(const Point<T>&);
@@ -1276,16 +1281,16 @@ template <typename T>
 Point<T> latLngToLngLat(Point<T> latLng);
 
 template <typename T>
-Point<T> convertToCRS(const Point<T>& p, CRSType baseCrs, CRSType goalCrs);
+Point<T> projectToCRS(const Point<T>& p, CRSType baseCrs, CRSType goalCrs);
 
 template <typename T>
-Point<T> convertToCRS84(const Point<T>& p, CRSType baseCrs);
+Point<T> projectToCRS84(const Point<T>& p, CRSType baseCrs);
 
 template <typename T>
-Point<T> convertToWGS84(const Point<T>& p, CRSType baseCrs);
+Point<T> projectToWGS84(const Point<T>& p, CRSType baseCrs);
 
 template <typename T>
-Point<T> convertToWebMerc(const Point<T>& p, CRSType baseCrs);
+Point<T> projectToWebMerc(const Point<T>& p, CRSType baseCrs);
 
 template <typename T>
 double webMercMeterDist(const Point<T>& a, const Point<T>& b);

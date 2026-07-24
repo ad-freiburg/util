@@ -96,11 +96,19 @@ util::geo::WKTType util::geo::getWKTType(const char* c, const char** endr) {
 
 // _____________________________________________________________________________
 util::geo::CRSType util::geo::getCRSType(const char* c, const char** endr) {
-  while ((*c == ' ' || *c == '\n' || *c == '\t' || *c == '\r') ||
-         ((*c) == '"') || ((*c) == '\''))
+  while (((*c == ' ' || *c == '\n' || *c == '\t' || *c == '\r') ||
+         ((*c) == '"') || ((*c) == '\'')) && ((*c) != '\0'))
     c++; // Skip possible whitespace.
 
-  if (*c != '<') return CRS84;  // Default.
+  // If 'endr == nullptr' this function should still update it, for this
+  // 'endr' is replaced accordingly.
+  const char* replacement = nullptr;
+  endr = (endr != nullptr) ? endr : &replacement;
+
+  if (*c != '<') {
+    if (endr) (*endr) = c;
+    return CRS84;  // Default.
+  }
 
   if (strncicmp("<http://www.opengis.net/def/crs/OGC/1.3/CRS84>", c, 46) == 0) {
     if (endr) (*endr) = c + 46;
@@ -115,7 +123,7 @@ util::geo::CRSType util::geo::getCRSType(const char* c, const char** endr) {
     return WEB_MERCATOR;
   }
 
-  if (endr) (*endr) = 0;
+  if (endr) (*endr) = c;
   return UNSUPPORTED;
 }
 
