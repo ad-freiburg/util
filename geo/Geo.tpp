@@ -6946,8 +6946,6 @@ std::vector<Point<T>> fill(const Polygon<T>& p, double d,
 
   std::vector<double> xs;
 
-  const auto& outer = p.getOuter();
-
   std::vector<const Ring<T>*> rings;
   rings.reserve(p.getInners().size() + 1);
   rings.push_back(&p.getOuter());
