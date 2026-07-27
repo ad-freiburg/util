@@ -6199,21 +6199,34 @@ double withinDist(const std::vector<XSortedTuple<T>>& ls1,
                   T maxSegLenB, const Box<T>& boxA, const Box<T>& boxB,
                   double maxDist, PF&& paddingFunc, double maxEuclideanDist,
                   DF&& distFunc) {
+  return withinDist(ls1, 0, ls1.size(), ls2, 0, ls2.size(), maxSegLenA,
+                    maxSegLenB, boxA, boxB, maxDist, paddingFunc,
+                    maxEuclideanDist, distFunc);
+}
+
+// _____________________________________________________________________________
+template <typename T, typename PF, typename DF>
+double withinDist(const std::vector<XSortedTuple<T>>& ls1, size_t fromA,
+                  size_t toA, const std::vector<XSortedTuple<T>>& ls2,
+                  size_t fromB, size_t toB, T maxSegLenA, T maxSegLenB,
+                  const Box<T>& boxA, const Box<T>& boxB, double maxDist,
+                  PF&& paddingFunc, double maxEuclideanDist, DF&& distFunc) {
   if (util::geo::dist(boxA, boxB) > maxEuclideanDist) {
     return std::numeric_limits<double>::max();
   }
 
   // always ensure that ls2 is smaller, because ls2 is padded
-  if (ls1.size() < ls2.size())
-    return withinDist(ls2, ls1, maxSegLenB, maxSegLenA, boxB, boxA, maxDist,
-                      paddingFunc, maxEuclideanDist, distFunc);
+  if (toA - fromA < toB - fromB)
+    return withinDist(ls2, fromB, toB, ls1, fromA, toA, maxSegLenB, maxSegLenA,
+                      boxB, boxA, maxDist, paddingFunc, maxEuclideanDist,
+                      distFunc);
 
-  if (ls1.size() == 0 || ls2.size() == 0)
-    return std::numeric_limits<double>::max();
+  if (toA == fromA || toB == fromB) return std::numeric_limits<double>::max();
 
-  auto probeDists =
-      probeDistanceUpperBound(100, ls1, ls2, boxA, boxB, maxSegLenB, maxSegLenA,
-                              maxEuclideanDist, distFunc);
+  auto probeDists = probeDistanceUpperBound(100, ls1, fromA, toA, ls2, fromB,
+                                            toB, boxA, boxB, maxSegLenB,
+                                            maxSegLenA, maxEuclideanDist,
+                                            distFunc);
 
   // if we already have the correct distance from probing, return
   if (std::get<2>(probeDists)) {
@@ -6239,10 +6252,10 @@ double withinDist(const std::vector<XSortedTuple<T>>& ls1,
            LineSegment<T>{Point<T>{0, boxB.getLowerLeft().getY()},
                           Point<T>{0, boxB.getUpperRight().getY()}});
 
-  size_t i = 0;  // position in ls1
-  size_t j = 0;  // position in ls2
-  size_t k = 0;  // position in OUT ls2
-  size_t ls2OutSize = 0;
+  size_t i = fromA;  // position in ls1
+  size_t j = fromB;  // position in ls2
+  size_t k = fromB;  // position in OUT ls2
+  size_t ls2OutSize = fromB;
 
   double padding = paddingFunc(euclideanDistUpperBound,
                                std::min(minDist, maxDist), boxA, boxB) *
@@ -6262,7 +6275,7 @@ double withinDist(const std::vector<XSortedTuple<T>>& ls1,
       ls1[i].p.getX() <
           boundedSub(boundedSub(ls2[j].p.getX(), maxSegLenA), xPadding)) {
     i = std::lower_bound(
-            ls1.begin() + i, ls1.end(),
+            ls1.begin() + i, ls1.begin() + toA,
             XSortedTuple<T>{
                 {boundedSub(boundedSub(ls2[j].p.getX(), maxSegLenA), xPadding),
                  0},
@@ -6271,11 +6284,11 @@ double withinDist(const std::vector<XSortedTuple<T>>& ls1,
   }
 
   // skip irrelevant parts in ls2
-  if (maxSegLenB < std::numeric_limits<T>::max() &&
+  if (i < toA && maxSegLenB < std::numeric_limits<T>::max() &&
       ls2[j].p.getX() <
           boundedSub(boundedSub(ls1[i].p.getX(), maxSegLenB), xPadding)) {
     j = std::lower_bound(
-            ls2.begin() + j, ls2.end(),
+            ls2.begin() + j, ls2.begin() + toB,
             XSortedTuple<T>{
                 {boundedSub(boundedSub(ls1[i].p.getX(), maxSegLenB), xPadding),
                  0},
@@ -6283,11 +6296,11 @@ double withinDist(const std::vector<XSortedTuple<T>>& ls1,
         ls2.begin();
   }
 
-  while (i < ls1.size() && ls1[i].seg().second.getX() <
-                               boundedSub(boxB.getLowerLeft().getX(), xPadding))
+  while (i < toA && ls1[i].seg().second.getX() <
+                        boundedSub(boxB.getLowerLeft().getX(), xPadding))
     i++;
-  while (j < ls2.size() && ls2[j].seg().second.getX() <
-                               boundedSub(boxA.getLowerLeft().getX(), xPadding))
+  while (j < toB && ls2[j].seg().second.getX() <
+                        boundedSub(boxA.getLowerLeft().getX(), xPadding))
     j++;
 
   // segments active by their padded bounding box
@@ -6297,12 +6310,12 @@ double withinDist(const std::vector<XSortedTuple<T>>& ls1,
   std::vector<util::geo::IntervalVal<T, LineSegment<T>>> segs;
 
   // ls2 is always padded!
-  while (i < ls1.size() || j < ls2.size() || k < ls2OutSize) {
-    T ls1X = i < ls1.size() ? ls1[i].p.getX() : std::numeric_limits<T>::max();
-    bool ls1Out = i < ls1.size() ? ls1[i].out() : true;
-    T ls2X = j < ls2.size() ? boundedSub(ls2[j].p.getX(), xPadding)
-                            : std::numeric_limits<T>::max();
-    bool ls2Out = j < ls2.size() ? ls2[j].out() : true;
+  while (i < toA || j < toB || k < ls2OutSize) {
+    T ls1X = i < toA ? ls1[i].p.getX() : std::numeric_limits<T>::max();
+    bool ls1Out = i < toA ? ls1[i].out() : true;
+    T ls2X = j < toB ? boundedSub(ls2[j].p.getX(), xPadding)
+                     : std::numeric_limits<T>::max();
+    bool ls2Out = j < toB ? ls2[j].out() : true;
 
     T ls2OutX = k < ls2OutSize ? boundedAdd(ls2[k].p.getX(), xPadding)
                                : std::numeric_limits<T>::max();
@@ -6313,7 +6326,7 @@ double withinDist(const std::vector<XSortedTuple<T>>& ls1,
       const auto& ls1seg = ls1[i].seg();
 
       // we are past ls2
-      if (ls1X > boundedAdd(ls2.back().p.getX(), xPadding)) break;
+      if (ls1X > boundedAdd(ls2[toB - 1].p.getX(), xPadding)) break;
 
       // ignore segments out of the X range
       if (ls1seg.second.getX() <
@@ -6365,7 +6378,7 @@ double withinDist(const std::vector<XSortedTuple<T>>& ls1,
       const auto& ls2seg = ls2[j].seg();
 
       // we are past ls1, so simply break
-      if (ls2X > ls1.back().p.getX()) break;
+      if (ls2X > ls1[toA - 1].p.getX()) break;
 
       // ignore segments out of the X range
       if (boundedAdd(ls2seg.second.getX(), xPadding) <
@@ -6717,31 +6730,34 @@ double withinDist(const XSortedLine<T>& ls1, const XSortedLine<T>& ls2,
 // _____________________________________________________________________________
 template <typename T, typename DF>
 std::tuple<double, double, bool> probeDistanceUpperBound(
-    size_t maxComps, const std::vector<XSortedTuple<T>>& ls1,
-    const std::vector<XSortedTuple<T>>& ls2, const Box<T>& boxA,
-    const Box<T>& boxB, T maxSegLenA, T maxSegLenB, double euclideanUpperBound,
-    DF&& distFunc) {
+    size_t maxComps, const std::vector<XSortedTuple<T>>& ls1, size_t fromA,
+    size_t toA, const std::vector<XSortedTuple<T>>& ls2, size_t fromB,
+    size_t toB, const Box<T>& boxA, const Box<T>& boxB, T maxSegLenA,
+    T maxSegLenB, double euclideanUpperBound, DF&& distFunc) {
   double upperBound = std::numeric_limits<double>::infinity();
   double eucSquared = euclideanUpperBound * euclideanUpperBound;
 
+  const size_t sizeA = toA - fromA;
+  const size_t sizeB = toB - fromB;
+
   size_t samplesA = std::max(
       static_cast<size_t>(1),
-      std::min(ls1.size(), static_cast<size_t>(sqrt(
-                               maxComps * 1.0 *
-                               ((ls1.size() * 1.0) / (ls2.size() * 1.0))))));
+      std::min(sizeA, static_cast<size_t>(
+                          sqrt(maxComps * 1.0 * ((sizeA * 1.0) /
+                                                 (sizeB * 1.0))))));
   size_t samplesB = std::max(
       static_cast<size_t>(1),
-      std::min(ls2.size(),
+      std::min(sizeB,
                static_cast<size_t>((maxComps * 1.0) / (samplesA * 1.0))));
   samplesA = std::max(
       static_cast<size_t>(1),
-      std::min(ls1.size(),
+      std::min(sizeA,
                static_cast<size_t>((maxComps * 1.0) / (samplesB * 1.0))));
 
-  size_t stepA = ls1.size() / samplesA;
-  size_t stepB = ls2.size() / samplesB;
+  size_t stepA = sizeA / samplesA;
+  size_t stepB = sizeB / samplesB;
 
-  for (size_t i = 0; i < ls1.size(); i += stepA) {
+  for (size_t i = fromA; i < toA; i += stepA) {
     if (ls1[i].out()) continue;
     if (ls1[i].p.getX() + maxSegLenA + euclideanUpperBound <
         boxB.getLowerLeft().getX())
@@ -6751,7 +6767,7 @@ std::tuple<double, double, bool> probeDistanceUpperBound(
     const auto& ls1seg = ls1[i].seg();
     if (distSquared(ls1seg, boxB) > eucSquared) continue;
 
-    for (size_t j = 0; j < ls2.size(); j += stepB) {
+    for (size_t j = fromB; j < toB; j += stepB) {
       if (ls2[j].out()) continue;
       if (ls2[j].p.getX() + maxSegLenB + euclideanUpperBound <
           boxA.getLowerLeft().getX())

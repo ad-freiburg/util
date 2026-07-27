@@ -1360,6 +1360,13 @@ template <typename G>
 double latLngDistFactor(const G& a);
 
 template <typename T, typename PF, typename DF>
+double withinDist(const std::vector<XSortedTuple<T>>& ls1, size_t fromA,
+                  size_t toA, const std::vector<XSortedTuple<T>>& ls2,
+                  size_t fromB, size_t toB, T maxSegLenA, T maxSegLenB,
+                  const Box<T>& boxA, const Box<T>& boxB, double maxDist,
+                  PF&& paddingFunc, double maxEuclideanDist, DF&& distFunc);
+
+template <typename T, typename PF, typename DF>
 double withinDist(const std::vector<XSortedTuple<T>>& ls1,
                   const std::vector<XSortedTuple<T>>& ls2, T maxSegLenA,
                   T maxSegLenB, const Box<T>& boxA, const Box<T>& boxB,
