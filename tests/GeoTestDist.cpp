@@ -575,6 +575,34 @@ static void testDistOther() {
   auto webMercLineB = lineFromWKT<double>("LINESTRING(20 0, 30 0)");
   TEST(util::geo::webMercMeterDist(webMercLineA, webMercLineB), ==, approx(10.0));
   TEST(util::geo::webMercMeterDist(webMercLineB, webMercLineA), ==, approx(10.0));
+
+  // haversine on web mercator coordinates must match haversine on the
+  // corresponding lat/lng coordinates
+  std::vector<Point<double>> lngLats{
+      {0, 0},          {10, 0},        {7.842, 47.998}, {-122.419, 37.775},
+      {139.69, 35.69}, {-58.38, -34.6}, {24.94, 60.17},  {170, -80},
+      {-179.9, 85.0},  {179.9, 85.0}};
+
+  for (const auto& latLngA : lngLats) {
+    for (const auto& latLngB : lngLats) {
+      const auto a = latLngToWebMerc(latLngA);
+      const auto b = latLngToWebMerc(latLngB);
+      TEST(util::geo::haversineWebMerc(a, b), ==,
+           approx(util::geo::haversine(latLngA, latLngB)));
+    }
+  }
+
+  TEST(util::geo::haversineWebMerc(latLngToWebMerc(Point<double>{0, 0}),
+                                   latLngToWebMerc(Point<double>{0, 0})),
+       ==, approx(0.0));
+
+  // symmetry
+  TEST(util::geo::haversineWebMerc(latLngToWebMerc(Point<double>{7.842, 47.998}),
+                                   latLngToWebMerc(Point<double>{9.18, 48.78})),
+       ==,
+       approx(util::geo::haversineWebMerc(
+           latLngToWebMerc(Point<double>{9.18, 48.78}),
+           latLngToWebMerc(Point<double>{7.842, 47.998}))));
 }
 
 // _____________________________________________________________________________

@@ -5997,6 +5997,32 @@ double haversine(const Point<T>& a, const Point<T>& b) {
 
 // _____________________________________________________________________________
 template <typename T>
+double haversineWebMerc(T x1, T y1, T x2, T y2) {
+  // haversine directly on web mercator coordinates
+  const double t1 = exp(y1 / EQUATORIAL_RAD);
+  const double t2 = exp(y2 / EQUATORIAL_RAD);
+
+  const double q1 = t1 * t1 + 1.0;
+  const double q2 = t2 * t2 + 1.0;
+
+  const double sDLat = (t2 - t1) / sqrt(q1 * q2);
+  const double sDLon = sin((x2 - x1) / (2.0 * EQUATORIAL_RAD));
+
+  const double cLat1 = 2.0 * t1 / q1;
+  const double cLat2 = 2.0 * t2 / q2;
+
+  const double a = (sDLat * sDLat) + (sDLon * sDLon) * cLat1 * cLat2;
+  return EQUATORIAL_RAD * 2.0 * atan2(sqrt(a), sqrt(1.0 - a));
+}
+
+// _____________________________________________________________________________
+template <typename T>
+double haversineWebMerc(const Point<T>& a, const Point<T>& b) {
+  return haversineWebMerc(a.getX(), a.getY(), b.getX(), b.getY());
+}
+
+// _____________________________________________________________________________
+template <typename T>
 Line<T> sparseify(const Line<T>& l, double mind) {
   if (l.size() < 3) return l;
 
@@ -6334,9 +6360,7 @@ Point<T> projectToWebMerc(const Point<T>& p, CRSType baseCRS) {
 // _____________________________________________________________________________
 template <typename T>
 double webMercMeterDist(const Point<T>& a, const Point<T>& b) {
-  const auto llA = webMercToLatLng<T>(a.getX(), a.getY());
-  const auto llB = webMercToLatLng<T>(b.getX(), b.getY());
-  return haversine(llA.getY(), llA.getX(), llB.getY(), llB.getX());
+  return haversineWebMerc(a.getX(), a.getY(), b.getX(), b.getY());
 }
 
 // _____________________________________________________________________________

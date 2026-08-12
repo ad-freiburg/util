@@ -1361,6 +1361,12 @@ template <typename T>
 double haversine(const Point<T>& a, const Point<T>& b);
 
 template <typename T>
+double haversineWebMerc(T x1, T y1, T x2, T y2);
+
+template <typename T>
+double haversineWebMerc(const Point<T>& a, const Point<T>& b);
+
+template <typename T>
 Line<T> densify(const Line<T>& l, double d);
 
 template <typename T>
