@@ -1866,7 +1866,7 @@ template <template <typename> class GeomA, template <typename> class GeomB,
           typename T>
 double withinMeterDist(const GeomA<T>& a, const std::vector<GeomB<T>>& b,
                        double maxD) {
-  return withinDist(b, a, maxD);
+  return withinMeterDist(b, a, maxD);
 }
 
 template <template <typename> class GeomA, template <typename> class GeomB,
