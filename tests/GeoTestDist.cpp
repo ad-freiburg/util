@@ -174,9 +174,17 @@ static void testDistWithinRealisticMaxDist() {
        approx(5.5));
   TEST(util::geo::withinDist(XSortedLine<double>(line), point, 10.0), ==,
        approx(5.5));
+  TEST(util::geo::withinDist(XSortedLine<double>(line), point, 5.4), >,
+       5.4);
+  TEST(util::geo::withinDist(XSortedLine<double>(line), point, 5.0), >,
+       5.0);
+  TEST(util::geo::withinDist(XSortedLine<double>(line), point, 1.0), >,
+       1.0);
 
   TEST(util::geo::withinDist(XSortedPolygon<double>(poly), point2, 10.0), ==,
        approx(sqrt(2)));
+  TEST(util::geo::withinDist(XSortedPolygon<double>(poly), point2, 1.0), >,
+       1);
   TEST(util::geo::withinDist(point2, XSortedPolygon<double>(poly), 10.0), ==,
        approx(sqrt(2)));
 
@@ -193,9 +201,15 @@ static void testDistWithinRealisticMaxDist() {
   TEST(util::geo::withinDist(XSortedPolygon<double>(polyWithInner),
                              XSortedLine<double>(line2), 10.0),
        ==, approx(0.25));
-  TEST(
-      util::geo::withinDist(XSortedPolygon<double>(polyWithInner), point, 10.0),
-      ==, approx(0.5));
+  TEST(util::geo::withinDist(XSortedPolygon<double>(polyWithInner),
+                             point, 10.0),
+       ==, approx(0.5));
+  TEST(util::geo::withinDist(XSortedPolygon<double>(polyWithInner),
+                             XSortedLine<double>(line2), .2),
+       >, 0.2);
+  TEST(util::geo::withinDist(XSortedPolygon<double>(polyWithInner),
+                             point, .4),
+       >, 0.4);
 
   TEST(util::geo::withinDist(XSortedPolygon<double>(poly2),
                              XSortedPolygon<double>(polyWithInner), 10.0),
@@ -203,6 +217,9 @@ static void testDistWithinRealisticMaxDist() {
   TEST(util::geo::withinDist(XSortedPolygon<double>(polyWithInner),
                              XSortedPolygon<double>(poly2), 10.0),
        ==, approx(0.25));
+  TEST(util::geo::withinDist(XSortedPolygon<double>(polyWithInner),
+                             XSortedPolygon<double>(poly2), .2),
+       >, 0.2);
 }
 
 // _____________________________________________________________________________
