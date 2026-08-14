@@ -1362,11 +1362,12 @@ double withinDist(const Point<T>& p, const XSortedLine<T>& line, double maxDist,
   double euclideanDistUpperBound =
       std::min(maxEuclideanDist, std::min(dist(p, line.rawLine().back().other),
                                           dist(p, line.rawLine().front().p)));
-  double minDist = std::min(
-      std::min(maxDist, distFunc(p, line.rawLine().back().other, maxDist)),
-      distFunc(p, line.rawLine().front().p, maxDist));
+  double minDist = std::min(distFunc(p, line.rawLine().back().other,
+                                     std::numeric_limits<double>::max()),
+                            distFunc(p, line.rawLine().front().p,
+                                     std::numeric_limits<double>::max()));
 
-  auto padding = paddingFunc(euclideanDistUpperBound, minDist,
+  auto padding = paddingFunc(euclideanDistUpperBound, std::min(maxDist, minDist),
                              getBoundingBox(p), line.boundingBox());
 
   // skip irrelevant parts
@@ -1400,8 +1401,8 @@ double withinDist(const Point<T>& p, const XSortedLine<T>& line, double maxDist,
 
     if (euclideanDist < euclideanDistUpperBound) {
       euclideanDistUpperBound = euclideanDist;
-      padding = paddingFunc(euclideanDistUpperBound, minDist, getBoundingBox(p),
-                            line.boundingBox());
+      padding = paddingFunc(euclideanDistUpperBound, std::min(maxDist, minDist),
+                            getBoundingBox(p), line.boundingBox());
     }
   }
 
