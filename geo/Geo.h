@@ -743,6 +743,14 @@ double euclideanDistFunc(const Point<T>& a, const Point<T>& b, double) {
   return util::geo::dist(a, b);
 }
 
+struct Padding {
+  double xPadding;
+  double yPadding;
+};
+
+template <typename T>
+Padding splitPadding(double padding, const Box<T>& boxA, const Box<T>& boxB);
+
 // standard max euclidean dist function
 template <typename T>
 std::function<double(double, double, const Box<T>&, const Box<T>&)>
@@ -937,10 +945,12 @@ bool empty(const Collection<T>& g);
 template <typename T, typename F>
 Line<T> lineFromWKTProj(const char* c, const char** endr, F projFunc);
 
-// Overload used internally by other geometry parsers (e.g. 'multiPointFromWKTProj'), which
-// detect their 'CRSType' and pass it down to this function. Otherwise the CRS IRI would be lost.
+// Overload used internally by other geometry parsers (e.g.
+// 'multiPointFromWKTProj'), which detect their 'CRSType' and pass it down to
+// this function. Otherwise the CRS IRI would be lost.
 template <typename T, typename F>
-Line<T> lineFromWKTProj(const char* c, const char** endr, F projFunc, CRSType sourceCRS);
+Line<T> lineFromWKTProj(const char* c, const char** endr, F projFunc,
+                        CRSType sourceCRS);
 
 template <typename T>
 Line<T> lineFromWKT(const char* c, const char** endr);
@@ -952,8 +962,9 @@ template <typename T, typename F>
 MultiPoint<T> multiPointFromWKTProj(const char* c, const char** endr,
                                     F projFunc);
 
-// Overload used internally by other geometry parsers (e.g. 'multiPointFromWKT'), which
-// detect their 'CRSType' and pass it down to this function. Otherwise the CRS IRI would be lost.
+// Overload used internally by other geometry parsers (e.g.
+// 'multiPointFromWKT'), which detect their 'CRSType' and pass it down to this
+// function. Otherwise the CRS IRI would be lost.
 template <typename T, typename F>
 MultiPoint<T> multiPointFromWKTProj(const char* c, const char** endr,
                                     F projFunc, CRSType sourceCRS);
@@ -970,10 +981,12 @@ MultiPoint<T> multiPointFromWKTProj(const std::string& wkt, F&& projFunc);
 template <typename T, typename F>
 Point<T> pointFromWKTProj(const char* c, const char** endr, F projFunc);
 
-// Overload used internally by other geometry parsers (e.g. 'collectionFromWKTProj'), which
-// detect their 'CRSType' and pass it down to this function. Otherwise the CRS IRI would be lost.
+// Overload used internally by other geometry parsers (e.g.
+// 'collectionFromWKTProj'), which detect their 'CRSType' and pass it down to
+// this function. Otherwise the CRS IRI would be lost.
 template <typename T, typename F>
-Point<T> pointFromWKTProj(const char* c, const char** endr, F projFunc, CRSType sourceCRS);
+Point<T> pointFromWKTProj(const char* c, const char** endr, F projFunc,
+                          CRSType sourceCRS);
 
 template <typename T>
 Point<T> pointFromWKT(const char* c, const char** endr);
@@ -987,10 +1000,12 @@ Point<T> pointFromWKTProj(std::string wkt, F&& projFunc);
 template <typename T, typename F>
 Polygon<T> polygonFromWKTProj(const char* c, const char** endr, F projFunc);
 
-// Overload used internally by other geometry parsers (e.g. 'multiPolygonFromWKTProj'), which
-// detect their 'CRSType' and pass it down to this function. Otherwise the CRS IRI would be lost.
+// Overload used internally by other geometry parsers (e.g.
+// 'multiPolygonFromWKTProj'), which detect their 'CRSType' and pass it down to
+// this function. Otherwise the CRS IRI would be lost.
 template <typename T, typename F>
-Polygon<T> polygonFromWKTProj(const char* c, const char** endr, F projFunc, CRSType sourceCRS);
+Polygon<T> polygonFromWKTProj(const char* c, const char** endr, F projFunc,
+                              CRSType sourceCRS);
 
 template <typename T>
 Polygon<T> polygonFromWKT(const char* c, const char** endr);
@@ -1004,17 +1019,20 @@ Polygon<T> polygonFromWKTProj(std::string wkt, F projFunc);
 template <typename T, typename F>
 MultiLine<T> multiLineFromWKTProj(const char* c, const char** endr, F projFunc);
 
-// Overload used internally by other geometry parsers (e.g. 'multiPointFromWKTProj'), which
-// detect their 'CRSType' and pass it down to this function. Otherwise the CRS IRI would be lost.
+// Overload used internally by other geometry parsers (e.g.
+// 'multiPointFromWKTProj'), which detect their 'CRSType' and pass it down to
+// this function. Otherwise the CRS IRI would be lost.
 template <typename T, typename F>
-MultiLine<T> multiLineFromWKTProj(const char* c, const char** endr, F projFunc, CRSType sourceCRS);
+MultiLine<T> multiLineFromWKTProj(const char* c, const char** endr, F projFunc,
+                                  CRSType sourceCRS);
 
 template <typename T, typename F>
 MultiPolygon<T> multiPolygonFromWKTProj(const char* c, const char** endr,
                                         F projFunc);
 
-// Overload used internally by other geometry parsers (e.g. 'collectionFromWKTProj'), which
-// detect their 'CRSType' and pass it down to this function. Otherwise the CRS IRI would be lost.
+// Overload used internally by other geometry parsers (e.g.
+// 'collectionFromWKTProj'), which detect their 'CRSType' and pass it down to
+// this function. Otherwise the CRS IRI would be lost.
 template <typename T, typename F>
 MultiPolygon<T> multiPolygonFromWKTProj(const char* c, const char** endr,
                                         F projFunc, CRSType sourceCRS);
@@ -1038,8 +1056,9 @@ template <typename T, typename F>
 Collection<T> collectionFromWKTProj(const char* c, const char** endr,
                                     F&& projFunc);
 
-// Overload used internally by other geometry parsers (e.g. 'collectionFromWKT'), which
-// detect their 'CRSType' and pass it down to this function. Otherwise the CRS IRI would be lost.
+// Overload used internally by other geometry parsers (e.g.
+// 'collectionFromWKT'), which detect their 'CRSType' and pass it down to this
+// function. Otherwise the CRS IRI would be lost.
 template <typename T, typename F>
 Collection<T> collectionFromWKTProj(const char* c, const char** endr,
                                     F projFunc, CRSType sourceCRS);
@@ -1426,12 +1445,6 @@ template <typename T>
 Point<T> projectToWebMerc(const Point<T>& p, CRSType baseCrs);
 
 template <typename T>
-double webMercMeterDist(const Point<T>& a, const Point<T>& b);
-
-template <typename G1, typename G2>
-double webMercMeterDist(const G1& a, const G2& b);
-
-template <typename T>
 double webMercLen(const Line<T>& g);
 
 template <typename T>
@@ -1777,6 +1790,13 @@ double withinDist(const Line<T>& b, const Point<T>& a, double maxDist) {
   return withinDist(a, b, maxDist);
 }
 
+// CAREFUL: this overload is required, otherwise the line/line case
+// would match the multigeometry/line case, as line is a descendant of
+// std::vector<Point>
+template <typename T, typename PF, typename DF>
+double withinDist(const Line<T>& la, const Line<T>& lb, double maxDist,
+                  PF&& paddingFunc, double maxEuclideanDist, DF&& distFunc);
+
 template <typename T, typename PF, typename DF>
 double withinDist(const Line<T>& l, const Polygon<T>& poly, double maxDist,
                   PF&& paddingFunc, double maxEuclideanDist, DF&& distFunc) {
@@ -1816,95 +1836,101 @@ double dist(const GeomA& a, const GeomB& b, PF&& paddingFunc, DF&& distFunc) {
 }
 
 template <typename T>
-double meterDistLocalSearchPadding(double euclideanDistanceUpperBound,
-                                   double distanceUpperBound,
-                                   const util::geo::Box<T>& boxA,
-                                   const util::geo::Box<T>& boxB);
+std::pair<double, double> getMinMaxLocalScaleFactors(const Box<T>& boxA,
+                                                     const Box<T>& boxB,
+                                                     double distanceUpperBound);
 
 template <typename T>
-double withinMeterDist(const XSortedCollection<T>& a,
-                       const XSortedCollection<T>& b, double maxD) {
-  auto scale = getMinMaxLocalScaleFactors(util::geo::getBoundingBox(a),
-                                          util::geo::getBoundingBox(b), maxD);
+std::pair<double, double> getMinMaxLocalScaleFactorsWebMerc(
+    const Box<T>& boxA, const Box<T>& boxB, double distanceUpperBound);
 
-  double maxEuclideanDist = maxD / scale.first;
-  return withinDist(a, b, maxD, &meterDistLocalSearchPadding<T>,
+template <typename T>
+double webMercMaxEuclideanDist(const Box<T>& boxA, const Box<T>& boxB,
+                               double maxD);
+
+template <typename T>
+double webMercMeterDistLocalSearchPadding(double euclideanDistanceUpperBound,
+                                          double distanceUpperBound,
+                                          const util::geo::Box<T>& boxA,
+                                          const util::geo::Box<T>& boxB);
+
+template <typename T>
+double webMercWithinMeterDist(const XSortedCollection<T>& a,
+                              const XSortedCollection<T>& b, double maxD) {
+  double maxEuclideanDist = webMercMaxEuclideanDist(
+      util::geo::getBoundingBox(a), util::geo::getBoundingBox(b), maxD);
+  return withinDist(a, b, maxD, &webMercMeterDistLocalSearchPadding<T>,
                     maxEuclideanDist,
                     [](const Point<T> a, const Point<T> b, double) -> double {
-                      return haversine(a, b);
+                      return haversineWebMerc(a, b);
                     });
 }
 
+// NOTE: we need to check for arithmetic types here because there is a
+// variant of this function which accepts two multigeometries, and
+// std::vector<Geom<something>> also matches this template, with
+// Geom<something> as T. The whole reason we need to catch the multigeom
+// separately is because we use a different size() threshhold for multigeoms
+// (as size for multigeoms catches the number of members, not the number of
+// geometric primitives)
 template <template <typename> class GeomA, template <typename> class GeomB,
           typename T,
           typename std::enable_if<std::is_arithmetic<T>::value, int>::type = 0>
-double withinMeterDist(const GeomA<T>& a, const GeomB<T>& b, double maxD) {
-  // NOTE: we need to check for arithmetic types here because there is a
-  // variant of this function which accepts two multigeometries, and
-  // std::vector<Geom<something>> also matches this template, with
-  // Geom<something> as T. The whole reason we need to catch the multigeom
-  // separately is because we use a different size() threshhold for multigeoms
-  // (as size for multigeoms catches the number of members, not the number of
-  // geometric primitives)
-  auto scale = getMinMaxLocalScaleFactors(util::geo::getBoundingBox(a),
-                                          util::geo::getBoundingBox(b), maxD);
-
-  double maxEuclideanDist = maxD / scale.first;
-  return withinDist(a, b, maxD, &meterDistLocalSearchPadding<T>,
+double webMercWithinMeterDist(const GeomA<T>& a, const GeomB<T>& b,
+                              double maxD) {
+  double maxEuclideanDist = webMercMaxEuclideanDist(
+      util::geo::getBoundingBox(a), util::geo::getBoundingBox(b), maxD);
+  return withinDist(a, b, maxD, &webMercMeterDistLocalSearchPadding<T>,
                     maxEuclideanDist,
                     [](const Point<T> a, const Point<T> b, double) -> double {
-                      return haversine(a, b);
+                      return haversineWebMerc(a, b);
                     });
 }
 
 template <template <typename> class GeomA, template <typename> class GeomB,
           typename T>
-double withinMeterDist(const std::vector<GeomA<T>>& a, const GeomB<T>& b,
-                       double maxD);
+double webMercWithinMeterDist(const std::vector<GeomA<T>>& a, const GeomB<T>& b,
+                              double maxD);
 
 template <template <typename> class GeomA, template <typename> class GeomB,
           typename T>
-double withinMeterDist(const GeomA<T>& a, const std::vector<GeomB<T>>& b,
-                       double maxD) {
-  return withinMeterDist(b, a, maxD);
+double webMercWithinMeterDist(const GeomA<T>& a, const std::vector<GeomB<T>>& b,
+                              double maxD) {
+  return webMercWithinMeterDist(b, a, maxD);
 }
 
 template <template <typename> class GeomA, template <typename> class GeomB,
           typename T>
-double withinMeterDist(const std::vector<GeomA<T>>& a,
-                       const std::vector<GeomB<T>>& b, double maxD);
+double webMercWithinMeterDist(const std::vector<GeomA<T>>& a,
+                              const std::vector<GeomB<T>>& b, double maxD);
 
 template <typename GeomA, typename GeomB>
-double meterDist(const GeomA& a, const GeomB& b) {
-  return withinMeterDist(a, b, std::numeric_limits<double>::infinity());
+double webMercMeterDist(const GeomA& a, const GeomB& b) {
+  return webMercWithinMeterDist(a, b, std::numeric_limits<double>::infinity());
 }
 
 template <typename T>
-std::vector<Point<T>> fill(const Polygon<T>& p, double d,
-                                  const Box<T>& bounds);
+std::vector<Point<T>> fill(const Polygon<T>& p, double d, const Box<T>& bounds);
 
 template <typename T>
-std::vector<Point<T>> fill(const Point<T>&, double,
-                                  const Box<T>&) {
+std::vector<Point<T>> fill(const Point<T>&, double, const Box<T>&) {
   return {};
 }
 
 template <typename T>
-std::vector<Point<T>> fill(const Line<T>&, double,
-                                  const Box<T>&) {
+std::vector<Point<T>> fill(const Line<T>&, double, const Box<T>&) {
   // TODO: strictly speaking a line has an interior
   return {};
 }
 
 template <typename T>
-std::vector<Point<T>> fill(const Box<T>& b, double d,
-                                  const Box<T>& bounds) {
+std::vector<Point<T>> fill(const Box<T>& b, double d, const Box<T>& bounds) {
   return fill(convexHull(b), d, bounds);
 }
 
 template <template <typename> class Geom, typename T>
 std::vector<Point<T>> fill(const std::vector<Geom<T>>& multi, double d,
-                                  const Box<T>& bounds) {
+                           const Box<T>& bounds) {
   std::vector<Point<T>> ret;
   for (const auto& geom : multi) {
     const auto& points = fill(geom, d, bounds);
