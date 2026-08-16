@@ -982,6 +982,73 @@ static void testDistLimitedPrecision() {
   auto point_b = pointFromWKT<bool>("POINT(1 1)");
   auto point2_b = pointFromWKT<bool>("POINT(0 0)");
   TEST(util::geo::dist(point_b, point2_b), ==, approx(sqrt(2)));
+
+  auto germanyCoarse = polygonFromWKTProj<int32_t>(
+      "POLYGON((7.20369317867016 53.62121249029073, 9.335040870259194 "
+      "54.77156944262062, 13.97127141588071 53.7058383745324, "
+      "14.77327338230339 51.01654754091759, 11.916828022441791 "
+      "50.36932046223437, 13.674640551587391 48.68663848319227, "
+      "12.773761630400273 47.74969625921073, 7.58917 47.59002, 8.03916 "
+      "49.01783, 6.50056816701192 49.535220384133375, 6.0391423781112 "
+      "51.804566644690524, 7.20369317867016 53.62121249029073))",
+      [](const DPoint& p, CRSType) {
+        auto proj = util::geo::projectToWebMerc<double>(p, CRS84);
+        return Point<int32_t>{static_cast<int32_t>(proj.getX() * 10),
+                              static_cast<int32_t>(proj.getY() * 10)};
+      });
+  auto londonCoarse = polygonFromWKTProj<int32_t>(
+      "POLYGON((-0.1198608 51.5027451,-0.1197395 51.5027354,-0.1194922 "
+      "51.5039381,-0.1196135 51.5039478,-0.1198608 51.5027451))",
+      [](const DPoint& p, CRSType) {
+        auto proj = util::geo::projectToWebMerc<double>(p, CRS84);
+        return Point<int32_t>{static_cast<int32_t>(proj.getX() * 10),
+                              static_cast<int32_t>(proj.getY() * 10)};
+      });
+
+  auto germanyCoarseRaw = polygonFromWKTProj<double>(
+      "POLYGON((7.20369317867016 53.62121249029073, 9.335040870259194 "
+      "54.77156944262062, 13.97127141588071 53.7058383745324, "
+      "14.77327338230339 51.01654754091759, 11.916828022441791 "
+      "50.36932046223437, 13.674640551587391 48.68663848319227, "
+      "12.773761630400273 47.74969625921073, 7.58917 47.59002, 8.03916 "
+      "49.01783, 6.50056816701192 49.535220384133375, 6.0391423781112 "
+      "51.804566644690524, 7.20369317867016 53.62121249029073))",
+      util::geo::projectToWebMerc<double>);
+  auto londonCoarseRaw = polygonFromWKTProj<double>(
+      "POLYGON((-0.1198608 51.5027451,-0.1197395 51.5027354,-0.1194922 "
+      "51.5039381,-0.1196135 51.5039478,-0.1198608 51.5027451))",
+      util::geo::projectToWebMerc<double>);
+
+  TEST(util::geo::webMercMeterDist(germanyCoarseRaw, londonCoarseRaw), ==,
+       approx(426521.22769));
+
+  TEST(
+      util::geo::withinDist(
+          germanyCoarse, londonCoarse, 426521.0 + 10,
+          [](double euDistUp, double distUp, Box<int32_t> boxa,
+             Box<int32_t> boxb) -> double {
+            euDistUp = euDistUp / 10.0;
+            DBox boxAD{{(boxa.getLowerLeft().getX() * 1.0) / 10.0,
+                        (boxa.getLowerLeft().getY() * 1.0) / 10.0},
+                       {(boxa.getUpperRight().getX() * 1.0) / 10.0,
+                        (boxa.getUpperRight().getY() * 1.0) / 10.0}};
+            DBox boxBD{{(boxb.getLowerLeft().getX() * 1.0) / 10.0,
+                        (boxb.getLowerLeft().getY() * 1.0) / 10.0},
+                       {(boxb.getUpperRight().getX() * 1.0) / 10.0,
+                        (boxb.getUpperRight().getY() * 1.0) / 10.0}};
+            return webMercMeterDistLocalSearchPadding(euDistUp, distUp, boxAD,
+                                                      boxBD) *
+                   10.0;
+          },
+          426521 * 1.05,
+          [](const Point<int32_t> a, const Point<int32_t> b, double) -> double {
+            DPoint aReal{(a.getX() * 1.0) / 10.0, (a.getY() * 1.0) / 10.0};
+            DPoint bReal{(b.getX() * 1.0) / 10.0, (b.getY() * 1.0) / 10.0};
+            return haversineWebMerc(aReal, bReal);
+          }),
+    // NOTE: difference because of precision to only 10 cm because of coarse
+    // projection
+      ==, approx(426521.18896));
 }
 
 // _____________________________________________________________________________
