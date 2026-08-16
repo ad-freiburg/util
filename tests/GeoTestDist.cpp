@@ -25,30 +25,32 @@ struct LargeTestGeoms {
   // unsorted variants
   MultiPolygon<double> germany, spain;
   Polygon<double> saimaa;
-  Polygon<double> vaubaun;
+  Polygon<double> vauban;
   Collection<double> flixbus;
 
   // xsorted variants
-  XSortedMultiPolygon<double> germanyX, spainX, saimaaX;
+  XSortedMultiPolygon<double> germanyX, spainX, saimaaX, vaubanX;
   XSortedCollection<double> flixbusX;
 
   // web mercator variants for the meter distance tests
   MultiPolygon<double> germanyM, spainM;
   Polygon<double> saimaaM;
+  Polygon<double> vaubanM;
   Collection<double> flixbusM;
 
-  XSortedMultiPolygon<double> germanyMX, spainMX, saimaaMX;
+  XSortedMultiPolygon<double> germanyMX, spainMX, saimaaMX, vaubanMX;
   XSortedCollection<double> flixbusMX;
 
   LargeTestGeoms()
       : germany(multiPolygonFromWKT<double>(readTestDataset("germany.tsv"))),
         spain(multiPolygonFromWKT<double>(readTestDataset("spain.tsv"))),
         saimaa(polygonFromWKT<double>(readTestDataset("saimaa.tsv"))),
-        vaubaun(polygonFromWKT<double>(readTestDataset("vauban.tsv"))),
+        vauban(polygonFromWKT<double>(readTestDataset("vauban.tsv"))),
         flixbus(collectionFromWKT<double>(readTestDataset("flixbus.tsv"))),
         germanyX(germany),
         spainX(spain),
         saimaaX(saimaa),
+        vaubanX(vauban),
         flixbusX(flixbus),
         germanyM(multiPolygonFromWKTProj<double>(readTestDataset("germany.tsv"),
                                                 util::geo::projectToWebMerc<double>)),
@@ -56,11 +58,14 @@ struct LargeTestGeoms {
                                               util::geo::projectToWebMerc<double>)),
         saimaaM(polygonFromWKTProj<double>(readTestDataset("saimaa.tsv"),
                                           util::geo::projectToWebMerc<double>)),
+        vaubanM(polygonFromWKTProj<double>(readTestDataset("vauban.tsv"),
+                                          util::geo::projectToWebMerc<double>)),
         flixbusM(collectionFromWKTProj<double>(readTestDataset("flixbus.tsv"),
                                               util::geo::projectToWebMerc<double>)),
         germanyMX(germanyM),
         spainMX(spainM),
         saimaaMX(saimaaM),
+        vaubanMX(vaubanM),
         flixbusMX(flixbusM) {}
 };
 
@@ -435,15 +440,33 @@ static void testDistComplexGeoms(const LargeTestGeoms& g) {
   TEST(util::geo::webMercMeterDist(g.spainM, g.flixbusM), ==,
        approx(703461.25144));
 
-  auto vauban = polygonFromWKT<double>(readTestDataset("vauban.tsv"));
-  auto line = lineFromWKT<double>("LINESTRING(7.8824970  48.0228303,7.8823288 48.0227874,7.8820604 48.0227417,7.8819946 48.0227305)");
+  auto line = lineFromWKTProj<double>("LINESTRING(7.8824970  48.0228303,7.8823288 48.0227874,7.8820604 48.0227417,7.8819946 48.0227305)", util::geo::projectToWebMerc<double>);
+  auto lineX = XSortedLine<double>(line);
 
-  TEST(util::geo::withinDist(vauban, line, 10), ==, approx(0.06998));
-  TEST(util::geo::withinDist(vauban, line, 0.06998), ==,
-       approx(0.06998));
-  TEST(util::geo::dist(vauban, line), ==, approx(0.06998));
-  TEST(util::geo::webMercMeterDist(vauban, line), !=,
-       approx(0.06998));
+  TEST(util::geo::withinDist(g.vaubanM, line, 10), ==, approx(9638.74057));
+  TEST(util::geo::withinDist(g.vaubanM, line, 9638.74057), ==,
+       approx(9638.74057));
+  TEST(util::geo::dist(g.vaubanM, line), ==, approx(9638.74057));
+  TEST(util::geo::webMercMeterDist(g.vaubanM, line), !=,
+       approx(util::geo::dist(g.vaubanM, line)));
+
+  TEST(util::geo::webMercMeterDist(g.vaubanM, line), ==,
+       util::geo::webMercMeterDist(line, g.vaubanM));
+
+  TEST(util::geo::webMercMeterDist(g.vaubanM, line), ==,
+       util::geo::webMercMeterDist(lineX, g.vaubanMX));
+
+  TEST(util::geo::webMercMeterDist(line, g.vaubanM), ==,
+       util::geo::webMercMeterDist(lineX, g.vaubanMX));
+
+  TEST(util::geo::webMercMeterDist(line, g.vaubanM), ==,
+       util::geo::webMercMeterDist(g.vaubanMX, lineX));
+
+  TEST(util::geo::webMercMeterDist(g.vaubanM, line), ==,
+       approx(6449.59555));
+
+  TEST(util::geo::webMercMeterDist(line, g.vaubanM), ==,
+       approx(6449.59555));
 }
 
 // _____________________________________________________________________________

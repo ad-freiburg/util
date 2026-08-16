@@ -4223,7 +4223,7 @@ double withinDist(const Polygon<T>& poly, const Line<T>& l, double maxDist,
   }
 
   if (intersects(l, poly)) return 0;
-  double d = dist(l, poly.getOuter());
+  double d = dist(l, poly.getOuter(), distFunc);
 
   for (const auto& inner : poly.getInners()) {
     d = std::min(d, dist(l, inner, distFunc));
