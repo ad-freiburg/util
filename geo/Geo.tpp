@@ -1235,10 +1235,10 @@ std::pair<double, bool> withinDist(const Point<T>& p, const XSortedRing<T>& ph,
     }
     if (euclideanDist < euclideanDistUpperBound) {
       euclideanDistUpperBound = euclideanDist;
-      padding = paddingFunc(euclideanDistUpperBound, minDist,
-                            getBoundingBox(p), ph.boundingBox());
-      xPadding = splitPadding(padding, getBoundingBox(p), ph.boundingBox())
-                     .xPadding;
+      padding = paddingFunc(euclideanDistUpperBound, minDist, getBoundingBox(p),
+                            ph.boundingBox());
+      xPadding =
+          splitPadding(padding, getBoundingBox(p), ph.boundingBox()).xPadding;
     }
   }
 
@@ -1356,8 +1356,9 @@ double withinDist(const Point<T>& p, const XSortedLine<T>& line, double maxDist,
                             distFunc(p, line.rawLine().front().p,
                                      std::numeric_limits<double>::max()));
 
-  auto padding = paddingFunc(euclideanDistUpperBound, std::min(maxDist, minDist),
-                             getBoundingBox(p), line.boundingBox());
+  auto padding =
+      paddingFunc(euclideanDistUpperBound, std::min(maxDist, minDist),
+                  getBoundingBox(p), line.boundingBox());
   auto xPadding =
       splitPadding(padding, getBoundingBox(p), line.boundingBox()).xPadding;
 
@@ -1395,8 +1396,8 @@ double withinDist(const Point<T>& p, const XSortedLine<T>& line, double maxDist,
       euclideanDistUpperBound = euclideanDist;
       padding = paddingFunc(euclideanDistUpperBound, std::min(maxDist, minDist),
                             getBoundingBox(p), line.boundingBox());
-      xPadding = splitPadding(padding, getBoundingBox(p), line.boundingBox())
-                     .xPadding;
+      xPadding =
+          splitPadding(padding, getBoundingBox(p), line.boundingBox()).xPadding;
     }
   }
 
@@ -3619,15 +3620,17 @@ double withinDist(const LineSegment<T>& ls1, const LineSegment<T>& ls2,
   double d = distToSegment(ls2.first.getX(), ls2.first.getY(),
                            ls2.second.getX(), ls2.second.getY(),
                            ls1.first.getX(), ls1.first.getY(), distFunc);
-  d = std::min(d, distToSegment(ls2.first.getX(), ls2.first.getY(),
-                                ls2.second.getX(), ls2.second.getY(),
-                                ls1.second.getX(), ls1.second.getY(), distFunc));
+  d = std::min(
+      d, distToSegment(ls2.first.getX(), ls2.first.getY(), ls2.second.getX(),
+                       ls2.second.getY(), ls1.second.getX(), ls1.second.getY(),
+                       distFunc));
   d = std::min(d, distToSegment(ls1.first.getX(), ls1.first.getY(),
                                 ls1.second.getX(), ls1.second.getY(),
                                 ls2.first.getX(), ls2.first.getY(), distFunc));
-  d = std::min(d, distToSegment(ls1.first.getX(), ls1.first.getY(),
-                                ls1.second.getX(), ls1.second.getY(),
-                                ls2.second.getX(), ls2.second.getY(), distFunc));
+  d = std::min(
+      d, distToSegment(ls1.first.getX(), ls1.first.getY(), ls1.second.getX(),
+                       ls1.second.getY(), ls2.second.getX(), ls2.second.getY(),
+                       distFunc));
   return d;
 }
 
@@ -3663,15 +3666,17 @@ double dist(const LineSegment<T>& ls1, const LineSegment<T>& ls2,
   double d = distToSegment(ls2.first.getX(), ls2.first.getY(),
                            ls2.second.getX(), ls2.second.getY(),
                            ls1.first.getX(), ls1.first.getY(), distFunc);
-  d = std::min(d, distToSegment(ls2.first.getX(), ls2.first.getY(),
-                                ls2.second.getX(), ls2.second.getY(),
-                                ls1.second.getX(), ls1.second.getY(), distFunc));
+  d = std::min(
+      d, distToSegment(ls2.first.getX(), ls2.first.getY(), ls2.second.getX(),
+                       ls2.second.getY(), ls1.second.getX(), ls1.second.getY(),
+                       distFunc));
   d = std::min(d, distToSegment(ls1.first.getX(), ls1.first.getY(),
                                 ls1.second.getX(), ls1.second.getY(),
                                 ls2.first.getX(), ls2.first.getY(), distFunc));
-  d = std::min(d, distToSegment(ls1.first.getX(), ls1.first.getY(),
-                                ls1.second.getX(), ls1.second.getY(),
-                                ls2.second.getX(), ls2.second.getY(), distFunc));
+  d = std::min(
+      d, distToSegment(ls1.first.getX(), ls1.first.getY(), ls1.second.getX(),
+                       ls1.second.getY(), ls2.second.getX(), ls2.second.getY(),
+                       distFunc));
   return d;
 }
 
@@ -4223,7 +4228,7 @@ double withinDist(const Polygon<T>& poly, const Line<T>& l, double maxDist,
   }
 
   if (intersects(l, poly)) return 0;
-  double d = dist(l, poly.getOuter());
+  double d = dist(l, poly.getOuter(), distFunc);
 
   for (const auto& inner : poly.getInners()) {
     d = std::min(d, dist(l, inner, distFunc));
@@ -5143,7 +5148,8 @@ double distToSegment(T lax, T lay, T lbx, T lby, T px, T py, DF&& distFunc) {
     return distFunc(Point<T>{px, py}, Point<T>{lax, lay},
                     std::numeric_limits<double>::max());
 
-  double t = ((px - lax) * (lbx - lax) + (py - lay) * (lby - lay)) / d;
+  double t =
+      ((px - lax) * 1.0 * (lbx - lax) + (py - lay) * 1.0 * (lby - lay)) / d;
 
   if (t < 0) {
     return distFunc(Point<T>{px, py}, Point<T>{lax, lay},
@@ -5154,8 +5160,8 @@ double distToSegment(T lax, T lay, T lbx, T lby, T px, T py, DF&& distFunc) {
   }
 
   return distFunc(Point<T>{px, py},
-                  Point<T>{static_cast<T>(lax + t * (lbx - lax)),
-                           static_cast<T>(lay + t * (lby - lay))},
+                  Point<T>{static_cast<T>(lax * 1.0 + t * (lbx - lax)),
+                           static_cast<T>(lay * 1.0 + t * (lby - lay))},
                   std::numeric_limits<double>::max());
 }
 
@@ -6454,9 +6460,8 @@ double withinDist(const std::vector<XSortedTuple<T>>& ls1,
   size_t k = 0;  // position in OUT ls2
   size_t ls2OutSize = 0;
 
-  double padding =
-      paddingFunc(euclideanDistUpperBound, std::min(minDist, maxDist), boxA,
-                  boxB);
+  double padding = paddingFunc(euclideanDistUpperBound,
+                               std::min(minDist, maxDist), boxA, boxB);
   const auto pad = splitPadding(padding, boxA, boxB);
 
   T xPadding = std::min(std::numeric_limits<T>::max() * 1.0, pad.xPadding);
@@ -6557,8 +6562,8 @@ double withinDist(const std::vector<XSortedTuple<T>>& ls1,
                        ls1seg);
 
         if (processActives(activesB, ls1seg, euclideanDistUpperBound, minDist,
-                           maxDist, padding, xPadding, yPadding,
-                           box, boxB, boxA, segs, paddingFunc, distFunc))
+                           maxDist, padding, xPadding, yPadding, box, boxB,
+                           boxA, segs, paddingFunc, distFunc))
           return minDist;
       }
 
@@ -6649,8 +6654,8 @@ double withinDist(const std::vector<XSortedTuple<T>>& ls1,
                      ls2OutSeg);
 
       if (processActives(activesA, ls2OutSeg, euclideanDistUpperBound, minDist,
-                         maxDist, padding, xPadding, yPadding,
-                         box, boxA, boxB, segs, paddingFunc, distFunc))
+                         maxDist, padding, xPadding, yPadding, box, boxA, boxB,
+                         segs, paddingFunc, distFunc))
         return minDist;
 
       // advance to next OUT
@@ -6994,8 +6999,7 @@ std::tuple<double, double, bool> probeDistanceUpperBound(
     }
   }
 
-  return {upperBound, euclideanUpperBound,
-          stepA == 1 && stepB == 1 && !pruned};
+  return {upperBound, euclideanUpperBound, stepA == 1 && stepB == 1 && !pruned};
 }
 
 // _____________________________________________________________________________
@@ -7085,10 +7089,10 @@ Padding splitPadding(double padding, const Box<T>& boxA, const Box<T>& boxB) {
                       LineSegment<T>{Point<T>{0, boxB.getLowerLeft().getY()},
                                      Point<T>{0, boxB.getUpperRight().getY()}});
 
-  return {sqrt(std::max(0.0, padding * padding -
-                                 minEuclideanYDist * minEuclideanYDist)),
-          sqrt(std::max(0.0, padding * padding -
-                                 minEuclideanXDist * minEuclideanXDist))};
+  return {sqrt(std::max(
+              0.0, padding * padding - minEuclideanYDist * minEuclideanYDist)),
+          sqrt(std::max(
+              0.0, padding * padding - minEuclideanXDist * minEuclideanXDist))};
 }
 
 // _____________________________________________________________________________
@@ -7282,8 +7286,7 @@ double webMercMeterDistLocalSearchPadding(double euclideanDistanceUpperBound,
   auto boxBStar = util::geo::intersection(paddedA, boxB);
 
   // may be empty!
-  if (boxBStar.isNull())
-    return factorNew2 * euclideanDistanceUpperBound;
+  if (boxBStar.isNull()) return factorNew2 * euclideanDistanceUpperBound;
 
   double min2 = std::numeric_limits<double>::infinity();
   double max2 = 0;
@@ -7305,8 +7308,7 @@ double webMercMeterDistLocalSearchPadding(double euclideanDistanceUpperBound,
 
   double factorNew3 = max2 / min2;
 
-  if (factorNew2 < factorNew3)
-    return factorNew2 * euclideanDistanceUpperBound;
+  if (factorNew2 < factorNew3) return factorNew2 * euclideanDistanceUpperBound;
 
   return factorNew3 * euclideanDistanceUpperBound;
 }

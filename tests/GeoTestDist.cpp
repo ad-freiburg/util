@@ -16,38 +16,41 @@ using namespace util;
 using namespace util::geo;
 
 // _____________________________________________________________________________
+std::string readTestDataset(const std::string& name) {
+  std::ifstream f(std::string(TEST_DATASETS) + "/" + name, std::ios::binary);
+  return std::string((std::istreambuf_iterator<char>(f)), {});
+}
 
 struct LargeTestGeoms {
   // unsorted variants
   MultiPolygon<double> germany, spain;
   Polygon<double> saimaa;
+  Polygon<double> vauban;
   Collection<double> flixbus;
 
   // xsorted variants
-  XSortedMultiPolygon<double> germanyX, spainX, saimaaX;
+  XSortedMultiPolygon<double> germanyX, spainX, saimaaX, vaubanX;
   XSortedCollection<double> flixbusX;
 
   // web mercator variants for the meter distance tests
   MultiPolygon<double> germanyM, spainM;
   Polygon<double> saimaaM;
+  Polygon<double> vaubanM;
   Collection<double> flixbusM;
 
-  XSortedMultiPolygon<double> germanyMX, spainMX, saimaaMX;
+  XSortedMultiPolygon<double> germanyMX, spainMX, saimaaMX, vaubanMX;
   XSortedCollection<double> flixbusMX;
-
-  std::string readTestDataset(const std::string& name) {
-    std::ifstream f(std::string(TEST_DATASETS) + "/" + name, std::ios::binary);
-    return std::string((std::istreambuf_iterator<char>(f)), {});
-  }
 
   LargeTestGeoms()
       : germany(multiPolygonFromWKT<double>(readTestDataset("germany.tsv"))),
         spain(multiPolygonFromWKT<double>(readTestDataset("spain.tsv"))),
         saimaa(polygonFromWKT<double>(readTestDataset("saimaa.tsv"))),
+        vauban(polygonFromWKT<double>(readTestDataset("vauban.tsv"))),
         flixbus(collectionFromWKT<double>(readTestDataset("flixbus.tsv"))),
         germanyX(germany),
         spainX(spain),
         saimaaX(saimaa),
+        vaubanX(vauban),
         flixbusX(flixbus),
         germanyM(multiPolygonFromWKTProj<double>(readTestDataset("germany.tsv"),
                                                 util::geo::projectToWebMerc<double>)),
@@ -55,11 +58,14 @@ struct LargeTestGeoms {
                                               util::geo::projectToWebMerc<double>)),
         saimaaM(polygonFromWKTProj<double>(readTestDataset("saimaa.tsv"),
                                           util::geo::projectToWebMerc<double>)),
+        vaubanM(polygonFromWKTProj<double>(readTestDataset("vauban.tsv"),
+                                          util::geo::projectToWebMerc<double>)),
         flixbusM(collectionFromWKTProj<double>(readTestDataset("flixbus.tsv"),
                                               util::geo::projectToWebMerc<double>)),
         germanyMX(germanyM),
         spainMX(spainM),
         saimaaMX(saimaaM),
+        vaubanMX(vaubanM),
         flixbusMX(flixbusM) {}
 };
 
@@ -433,6 +439,34 @@ static void testDistComplexGeoms(const LargeTestGeoms& g) {
   TEST(util::geo::dist(g.spain, g.flixbus), ==, approx(7.00409));
   TEST(util::geo::webMercMeterDist(g.spainM, g.flixbusM), ==,
        approx(703461.25144));
+
+  auto line = lineFromWKTProj<double>("LINESTRING(7.8824970  48.0228303,7.8823288 48.0227874,7.8820604 48.0227417,7.8819946 48.0227305)", util::geo::projectToWebMerc<double>);
+  auto lineX = XSortedLine<double>(line);
+
+  TEST(util::geo::withinDist(g.vaubanM, line, 10), ==, approx(9638.74057));
+  TEST(util::geo::withinDist(g.vaubanM, line, 9638.74057), ==,
+       approx(9638.74057));
+  TEST(util::geo::dist(g.vaubanM, line), ==, approx(9638.74057));
+  TEST(util::geo::webMercMeterDist(g.vaubanM, line), !=,
+       approx(util::geo::dist(g.vaubanM, line)));
+
+  TEST(util::geo::webMercMeterDist(g.vaubanM, line), ==,
+       util::geo::webMercMeterDist(line, g.vaubanM));
+
+  TEST(util::geo::webMercMeterDist(g.vaubanM, line), ==,
+       util::geo::webMercMeterDist(lineX, g.vaubanMX));
+
+  TEST(util::geo::webMercMeterDist(line, g.vaubanM), ==,
+       util::geo::webMercMeterDist(lineX, g.vaubanMX));
+
+  TEST(util::geo::webMercMeterDist(line, g.vaubanM), ==,
+       util::geo::webMercMeterDist(g.vaubanMX, lineX));
+
+  TEST(util::geo::webMercMeterDist(g.vaubanM, line), ==,
+       approx(6449.59555));
+
+  TEST(util::geo::webMercMeterDist(line, g.vaubanM), ==,
+       approx(6449.59555));
 }
 
 // _____________________________________________________________________________
@@ -682,6 +716,9 @@ static void testDistOther() {
   auto line2 = lineFromWKT<double>("LINESTRING(4.75 4.5, 4.27 4.5)");
   auto point = pointFromWKT<double>("POINT(4.5 4.5)");
   auto point2 = pointFromWKT<double>("POINT(11 11)");
+
+  auto lineFreiburgHbf = lineFromWKT<double>("");
+  auto polygonFreiburg = polygonFromWKT<double>("");
 
   // web mercator copies, for the meter distance assertions
   auto polyWithInnerM = polygonFromWKTProj<double>(
@@ -945,6 +982,73 @@ static void testDistLimitedPrecision() {
   auto point_b = pointFromWKT<bool>("POINT(1 1)");
   auto point2_b = pointFromWKT<bool>("POINT(0 0)");
   TEST(util::geo::dist(point_b, point2_b), ==, approx(sqrt(2)));
+
+  auto germanyCoarse = polygonFromWKTProj<int32_t>(
+      "POLYGON((7.20369317867016 53.62121249029073, 9.335040870259194 "
+      "54.77156944262062, 13.97127141588071 53.7058383745324, "
+      "14.77327338230339 51.01654754091759, 11.916828022441791 "
+      "50.36932046223437, 13.674640551587391 48.68663848319227, "
+      "12.773761630400273 47.74969625921073, 7.58917 47.59002, 8.03916 "
+      "49.01783, 6.50056816701192 49.535220384133375, 6.0391423781112 "
+      "51.804566644690524, 7.20369317867016 53.62121249029073))",
+      [](const DPoint& p, CRSType) {
+        auto proj = util::geo::projectToWebMerc<double>(p, CRS84);
+        return Point<int32_t>{static_cast<int32_t>(proj.getX() * 10),
+                              static_cast<int32_t>(proj.getY() * 10)};
+      });
+  auto londonCoarse = polygonFromWKTProj<int32_t>(
+      "POLYGON((-0.1198608 51.5027451,-0.1197395 51.5027354,-0.1194922 "
+      "51.5039381,-0.1196135 51.5039478,-0.1198608 51.5027451))",
+      [](const DPoint& p, CRSType) {
+        auto proj = util::geo::projectToWebMerc<double>(p, CRS84);
+        return Point<int32_t>{static_cast<int32_t>(proj.getX() * 10),
+                              static_cast<int32_t>(proj.getY() * 10)};
+      });
+
+  auto germanyCoarseRaw = polygonFromWKTProj<double>(
+      "POLYGON((7.20369317867016 53.62121249029073, 9.335040870259194 "
+      "54.77156944262062, 13.97127141588071 53.7058383745324, "
+      "14.77327338230339 51.01654754091759, 11.916828022441791 "
+      "50.36932046223437, 13.674640551587391 48.68663848319227, "
+      "12.773761630400273 47.74969625921073, 7.58917 47.59002, 8.03916 "
+      "49.01783, 6.50056816701192 49.535220384133375, 6.0391423781112 "
+      "51.804566644690524, 7.20369317867016 53.62121249029073))",
+      util::geo::projectToWebMerc<double>);
+  auto londonCoarseRaw = polygonFromWKTProj<double>(
+      "POLYGON((-0.1198608 51.5027451,-0.1197395 51.5027354,-0.1194922 "
+      "51.5039381,-0.1196135 51.5039478,-0.1198608 51.5027451))",
+      util::geo::projectToWebMerc<double>);
+
+  TEST(util::geo::webMercMeterDist(germanyCoarseRaw, londonCoarseRaw), ==,
+       approx(426521.22769));
+
+  TEST(
+      util::geo::withinDist(
+          germanyCoarse, londonCoarse, 426521.0 + 10,
+          [](double euDistUp, double distUp, Box<int32_t> boxa,
+             Box<int32_t> boxb) -> double {
+            euDistUp = euDistUp / 10.0;
+            DBox boxAD{{(boxa.getLowerLeft().getX() * 1.0) / 10.0,
+                        (boxa.getLowerLeft().getY() * 1.0) / 10.0},
+                       {(boxa.getUpperRight().getX() * 1.0) / 10.0,
+                        (boxa.getUpperRight().getY() * 1.0) / 10.0}};
+            DBox boxBD{{(boxb.getLowerLeft().getX() * 1.0) / 10.0,
+                        (boxb.getLowerLeft().getY() * 1.0) / 10.0},
+                       {(boxb.getUpperRight().getX() * 1.0) / 10.0,
+                        (boxb.getUpperRight().getY() * 1.0) / 10.0}};
+            return webMercMeterDistLocalSearchPadding(euDistUp, distUp, boxAD,
+                                                      boxBD) *
+                   10.0;
+          },
+          426521 * 1.05,
+          [](const Point<int32_t> a, const Point<int32_t> b, double) -> double {
+            DPoint aReal{(a.getX() * 1.0) / 10.0, (a.getY() * 1.0) / 10.0};
+            DPoint bReal{(b.getX() * 1.0) / 10.0, (b.getY() * 1.0) / 10.0};
+            return haversineWebMerc(aReal, bReal);
+          }),
+    // NOTE: difference because of precision to only 10 cm because of coarse
+    // projection
+      ==, approx(426521.18896));
 }
 
 // _____________________________________________________________________________

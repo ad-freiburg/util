@@ -90,6 +90,8 @@ if (ZLIB_FOUND)
 	target_link_libraries(pb_util_xml ${ZLIB_LIBRARIES})
 endif(ZLIB_FOUND)
 
+target_link_libraries(pb_util -pthread)
+
 if(CMAKE_TESTING_ENABLED)
     add_subdirectory(tests)
 endif()
