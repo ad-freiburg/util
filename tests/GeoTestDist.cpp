@@ -16,11 +16,16 @@ using namespace util;
 using namespace util::geo;
 
 // _____________________________________________________________________________
+std::string readTestDataset(const std::string& name) {
+  std::ifstream f(std::string(TEST_DATASETS) + "/" + name, std::ios::binary);
+  return std::string((std::istreambuf_iterator<char>(f)), {});
+}
 
 struct LargeTestGeoms {
   // unsorted variants
   MultiPolygon<double> germany, spain;
   Polygon<double> saimaa;
+  Polygon<double> vaubaun;
   Collection<double> flixbus;
 
   // xsorted variants
@@ -35,15 +40,11 @@ struct LargeTestGeoms {
   XSortedMultiPolygon<double> germanyMX, spainMX, saimaaMX;
   XSortedCollection<double> flixbusMX;
 
-  std::string readTestDataset(const std::string& name) {
-    std::ifstream f(std::string(TEST_DATASETS) + "/" + name, std::ios::binary);
-    return std::string((std::istreambuf_iterator<char>(f)), {});
-  }
-
   LargeTestGeoms()
       : germany(multiPolygonFromWKT<double>(readTestDataset("germany.tsv"))),
         spain(multiPolygonFromWKT<double>(readTestDataset("spain.tsv"))),
         saimaa(polygonFromWKT<double>(readTestDataset("saimaa.tsv"))),
+        vaubaun(polygonFromWKT<double>(readTestDataset("vauban.tsv"))),
         flixbus(collectionFromWKT<double>(readTestDataset("flixbus.tsv"))),
         germanyX(germany),
         spainX(spain),
@@ -433,6 +434,16 @@ static void testDistComplexGeoms(const LargeTestGeoms& g) {
   TEST(util::geo::dist(g.spain, g.flixbus), ==, approx(7.00409));
   TEST(util::geo::webMercMeterDist(g.spainM, g.flixbusM), ==,
        approx(703461.25144));
+
+  auto vauban = polygonFromWKT<double>(readTestDataset("vauban.tsv"));
+  auto line = lineFromWKT<double>("LINESTRING(7.8824970  48.0228303,7.8823288 48.0227874,7.8820604 48.0227417,7.8819946 48.0227305)");
+
+  TEST(util::geo::withinDist(vauban, line, 10), ==, approx(0.06998));
+  TEST(util::geo::withinDist(vauban, line, 0.06998), ==,
+       approx(0.06998));
+  TEST(util::geo::dist(vauban, line), ==, approx(0.06998));
+  TEST(util::geo::webMercMeterDist(vauban, line), !=,
+       approx(0.06998));
 }
 
 // _____________________________________________________________________________
@@ -682,6 +693,9 @@ static void testDistOther() {
   auto line2 = lineFromWKT<double>("LINESTRING(4.75 4.5, 4.27 4.5)");
   auto point = pointFromWKT<double>("POINT(4.5 4.5)");
   auto point2 = pointFromWKT<double>("POINT(11 11)");
+
+  auto lineFreiburgHbf = lineFromWKT<double>("");
+  auto polygonFreiburg = polygonFromWKT<double>("");
 
   // web mercator copies, for the meter distance assertions
   auto polyWithInnerM = polygonFromWKTProj<double>(
