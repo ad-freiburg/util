@@ -6111,7 +6111,7 @@ double andoyerLambertWebMerc(const Point<T>& a, const Point<T>& b) {
 template <typename T>
 double vincenty(T lat1, T lon1, T lat2, T lon2) {
   // see https://en.wikipedia.org/wiki/Vincenty's_formulae
-  size_t MAX_ITERS = 200;
+  int MAX_ITERS = 200;
   double f1 = 1.0 - FLATTENING;
   double b = EQUATORIAL_RAD * f1;
 
