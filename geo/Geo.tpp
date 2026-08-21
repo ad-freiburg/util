@@ -6054,7 +6054,8 @@ double haversineWebMerc(const Point<T>& a, const Point<T>& b) {
 // _____________________________________________________________________________
 template <typename T>
 double andoyerLambert(T lat1, T lon1, T lat2, T lon2) {
-  // see https://en.wikipedia.org/wiki/Geographical_distance#Andoyer-Lambert_formula_for_long_lines
+  // see
+  // https://en.wikipedia.org/wiki/Geographical_distance#Andoyer-Lambert_formula_for_long_lines
   double f1 = 1.0 - FLATTENING;
 
   double b1 = atan(f1 * tan(lat1 * RAD));
@@ -6605,7 +6606,7 @@ double webMercDistFactor(const G& a) {
   // euclidean distance on web mercator is in meters on equator,
   // and proportional to cos(lat) in both y directions
   double et = exp(a.getY() / EQUATORIAL_RAD);
-  return 2 * et / (et * et + 1);
+  return (MEAN_EARTH_RAD / EQUATORIAL_RAD) * 2 * et / (et * et + 1);
 }
 
 // _____________________________________________________________________________
@@ -7395,12 +7396,14 @@ std::pair<double, double> getMinMaxLocalScaleFactors(
       -90.0 + util::geo::EPSILON,
       std::min(withinUp.getY() * 1.0, std::min(aUp.getY(), bUp.getY())));
 
-  double a = cos(yRangeMin * util::geo::RAD);
-  double b = cos(yRangeMax * util::geo::RAD);
+  const double r = util::geo::MEAN_EARTH_RAD / util::geo::EQUATORIAL_RAD;
 
-  // if we crossed the equator, we encountered a scale factor of 1!
+  double a = r * cos(yRangeMin * util::geo::RAD);
+  double b = r * cos(yRangeMax * util::geo::RAD);
+
+  // if we crossed the equator, we encountered the maximum scale factor!
   if (yRangeMin < 0 && yRangeMax > 0) {
-    return {std::min(a, b), std::max(1.0, std::max(a, b))};
+    return {std::min(a, b), std::max(r, std::max(a, b))};
   }
 
   return {std::min(a, b), std::max(a, b)};
@@ -7428,7 +7431,8 @@ double webMercMaxEuclideanDist(const Box<T>& boxA, const Box<T>& boxB,
                                double maxD) {
   auto scale = getMinMaxLocalScaleFactorsWebMerc(boxA, boxB, maxD);
 
-  // use meters here directly, we are in web mercator world
+  // use meters here directly, we are in web mercator world, but acknowledge
+  // haversine error
   return (maxD * (1.0 + HAVERSINE_MAX_ERR)) / scale.first;
 }
 

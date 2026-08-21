@@ -752,8 +752,8 @@ static void testDistOther() {
   TEST(util::geo::dist(point2, line2), ==, approx(9.01734));
   TEST(util::geo::dist(line, point), ==, approx(5.5));
 
-  TEST(util::geo::webMercMeterDist(point2M, line2M), ==, approx(999138.68916));
-  TEST(util::geo::webMercMeterDist(lineM, pointM), ==, approx(610368.37082));
+  TEST(util::geo::webMercMeterDist(point2M, line2M), ==, approx(998021.68916));
+  TEST(util::geo::webMercMeterDist(lineM, pointM), ==, approx(609686.22369));
 
   // standard point/polygon
   TEST(util::geo::withinDist(point, polyWithInner, 1), ==, approx(0.5));
@@ -763,9 +763,9 @@ static void testDistOther() {
   TEST(util::geo::dist(polyWithInner, point), ==, approx(0.5));
 
   TEST(util::geo::webMercMeterDist(pointM, polyWithInnerM), ==,
-       approx(55488.16389));
+       approx(55426.15037));
   TEST(util::geo::webMercMeterDist(polyWithInnerM, pointM), ==,
-       approx(55488.16389));
+       approx(55426.15037));
 
   // standard line/polygon
   TEST(util::geo::withinDist(line2, polyWithInner, 100), ==, approx(0.25));
@@ -775,9 +775,9 @@ static void testDistOther() {
   TEST(util::geo::dist(polyWithInner, line2), ==, approx(0.25));
 
   TEST(util::geo::webMercMeterDist(line2M, polyWithInnerM), ==,
-       approx(27744.08235));
+       approx(27713.07559));
   TEST(util::geo::webMercMeterDist(polyWithInnerM, line2M), ==,
-       approx(27744.08235));
+       approx(27713.07559));
 
   // standard line/line
   auto segLineA = lineFromWKT<double>("LINESTRING(0 0, 1 0)");
@@ -893,9 +893,9 @@ static void testDistOther() {
   auto webMercLineA = lineFromWKT<double>("LINESTRING(0 0, 10 0)");
   auto webMercLineB = lineFromWKT<double>("LINESTRING(20 0, 30 0)");
   TEST(util::geo::webMercMeterDist(webMercLineA, webMercLineB), ==,
-       approx(10.0));
+       approx(9.98882));
   TEST(util::geo::webMercMeterDist(webMercLineB, webMercLineA), ==,
-       approx(10.0));
+       approx(9.98882));
 
   // haversine on web mercator coordinates must match haversine on the
   // corresponding lat/lng coordinates
@@ -1020,7 +1020,7 @@ static void testDistLimitedPrecision() {
       util::geo::projectToWebMerc<double>);
 
   TEST(util::geo::webMercMeterDist(germanyCoarseRaw, londonCoarseRaw), ==,
-       approx(426521.22769));
+       approx(426044.54796));
 
   TEST(
       util::geo::withinDist(
@@ -1048,7 +1048,7 @@ static void testDistLimitedPrecision() {
           }),
     // NOTE: difference because of precision to only 10 cm because of coarse
     // projection
-      ==, approx(426521.18896));
+      ==, approx(426044.50928));
 }
 
 // _____________________________________________________________________________
@@ -1117,8 +1117,8 @@ static void testDistToSegmentExtreme() {
         latLngToWebMerc(Point<double>{60.0, 67.410787});
 
     double ref = haversineWebMerc(p, seg.front());
-    TEST(ref, >, 2832051.0);
-    TEST(ref, <, 2832052.0);
+    TEST(ref, >, 2828886.0);
+    TEST(ref, <, 2828887.0);
 
     // FAILS with a significant error!
     // TEST(util::geo::webMercMeterDist(p, seg), ==, approx(ref));
@@ -1134,8 +1134,8 @@ static void testDistToSegmentExtreme() {
 
     double ref =
         haversineWebMerc(p, latLngToWebMerc(Point<double>{0.278391, 76.962378}));
-    TEST(ref, >, 193127.0);
-    TEST(ref, <, 193128.0);
+    TEST(ref, >, 192911.0);
+    TEST(ref, <, 192912.0);
 
     // FAILS with a small error
     // TEST(util::geo::webMercMeterDist(p, seg), ==, approx(ref));
@@ -1149,8 +1149,8 @@ static void testDistToSegmentExtreme() {
     auto p = latLngToWebMerc(Point<double>{150.0, 84.994120});
 
     double ref = haversineWebMerc(p, seg.front());
-    TEST(ref, >, 556393.0);
-    TEST(ref, <, 556395.0);
+    TEST(ref, >, 555772.0);
+    TEST(ref, <, 555773.0);
 
     // FAILS with a huge error, as expected
     // TEST(util::geo::webMercMeterDist(p, seg), ==, approx(ref));
