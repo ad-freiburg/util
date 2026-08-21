@@ -378,13 +378,13 @@ static void testDistComplexGeoms(const LargeTestGeoms& g) {
        approx(6.5434));
   TEST(util::geo::dist(g.germanyX, g.spainX), ==, approx(6.5434));
   TEST(util::geo::webMercMeterDist(g.germanyMX, g.spainMX), ==,
-       approx(653276.57366));
+       approx(652546.47237));
 
   TEST(util::geo::withinDist(g.germany, g.spain, 10), ==, approx(6.5434));
   TEST(util::geo::withinDist(g.germany, g.spain, 6.54341), ==, approx(6.5434));
   TEST(util::geo::dist(g.germany, g.spain), ==, approx(6.5434));
   TEST(util::geo::webMercMeterDist(g.germanyM, g.spainM), ==,
-       approx(653276.57366));
+       approx(652546.47237));
 
   TEST(util::geo::withinDist(g.germany, g.germany, 10), ==, approx(0));
   TEST(util::geo::withinDist(g.germany, g.germany, 0), ==, approx(0));
@@ -431,14 +431,14 @@ static void testDistComplexGeoms(const LargeTestGeoms& g) {
        approx(7.00409));
   TEST(util::geo::dist(g.spainX, g.flixbusX), ==, approx(7.00409));
   TEST(util::geo::webMercMeterDist(g.spainMX, g.flixbusMX), ==,
-       approx(703461.25144));
+       approx(702675.06380));
 
   TEST(util::geo::withinDist(g.spain, g.flixbus, 10), ==, approx(7.00409));
   TEST(util::geo::withinDist(g.spain, g.flixbus, 7.004091), ==,
        approx(7.00409));
   TEST(util::geo::dist(g.spain, g.flixbus), ==, approx(7.00409));
   TEST(util::geo::webMercMeterDist(g.spainM, g.flixbusM), ==,
-       approx(703461.25144));
+       approx(702675.06380));
 
   auto line = lineFromWKTProj<double>("LINESTRING(7.8824970  48.0228303,7.8823288 48.0227874,7.8820604 48.0227417,7.8819946 48.0227305)", util::geo::projectToWebMerc<double>);
   auto lineX = XSortedLine<double>(line);
@@ -463,10 +463,10 @@ static void testDistComplexGeoms(const LargeTestGeoms& g) {
        util::geo::webMercMeterDist(g.vaubanMX, lineX));
 
   TEST(util::geo::webMercMeterDist(g.vaubanM, line), ==,
-       approx(6449.59555));
+       approx(6442.38749));
 
   TEST(util::geo::webMercMeterDist(line, g.vaubanM), ==,
-       approx(6449.59555));
+       approx(6442.38749));
 }
 
 // _____________________________________________________________________________
@@ -480,7 +480,7 @@ static void testDistHaversineNoPadding(const LargeTestGeoms& g) {
                          double) -> double { return haversineWebMerc(a, b); }) *
                   10.0) /
            10.0,
-       ==, approx(653276.6));
+       ==, approx(652546.5));
   TEST(std::round(util::geo::withinDist(
                       g.germanyMX, g.germanyMX, 1000000,
                       defaultPaddingFunc<double>(), 1e8,
@@ -496,7 +496,7 @@ static void testDistHaversineNoPadding(const LargeTestGeoms& g) {
                          double) -> double { return haversineWebMerc(a, b); }) *
                   10.0) /
            10.0,
-       ==, approx(1082465.4));
+       ==, approx(1081255.6));
 
   TEST(std::round(
            util::geo::withinDist(
@@ -507,7 +507,7 @@ static void testDistHaversineNoPadding(const LargeTestGeoms& g) {
                   double) -> double { return haversineWebMerc(a, b); }) *
            10.0) /
            10.0,
-       ==, approx(653276.6));
+       ==, approx(652546.5));
 
   TEST(std::round(
            util::geo::withinDist(
@@ -518,7 +518,7 @@ static void testDistHaversineNoPadding(const LargeTestGeoms& g) {
                   double) -> double { return haversineWebMerc(a, b); }) *
            10.0) /
            10.0,
-       ==, approx(653276.6));
+       ==, approx(652546.5));
 
   TEST(std::round(
            util::geo::withinDist(
@@ -528,7 +528,7 @@ static void testDistHaversineNoPadding(const LargeTestGeoms& g) {
                   double) -> double { return haversineWebMerc(a, b); }) *
            10.0) /
            10.0,
-       ==, approx(653276.6));
+       ==, approx(652546.5));
 }
 
 // _____________________________________________________________________________
@@ -544,7 +544,7 @@ static void testDistHaversineSmallPadding(const LargeTestGeoms& g) {
                          double) -> double { return haversineWebMerc(a, b); }) *
                   10.0) /
            10.0,
-       ==, approx(653276.6));
+       ==, approx(652546.5));
   TEST(std::round(util::geo::withinDist(
                       g.germanyMX, g.flixbusMX, 1000000,
                       [](double d, double, const Box<double>&,
@@ -565,7 +565,7 @@ static void testDistHaversineSmallPadding(const LargeTestGeoms& g) {
                          double) -> double { return haversineWebMerc(a, b); }) *
                   10.0) /
            10.0,
-       ==, approx(703461.3));
+       ==, approx(702675.1));
 }
 
 // _____________________________________________________________________________
@@ -574,13 +574,13 @@ static void testDistHaversineMeterDistPadding(const LargeTestGeoms& g) {
 
   TEST(std::round(util::geo::webMercMeterDist(g.germanyMX, g.spainMX) * 10.0) /
            10.0,
-       ==, approx(653276.6));
+       ==, approx(652546.5));
   TEST(std::round(util::geo::webMercMeterDist(g.germanyMX, g.flixbusMX) * 10.0) /
            10.0,
        ==, approx(0));
   TEST(std::round(util::geo::webMercMeterDist(g.spainMX, g.flixbusMX) * 10.0) /
            10.0,
-       ==, approx(703461.3));
+       ==, approx(702675.1));
   // takes too long
   // TEST(std::round(util::geo::meterDist(g.germanyMX,
   // XSortedCollection<double>(Collection<double>{g.spainM, g.saimaaM})) * 10.0)
@@ -752,7 +752,7 @@ static void testDistOther() {
   TEST(util::geo::dist(point2, line2), ==, approx(9.01734));
   TEST(util::geo::dist(line, point), ==, approx(5.5));
 
-  TEST(util::geo::webMercMeterDist(point2M, line2M), ==, approx(999138.32522));
+  TEST(util::geo::webMercMeterDist(point2M, line2M), ==, approx(999138.68916));
   TEST(util::geo::webMercMeterDist(lineM, pointM), ==, approx(610368.37082));
 
   // standard point/polygon
@@ -1158,7 +1158,98 @@ static void testDistToSegmentExtreme() {
 }
 
 // _____________________________________________________________________________
+static void testDistAdaptiveMeterDist() {
+  auto p = [](double lng, double lat) {
+    return latLngToWebMerc(Point<double>{lng, lat});
+  };
+
+  // tolerance 0.1 m
+  // Freiburg, 10 m -> haversine
+  TEST(fabs(adaptiveMeterDistWebMerc(p(7.842, 47.998),
+                                     p(7.842066999, 47.998077887), 0.1) -
+            10.0000) <= 0.1);
+  // Freiburg, 5 km -> andoyerLambert
+  TEST(fabs(adaptiveMeterDistWebMerc(p(7.842, 47.998),
+                                     p(7.899997428, 47.975501331), 0.1) -
+            5000.0000) <= 0.1);
+  // Freiburg, 100 km -> vincenty
+  TEST(fabs(adaptiveMeterDistWebMerc(p(7.842, 47.998),
+                                     p(7.391038751, 47.151920583), 0.1) -
+            99999.9999) <= 0.1);
+
+  // tolerance 1.0 m
+  // equator, 100 m -> haversine
+  TEST(fabs(adaptiveMeterDistWebMerc(p(0.0, 0.0), p(0.0, 0.000904369), 1.0) -
+            99.9999) <= 1.0);
+  // Helsinki, 50 km -> andoyerLambert
+  TEST(fabs(adaptiveMeterDistWebMerc(p(24.94, 60.17),
+                                     p(25.813024072, 60.283283669), 1.0) -
+            50000.0000) <= 1.0);
+  // Helsinki, 1000 km -> vincenty
+  TEST(fabs(adaptiveMeterDistWebMerc(p(24.94, 60.17),
+                                     p(17.645254308, 52.150404569), 1.0) -
+            1000000.0000) <= 1.0);
+
+  // tolerance 10.0 m
+  // Cape Town, 1 km -> haversine
+  TEST(fabs(adaptiveMeterDistWebMerc(p(18.424, -33.925),
+                                     p(18.431646647, -33.918624893), 10.0) -
+            1000.0000) <= 10.0);
+  // Cape Town, 500 km -> andoyerLambert
+  TEST(fabs(adaptiveMeterDistWebMerc(p(18.424, -33.925),
+                                     p(23.793744594, -34.590866672), 10.0) -
+            500000.0000) <= 10.0);
+  // Cape Town, 5000 km -> vincenty
+  TEST(fabs(adaptiveMeterDistWebMerc(p(18.424, -33.925),
+                                     p(32.574341805, 9.183855187), 10.0) -
+            5000000.0000) <= 10.0);
+
+  // tolerance 100.0 m
+  // Tokyo, 10 km -> haversine
+  TEST(fabs(adaptiveMeterDistWebMerc(p(139.69, 35.69),
+                                     p(139.59426886, 35.735025795), 100.0) -
+            10000.0000) <= 100.0);
+  // Tokyo, 5000 km -> andoyerLambert
+  TEST(fabs(adaptiveMeterDistWebMerc(p(139.69, 35.69),
+                                     p(101.657485041, 7.123964981), 100.0) -
+            5000000.0000) <= 100.0);
+  // Tokyo, 12000 km -> vincenty
+  TEST(fabs(adaptiveMeterDistWebMerc(p(139.69, 35.69),
+                                     p(-97.87522015, 11.949948055), 100.0) -
+            12000000.0000) <= 100.0);
+
+  // tolerance 1000.0 m
+  // Buenos Aires, 100 km -> haversine
+  TEST(fabs(adaptiveMeterDistWebMerc(p(-58.38, -34.6),
+                                     p(-58.100741115, -33.728890554), 1000.0) -
+            99999.9999) <= 1000.0);
+  // Buenos Aires, 5000 km -> andoyerLambert
+  TEST(fabs(adaptiveMeterDistWebMerc(p(-58.38, -34.6),
+                                     p(-72.504836992, 8.527465826), 1000.0) -
+            5000000.0000) <= 1000.0);
+  // Buenos Aires, 12000 km -> vincenty
+  TEST(fabs(adaptiveMeterDistWebMerc(p(-58.38, -34.6),
+                                     p(35.958128097, 26.440931366), 1000.0) -
+            12000000.0000) <= 1000.0);
+
+  // tolerance 10000.0 m
+  // Reykjavik, 1000 km -> haversine
+  TEST(fabs(adaptiveMeterDistWebMerc(p(-21.942, 64.146),
+                                     p(-19.21998632, 55.273720353), 10000.0) -
+            1000000.0000) <= 10000.0);
+  // Reykjavik, 5000 km -> andoyerLambert
+  TEST(fabs(adaptiveMeterDistWebMerc(p(-21.942, 64.146),
+                                     p(-36.852837223, 20.269614079), 10000.0) -
+            5000000.0000) <= 10000.0);
+  // Reykjavik, 12000 km -> vincenty
+  TEST(fabs(adaptiveMeterDistWebMerc(p(-21.942, 64.146),
+                                     p(16.142559896, -39.804652894), 10000.0) -
+            12000000.0000) <= 10000.0);
+}
+
+// _____________________________________________________________________________
 void GeoTest::testDist() {
+  testDistAdaptiveMeterDist();
   testDistCombinations();
   testDistWithinRealisticMaxDist();
   testDistWithinInfinityMaxDist();
