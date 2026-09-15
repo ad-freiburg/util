@@ -12,14 +12,16 @@
 #include <bitset>
 #include <cassert>
 #include <cmath>
-#include <codecvt>
 #include <cstring>
+#include <cwchar>
+#include <cwctype>
 #include <exception>
 #include <iomanip>
 #include <iostream>
 #include <locale>
 #include <set>
 #include <sstream>
+#include <stdexcept>
 #include <string>
 #include <vector>
 
@@ -360,15 +362,70 @@ inline std::string normalizeWhiteSpace(const std::string& input) {
 }
 
 // _____________________________________________________________________________
+inline const std::codecvt<char16_t, char, std::mbstate_t>& utf8Utf16Cvt() {
+  static const std::locale loc = std::locale::classic();
+  return std::use_facet<std::codecvt<char16_t, char, std::mbstate_t>>(loc);
+}
+
+// _____________________________________________________________________________
 inline std::wstring toWStr(const std::string& str) {
-  std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> converter;
-  return converter.from_bytes(str);
+  const auto& cvt = utf8Utf16Cvt();
+  auto state = std::mbstate_t();
+
+  std::u16string buf(str.size() + 1, u'\0');
+
+  const char* inNext;
+  char16_t* outNext;
+
+  std::codecvt_base::result res =
+      cvt.in(state, str.data(), str.data() + str.size(), inNext, &buf[0],
+             &buf[0] + buf.size(), outNext);
+
+  if (res == std::codecvt_base::error)
+    throw std::range_error("invalid UTF-8 input");
+
+  buf.resize(outNext - &buf[0]);
+
+  return std::wstring(buf.begin(), buf.end());
 }
 
 // _____________________________________________________________________________
 inline std::string toNStr(const std::wstring& wstr) {
-  std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> converter;
-  return converter.to_bytes(wstr);
+  std::u16string buf;
+  buf.reserve(wstr.size());
+
+  for (size_t i = 0; i < wstr.size(); ++i) {
+    uint32_t cp = static_cast<uint32_t>(wstr[i]);
+
+    if (cp > 0x10FFFF) throw std::range_error("invalid UTF-16 input");
+
+    if (cp > 0xFFFF) {
+      cp -= 0x10000;
+      buf += static_cast<char16_t>(0xD800 + (cp >> 10));
+      buf += static_cast<char16_t>(0xDC00 + (cp & 0x3FF));
+    } else {
+      buf += static_cast<char16_t>(cp);
+    }
+  }
+
+  const auto& cvt = utf8Utf16Cvt();
+  std::mbstate_t state = std::mbstate_t();
+
+  std::string out(buf.size() * 3 + 1, '\0');
+
+  const char16_t* inNext;
+  char* outNext;
+
+  std::codecvt_base::result res =
+      cvt.out(state, buf.data(), buf.data() + buf.size(), inNext, &out[0],
+              &out[0] + out.size(), outNext);
+
+  if (res == std::codecvt_base::error)
+    throw std::range_error("invalid UTF-16 input");
+
+  out.resize(outNext - &out[0]);
+
+  return out;
 }
 
 // _____________________________________________________________________________
