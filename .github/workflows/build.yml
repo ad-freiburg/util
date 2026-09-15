@@ -59,6 +59,33 @@ jobs:
         run: cd build && make
       - name: tests
         run: cd build && ctest --output-on-failure
+  clang-version-build:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        clang: [22]
+        std: [11, 17, 23]
+    steps:
+      - name: Checkout repository code
+        uses: actions/checkout@v2
+      - name: install clang
+        run: |
+          wget -qO llvm.sh https://apt.llvm.org/llvm.sh
+          chmod +x llvm.sh
+          sudo ./llvm.sh ${{ matrix.clang }}
+      - name: install dependencies
+        run: sudo apt install -y cmake libbz2-dev
+      - name: cmake
+        run: mkdir build && cd build && cmake .. -DCMAKE_CXX_STANDARD=${{ matrix.std }}
+        shell: bash
+        env:
+          CC: clang-${{ matrix.clang }}
+          CXX: clang++-${{ matrix.clang }}
+      - name: make
+        run: cd build && make
+      - name: tests
+        run: cd build && ctest --output-on-failure
   ubuntu-latest-build-clang:
     runs-on: ubuntu-latest
     steps:
