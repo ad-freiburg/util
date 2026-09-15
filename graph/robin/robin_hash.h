@@ -300,7 +300,7 @@ public:
                  "DIST_FROM_IDEAL_BUCKET_LIMIT must be <= std::numeric_limits<distance_type>::max() - 1.");
     
 private:
-    using storage = typename std::aligned_storage<sizeof(value_type), alignof(value_type)>::type;
+    struct storage { alignas(value_type) unsigned char data[sizeof(value_type)]; };
     
     static const distance_type EMPTY_MARKER_DIST_FROM_IDEAL_BUCKET = -1;
     

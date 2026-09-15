@@ -5,6 +5,7 @@
 #ifndef UTIL_GEO_GRID_H_
 #define UTIL_GEO_GRID_H_
 
+#include <iterator>
 #include <map>
 #include <set>
 #include <vector>
