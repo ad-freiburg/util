@@ -18,6 +18,7 @@
 #include <exception>
 #include <iomanip>
 #include <iostream>
+#include <iterator>
 #include <locale>
 #include <set>
 #include <sstream>
@@ -26,6 +27,12 @@
 #include <vector>
 
 namespace util {
+
+#ifdef __cpp_char8_t
+typedef char8_t UTF8CHAR;
+#else
+typedef char UTF8CHAR;
+#endif
 
 // _____________________________________________________________________________
 inline int strcicmp(char const* left, char const* right) {
@@ -362,9 +369,9 @@ inline std::string normalizeWhiteSpace(const std::string& input) {
 }
 
 // _____________________________________________________________________________
-inline const std::codecvt<char16_t, char, std::mbstate_t>& utf8Utf16Cvt() {
+inline const std::codecvt<char16_t, UTF8CHAR, std::mbstate_t>& utf8Utf16Cvt() {
   static const std::locale loc = std::locale::classic();
-  return std::use_facet<std::codecvt<char16_t, char, std::mbstate_t>>(loc);
+  return std::use_facet<std::codecvt<char16_t, UTF8CHAR, std::mbstate_t>>(loc);
 }
 
 // _____________________________________________________________________________
@@ -372,13 +379,14 @@ inline std::wstring toWStr(const std::string& str) {
   const auto& cvt = utf8Utf16Cvt();
   auto state = std::mbstate_t();
 
-  std::u16string buf(str.size() + 1, u'\0');
+  std::basic_string<UTF8CHAR> in(str.begin(), str.end());
+  std::u16string buf(in.size() + 1, u'\0');
 
-  const char* inNext;
+  const UTF8CHAR* inNext;
   char16_t* outNext;
 
   std::codecvt_base::result res =
-      cvt.in(state, str.data(), str.data() + str.size(), inNext, &buf[0],
+      cvt.in(state, in.data(), in.data() + in.size(), inNext, &buf[0],
              &buf[0] + buf.size(), outNext);
 
   if (res == std::codecvt_base::error)
@@ -411,10 +419,10 @@ inline std::string toNStr(const std::wstring& wstr) {
   const auto& cvt = utf8Utf16Cvt();
   std::mbstate_t state = std::mbstate_t();
 
-  std::string out(buf.size() * 3 + 1, '\0');
+  std::basic_string<UTF8CHAR> out(buf.size() * 3 + 1, 0);
 
   const char16_t* inNext;
-  char* outNext;
+  UTF8CHAR* outNext;
 
   std::codecvt_base::result res =
       cvt.out(state, buf.data(), buf.data() + buf.size(), inNext, &out[0],
@@ -425,7 +433,7 @@ inline std::string toNStr(const std::wstring& wstr) {
 
   out.resize(outNext - &out[0]);
 
-  return out;
+  return std::string(out.begin(), out.end());
 }
 
 // _____________________________________________________________________________
