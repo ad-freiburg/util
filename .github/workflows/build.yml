@@ -40,6 +40,25 @@ jobs:
         run: cd build && make
       - name: tests
         run: cd build && ctest --output-on-failure
+  gcc-version-build:
+    runs-on: ubuntu-latest
+    container: gcc:${{ matrix.gcc }}
+    strategy:
+      fail-fast: false
+      matrix:
+        gcc: [15, 16]
+        std: [11, 17, 23]
+    steps:
+      - name: Checkout repository code
+        uses: actions/checkout@v4
+      - name: install dependencies
+        run: apt-get update && apt-get install -y cmake libbz2-dev zlib1g-dev
+      - name: cmake
+        run: mkdir build && cd build && cmake .. -DCMAKE_CXX_STANDARD=${{ matrix.std }}
+      - name: make
+        run: cd build && make
+      - name: tests
+        run: cd build && ctest --output-on-failure
   ubuntu-latest-build-clang:
     runs-on: ubuntu-latest
     steps:
