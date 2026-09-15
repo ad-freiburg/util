@@ -6016,7 +6016,7 @@ double haversine(T lat1, T lon1, T lat2, T lon2) {
   const double sDLon = sin(dLon / 2);
 
   const double a = (sDLat * sDLat) + (sDLon * sDLon) * cos(lat1) * cos(lat2);
-  return EQUATORIAL_RAD * 2.0 * atan2(sqrt(a), sqrt(1.0 - a));
+  return MEAN_EARTH_RAD * 2.0 * atan2(sqrt(a), sqrt(1.0 - a));
 }
 
 // _____________________________________________________________________________
@@ -6042,13 +6042,211 @@ double haversineWebMerc(T x1, T y1, T x2, T y2) {
   const double cLat2 = 2.0 * t2 / q2;
 
   const double a = (sDLat * sDLat) + (sDLon * sDLon) * cLat1 * cLat2;
-  return EQUATORIAL_RAD * 2.0 * atan2(sqrt(a), sqrt(1.0 - a));
+  return MEAN_EARTH_RAD * 2.0 * atan2(sqrt(a), sqrt(1.0 - a));
 }
 
 // _____________________________________________________________________________
 template <typename T>
 double haversineWebMerc(const Point<T>& a, const Point<T>& b) {
   return haversineWebMerc(a.getX(), a.getY(), b.getX(), b.getY());
+}
+
+// _____________________________________________________________________________
+template <typename T>
+double andoyerLambert(T lat1, T lon1, T lat2, T lon2) {
+  // see
+  // https://en.wikipedia.org/wiki/Geographical_distance#Andoyer-Lambert_formula_for_long_lines
+  double f1 = 1.0 - FLATTENING;
+
+  double b1 = atan(f1 * tan(lat1 * RAD));
+  double b2 = atan(f1 * tan(lat2 * RAD));
+
+  double cB1 = cos(b1);
+  double cB2 = cos(b2);
+
+  double sDLat = sin((b2 - b1) / 2.0);
+  double sDLon = sin((lon2 - lon1) * RAD / 2.0);
+
+  double a = (sDLat * sDLat) + (sDLon * sDLon) * cB1 * cB2;
+  double sig = 2.0 * atan2(sqrt(a), sqrt(1.0 - a));
+
+  if (sig == 0.0) return 0.0;
+
+  double p = (b1 + b2) / 2.0;
+  double q = (b2 - b1) / 2.0;
+
+  double sP = sin(p), cP = cos(p);
+  double sQ = sin(q), cQ = cos(q);
+
+  double sSig = sin(sig);
+  double sSigH = sin(sig / 2.0), cSigH = cos(sig / 2.0);
+
+  double x = (sig - sSig) * (sP * sP) * (cQ * cQ) / (cSigH * cSigH);
+  double y = (sig + sSig) * (cP * cP) * (sQ * sQ) / (sSigH * sSigH);
+
+  return EQUATORIAL_RAD * (sig - (FLATTENING / 2.0) * (x + y));
+}
+
+// _____________________________________________________________________________
+template <typename T>
+double andoyerLambert(const Point<T>& a, const Point<T>& b) {
+  return andoyerLambert(a.getY(), a.getX(), b.getY(), b.getX());
+}
+
+// _____________________________________________________________________________
+template <typename T>
+double andoyerLambertWebMerc(T x1, T y1, T x2, T y2) {
+  const auto a = webMercToLatLng<double>(x1, y1);
+  const auto b = webMercToLatLng<double>(x2, y2);
+  return andoyerLambert(a.getY(), a.getX(), b.getY(), b.getX());
+}
+
+// _____________________________________________________________________________
+template <typename T>
+double andoyerLambertWebMerc(const Point<T>& a, const Point<T>& b) {
+  return andoyerLambertWebMerc(a.getX(), a.getY(), b.getX(), b.getY());
+}
+
+// _____________________________________________________________________________
+template <typename T>
+double vincenty(T lat1, T lon1, T lat2, T lon2) {
+  // see https://en.wikipedia.org/wiki/Vincenty's_formulae
+  int MAX_ITERS = 200;
+  double f1 = 1.0 - FLATTENING;
+  double b = EQUATORIAL_RAD * f1;
+
+  double l = (lon2 - lon1) * RAD;
+
+  double u1 = atan(f1 * tan(lat1 * RAD));
+  double u2 = atan(f1 * tan(lat2 * RAD));
+
+  double sU1 = sin(u1), cU1 = cos(u1);
+  double sU2 = sin(u2), cU2 = cos(u2);
+
+  double lambda = l;
+  double sSig = 0.0, cSig = 0.0, sig = 0.0, c2Alpha = 0.0, c2SigM = 0.0;
+
+  bool converged = false;
+
+  for (int i = 0; i < MAX_ITERS && !converged; ++i) {
+    double sLam = sin(lambda), cLam = cos(lambda);
+
+    double t1 = cU2 * sLam;
+    double t2 = cU1 * sU2 - sU1 * cU2 * cLam;
+
+    sSig = sqrt(t1 * t1 + t2 * t2);
+
+    if (sSig == 0.0) return 0.0;
+
+    cSig = sU1 * sU2 + cU1 * cU2 * cLam;
+    sig = atan2(sSig, cSig);
+
+    double sAlpha = cU1 * cU2 * sLam / sSig;
+    c2Alpha = 1.0 - sAlpha * sAlpha;
+
+    c2SigM = c2Alpha == 0.0 ? 0.0 : cSig - 2.0 * sU1 * sU2 / c2Alpha;
+
+    double c = (FLATTENING / 16.0) * c2Alpha *
+               (4.0 + FLATTENING * (4.0 - 3.0 * c2Alpha));
+
+    double prev = lambda;
+    lambda = l + (1.0 - c) * FLATTENING * sAlpha *
+                     (sig +
+                      c * sSig *
+                          (c2SigM + c * cSig * (-1.0 + 2.0 * c2SigM * c2SigM)));
+
+    converged = fabs(lambda - prev) < 1e-12;
+  }
+
+  if (!converged) return std::numeric_limits<double>::quiet_NaN();
+
+  double uSq = c2Alpha * (EQUATORIAL_RAD * EQUATORIAL_RAD - b * b) / (b * b);
+
+  double aa = 1.0 + (uSq / 16384.0) *
+                        (4096.0 + uSq * (-768.0 + uSq * (320.0 - 175.0 * uSq)));
+  double bb =
+      (uSq / 1024.0) * (256.0 + uSq * (-128.0 + uSq * (74.0 - 47.0 * uSq)));
+
+  double dSig =
+      bb * sSig *
+      (c2SigM + (bb / 4.0) * (cSig * (-1.0 + 2.0 * c2SigM * c2SigM) -
+                              (bb / 6.0) * c2SigM * (-3.0 + 4.0 * sSig * sSig) *
+                                  (-3.0 + 4.0 * c2SigM * c2SigM)));
+
+  return b * aa * (sig - dSig);
+}
+
+// _____________________________________________________________________________
+template <typename T>
+double vincenty(const Point<T>& a, const Point<T>& b) {
+  return vincenty(a.getY(), a.getX(), b.getY(), b.getX());
+}
+
+// _____________________________________________________________________________
+template <typename T>
+double vincentyWebMerc(T x1, T y1, T x2, T y2) {
+  const auto a = webMercToLatLng<double>(x1, y1);
+  const auto b = webMercToLatLng<double>(x2, y2);
+  return vincenty(a.getY(), a.getX(), b.getY(), b.getX());
+}
+
+// _____________________________________________________________________________
+template <typename T>
+double vincentyWebMerc(const Point<T>& a, const Point<T>& b) {
+  return vincentyWebMerc(a.getX(), a.getY(), b.getX(), b.getY());
+}
+
+// _____________________________________________________________________________
+template <typename T>
+double adaptiveMeterDist(T lat1, T lon1, T lat2, T lon2, double tol) {
+  const double dHaversine = haversine(lat1, lon1, lat2, lon2);
+
+  // the new methods below fail catastrophically if the two points are very
+  // close to being antipodes (on exactly the opposite side of the earth). The
+  // haversine distance doesnt fail in this case, so
+  // as soon as the haversine distance (exact to around 0.56%) is within 150km
+  // to half the earth cirumvernece, return the haversine
+  if ((M_PI * MEAN_EARTH_RAD) - dHaversine < 150000.0) return dHaversine;
+
+  // dHaversine may have underestimated, so correct first by MAX_ERROR, then
+  // check whether the max error at that corrected distance ist still smaller
+  // than the tolerance if so, return haversine directly for speed
+  if (tol > HAVERSINE_MAX_ERR * ((HAVERSINE_MAX_ERR + 1.0) * dHaversine))
+    return dHaversine;
+
+  // andoyerLabert is correct to about a factor of 0.0000014 for dists within
+  // 100000 meters, pad this here a bit to be safe and return andoyerLambert
+  // directly if we are still within tolernace
+  if (dHaversine < 10000.0 * 1000.0 && tol > 0.000004 * dHaversine)
+    return andoyerLambert(lat1, lon1, lat2, lon2);
+
+  // only now do iterative vincenty
+  const double v = vincenty(lat1, lon1, lat2, lon2);
+
+  // if vincenty doesnt converge for some reason, return the haversine as
+  // fallback
+  return std::isnan(v) ? dHaversine : v;
+}
+
+// _____________________________________________________________________________
+template <typename T>
+double adaptiveMeterDist(const Point<T>& a, const Point<T>& b, double tol) {
+  return adaptiveMeterDist(a.getY(), a.getX(), b.getY(), b.getX(), tol);
+}
+
+// _____________________________________________________________________________
+template <typename T>
+double adaptiveMeterDistWebMerc(T x1, T y1, T x2, T y2, double tol) {
+  const auto a = webMercToLatLng<double>(x1, y1);
+  const auto b = webMercToLatLng<double>(x2, y2);
+  return adaptiveMeterDist(a.getY(), a.getX(), b.getY(), b.getX(), tol);
+}
+
+// _____________________________________________________________________________
+template <typename T>
+double adaptiveMeterDistWebMerc(const Point<T>& a, const Point<T>& b,
+                                double tol) {
+  return adaptiveMeterDistWebMerc(a.getX(), a.getY(), b.getX(), b.getY(), tol);
 }
 
 // _____________________________________________________________________________
@@ -6408,7 +6606,7 @@ double webMercDistFactor(const G& a) {
   // euclidean distance on web mercator is in meters on equator,
   // and proportional to cos(lat) in both y directions
   double et = exp(a.getY() / EQUATORIAL_RAD);
-  return 2 * et / (et * et + 1);
+  return (MEAN_EARTH_RAD / EQUATORIAL_RAD) * 2 * et / (et * et + 1);
 }
 
 // _____________________________________________________________________________
@@ -7198,12 +7396,14 @@ std::pair<double, double> getMinMaxLocalScaleFactors(
       -90.0 + util::geo::EPSILON,
       std::min(withinUp.getY() * 1.0, std::min(aUp.getY(), bUp.getY())));
 
-  double a = cos(yRangeMin * util::geo::RAD);
-  double b = cos(yRangeMax * util::geo::RAD);
+  const double r = util::geo::MEAN_EARTH_RAD / util::geo::EQUATORIAL_RAD;
 
-  // if we crossed the equator, we encountered a scale factor of 1!
+  double a = r * cos(yRangeMin * util::geo::RAD);
+  double b = r * cos(yRangeMax * util::geo::RAD);
+
+  // if we crossed the equator, we encountered the maximum scale factor!
   if (yRangeMin < 0 && yRangeMax > 0) {
-    return {std::min(a, b), std::max(1.0, std::max(a, b))};
+    return {std::min(a, b), std::max(r, std::max(a, b))};
   }
 
   return {std::min(a, b), std::max(a, b)};
@@ -7231,8 +7431,9 @@ double webMercMaxEuclideanDist(const Box<T>& boxA, const Box<T>& boxB,
                                double maxD) {
   auto scale = getMinMaxLocalScaleFactorsWebMerc(boxA, boxB, maxD);
 
-  // use meters here directly, we are in web mercator world
-  return maxD / scale.first;
+  // use meters here directly, we are in web mercator world, but acknowledge
+  // haversine error
+  return (maxD * (1.0 + HAVERSINE_MAX_ERR)) / scale.first;
 }
 
 // _____________________________________________________________________________

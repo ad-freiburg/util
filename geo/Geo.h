@@ -11,8 +11,11 @@
 
 #include <algorithm>
 #include <array>
+#include <cmath>
 #include <functional>
+#include <limits>
 #include <sstream>
+#include <utility>
 
 #include "util/Misc.h"
 #include "util/String.h"
@@ -142,8 +145,19 @@ const static double AVERAGING_STEP = 20;
 
 const static double M_PER_DEG = 111319.4;
 
+// earth radius at the equator
 const static double EQUATORIAL_RAD = 6378137.0;
+
+// mean earth radius, used for haversine
+const static double MEAN_EARTH_RAD = 6371008.8;
+
 const static double MIN_METERS_PER_LAT_RAD = 6356752.314245;
+
+// WGS84 flattening f = 1 - b / a, used by the ellipsoidal distance measures
+// (andoyerLambert, vincenty)
+const static double FLATTENING = 1.0 / 298.257223563;
+// max error of haversine against the true distance
+const static double HAVERSINE_MAX_ERR = 0.00561437;
 
 enum WKTType : uint8_t {
   NONE = 0,
@@ -1384,6 +1398,45 @@ double haversineWebMerc(T x1, T y1, T x2, T y2);
 
 template <typename T>
 double haversineWebMerc(const Point<T>& a, const Point<T>& b);
+
+template <typename T>
+double andoyerLambert(T lat1, T lon1, T lat2, T lon2);
+
+template <typename T>
+double andoyerLambert(const Point<T>& a, const Point<T>& b);
+
+template <typename T>
+double andoyerLambertWebMerc(T x1, T y1, T x2, T y2);
+
+template <typename T>
+double andoyerLambertWebMerc(const Point<T>& a, const Point<T>& b);
+
+template <typename T>
+double vincenty(T lat1, T lon1, T lat2, T lon2);
+
+template <typename T>
+double vincenty(const Point<T>& a, const Point<T>& b);
+
+template <typename T>
+double vincentyWebMerc(T x1, T y1, T x2, T y2);
+
+template <typename T>
+double vincentyWebMerc(const Point<T>& a, const Point<T>& b);
+
+// tol is the allows abs error in meters, 0.5 per default
+template <typename T>
+double adaptiveMeterDist(T lat1, T lon1, T lat2, T lon2, double tol = 0.5);
+
+template <typename T>
+double adaptiveMeterDist(const Point<T>& a, const Point<T>& b,
+                         double tol = 0.5);
+
+template <typename T>
+double adaptiveMeterDistWebMerc(T x1, T y1, T x2, T y2, double tol = 0.5);
+
+template <typename T>
+double adaptiveMeterDistWebMerc(const Point<T>& a, const Point<T>& b,
+                                double tol = 0.5);
 
 template <typename T>
 Line<T> densify(const Line<T>& l, double d);
