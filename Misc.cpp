@@ -377,16 +377,21 @@ ssize_t util::externalSort(int file, int newFile, size_t size, size_t numobjs,
 
   size_t fsize = size * numobjs;
 
-  size_t bufferSize = SORT_BUFFER_S * size;
+  // cap buffer size at input size, but ensure nonempty buffer
+  size_t bufferSize = std::min(numobjs + 1, SORT_BUFFER_S) * size;
 
   size_t parts = fsize / bufferSize + 1;
   size_t partsBufSize = ((bufferSize / size) / parts + 1) * size;
+
+  // cap number of threads at number of parts, but ensure at least 1 thread
+  numThreads = std::max<size_t>(1, std::min(numThreads, parts));
+
   unsigned char** bufs = new unsigned char*[numThreads];
   unsigned char** partbufs = new unsigned char*[parts];
   size_t* partpos = new size_t[parts];
   size_t* partsize = new size_t[parts];
 
-  // fire up worker threads for geometry checking
+  // fire up worker threads for sorting
   std::vector<std::thread> thrds(numThreads);
 
   auto pqComp = [cmpf](const std::pair<const void*, size_t>& a,
