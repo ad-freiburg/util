@@ -743,6 +743,22 @@ double euclideanDistFunc(const Point<T>& a, const Point<T>& b, double) {
   return util::geo::dist(a, b);
 }
 
+// x-distance between boxes
+template <typename T>
+inline double distX(const Box<T>& a, const Box<T>& b) {
+  return std::max(
+      0.0, std::max(1.0 * b.getLowerLeft().getX() - a.getUpperRight().getX(),
+                    1.0 * a.getLowerLeft().getX() - b.getUpperRight().getX()));
+}
+
+// y-distance between boxes
+template <typename T>
+inline double distY(const Box<T>& a, const Box<T>& b) {
+  return std::max(
+      0.0, std::max(1.0 * b.getLowerLeft().getY() - a.getUpperRight().getY(),
+                    1.0 * a.getLowerLeft().getY() - b.getUpperRight().getY()));
+}
+
 struct Padding {
   double xPadding;
   double yPadding;
@@ -774,10 +790,15 @@ double dist(const GeometryB<T>& geomB, const AnyGeometry<T>& any2) {
 }
 
 template <typename T>
+inline double distSquared(const Box<T>& a, const Box<T>& b) {
+  double dx = distX(a, b);
+  double dy = distY(a, b);
+  return dx * dx + dy * dy;
+}
+
+template <typename T>
 double dist(const Box<T>& a, const Box<T>& b) {
-  return dist(a, b,
-              std::function<double(const Point<T>&, const Point<T>&, double)>(
-                  euclideanDistFunc<T>));
+  return sqrt(distSquared(a, b));
 }
 
 template <typename T>

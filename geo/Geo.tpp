@@ -6545,12 +6545,12 @@ double withinDist(const std::vector<XSortedTuple<T>>& ls1,
         continue;
       }
 
-      if (withinDist(ls1seg, boxB, distFunc, minDist) > minDist) {
+      const auto& box = getBoundingBox(ls1seg);
+
+      if (distSquared(box, boxB) > padding * padding) {
         i++;
         continue;
       }
-
-      const auto& box = getBoundingBox(ls1seg);
 
       if (!ls1Out) {
         // IN event
@@ -6601,7 +6601,8 @@ double withinDist(const std::vector<XSortedTuple<T>>& ls1,
       }
 
       const auto& box = getBoundingBox(ls2seg);
-      if (withinDist(ls2seg, boxA, distFunc, minDist) > minDist) {
+
+      if (distSquared(box, boxA) > padding * padding) {
         j++;
         continue;
       }
@@ -6630,7 +6631,7 @@ double withinDist(const std::vector<XSortedTuple<T>>& ls1,
       }
 
       // ignore segments out of the Y range
-      if (boundedSub(ls2OutSeg.first.getY(), yPadding) <
+      if (boundedAdd(ls2OutSeg.first.getY(), yPadding) <
               boxA.getLowerLeft().getY() &&
           boundedAdd(ls2OutSeg.second.getY(), yPadding) <
               boxA.getLowerLeft().getY()) {
@@ -6641,7 +6642,7 @@ double withinDist(const std::vector<XSortedTuple<T>>& ls1,
 
       if (boundedSub(ls2OutSeg.first.getY(), yPadding) >
               boxA.getUpperRight().getY() &&
-          boundedAdd(ls2OutSeg.second.getY(), yPadding) >
+          boundedSub(ls2OutSeg.second.getY(), yPadding) >
               boxA.getUpperRight().getY()) {
         k++;
         while (k < ls2OutSize && !ls2[k].out()) k++;
@@ -6967,7 +6968,7 @@ std::tuple<double, double, bool> probeDistanceUpperBound(
       break;
     }
     const auto& ls1seg = ls1[i].seg();
-    if (distSquared(ls1seg, boxB) > eucSquared) {
+    if (distSquared(getBoundingBox(ls1seg), boxB) > eucSquared) {
       pruned = true;
       continue;
     }
@@ -7078,16 +7079,8 @@ inline bool processActives(util::geo::IntervalIdx<T, LineSegment<T>>& actives,
 // _____________________________________________________________________________
 template <typename T>
 Padding splitPadding(double padding, const Box<T>& boxA, const Box<T>& boxB) {
-  const double minEuclideanXDist =
-      util::geo::dist(LineSegment<T>{Point<T>{boxA.getLowerLeft().getX(), 0},
-                                     Point<T>{boxA.getUpperRight().getX(), 0}},
-                      LineSegment<T>{Point<T>{boxB.getLowerLeft().getX(), 0},
-                                     Point<T>{boxB.getUpperRight().getX(), 0}});
-  const double minEuclideanYDist =
-      util::geo::dist(LineSegment<T>{Point<T>{0, boxA.getLowerLeft().getY()},
-                                     Point<T>{0, boxA.getUpperRight().getY()}},
-                      LineSegment<T>{Point<T>{0, boxB.getLowerLeft().getY()},
-                                     Point<T>{0, boxB.getUpperRight().getY()}});
+  double minEuclideanXDist = distX(boxA, boxB);
+  double minEuclideanYDist = distY(boxA, boxB);
 
   return {sqrt(std::max(
               0.0, padding * padding - minEuclideanYDist * minEuclideanYDist)),
@@ -7265,16 +7258,8 @@ double webMercMeterDistLocalSearchPadding(double euclideanDistanceUpperBound,
 
   double factorNew2 = max / std::max(util::geo::EPSILON, min);
 
-  double minEuclideanXDist =
-      util::geo::dist(LineSegment<T>{Point<T>{boxA.getLowerLeft().getX(), 0},
-                                     Point<T>{boxA.getUpperRight().getX(), 0}},
-                      LineSegment<T>{Point<T>{boxB.getLowerLeft().getX(), 0},
-                                     Point<T>{boxB.getUpperRight().getX(), 0}});
-  double minEuclideanYDist =
-      util::geo::dist(LineSegment<T>{Point<T>{0, boxA.getLowerLeft().getY()},
-                                     Point<T>{0, boxA.getUpperRight().getY()}},
-                      LineSegment<T>{Point<T>{0, boxB.getLowerLeft().getY()},
-                                     Point<T>{0, boxB.getUpperRight().getY()}});
+  double minEuclideanXDist = distX(boxA, boxB);
+  double minEuclideanYDist = distY(boxA, boxB);
 
   double padding = factorNew2 * euclideanDistanceUpperBound;
   auto xPadding = (sqrt(std::max(
