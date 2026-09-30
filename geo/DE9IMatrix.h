@@ -116,12 +116,20 @@ class DE9IMatrix {
     return ret;
   }
 
-  DE9IMatrix& operator+=(const DE9IMatrix& other) {
+  DE9IMatrix& uniteRowGeoms(const DE9IMatrix& other) {
+    for (size_t i = 0; i < 6; i++) {
+      if (other.get(i) > get(i)) setTo(i, other.get(i));
+    }
+    for (size_t i = 6; i < 8; i++) {
+      if (other.get(i) < get(i)) setTo(i, other.get(i));
+    }
+    return *this;
+  }
+
+  // set each entry to the maximum of this and other
+  DE9IMatrix& elementwiseMax(const DE9IMatrix& other) {
     for (size_t i = 0; i < 8; i++) {
-      if (other.get(i) >= get(i))
-        setTo(i, other.get(i));
-      else
-        setTo(i, get(i));
+      if (other.get(i) > get(i)) setTo(i, other.get(i));
     }
     return *this;
   }
@@ -357,19 +365,6 @@ static CONSTEXPR DE9IMatrix MFF1FF0212("FF1FF0212");
 
 static CONSTEXPR DE9IMatrix M2F2FFF2F2("2F2FFF2F2");
 static CONSTEXPR DE9IMatrix M1F1FFFFF2("1F1FFFFF2");
-
-inline DE9IMatrix operator+(const DE9IMatrix a, const DE9IMatrix b) {
-  DE9IMatrix ret;
-
-  for (size_t i = 0; i < 8; i++) {
-    if (a.get(i) >= b.get(i))
-      ret.setTo(i, a.get(i));
-    else
-      ret.setTo(i, b.get(i));
-  }
-
-  return ret;
-}
 
 inline bool operator&(const DE9IMFilter a, const DE9IMatrix b) {
   return a.matches(b);

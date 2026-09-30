@@ -47,16 +47,36 @@ void GeoTest::testDE9IM() {
 
     util::geo::DE9IMatrix de9im4 = "FFFFFFFF2";
     util::geo::DE9IMatrix de9im5 = "F0FFFFFF2";
-    auto a = de9im4 + de9im5;
+    auto a = de9im4;
+    a.elementwiseMax(de9im5);
     TEST(a.toString(), ==, "F0FFFFFF2");
 
     util::geo::DE9IMatrix de9im6 = "000200002";
 
-    auto c = de9im3 + de9im5;
+    auto c = de9im3;
+    c.elementwiseMax(de9im5);
     TEST(c.toString(), ==, "012F2FF12");
 
-    auto d = de9im3 + de9im5 + de9im6;
+    auto d = de9im3;
+    d.elementwiseMax(de9im5).elementwiseMax(de9im6);
     TEST(d.toString(), ==, "012220012");
+
+    util::geo::DE9IMatrix a1b = "1FFF0FFF2";
+    util::geo::DE9IMatrix a2b = "FF1F00102";
+
+    auto u1 = a1b;
+    u1.uniteRowGeoms(a2b);
+    TEST(u1.toString(), ==, "1F1F00FF2");
+    TEST(u1.covers());
+
+    auto u2 = a2b;
+    u2.uniteRowGeoms(a1b);
+    TEST(u2.toString(), ==, "1F1F00FF2");
+
+    auto m = a1b;
+    m.elementwiseMax(a2b);
+    TEST(m.toString(), ==, "1F1F00102");
+    TEST(!m.covers());
   }
 
   {
