@@ -206,7 +206,11 @@ class XSortedRing {
 
   XSortedRing(const Ring<T>& ring) {
     _area = ringArea(ring);
-    _ring.reserve(ring.size());
+    _ring.reserve(2 * ring.size());
+
+    bool haveLastNext = false;
+    double lastNextAng = 0;
+    double lastNextY = 0;
 
     for (size_t i = 1; i < ring.size(); i++) {
       if (ring[i - 1].getX() == ring[i].getX() &&
@@ -220,27 +224,31 @@ class XSortedRing {
       double prevAng = 0;
       double nextAng = 0;
 
-      size_t prev;
+      if (haveLastNext) {
+        prevAng = lastNextY == 0 ? lastNextAng : -lastNextAng;
+      } else {
+        size_t prev;
 
-      if (i > 1)
-        prev = i - 2;
-      else
-        prev = ring.size() - 1;
-
-      while (ring[prev].getX() == ring[i - 1].getX() &&
-             ring[prev].getY() == ring[i - 1].getY() && prev != i - 1) {
-        if (prev > 0)
-          prev = prev - 1;
+        if (i > 1)
+          prev = i - 2;
         else
           prev = ring.size() - 1;
-      }
 
-      prevAng = util::geo::angBetween(
-          ring[i].asDPoint(), ring[i - 1].asDPoint(),
-          {ring[prev].getX() * 1.0 -
-               (ring[i - 1].getX() * 1.0 - ring[i].getX() * 1.0),
-           ring[prev].getY() * 1.0 -
-               (ring[i - 1].getY() * 1.0 - ring[i].getY() * 1.0)});
+        while (ring[prev].getX() == ring[i - 1].getX() &&
+               ring[prev].getY() == ring[i - 1].getY() && prev != i - 1) {
+          if (prev > 0)
+            prev = prev - 1;
+          else
+            prev = ring.size() - 1;
+        }
+
+        prevAng = util::geo::angBetween(
+            ring[i].asDPoint(), ring[i - 1].asDPoint(),
+            {ring[prev].getX() * 1.0 -
+                 (ring[i - 1].getX() * 1.0 - ring[i].getX() * 1.0),
+             ring[prev].getY() * 1.0 -
+                 (ring[i - 1].getY() * 1.0 - ring[i].getY() * 1.0)});
+      }
 
       size_t next = (i + 1) % ring.size();
 
@@ -249,12 +257,9 @@ class XSortedRing {
         next = (next + 1) % ring.size();
       }
 
-      nextAng = util::geo::angBetween(
-          ring[i - 1].asDPoint(), ring[i].asDPoint(),
-          {ring[next].getX() * 1.0 -
-               (ring[i].getX() * 1.0 - ring[i - 1].getX() * 1.0),
-           ring[next].getY() * 1.0 -
-               (ring[i].getY() * 1.0 - ring[i - 1].getY() * 1.0)});
+      nextAng = nextAngle(ring[i - 1], ring[i], ring[next], &lastNextY);
+      lastNextAng = nextAng;
+      haveLastNext = true;
 
       if (len > _maxSegLen) _maxSegLen = len;
 
@@ -285,27 +290,33 @@ class XSortedRing {
       T len = fabs(ring[i - 1].getX() - ring[0].getX());
       if (len > _maxSegLen) _maxSegLen = len;
 
-      size_t prev;
+      double prevAng;
 
-      if (i > 1)
-        prev = i - 2;
-      else
-        prev = ring.size() - 1;
+      if (haveLastNext) {
+        prevAng = lastNextY == 0 ? lastNextAng : -lastNextAng;
+      } else {
+        size_t prev;
 
-      while (ring[prev].getX() == ring[i - 1].getX() &&
-             ring[prev].getY() == ring[i - 1].getY() && prev != i - 1) {
-        if (prev > 0)
-          prev = prev - 1;
+        if (i > 1)
+          prev = i - 2;
         else
           prev = ring.size() - 1;
-      }
 
-      double prevAng = util::geo::angBetween(
-          ring[0].asDPoint(), ring[i - 1].asDPoint(),
-          {ring[prev].getX() * 1.0 -
-               (ring[i - 1].getX() * 1.0 - ring[0].getX() * 1.0),
-           ring[prev].getY() * 1.0 -
-               (ring[i - 1].getY() * 1.0 - ring[0].getY() * 1.0)});
+        while (ring[prev].getX() == ring[i - 1].getX() &&
+               ring[prev].getY() == ring[i - 1].getY() && prev != i - 1) {
+          if (prev > 0)
+            prev = prev - 1;
+          else
+            prev = ring.size() - 1;
+        }
+
+        prevAng = util::geo::angBetween(
+            ring[0].asDPoint(), ring[i - 1].asDPoint(),
+            {ring[prev].getX() * 1.0 -
+                 (ring[i - 1].getX() * 1.0 - ring[0].getX() * 1.0),
+             ring[prev].getY() * 1.0 -
+                 (ring[i - 1].getY() * 1.0 - ring[0].getY() * 1.0)});
+      }
 
       size_t next = 1;
 
@@ -343,6 +354,19 @@ class XSortedRing {
     }
 
     std::sort(_ring.begin(), _ring.end());
+  }
+
+  static double nextAngle(const Point<T>& a, const Point<T>& b,
+                          const Point<T>& c, double* y) {
+    double dy1 = b.getY() * 1.0 - a.getY() * 1.0;
+    double dx1 = b.getX() * 1.0 - a.getX() * 1.0;
+    double dy2 = (c.getY() * 1.0 - (b.getY() * 1.0 - a.getY() * 1.0)) -
+                 a.getY() * 1.0;
+    double dx2 = (c.getX() * 1.0 - (b.getX() * 1.0 - a.getX() * 1.0)) -
+                 a.getX() * 1.0;
+
+    *y = dy1 * dx2 - dy2 * dx1;
+    return atan2(*y, dx1 * dx2 + dy1 * dy2);
   }
 
   bool operator==(const XSortedRing<T>& other) const {
