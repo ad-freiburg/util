@@ -7148,7 +7148,7 @@ std::tuple<double, double, bool> probeDistanceUpperBound(
 
   for (size_t i = 0; i < ls1.size(); i += stepA) {
     if (ls1[i].out()) continue;
-    if (ls1[i].p.getX() + maxSegLenA + euclideanUpperBound <
+    if (boundedAdd(ls1[i].p.getX(), maxSegLenA) + euclideanUpperBound <
         boxB.getLowerLeft().getX()) {
       pruned = true;
       continue;
@@ -7165,7 +7165,7 @@ std::tuple<double, double, bool> probeDistanceUpperBound(
 
     for (size_t j = 0; j < ls2.size(); j += stepB) {
       if (ls2[j].out()) continue;
-      if (ls2[j].p.getX() + maxSegLenB + euclideanUpperBound <
+      if (boundedAdd(ls2[j].p.getX(), maxSegLenB) + euclideanUpperBound <
           boxA.getLowerLeft().getX()) {
         pruned = true;
         continue;
@@ -7227,7 +7227,7 @@ inline bool processActives(util::geo::IntervalIdx<T, LineSegment<T>>& actives,
   for (const auto& seg : segs) {
     if (minDistUpdated) {
       // clear activesB along the way
-      if (withinDist(seg.v, thisBox, distFunc, minDist) > minDist) {
+      if (distSquared(getBoundingBox(seg.v), thisBox) > padding * padding) {
         actives.erase({seg.l, seg.r}, seg.v);
         continue;
       }
