@@ -1410,6 +1410,24 @@ template <typename T>
 Line<T> densify(const Line<T>& l, double d);
 
 template <typename T>
+Line<T> densifyX(const Line<T>& l, double maxLen);
+
+template <typename T>
+Line<T> densifyY(const Line<T>& l, double maxLen);
+
+template <typename T>
+Ring<T> densifyRingX(const Ring<T>& r, double maxLen);
+
+template <typename T>
+Ring<T> densifyRingY(const Ring<T>& r, double maxLen);
+
+template <typename T>
+Polygon<T> densifyX(const Polygon<T>& p, double maxLen);
+
+template <typename T>
+Polygon<T> densifyY(const Polygon<T>& p, double maxLen);
+
+template <typename T>
 Line<T> sparseify(const Line<T>& l, double mind);
 
 template <typename T>
