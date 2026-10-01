@@ -6138,9 +6138,9 @@ Line<T> densifyX(const Line<T>& l, double d) {
     ret.push_back(a);
 
     double e = fabs(b.getX() * 1.0 - a.getX() * 1.0);
-    if (e <= maxLen) continue;
+    if (e <= d) continue;
 
-    size_t pieces = std::ceil(e / maxLen);
+    size_t pieces = std::ceil(e / d);
     for (size_t j = 1; j < pieces; j++) {
       double x = a.getX() + (b.getX() * 1.0 - a.getX() * 1.0) * j / pieces;
       double y = a.getY() + (b.getY() * 1.0 - a.getY() * 1.0) * j / pieces;
@@ -6159,14 +6159,14 @@ Line<T> densifyX(const Line<T>& l, double d) {
 
 // _____________________________________________________________________________
 template <typename T>
-Line<T> densifyY(const Line<T>& l, double maxLen) {
-  if (l.size() < 2 || maxLen <= 0) return l;
+Line<T> densifyY(const Line<T>& l, double d) {
+  if (l.size() < 2 || d <= 0) return l;
 
   // compute rough approx number of required points
   size_t exp = l.size();
   for (size_t i = 0; i < l.size() - 1; i++) {
     double e = fabs(l[i + 1].getY() * 1.0 - l[i].getY() * 1.0);
-    if (e > maxLen) exp += std::ceil(e / maxLen) - 1;
+    if (e > d) exp += std::ceil(e / d) - 1;
   }
 
   // shortcut
@@ -6182,9 +6182,9 @@ Line<T> densifyY(const Line<T>& l, double maxLen) {
     ret.push_back(a);
 
     double e = fabs(b.getY() * 1.0 - a.getY() * 1.0);
-    if (e <= maxLen) continue;
+    if (e <= d) continue;
 
-    size_t pieces = std::ceil(e / maxLen);
+    size_t pieces = std::ceil(e / d);
     for (size_t j = 1; j < pieces; j++) {
       double x = a.getX() + (b.getX() * 1.0 - a.getX() * 1.0) * j / pieces;
       double y = a.getY() + (b.getY() * 1.0 - a.getY() * 1.0) * j / pieces;
@@ -6203,14 +6203,14 @@ Line<T> densifyY(const Line<T>& l, double maxLen) {
 
 // _____________________________________________________________________________
 template <typename T>
-Ring<T> densifyRingX(const Ring<T>& l, double maxLen) {
-  if (l.size() < 2 || maxLen <= 0) return l;
+Ring<T> densifyRingX(const Ring<T>& l, double d) {
+  if (l.size() < 2 || d <= 0) return l;
 
   // number of required points, including the closing segment
   size_t exp = l.size();
   for (size_t i = 0; i < l.size(); i++) {
     double e = fabs(l[(i + 1) % l.size()].getX() * 1.0 - l[i].getX() * 1.0);
-    if (e > maxLen) exp += std::ceil(e / maxLen) - 1;
+    if (e > d) exp += std::ceil(e / d) - 1;
   }
 
   // shortcut
@@ -6226,9 +6226,9 @@ Ring<T> densifyRingX(const Ring<T>& l, double maxLen) {
     ret.push_back(a);
 
     double e = fabs(b.getX() * 1.0 - a.getX() * 1.0);
-    if (e <= maxLen) continue;
+    if (e <= d) continue;
 
-    size_t pieces = std::ceil(e / maxLen);
+    size_t pieces = std::ceil(e / d);
     for (size_t j = 1; j < pieces; j++) {
       double x = a.getX() + (b.getX() * 1.0 - a.getX() * 1.0) * j / pieces;
       double y = a.getY() + (b.getY() * 1.0 - a.getY() * 1.0) * j / pieces;
@@ -6245,14 +6245,14 @@ Ring<T> densifyRingX(const Ring<T>& l, double maxLen) {
 
 // _____________________________________________________________________________
 template <typename T>
-Ring<T> densifyRingY(const Ring<T>& l, double maxLen) {
-  if (l.size() < 2 || maxLen <= 0) return l;
+Ring<T> densifyRingY(const Ring<T>& l, double d) {
+  if (l.size() < 2 || d <= 0) return l;
 
   // number of required points, including the closing segment
   size_t exp = l.size();
   for (size_t i = 0; i < l.size(); i++) {
     double e = fabs(l[(i + 1) % l.size()].getY() * 1.0 - l[i].getY() * 1.0);
-    if (e > maxLen) exp += std::ceil(e / maxLen) - 1;
+    if (e > d) exp += std::ceil(e / d) - 1;
   }
 
   // shortcut
@@ -6268,9 +6268,9 @@ Ring<T> densifyRingY(const Ring<T>& l, double maxLen) {
     ret.push_back(a);
 
     double e = fabs(b.getY() * 1.0 - a.getY() * 1.0);
-    if (e <= maxLen) continue;
+    if (e <= d) continue;
 
-    size_t pieces = std::ceil(e / maxLen);
+    size_t pieces = std::ceil(e / d);
     for (size_t j = 1; j < pieces; j++) {
       double x = a.getX() + (b.getX() * 1.0 - a.getX() * 1.0) * j / pieces;
       double y = a.getY() + (b.getY() * 1.0 - a.getY() * 1.0) * j / pieces;
@@ -6287,19 +6287,19 @@ Ring<T> densifyRingY(const Ring<T>& l, double maxLen) {
 
 // _____________________________________________________________________________
 template <typename T>
-Polygon<T> densifyX(const Polygon<T>& p, double maxLen) {
+Polygon<T> densifyX(const Polygon<T>& p, double d) {
   Polygon<T> ret = p;
-  ret.getOuter() = densifyRingX(p.getOuter(), maxLen);
-  for (auto& inner : ret.getInners()) inner = densifyRingX(inner, maxLen);
+  ret.getOuter() = densifyRingX(p.getOuter(), d);
+  for (auto& inner : ret.getInners()) inner = densifyRingX(inner, d);
   return ret;
 }
 
 // _____________________________________________________________________________
 template <typename T>
-Polygon<T> densifyY(const Polygon<T>& p, double maxLen) {
+Polygon<T> densifyY(const Polygon<T>& p, double d) {
   Polygon<T> ret = p;
-  ret.getOuter() = densifyRingY(p.getOuter(), maxLen);
-  for (auto& inner : ret.getInners()) inner = densifyRingY(inner, maxLen);
+  ret.getOuter() = densifyRingY(p.getOuter(), d);
+  for (auto& inner : ret.getInners()) inner = densifyRingY(inner, d);
   return ret;
 }
 
