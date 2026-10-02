@@ -1218,22 +1218,37 @@ std::pair<double, bool> withinDist(const Point<T>& p, const XSortedRing<T>& ph,
 
   for (; i < ph.rawRing().size(); i++) {
     if (ph.rawRing()[i].out()) continue;
+    const auto seg = ph.rawRing()[i].seg();
+
     // there won't be coming any more lines intersecting a straight north/south
     // line through p
-    if (boundedSub(ph.rawRing()[i].seg().first.getX(), xPadding) > p.getX())
-      break;
-    c *= polyContCheck(p, ph.rawRing()[i].seg().first,
-                       ph.rawRing()[i].seg().second);
-    if (c == 0) return {0, false};
+    if (boundedSub(seg.first.getX(), xPadding) > p.getX()) break;
 
-    double euclideanDist = dist(ph.rawRing()[i].seg(), p);
+    if (seg.second.getX() >= p.getX() - EPSILON) {
+      c *= polyContCheck(p, seg.first, seg.second);
+      if (c == 0) return {0, false};
+    }
+
+    // if the segs bbox is farther away
+    // than the padding and the current euclidean upper bound, the segment
+    // can neither update minDist nor the upper bound
+    double boxDist = std::max(
+        std::max(0.0, 1.0 * seg.first.getX() - p.getX()),
+        std::max(
+            std::max(0.0, 1.0 * p.getX() - seg.second.getX()),
+            std::max(1.0 * std::min(seg.first.getY(), seg.second.getY()) -
+                         p.getY(),
+                     1.0 * p.getY() -
+                         std::max(seg.first.getY(), seg.second.getY()))));
+    if (boxDist > padding && boxDist > euclideanDistUpperBound) continue;
+
+    double euclideanDist = dist(seg, p);
     if (euclideanDist <= padding) {
       double dist;
       if (euclidean) {
         dist = euclideanDist;
       } else {
-        auto p2 = projectOn(ph.rawRing()[i].seg().first, p,
-                            ph.rawRing()[i].seg().second);
+        auto p2 = projectOn(seg.first, p, seg.second);
         dist = distFunc(p, p2, std::min(maxDist, minDist));
       }
       if (dist <= maxDist && dist < minDist) minDist = dist;
@@ -1263,8 +1278,13 @@ double withinDist(const Point<T>& p, const XSortedPolygon<T>& poly,
   // if we are not included in the outer ring,  we can abort here
   if (!r.second) return r.first;
 
+  // rationale: if we are contained in the outer ring, the distance can only be
+  // nonzero if we are inside an inner ring. But the distance to this inner ring
+  // cannot be greater than the distance to the outer ring
+  maxDist = std::min(maxDist, r.first);
+
   // if we are included in the outer ring, we have to check the inner rings too
-  if (r.second && poly.getInners().size()) {
+  if (poly.getInners().size()) {
     size_t i = 0;
 
     // skip irrelevant inner rings by their bounding box
@@ -1283,8 +1303,17 @@ double withinDist(const Point<T>& p, const XSortedPolygon<T>& poly,
       if (poly.getInnerBoxes()[i].getLowerLeft().getX() > p.getX()) break;
       if (!util::geo::contains(p, poly.getInnerBoxes()[i])) continue;
 
+      // if we are inside the inner ring, the distance to it cannot be greater
+      // than the smaller extent of its bounding box
+      double maxLocalEuclideanDist = std::min(
+          maxEuclideanDist,
+          1.0 * std::min(poly.getInnerBoxes()[i].getUpperRight().getX() -
+                             poly.getInnerBoxes()[i].getLowerLeft().getX(),
+                         poly.getInnerBoxes()[i].getUpperRight().getY() -
+                             poly.getInnerBoxes()[i].getLowerLeft().getY()));
+
       auto r = withinDist(p, poly.getInners()[i], maxDist, paddingFunc,
-                          maxEuclideanDist, distFunc);
+                          maxLocalEuclideanDist, distFunc);
 
       // if we are contained in the inner ring, directly return the distance to
       // its border. We can safely abort has as we assume that inner rings never
@@ -6962,6 +6991,9 @@ template <typename T, typename PF, typename DF>
 double withinDist(const XSortedLine<T>& a, const XSortedPolygon<T>& b,
                   double maxDist, PF&& paddingFunc, double maxEuclideanDist,
                   DF&& distFunc) {
+  if (util::geo::dist(a.boundingBox(), b.boundingBox()) > maxEuclideanDist)
+    return nextafter(maxDist, std::numeric_limits<double>::infinity());
+
   if (b.getInners().size() == 0 &&
       util::geo::ringContains(a.rawLine().front().seg().second, b.getOuter(), 0)
           .second)
@@ -6971,8 +7003,13 @@ double withinDist(const XSortedLine<T>& a, const XSortedPolygon<T>& b,
                       distFunc, b.getInners().size() > 0);
   if (!r.second) return r.first;
 
+  // rationale: if we are contained in the outer ring, the distance can only be
+  // nonzero if we are inside an inner ring. But the distance to this inner ring
+  // cannot be greater than the distance to the outer ring
+  maxDist = std::min(maxDist, r.first);
+
   // also check inner rings
-  if (r.second && b.getInners().size()) {
+  if (b.getInners().size()) {
     size_t i = 0;
 
     if (b.getInnerMaxSegLen() < std::numeric_limits<T>::max()) {
@@ -6992,8 +7029,15 @@ double withinDist(const XSortedLine<T>& a, const XSortedPolygon<T>& b,
         break;
       if (!util::geo::contains(a.boundingBox(), b.getInnerBoxes()[i])) continue;
 
+      double maxLocalEuclideanDist = std::min(
+          maxEuclideanDist,
+          1.0 * std::min(b.getInnerBoxes()[i].getUpperRight().getX() -
+                             b.getInnerBoxes()[i].getLowerLeft().getX(),
+                         b.getInnerBoxes()[i].getUpperRight().getY() -
+                             b.getInnerBoxes()[i].getLowerLeft().getY()));
+
       auto r2 = withinDist(a, b.getInners()[i], maxDist, paddingFunc,
-                           maxEuclideanDist, distFunc);
+                           maxLocalEuclideanDist, distFunc);
 
       // if we are contained in the inner ring, directly return the distance to
       // it
@@ -7015,9 +7059,7 @@ double withinDist(const XSortedPolygon<T>& p1, const XSortedPolygon<T>& p2,
     return nextafter(maxDist, std::numeric_limits<double>::infinity());
   if (p2.getOuter().rawRing().size() == 0)
     return nextafter(maxDist, std::numeric_limits<double>::infinity());
-
-  if (withinDist(p1.boundingBox(), p2.boundingBox(), distFunc, maxDist) >
-      maxDist)
+  if (util::geo::dist(p1.boundingBox(), p2.boundingBox()) > maxEuclideanDist)
     return nextafter(maxDist, std::numeric_limits<double>::infinity());
 
   if (p1.getInners().size() == 0 &&
