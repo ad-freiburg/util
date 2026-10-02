@@ -204,8 +204,11 @@ class XSortedRing {
                 true};
   }
 
-  XSortedRing(const Ring<T>& ring) {
-    _area = ringArea(ring);
+  XSortedRing(const Ring<T>& ring) : XSortedRing(ring, ringArea(ring)) {}
+
+  // area must be ringArea(ring)
+  XSortedRing(const Ring<T>& ring, double area) {
+    _area = area;
     _ring.reserve(2 * ring.size());
 
     bool haveLastNext = false;
@@ -360,10 +363,10 @@ class XSortedRing {
                           const Point<T>& c, double* y) {
     double dy1 = b.getY() * 1.0 - a.getY() * 1.0;
     double dx1 = b.getX() * 1.0 - a.getX() * 1.0;
-    double dy2 = (c.getY() * 1.0 - (b.getY() * 1.0 - a.getY() * 1.0)) -
-                 a.getY() * 1.0;
-    double dx2 = (c.getX() * 1.0 - (b.getX() * 1.0 - a.getX() * 1.0)) -
-                 a.getX() * 1.0;
+    double dy2 =
+        (c.getY() * 1.0 - (b.getY() * 1.0 - a.getY() * 1.0)) - a.getY() * 1.0;
+    double dx2 =
+        (c.getX() * 1.0 - (b.getX() * 1.0 - a.getX() * 1.0)) - a.getX() * 1.0;
 
     *y = dy1 * dx2 - dy2 * dx1;
     return atan2(*y, dx1 * dx2 + dy1 * dy2);
@@ -409,36 +412,52 @@ class XSortedPolygon {
   XSortedPolygon() {}
   XSortedPolygon(const Box<T>& box) : _outer(box) {}
   XSortedPolygon(const Ring<T>& ring) {
-    auto outer = ring;
+    double area = signedRingArea(ring);
 
-    // outer ring  must be oriented counter-clockwise
-    if (signedRingArea(outer) > 0) std::reverse(outer.begin(), outer.end());
-
-    _outer = outer;
+    // outer ring  must be oriented counter-clockwise, only copy if we have to
+    // reverse it
+    if (area > 0) {
+      auto outer = ring;
+      std::reverse(outer.begin(), outer.end());
+      _outer = XSortedRing<T>(outer);
+    } else {
+      _outer = XSortedRing<T>(ring, fabs(area));
+    }
   }
 
   XSortedPolygon(const Polygon<T>& poly) {
-    auto outer = poly.getOuter();
+    double area = signedRingArea(poly.getOuter());
 
-    // outer ring  must be oriented counter-clockwise
-    if (signedRingArea(outer) > 0) std::reverse(outer.begin(), outer.end());
+    // outer ring  must be oriented counter-clockwise, only copy if we have to
+    // reverse it
+    if (area > 0) {
+      auto outer = poly.getOuter();
+      std::reverse(outer.begin(), outer.end());
+      _outer = XSortedRing<T>(outer);
+    } else {
+      _outer = XSortedRing<T>(poly.getOuter(), fabs(area));
+    }
 
-    _outer = outer;
-
-    for (const auto& innerRaw : poly.getInners()) {
+    for (const auto& inner : poly.getInners()) {
       // skip empty polygons
-      if (innerRaw.size() < 2) continue;
-      auto inner = innerRaw;
+      if (inner.size() < 2) continue;
 
-      // inner rings must be oriented clockwise
-      if (signedRingArea(inner) < 0) std::reverse(inner.begin(), inner.end());
+      double innerArea = signedRingArea(inner);
 
-      _inners.push_back(inner);
+      // inner rings must be oriented clockwise, only copy if we have to
+      // reverse them
+      if (innerArea < 0) {
+        auto reversed = inner;
+        std::reverse(reversed.begin(), reversed.end());
+        _inners.push_back(XSortedRing<T>(reversed));
+      } else {
+        _inners.push_back(XSortedRing<T>(inner, innerArea));
+      }
 
       Box<T> box;
       for (const auto& p : inner) box = extendBox(p, box);
       _innerBoxes.push_back(box);
-      _innerAreas.push_back(ringArea(inner));
+      _innerAreas.push_back(_inners.back().area());
       _boxIdx.push_back({box.getLowerLeft().getX(), _innerAreas.size() - 1});
       if (box.getUpperRight().getX() - box.getLowerLeft().getX() >
           _innerMaxSegLen)
