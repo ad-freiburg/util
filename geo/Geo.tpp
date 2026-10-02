@@ -1332,11 +1332,15 @@ std::pair<bool, bool> ringContains(const Point<T>& p, const XSortedRing<T>& ph,
 
   for (; i < ph.rawRing().size(); i++) {
     if (ph.rawRing()[i].out()) continue;
+    const auto seg = ph.rawRing()[i].seg();
+
     // there won't be coming any more lines intersecting a straight north/south
     // line through p
-    if (ph.rawRing()[i].seg().first.getX() > p.getX()) break;
-    c *= polyContCheck(p, ph.rawRing()[i].seg().first,
-                       ph.rawRing()[i].seg().second);
+    if (seg.first.getX() > p.getX()) break;
+
+    if (seg.second.getX() < p.getX() - EPSILON) continue;
+
+    c *= polyContCheck(p, seg.first, seg.second);
     if (c == 0) return {0, 1};
   }
 
@@ -6878,7 +6882,8 @@ double withinDist(const std::vector<XSortedTuple<T>>& ls1,
 template <typename T, typename PF, typename DF>
 std::pair<double, std::pair<bool, bool>> withinDist(
     const XSortedRing<T>& p1, const XSortedRing<T>& p2, double maxDist,
-    PF&& paddingFunc, double maxEuclideanDist, DF&& distFunc) {
+    PF&& paddingFunc, double maxEuclideanDist, DF&& distFunc,
+    bool checkP2InP1, bool checkP1InP2) {
   if (p1.rawRing().size() == 1) {
     auto a = withinDist(p1.rawRing().front().p, p2, maxDist, paddingFunc,
                         maxEuclideanDist, distFunc);
@@ -6903,11 +6908,13 @@ std::pair<double, std::pair<bool, bool>> withinDist(
       boxB, maxDist, paddingFunc, maxEuclideanDist, distFunc);
 
   if (ringDist == 0) return {0, {false, false}};
-  if (util::geo::ringContains(p1.rawRing().front().seg().second, p2, 0)
+  if (checkP1InP2 &&
+      util::geo::ringContains(p1.rawRing().front().seg().second, p2, 0)
           .second) {
     return {ringDist, {false, true}};
   }
-  if (util::geo::ringContains(p2.rawRing().front().seg().second, p1, 0)
+  if (checkP2InP1 &&
+      util::geo::ringContains(p2.rawRing().front().seg().second, p1, 0)
           .second) {
     return {ringDist, {true, false}};
   }
@@ -7022,8 +7029,10 @@ double withinDist(const XSortedPolygon<T>& p1, const XSortedPolygon<T>& p2,
           .second)
     return 0;
 
+  // for polygons without inner rings, the containment was already checked above
   auto outerR = withinDist(p1.getOuter(), p2.getOuter(), maxDist, paddingFunc,
-                           maxEuclideanDist, distFunc);
+                           maxEuclideanDist, distFunc, p1.getInners().size() > 0,
+                           p2.getInners().size() > 0);
 
   // if we are not contained, directly return the distance (0 if we intersect)
   if (!outerR.second.first && !outerR.second.second) {
@@ -7066,8 +7075,10 @@ double withinDist(const XSortedPolygon<T>& p1, const XSortedPolygon<T>& p2,
                              p2.getInnerBoxes()[i].getLowerLeft().getX(),
                          p2.getInnerBoxes()[i].getUpperRight().getY() -
                              p2.getInnerBoxes()[i].getLowerLeft().getY()));
+      // we only need to know whether p1 is contained in the inner ring
       auto r2 = withinDist(p1.getOuter(), p2.getInners()[i], maxDist,
-                           paddingFunc, maxLocalEuclideanDist, distFunc);
+                           paddingFunc, maxLocalEuclideanDist, distFunc,
+                           false, true);
 
       // if we are contained in the inner ring, directly return the distance to
       // it
@@ -7105,8 +7116,10 @@ double withinDist(const XSortedPolygon<T>& p1, const XSortedPolygon<T>& p2,
                              p1.getInnerBoxes()[i].getLowerLeft().getX(),
                          p1.getInnerBoxes()[i].getUpperRight().getY() -
                              p1.getInnerBoxes()[i].getLowerLeft().getY()));
+      // we only need to know whether p2 is contained in the inner ring
       auto r2 = withinDist(p2.getOuter(), p1.getInners()[i], maxDist,
-                           paddingFunc, maxLocalEuclideanDist, distFunc);
+                           paddingFunc, maxLocalEuclideanDist, distFunc,
+                           false, true);
 
       // if we are contained in the inner ring, directly return the distance to
       // it
