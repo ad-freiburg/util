@@ -6927,7 +6927,7 @@ template <typename T, typename PF, typename DF>
 std::pair<double, bool> withinDist(const XSortedLine<T>& ls1,
                                    const XSortedRing<T>& p2, double maxDist,
                                    PF&& paddingFunc, double maxEuclideanDist,
-                                   DF&& distFunc) {
+                                   DF&& distFunc, bool checkContained) {
   if (ls1.rawLine().size() == 1) {
     return withinDist(ls1.rawLine().front().p, p2, maxDist, paddingFunc,
                       maxEuclideanDist, distFunc);
@@ -6950,7 +6950,8 @@ std::pair<double, bool> withinDist(const XSortedLine<T>& ls1,
       maxEuclideanDist, distFunc);
 
   if (ringDist == 0) return {ringDist, false};
-  if (util::geo::ringContains(ls1.rawLine().front().seg().second, p2, 0).second)
+  if (checkContained &&
+      util::geo::ringContains(ls1.rawLine().front().seg().second, p2, 0).second)
     return {ringDist, true};
 
   return {ringDist, false};
@@ -6965,8 +6966,9 @@ double withinDist(const XSortedLine<T>& a, const XSortedPolygon<T>& b,
       util::geo::ringContains(a.rawLine().front().seg().second, b.getOuter(), 0)
           .second)
     return 0;
+  // for polygons without inner rings, the containment was already checked above
   auto r = withinDist(a, b.getOuter(), maxDist, paddingFunc, maxEuclideanDist,
-                      distFunc);
+                      distFunc, b.getInners().size() > 0);
   if (!r.second) return r.first;
 
   // also check inner rings

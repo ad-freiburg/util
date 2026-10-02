@@ -1540,7 +1540,7 @@ template <typename T, typename PF, typename DF>
 std::pair<double, bool> withinDist(const XSortedLine<T>& ls1,
                                    const XSortedRing<T>& p2, double maxDist,
                                    PF&& paddingFunc, double maxEuclideanDist,
-                                   DF&& distFunc);
+                                   DF&& distFunc, bool checkContained = true);
 
 template <typename T, typename PF, typename DF>
 double withinDist(const XSortedLine<T>& a, const XSortedPolygon<T>& b,
