@@ -1181,6 +1181,8 @@ std::pair<double, bool> withinDist(const Point<T>& p, const XSortedRing<T>& ph,
 
   size_t i = 0;
 
+  bool euclidean = isEuclidean(distFunc);
+
   // do some distance probing to get a lower upper bound
   double euclideanDistUpperBound =
       std::min(maxEuclideanDist, std::min(dist(p, ph.rawRing().back().other),
@@ -1226,10 +1228,14 @@ std::pair<double, bool> withinDist(const Point<T>& p, const XSortedRing<T>& ph,
 
     double euclideanDist = dist(ph.rawRing()[i].seg(), p);
     if (euclideanDist <= padding) {
-      auto p2 = projectOn(ph.rawRing()[i].seg().first, p,
-                          ph.rawRing()[i].seg().second);
-
-      double dist = distFunc(p, p2, std::min(maxDist, minDist));
+      double dist;
+      if (euclidean) {
+        dist = euclideanDist;
+      } else {
+        auto p2 = projectOn(ph.rawRing()[i].seg().first, p,
+                            ph.rawRing()[i].seg().second);
+        dist = distFunc(p, p2, std::min(maxDist, minDist));
+      }
       if (dist <= maxDist && dist < minDist) minDist = dist;
       if (minDist == 0) return {0, false};
     }
@@ -1347,6 +1353,8 @@ double withinDist(const Point<T>& p, const XSortedLine<T>& line, double maxDist,
 
   size_t i = 0;
 
+  bool euclidean = isEuclidean(distFunc);
+
   // do some distance probing to get a lower upper bound
   double euclideanDistUpperBound =
       std::min(maxEuclideanDist, std::min(dist(p, line.rawLine().back().other),
@@ -1386,8 +1394,13 @@ double withinDist(const Point<T>& p, const XSortedLine<T>& line, double maxDist,
 
     double euclideanDist = dist(cur.seg(), p);
     if (euclideanDist <= padding) {
-      auto p2 = projectOn(cur.seg().first, p, cur.seg().second);
-      double dist = distFunc(p, p2, std::min(maxDist, minDist));
+      double dist;
+      if (euclidean) {
+        dist = euclideanDist;
+      } else {
+        auto p2 = projectOn(cur.seg().first, p, cur.seg().second);
+        dist = distFunc(p, p2, std::min(maxDist, minDist));
+      }
       if (dist <= maxDist && dist < minDist) minDist = dist;
       if (minDist == 0) return 0;
     }
@@ -3662,6 +3675,9 @@ double dist(const LineSegment<T>& ls1, const LineSegment<T>& ls2,
 
   // skip costly computation entirely
   if (euclideanDist > padding) return std::numeric_limits<double>::max();
+
+  // for euclidean distance functions, we already have the dist
+  if (isEuclidean(distFunc)) return euclideanDist;
 
   double d = distToSegment(ls2.first.getX(), ls2.first.getY(),
                            ls2.second.getX(), ls2.second.getY(),
@@ -7146,6 +7162,8 @@ std::tuple<double, double, bool> probeDistanceUpperBound(
   // exact if nothing was skipped
   bool pruned = false;
 
+  bool euclidean = isEuclidean(distFunc);
+
   for (size_t i = 0; i < ls1.size(); i += stepA) {
     if (ls1[i].out()) continue;
     if (boundedAdd(ls1[i].p.getX(), maxSegLenA) + euclideanUpperBound <
@@ -7180,7 +7198,7 @@ std::tuple<double, double, bool> probeDistanceUpperBound(
       // early abort
       if (euD == 0) return {0, 0, true};
 
-      double d = dist(ls1seg, ls2seg, distFunc);
+      double d = euclidean ? sqrt(euD) : dist(ls1seg, ls2seg, distFunc);
       if (d < upperBound) upperBound = d;
 
       if (euD < eucSquared) {
@@ -7190,7 +7208,8 @@ std::tuple<double, double, bool> probeDistanceUpperBound(
     }
   }
 
-  return {upperBound, euclideanUpperBound, stepA == 1 && stepB == 1 && !pruned};
+  return {upperBound, euclideanUpperBound,
+          stepA == 1 && stepB == 1 && (!pruned || euclidean)};
 }
 
 // _____________________________________________________________________________
