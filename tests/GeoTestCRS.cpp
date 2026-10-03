@@ -709,6 +709,12 @@ void GeoTest::testCRS() {
         "890555.926346 5942074.072431,890555.926346 6106854.834885,779236.435553"
         " 6106854.834885,779236.435553 5942074.072431))");
 
+    // Empty POLYGON
+    util::geo::DPolygon polyEmpty{};
+    TEST(getWKT(polyEmpty, util::geo::CRSType::CRS84, util::geo::CRSType::CRS84), ==, "POLYGON()");
+    TEST(getWKT(polyEmpty, util::geo::CRSType::CRS84, util::geo::CRSType::WGS84), ==, "<http://www.opengis.net/def/crs/EPSG/0/4326> POLYGON()");
+    TEST(getWKT(polyEmpty, util::geo::CRSType::CRS84, util::geo::CRSType::WEB_MERCATOR), ==, "<http://www.opengis.net/def/crs/EPSG/0/3857> POLYGON()");
+
     // MULTIPOLYGON
     auto projCRS84_6 = util::geo::multiPolygonFromWKT<double>(
         "<http://www.opengis.net/def/crs/OGC/1.3/CRS84> MULTIPOLYGON(((7 47, 8 47, 8 48, 7 48, 7 47)),"
