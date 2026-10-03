@@ -163,6 +163,13 @@ enum CRSType : uint8_t {
   WEB_MERCATOR = 3,
 };
 
+constexpr const char crs84Iri[] = "<http://www.opengis.net/def/crs/OGC/1.3/CRS84>";
+constexpr size_t crs84IriLen = sizeof(crs84Iri) - 1;
+constexpr const char wgs84Iri[] = "<http://www.opengis.net/def/crs/EPSG/0/4326>";
+constexpr size_t wgs84IriLen = sizeof(wgs84Iri) - 1;
+constexpr const char  webMercIri[] = "<http://www.opengis.net/def/crs/EPSG/0/3857>";
+constexpr size_t webMercIriLen = sizeof(webMercIri) - 1;
+
 uint8_t boolArrToInt8(const std::array<bool, 8> arr);
 
 template <typename T>
@@ -298,29 +305,32 @@ RotatedBox<T> shrink(const RotatedBox<T>& b, double d);
 
 bool doubleEq(double a, double b);
 
-template <typename T>
-std::string getWKT(const Point<T>& p, uint16_t prec);
+// This is used by `getWKT` to attach the CRS IRI for a specified CRS.
+std::string getCrsIri(CRSType targetCRS);
 
-template <typename T>
-std::string getWKT(const Point<T>& p);
+// This is used by `getWKT` for geometries that contain multiple points. For each point this projects the point to the `targetCRS`
+// and appends the string representation to the `ret` string. Returns the projected point to later reuse it in some cases.
+util::geo::Point<double> appendPoint(std::string& ret, const util::geo::Point<double>& point, uint16_t prec, CRSType currentCRS, CRSType targetCRS);
 
-template <typename T>
-std::string getWKT(const std::vector<Point<T>>& p, uint16_t prec);
+// The 'getWKT' functions now attach a given CRS IRI (specified by 'targetCRS').
+// By default or for 'targetCRS == CRS84' no IRI will be attached.
+// The point will also be projected from 'currentCRS' to the 'targetCRS'.
+// As the collection uses the 'getWKT' function of the subgeometries, the IRIs for these geometries are hidden (via 'hideIri'). 
+std::string getWKT(const Point<double>& p, uint16_t prec, CRSType currentCRS = CRS84, CRSType targetCRS = CRS84, bool hideIri = false);
 
-template <typename T>
-std::string getWKT(const std::vector<Point<T>>& p);
+std::string getWKT(const Point<double>& p, CRSType currentCRS = CRS84, CRSType targetCRS = CRS84, bool hideIri = false);
 
-template <typename T>
-std::string getWKT(const Line<T>& l, uint16_t prec);
+std::string getWKT(const std::vector<Point<double>>& p, uint16_t prec, CRSType currentCRS = CRS84, CRSType targetCRS = CRS84, bool hideIri = false);
 
-template <typename T>
-std::string getWKT(const Line<T>& l);
+std::string getWKT(const std::vector<Point<double>>& p, CRSType currentCRS = CRS84, CRSType targetCRS = CRS84, bool hideIri = false);
 
-template <typename T>
-std::string getWKT(const std::vector<Line<T>>& ls, uint16_t prec);
+std::string getWKT(const Line<double>& l, uint16_t prec, CRSType currentCRS = CRS84, CRSType targetCRS = CRS84, bool hideIri = false);
 
-template <typename T>
-std::string getWKT(const std::vector<Line<T>>& ls);
+std::string getWKT(const Line<double>& l, CRSType currentCRS = CRS84, CRSType targetCRS = CRS84, bool hideIri = false);
+
+std::string getWKT(const std::vector<Line<double>>& ls, uint16_t prec, CRSType currentCRS = CRS84, CRSType targetCRS = CRS84, bool hideIri = false);
+
+std::string getWKT(const std::vector<Line<double>>& ls, CRSType currentCRS = CRS84, CRSType targetCRS = CRS84, bool hideIri = false);
 
 template <typename T>
 std::string getWKT(const XSortedPolygon<T>& ls, uint16_t prec);
@@ -340,23 +350,17 @@ std::string getWKT(const Box<T>& l, uint16_t prec);
 template <typename T>
 std::string getWKT(const Box<T>& l);
 
-template <typename T>
-std::string getWKT(const Polygon<T>& p, uint16_t prec);
+std::string getWKT(const Polygon<double>& p, uint16_t prec, CRSType currentCRS = CRS84, CRSType targetCRS = CRS84, bool hideIri = false);
 
-template <typename T>
-std::string getWKT(const Polygon<T>& p);
+std::string getWKT(const Polygon<double>& p, CRSType currentCRS = CRS84, CRSType targetCRS = CRS84, bool hideIri = false);
 
-template <typename T>
-std::string getWKT(const std::vector<Polygon<T>>& ls, uint16_t prec);
+std::string getWKT(const std::vector<Polygon<double>>& ls, uint16_t prec, CRSType currentCRS = CRS84, CRSType targetCRS = CRS84, bool hideIri = false);
 
-template <typename T>
-std::string getWKT(const std::vector<Polygon<T>>& ls);
+std::string getWKT(const std::vector<Polygon<double>>& ls, CRSType currentCRS = CRS84, CRSType targetCRS = CRS84, bool hideIri = false);
 
-template <typename T>
-std::string getWKT(const Collection<T>& coll, uint16_t prec);
+std::string getWKT(const Collection<double>& coll, uint16_t prec, CRSType currentCRS = CRS84, CRSType targetCRS = CRS84, bool hideIri = false);
 
-template <typename T>
-std::string getWKT(const Collection<T>& coll);
+std::string getWKT(const Collection<double>& coll, CRSType currentCRS = CRS84, CRSType targetCRS = CRS84, bool hideIri = false);
 
 template <typename T>
 bool contains(const Point<T>& p, const Box<T>& box);
