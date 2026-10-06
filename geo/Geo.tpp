@@ -483,6 +483,109 @@ RotatedBox<T> shrink(const RotatedBox<T>& b, double d) {
 
 // _____________________________________________________________________________
 template <typename T>
+util::geo::Point<T> util::geo::appendPoint(std::string& ret, const util::geo::Point<T>& point, uint16_t prec, CRSType currentCRS, CRSType targetCRS) {
+  auto projected = projectToCRS(point, currentCRS, targetCRS);
+  ret.append(formatFloat(projected.getX(), prec));
+  ret.push_back(' ');
+  ret.append(formatFloat(projected.getY(), prec));
+  return projected;
+}
+
+// _____________________________________________________________________________
+template <typename T>
+std::string util::geo::getWKT(const Point<T>& p, uint16_t prec, CRSType currentCRS, CRSType targetCRS, bool hideIri) {
+  std::string ret;
+  const std::string iri = hideIri ? "" : getCrsIri(targetCRS);
+  ret.reserve(iri.size() + 6 + prec + 3 + prec + 3 + 1);
+  ret += iri;
+  ret += "POINT(";
+  appendPoint(ret, p, prec, currentCRS, targetCRS);
+  ret.push_back(')');
+  return ret;
+}
+
+// _____________________________________________________________________________
+template <typename T>
+std::string util::geo::getWKT(const Point<T>& p, CRSType currentCRS, CRSType targetCRS, bool hideIri) {
+  return getWKT(p, 6, currentCRS, targetCRS, hideIri);
+}
+
+// _____________________________________________________________________________
+template <typename T>
+std::string util::geo::getWKT(const std::vector<Point<T>>& p, uint16_t prec, CRSType currentCRS, CRSType targetCRS, bool hideIri) {
+  std::string ret;
+  const std::string iri = hideIri ? "" : getCrsIri(targetCRS);
+  ret.reserve(iri.size() + 10 + 1 + p.size() * (prec + 3) * 2 + 1);
+  ret += iri;
+  ret += "MULTIPOINT(";
+  for (size_t i = 0; i < p.size(); i++) {
+    if (i) ret.push_back(',');
+    appendPoint(ret, p[i], prec, currentCRS, targetCRS);
+  }
+  ret.push_back(')');
+  return ret;
+}
+
+// _____________________________________________________________________________
+template <typename T>
+std::string util::geo::getWKT(const std::vector<Point<T>>& p, CRSType currentCRS, CRSType targetCRS, bool hideIri) {
+  return getWKT(p, 6, currentCRS, targetCRS, hideIri);
+}
+
+// _____________________________________________________________________________
+template <typename T>
+std::string util::geo::getWKT(const Line<T>& l, uint16_t prec, CRSType currentCRS, CRSType targetCRS, bool hideIri) {
+  std::string ret;
+  const std::string iri = hideIri ? "" : getCrsIri(targetCRS);
+  ret.reserve(iri.size() + 10 + 1 + l.size() * (prec + 3) * 2 + 1);
+  ret += iri;
+  ret += "LINESTRING(";
+  for (size_t i = 0; i < l.size(); i++) {
+    if (i) ret.push_back(',');
+    appendPoint(ret, l[i], prec, currentCRS, targetCRS);
+  }
+  ret.push_back(')');
+  return ret;
+}
+
+// _____________________________________________________________________________
+template <typename T>
+std::string util::geo::getWKT(const Line<T>& l, CRSType currentCRS, CRSType targetCRS, bool hideIri) {
+  return getWKT(l, 6, currentCRS, targetCRS, hideIri);
+}
+
+// _____________________________________________________________________________
+template <typename T>
+std::string util::geo::getWKT(const std::vector<Line<T>>& ls, uint16_t prec, CRSType currentCRS, CRSType targetCRS, bool hideIri) {
+  std::string ret;
+  const std::string iri = hideIri ? "" : getCrsIri(targetCRS);
+
+  if (ls.size()) ret.reserve(iri.size() + 15 + 2 + ls[0].size() * (prec + 3) * 2 + 2);
+  ret += iri;
+  ret += "MULTILINESTRING(";
+
+  for (size_t j = 0; j < ls.size(); j++) {
+    if (j) ret.push_back(',');
+    ret.push_back('(');
+    for (size_t i = 0; i < ls[j].size(); i++) {
+      if (i) ret.push_back(',');
+      appendPoint(ret, ls[j][i], prec, currentCRS, targetCRS);
+    }
+    ret.push_back(')');
+  }
+
+  ret.push_back(')');
+  return ret;
+}
+
+// _____________________________________________________________________________
+template <typename T>
+std::string util::geo::getWKT(const std::vector<Line<T>>& ls, CRSType currentCRS, CRSType targetCRS, bool hideIri) {
+  return getWKT(ls, 6, currentCRS, targetCRS, hideIri);
+}
+
+// _____________________________________________________________________________
+template <typename T>
 std::string getWKT(const XSortedPolygon<T>& ls, uint16_t prec) {
   std::stringstream ss;
   ss << "MULTILINESTRING(";
@@ -560,6 +663,149 @@ std::string getWKT(const Box<T>& l, uint16_t prec) {
 template <typename T>
 std::string getWKT(const Box<T>& l) {
   return getWKT(l, 6);
+}
+
+// _____________________________________________________________________________
+template <typename T>
+std::string util::geo::getWKT(const Polygon<T>& p, uint16_t prec, CRSType currentCRS, CRSType targetCRS, bool hideIri) {
+  if (p.getOuter().size() == 0) return hideIri ? "POLYGON()" : getCrsIri(targetCRS) + "POLYGON()";
+
+  std::string ret;
+  const std::string iri = hideIri ? "" : getCrsIri(targetCRS);
+  ret.reserve(iri.size() + 7 + 2 + p.getOuter().size() * (prec + 3) * 2 + 2);
+  ret += iri;
+  ret += "POLYGON((";
+
+  util::geo::Point<T> front;
+  for (size_t i = 0; i < p.getOuter().size(); i++) {
+    if (i > 0) ret.push_back(',');
+    auto point = appendPoint(ret, p.getOuter()[i], prec, currentCRS, targetCRS);
+    if (i == 0) front = point;
+  }
+
+  if (p.getOuter().front() != p.getOuter().back()) {
+    ret.push_back(',');
+    ret.append(formatFloat(front.getX(), prec));
+    ret.push_back(' ');
+    ret.append(formatFloat(front.getY(), prec));
+  }
+  ret.push_back(')');
+
+  for (const auto& inner : p.getInners()) {
+    ret.append(",(");
+    for (size_t i = 0; i < inner.size(); i++) {
+      if (i > 0) ret.push_back(',');
+      auto point = appendPoint(ret, inner[i], prec, currentCRS, targetCRS);
+      if (i == 0) front = point;
+    }
+
+    if (inner.front() != inner.back()) {
+      ret.push_back(',');
+      ret.append(formatFloat(front.getX(), prec));
+      ret.push_back(' ');
+      ret.append(formatFloat(front.getY(), prec));
+    }
+    ret.push_back(')');
+  }
+  ret.push_back(')');
+  return ret;
+}
+
+// _____________________________________________________________________________
+template <typename T>
+std::string util::geo::getWKT(const Polygon<T>& p, CRSType currentCRS, CRSType targetCRS, bool hideIri) {
+  return getWKT(p, 6, currentCRS, targetCRS, hideIri);
+}
+
+// _____________________________________________________________________________
+template <typename T>
+std::string util::geo::getWKT(const std::vector<Polygon<T>>& ls, uint16_t prec, CRSType currentCRS, CRSType targetCRS, bool hideIri) {
+  std::string ret;
+  const std::string iri = hideIri ? "" : getCrsIri(targetCRS);
+  if (ls.size())
+    ret.reserve(iri.size() + 12 + 2 + ls[0].getOuter().size() * (prec + 3) * 2 + 2);
+  
+  ret += iri;
+  ret += "MULTIPOLYGON(";
+
+  for (size_t j = 0; j < ls.size(); j++) {
+    if (j) ret.push_back(',');
+    ret.push_back('(');
+    ret.push_back('(');
+
+    util::geo::Point<T> front;
+    for (size_t i = 0; i < ls[j].getOuter().size(); i++) {
+      if (i > 0) ret.push_back(',');
+      auto point = appendPoint(ret, ls[j].getOuter()[i], prec, currentCRS, targetCRS);
+      if (i == 0) front = point;
+    }
+
+    if (ls[j].getOuter().front() != ls[j].getOuter().back()) {
+      ret.push_back(',');
+      ret.append(formatFloat(front.getX(), prec));
+      ret.push_back(' ');
+      ret.append(formatFloat(front.getY(), prec));
+    }
+    ret.push_back(')');
+
+    for (const auto& inner : ls[j].getInners()) {
+      ret.push_back(',');
+      ret.push_back('(');
+      for (size_t i = 0; i < inner.size(); i++) {
+        if (i > 0) ret.push_back(',');
+        auto point = appendPoint(ret, inner[i], prec, currentCRS, targetCRS);
+        if (i == 0) front = point;
+      }
+      if (inner.front() != inner.back()) {
+        ret.push_back(',');
+        ret.append(formatFloat(front.getX(), prec));
+        ret.push_back(' ');
+        ret.append(formatFloat(front.getY(), prec));
+      }
+      ret.push_back(')');
+    }
+    ret.push_back(')');
+  }
+
+  ret.push_back(')');
+  return ret;
+}
+
+// _____________________________________________________________________________
+template <typename T>
+std::string util::geo::getWKT(const std::vector<Polygon<T>>& ls, CRSType currentCRS, CRSType targetCRS, bool hideIri) {
+  return getWKT(ls, 6, currentCRS, targetCRS, hideIri);
+}
+
+// _____________________________________________________________________________
+template <typename T>
+std::string util::geo::getWKT(const Collection<T>& coll, uint16_t prec, CRSType currentCRS, CRSType targetCRS, bool hideIri) {
+  std::string ret;
+  const std::string iri = hideIri ? "" : getCrsIri(targetCRS);
+  ret += iri;
+  ret += "GEOMETRYCOLLECTION(";
+
+  std::string delim = "";
+
+  for (const auto& g : coll) {
+    ret += delim;
+    delim = ",";
+    if (g.getType() == 0) ret += util::geo::getWKT(g.getPoint(), prec, currentCRS, targetCRS, true);
+    if (g.getType() == 1) ret += util::geo::getWKT(g.getLine(), prec, currentCRS, targetCRS, true);
+    if (g.getType() == 2) ret += util::geo::getWKT(g.getPolygon(), prec, currentCRS, targetCRS, true);
+    if (g.getType() == 3) ret += util::geo::getWKT(g.getMultiLine(), prec, currentCRS, targetCRS, true);
+    if (g.getType() == 4) ret += util::geo::getWKT(g.getMultiPolygon(), prec, currentCRS, targetCRS, true);
+    if (g.getType() == 5) ret += util::geo::getWKT(g.getCollection(), prec, currentCRS, targetCRS, true);
+    if (g.getType() == 6) ret += util::geo::getWKT(g.getMultiPoint(), prec, currentCRS, targetCRS, true);
+  }
+
+  return ret + ")";
+}
+
+// _____________________________________________________________________________
+template <typename T>
+std::string util::geo::getWKT(const Collection<T>& coll, CRSType currentCRS, CRSType targetCRS, bool hideIri) {
+  return getWKT(coll, 6, currentCRS, targetCRS, hideIri);
 }
 
 // _____________________________________________________________________________
