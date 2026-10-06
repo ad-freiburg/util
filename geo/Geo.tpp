@@ -536,7 +536,7 @@ std::string util::geo::getWKT(const std::vector<Point<T>>& p, CRSType currentCRS
 template <typename T>
 std::string util::geo::getWKT(const Line<T>& l, uint16_t prec, CRSType currentCRS, CRSType targetCRS, bool hideIri) {
   std::string ret;
-  const std::string iri = hideIri ? "" : getCrsIri(targetCRS);
+  const std::string& iri = getCrsIri(targetCRS, hideIri);
   ret.reserve(iri.size() + 10 + 1 + l.size() * (prec + 3) * 2 + 1);
   ret += iri;
   ret += "LINESTRING(";
@@ -558,7 +558,7 @@ std::string util::geo::getWKT(const Line<T>& l, CRSType currentCRS, CRSType targ
 template <typename T>
 std::string util::geo::getWKT(const std::vector<Line<T>>& ls, uint16_t prec, CRSType currentCRS, CRSType targetCRS, bool hideIri) {
   std::string ret;
-  const std::string iri = hideIri ? "" : getCrsIri(targetCRS);
+  const std::string& iri = getCrsIri(targetCRS, hideIri);
 
   if (ls.size()) ret.reserve(iri.size() + 15 + 2 + ls[0].size() * (prec + 3) * 2 + 2);
   ret += iri;
@@ -668,10 +668,10 @@ std::string getWKT(const Box<T>& l) {
 // _____________________________________________________________________________
 template <typename T>
 std::string util::geo::getWKT(const Polygon<T>& p, uint16_t prec, CRSType currentCRS, CRSType targetCRS, bool hideIri) {
-  if (p.getOuter().size() == 0) return hideIri ? "POLYGON()" : getCrsIri(targetCRS) + "POLYGON()";
+  if (p.getOuter().size() == 0) return getCrsIri(targetCRS, hideIri) + "POLYGON()";
 
   std::string ret;
-  const std::string iri = hideIri ? "" : getCrsIri(targetCRS);
+  const std::string& iri = getCrsIri(targetCRS, hideIri);
   ret.reserve(iri.size() + 7 + 2 + p.getOuter().size() * (prec + 3) * 2 + 2);
   ret += iri;
   ret += "POLYGON((";
@@ -721,7 +721,7 @@ std::string util::geo::getWKT(const Polygon<T>& p, CRSType currentCRS, CRSType t
 template <typename T>
 std::string util::geo::getWKT(const std::vector<Polygon<T>>& ls, uint16_t prec, CRSType currentCRS, CRSType targetCRS, bool hideIri) {
   std::string ret;
-  const std::string iri = hideIri ? "" : getCrsIri(targetCRS);
+  const std::string& iri = getCrsIri(targetCRS, hideIri);
   if (ls.size())
     ret.reserve(iri.size() + 12 + 2 + ls[0].getOuter().size() * (prec + 3) * 2 + 2);
   
@@ -781,7 +781,7 @@ std::string util::geo::getWKT(const std::vector<Polygon<T>>& ls, CRSType current
 template <typename T>
 std::string util::geo::getWKT(const Collection<T>& coll, uint16_t prec, CRSType currentCRS, CRSType targetCRS, bool hideIri) {
   std::string ret;
-  const std::string iri = hideIri ? "" : getCrsIri(targetCRS);
+  const std::string& iri = getCrsIri(targetCRS, hideIri);
   ret += iri;
   ret += "GEOMETRYCOLLECTION(";
 
@@ -6295,11 +6295,11 @@ Point<T> projectToCRS(const Point<T>& p, CRSType baseCRS, CRSType goalCRS) {
   
   switch (goalCRS)
   {
-  case CRS84:
+  case util::geo::CRSType::CRS84:
     return projectToCRS84(p, baseCRS);
-  case WGS84:
+  case util::geo::CRSType::WGS84:
     return projectToWGS84(p, baseCRS);
-  case WEB_MERCATOR:
+  case util::geo::CRSType::WEB_MERCATOR:
     return projectToWebMerc(p, baseCRS);
   default:
     throw std::runtime_error("Projection to unsupported CRS type.");
@@ -6311,11 +6311,11 @@ template <typename T>
 Point<T> projectToCRS84(const Point<T>& p, CRSType baseCRS) {
   switch (baseCRS)
   {
-  case CRS84:
+  case util::geo::CRSType::CRS84:
     return p;
-  case WGS84:
+  case util::geo::CRSType::WGS84:
     return latLngToLngLat(p);
-  case WEB_MERCATOR:
+  case util::geo::CRSType::WEB_MERCATOR:
     return webMercToLatLng(p);
   default:
     throw std::runtime_error("The CRS type of the input Point is not supported (yet).");
@@ -6327,11 +6327,11 @@ template <typename T>
 Point<T> projectToWGS84(const Point<T>& p, CRSType baseCRS) {
   switch (baseCRS)
   {
-  case CRS84:
+  case util::geo::CRSType::CRS84:
     return lngLatToLatLng(p);
-  case WGS84:
+  case util::geo::CRSType::WGS84:
     return p;
-  case WEB_MERCATOR:
+  case util::geo::CRSType::WEB_MERCATOR:
     return lngLatToLatLng(webMercToLatLng(p));
   default:
     throw std::runtime_error("The CRS type of the input Point is not supported (yet).");
@@ -6343,11 +6343,11 @@ template <typename T>
 Point<T> projectToWebMerc(const Point<T>& p, CRSType baseCRS) {
   switch (baseCRS)
   {
-  case CRS84:
+  case util::geo::CRSType::CRS84:
     return latLngToWebMerc(p);
-  case WGS84:
+  case util::geo::CRSType::WGS84:
     return latLngToWebMerc(latLngToLngLat(p));
-  case WEB_MERCATOR:
+  case util::geo::CRSType::WEB_MERCATOR:
     return p;
   default:
     throw std::runtime_error("The CRS type of the input Point is not supported (yet).");

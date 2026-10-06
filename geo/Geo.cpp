@@ -107,37 +107,43 @@ util::geo::CRSType util::geo::getCRSType(const char* c, const char** endr) {
 
   if (*c != '<') {
     if (endr) (*endr) = c;
-    return CRS84;  // Default.
+    return util::geo::CRSType::CRS84;  // Default.
   }
 
   if (strncicmp(crs84Iri, c, crs84IriLen) == 0) {
     if (endr) (*endr) = c + crs84IriLen;
-    return CRS84;
+    return util::geo::CRSType::CRS84;
   }
   if (strncicmp(wgs84Iri, c, wgs84IriLen) == 0) {
     if (endr) (*endr) = c + wgs84IriLen;
-    return WGS84;
+    return util::geo::CRSType::WGS84;
   }
   if (strncicmp(webMercIri, c, webMercIriLen) == 0) {
     if (endr) (*endr) = c + webMercIriLen;
-    return WEB_MERCATOR;
+    return util::geo::CRSType::WEB_MERCATOR;
   }
 
   if (endr) (*endr) = c;
-  return UNSUPPORTED;
+  return util::geo::CRSType::UNSUPPORTED;
 }
 
 // _____________________________________________________________________________
-std::string util::geo::getCrsIri(util::geo::CRSType targetCRS) {
+const std::string& util::geo::getCrsIri(util::geo::CRSType targetCRS, bool hideIri) {
+  static const std::string empty{""};
+  static const std::string wgs84 = std::string{wgs84Iri} + " ";
+  static const std::string webMerc = std::string{webMercIri} + " ";
+
+  if (hideIri) return empty;
+
   switch (targetCRS)
   {
-  case CRS84:
+  case util::geo::CRSType::CRS84:
     // Not attaching IRI as CRS84 is the default.
-    return "";
-  case WGS84:
-    return std::string{wgs84Iri} + " ";
-  case WEB_MERCATOR:
-    return std::string{webMercIri} + " ";
+    return empty;
+  case util::geo::CRSType::WGS84:
+    return wgs84;
+  case util::geo::CRSType::WEB_MERCATOR:
+    return webMerc;
   default:
     throw std::runtime_error("Trying to get CRS IRI for unsupported CRS type.");
   }
