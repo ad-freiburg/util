@@ -515,7 +515,7 @@ template <typename T>
 std::string util::geo::getWKT(const std::vector<Point<T>>& p, uint16_t prec, CRSType currentCRS, CRSType targetCRS, bool hideIri) {
   std::string ret;
   const std::string iri = hideIri ? "" : getCrsIri(targetCRS);
-  ret.reserve(iri.size() + 10 + 1 + p.size() * (prec + 3) * 2 + 1);
+  ret.reserve(iri.size() + 10 + 1 + p.size() * (2 * prec + 11) + 1);
   ret += iri;
   ret += "MULTIPOINT(";
   for (size_t i = 0; i < p.size(); i++) {
@@ -537,7 +537,7 @@ template <typename T>
 std::string util::geo::getWKT(const Line<T>& l, uint16_t prec, CRSType currentCRS, CRSType targetCRS, bool hideIri) {
   std::string ret;
   const std::string& iri = getCrsIri(targetCRS, hideIri);
-  ret.reserve(iri.size() + 10 + 1 + l.size() * (prec + 3) * 2 + 1);
+  ret.reserve(iri.size() + 10 + 1 + l.size() * (2 * prec + 11) + 1);
   ret += iri;
   ret += "LINESTRING(";
   for (size_t i = 0; i < l.size(); i++) {
@@ -560,7 +560,7 @@ std::string util::geo::getWKT(const std::vector<Line<T>>& ls, uint16_t prec, CRS
   std::string ret;
   const std::string& iri = getCrsIri(targetCRS, hideIri);
 
-  if (ls.size()) ret.reserve(iri.size() + 15 + 2 + ls[0].size() * (prec + 3) * 2 + 2);
+  if (ls.size()) ret.reserve(iri.size() + 15 + 2 + ls[0].size() * (2 * prec + 11) + 2);
   ret += iri;
   ret += "MULTILINESTRING(";
 
@@ -672,7 +672,7 @@ std::string util::geo::getWKT(const Polygon<T>& p, uint16_t prec, CRSType curren
 
   std::string ret;
   const std::string& iri = getCrsIri(targetCRS, hideIri);
-  ret.reserve(iri.size() + 7 + 2 + p.getOuter().size() * (prec + 3) * 2 + 2);
+  ret.reserve(iri.size() + 7 + 2 + p.getOuter().size() * (2 * prec + 11) + 2);
   ret += iri;
   ret += "POLYGON((";
 
@@ -723,7 +723,7 @@ std::string util::geo::getWKT(const std::vector<Polygon<T>>& ls, uint16_t prec, 
   std::string ret;
   const std::string& iri = getCrsIri(targetCRS, hideIri);
   if (ls.size())
-    ret.reserve(iri.size() + 12 + 2 + ls[0].getOuter().size() * (prec + 3) * 2 + 2);
+    ret.reserve(iri.size() + 12 + 2 + ls[0].getOuter().size() * (2 * prec + 11) + 2);
   
   ret += iri;
   ret += "MULTIPOLYGON(";
