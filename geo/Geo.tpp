@@ -495,7 +495,7 @@ util::geo::Point<double> util::geo::appendPoint(std::string& ret, const util::ge
 template <typename T>
 std::string util::geo::getWKT(const Point<T>& p, uint16_t prec, CRSType currentCRS, CRSType targetCRS, bool hideIri) {
   std::string ret;
-  const std::string iri = hideIri ? "" : getCrsIri(targetCRS);
+  const std::string& iri = getCrsIri(targetCRS, hideIri);
   ret.reserve(iri.size() + 6 + prec + 3 + prec + 3 + 1);
   ret += iri;
   ret += "POINT(";
@@ -514,7 +514,7 @@ std::string util::geo::getWKT(const Point<T>& p, CRSType currentCRS, CRSType tar
 template <typename T>
 std::string util::geo::getWKT(const std::vector<Point<T>>& p, uint16_t prec, CRSType currentCRS, CRSType targetCRS, bool hideIri) {
   std::string ret;
-  const std::string iri = hideIri ? "" : getCrsIri(targetCRS);
+  const std::string& iri = getCrsIri(targetCRS, hideIri);
   ret.reserve(iri.size() + 10 + 1 + p.size() * (2 * prec + 11) + 1);
   ret += iri;
   ret += "MULTIPOINT(";
