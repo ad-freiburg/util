@@ -821,4 +821,22 @@ void GeoTest::testCRS() {
         "890555.926346 5942074.072431,890555.926346 6106854.834885,779236.435553 6106854.834885,"
         "779236.435553 5942074.072431)))");
   }
+  {
+    // Test correct handling of `Point<int>` as input.
+
+    util::geo::IPoint pCRS84{2, 3};
+    TEST(getWKT(pCRS84, util::geo::CRSType::CRS84, util::geo::CRSType::CRS84), ==, "POINT(2 3)");
+    TEST(getWKT(pCRS84, util::geo::CRSType::CRS84, util::geo::CRSType::WGS84), ==, "<http://www.opengis.net/def/crs/EPSG/0/4326> POINT(3 2)");
+    TEST(getWKT(pCRS84, util::geo::CRSType::CRS84, util::geo::CRSType::WEB_MERCATOR), ==, "<http://www.opengis.net/def/crs/EPSG/0/3857> POINT(222638.981587 334111.171402)");
+
+    util::geo::IPoint pWGS84{3, 2};
+    TEST(getWKT(pWGS84, util::geo::CRSType::WGS84, util::geo::CRSType::CRS84), ==, "POINT(2 3)");
+    TEST(getWKT(pWGS84, util::geo::CRSType::WGS84, util::geo::CRSType::WGS84), ==, "<http://www.opengis.net/def/crs/EPSG/0/4326> POINT(3 2)");
+    TEST(getWKT(pWGS84, util::geo::CRSType::WGS84, util::geo::CRSType::WEB_MERCATOR), ==, "<http://www.opengis.net/def/crs/EPSG/0/3857> POINT(222638.981587 334111.171402)");
+
+    util::geo::IPoint pWebMerc{222638, 334111};
+    TEST(getWKT(pWebMerc, util::geo::CRSType::WEB_MERCATOR, util::geo::CRSType::CRS84), ==, "POINT(1.999991 2.999998)");
+    TEST(getWKT(pWebMerc, util::geo::CRSType::WEB_MERCATOR, util::geo::CRSType::WGS84), ==, "<http://www.opengis.net/def/crs/EPSG/0/4326> POINT(2.999998 1.999991)");
+    TEST(getWKT(pWebMerc, util::geo::CRSType::WEB_MERCATOR, util::geo::CRSType::WEB_MERCATOR), ==, "<http://www.opengis.net/def/crs/EPSG/0/3857> POINT(222638 334111)");
+  }
 }

@@ -483,8 +483,8 @@ RotatedBox<T> shrink(const RotatedBox<T>& b, double d) {
 
 // _____________________________________________________________________________
 template <typename T>
-util::geo::Point<T> util::geo::appendPoint(std::string& ret, const util::geo::Point<T>& point, uint16_t prec, CRSType currentCRS, CRSType targetCRS) {
-  auto projected = projectToCRS(point, currentCRS, targetCRS);
+util::geo::Point<double> util::geo::appendPoint(std::string& ret, const util::geo::Point<T>& point, uint16_t prec, CRSType currentCRS, CRSType targetCRS) {
+  Point<double> projected = projectToCRS(Point<double>{point.getX(), point.getY()}, currentCRS, targetCRS);
   ret.append(formatFloat(projected.getX(), prec));
   ret.push_back(' ');
   ret.append(formatFloat(projected.getY(), prec));
@@ -676,7 +676,7 @@ std::string util::geo::getWKT(const Polygon<T>& p, uint16_t prec, CRSType curren
   ret += iri;
   ret += "POLYGON((";
 
-  util::geo::Point<T> front;
+  util::geo::Point<double> front;
   for (size_t i = 0; i < p.getOuter().size(); i++) {
     if (i > 0) ret.push_back(',');
     auto point = appendPoint(ret, p.getOuter()[i], prec, currentCRS, targetCRS);
@@ -733,7 +733,7 @@ std::string util::geo::getWKT(const std::vector<Polygon<T>>& ls, uint16_t prec, 
     ret.push_back('(');
     ret.push_back('(');
 
-    util::geo::Point<T> front;
+    util::geo::Point<double> front;
     for (size_t i = 0; i < ls[j].getOuter().size(); i++) {
       if (i > 0) ret.push_back(',');
       auto point = appendPoint(ret, ls[j].getOuter()[i], prec, currentCRS, targetCRS);

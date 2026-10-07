@@ -320,8 +320,9 @@ const std::string& getCrsIri(CRSType targetCRS, bool hideIri = false);
 
 // This is used by `getWKT` for geometries that contain multiple points. For each point this projects the point to the `targetCRS`
 // and appends the string representation to the `ret` string. Returns the projected point to later reuse it in some cases.
+// To preserve precision, always return the projected point with `double` values.
 template <typename T>
-util::geo::Point<T> appendPoint(std::string& ret, const util::geo::Point<T>& point, uint16_t prec, CRSType currentCRS, CRSType targetCRS);
+util::geo::Point<double> appendPoint(std::string& ret, const util::geo::Point<T>& point, uint16_t prec, CRSType currentCRS, CRSType targetCRS);
 
 // The 'getWKT' functions now attach a given CRS IRI (specified by 'targetCRS').
 // By default or for 'targetCRS == CRS84' no IRI will be attached.
