@@ -1768,6 +1768,26 @@ double withinDist(const std::vector<GeometryA<T>>& multi,
                   const GeometryB<T>& geom, double maxDist, PF&& paddingFunc,
                   double maxEuclideanDist, DF&& distFunc);
 
+// CAREFUL: these overloads are required, otherwise a multigeometry/line call
+// would match the multigeometry/multigeometry case, as line is a descendant of
+// std::vector<Point>, and the line would be treated as a multipoint
+template <template <typename> class GeometryA,
+          template <typename> class GeometryB, typename T>
+double withinDist(const std::vector<GeometryA<T>>& multi,
+                  const GeometryB<T>& geom, double maxDist) {
+  return withinDist(
+      multi, geom, maxDist, defaultPaddingFunc<T>(), maxDist,
+      std::function<double(const Point<T>&, const Point<T>&, double)>(
+          euclideanDistFunc<T>));
+}
+
+template <template <typename> class GeometryA,
+          template <typename> class GeometryB, typename T>
+double withinDist(const GeometryB<T>& geom,
+                  const std::vector<GeometryA<T>>& multi, double maxDist) {
+  return withinDist(multi, geom, maxDist);
+}
+
 template <template <typename> class GeometryA,
           template <typename> class GeometryB, typename T, typename DF,
           typename PF>

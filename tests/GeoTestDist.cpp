@@ -706,6 +706,12 @@ static void testDistCollections() {
   TEST(util::geo::withinDist(point, XSortedCollection<double>(col), 20), ==,
        approx(0));
   TEST(util::geo::dist(point, XSortedCollection<double>(col)), ==, approx(0));
+
+  TEST(util::geo::withinDist(
+           MultiPolygon<double>{polygonFromWKT<double>(
+               "POLYGON((0 0, 10 0, 10 10, 0 10, 0 0))")},
+           lineFromWKT<double>("LINESTRING(15 -10, 15 20)"), 100),
+       ==, approx(5));
 }
 
 // _____________________________________________________________________________
@@ -1628,6 +1634,9 @@ static void testDistWithinEmptyOuter() {
   for (double maxDist :
        {20.0, 1000.0, std::numeric_limits<double>::infinity()}) {
     TEST(std::isnan(util::geo::withinDist(test2, line, maxDist)));
+    TEST(std::isnan(util::geo::withinDist(line, test2, maxDist)));
+    TEST(std::isnan(util::geo::withinDist(test2, farPoly, maxDist)));
+    TEST(std::isnan(util::geo::withinDist(farPoly, test2, maxDist)));
   }
 }
 

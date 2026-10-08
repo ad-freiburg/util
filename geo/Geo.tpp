@@ -4169,6 +4169,8 @@ template <template <typename> class GeometryA,
 double withinDist(const std::vector<GeometryA<T>>& multi,
                   const GeometryB<T>& geom, double maxDist, PF&& paddingFunc,
                   double maxEuclideanDist, DF&& distFunc) {
+  if (multi.empty()) return std::numeric_limits<double>::quiet_NaN();
+
   // for larger multigeometries, fall back to pre-sorted implementation to avoid
   // unnecessary checks
   if (multi.size() > EST_MULTI_CHECKS_THRESHOLD_XSORTED)
@@ -4176,10 +4178,15 @@ double withinDist(const std::vector<GeometryA<T>>& multi,
                       maxDist, paddingFunc, maxEuclideanDist, distFunc);
 
   double minD = nextafter(maxDist, std::numeric_limits<double>::infinity());
+  bool nonEmptyFound = false;
   for (const auto& g1 : multi) {
-    minD = std::min(minD, withinDist(g1, geom, minD, paddingFunc,
-                                     maxEuclideanDist, distFunc));
+    double d =
+        withinDist(g1, geom, minD, paddingFunc, maxEuclideanDist, distFunc);
+    if (!std::isnan(d)) nonEmptyFound = true;
+    minD = std::min(minD, d);
   }
+
+  if (!nonEmptyFound) return std::numeric_limits<double>::quiet_NaN();
 
   return minD;
 }
