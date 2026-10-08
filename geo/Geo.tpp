@@ -1472,8 +1472,8 @@ DE9IMatrix DE9IM(const Point<T>& p, const XSortedLine<T>& line) {
 template <typename T>
 DE9IMatrix DE9IM(const XSortedLine<T>& line, size_t i, const Point<T>& p) {
   auto res = intersectsContains(p, line, i);
-  if (res.first) return M0F1FF0FF2;
-  if (res.second) return MFF1F00FF2;
+  if (std::get<1>(res)) return M0F1FF0FF2;
+  if (std::get<0>(res)) return MFF10F0FF2;
   return MFF1FF00F2;
 }
 
@@ -1545,8 +1545,8 @@ DE9IMatrix DE9IM(const Point<T>& p, const XSortedPolygon<T>& poly) {
 template <typename T>
 DE9IMatrix DE9IM(const XSortedPolygon<T>& poly, size_t i, const Point<T>& p) {
   auto res = containsCovers(p, poly, i);
-  if (res.first) return M0F2FF1FF2;
-  if (res.second) return MFF20F1FF2;
+  if (std::get<0>(res)) return M0F2FF1FF2;
+  if (std::get<1>(res)) return MFF20F1FF2;
   return MFF2FF10F2;
 }
 
@@ -2900,8 +2900,8 @@ template <typename T>
 DE9IMatrix DE9IM(const util::geo::XSortedLine<T>& a,
                  const util::geo::XSortedPolygon<T>& b, size_t* firstRel1,
                  size_t* firstRel2) {
-  if (a.rawLine().size() == 0) return MFF1FF0102;
-  if (b.getOuter().size() < 2) return MFF1FF0102;
+  if (a.rawLine().size() == 0) return MFF1FF0212;
+  if (b.getOuter().size() < 2) return MFF1FF0212;
 
   const auto boxA = a.boundingBox();
   const auto boxB = b.boundingBox();
@@ -2972,7 +2972,7 @@ DE9IMatrix DE9IM(const util::geo::XSortedLine<T>& a,
       auto res = intersectsContainsInner(a, b.getInners()[i]);
 
       if (std::get<1>(res)) {
-        return MFF1FF0102;  // a is completely contained by innerB
+        return MFF1FF0212;  // a is completely contained by innerB
       }
 
       if (std::get<2>(res)) {
@@ -3002,7 +3002,7 @@ DE9IMatrix DE9IM(const util::geo::XSortedLine<T>& a,
            (be << 10) | (ei << 12) | (eb << 14);
   }
 
-  return MFF1FF0102;
+  return MFF1FF0212;
 }
 
 // _____________________________________________________________________________

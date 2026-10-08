@@ -25,6 +25,8 @@ class GeoTest {
     void testDE9IM();
     void testLineLinePredicates();
     void testLinePolygonPredicates();
+    void testLinePointPredicates();
+    void testPolyPointPredicates();
     void testPolygonPolygonPredicates();
     void testSegmentOrdering();
     void testPolygonInternals();

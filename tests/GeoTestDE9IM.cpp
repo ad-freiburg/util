@@ -14,8 +14,68 @@ using namespace util;
 using namespace util::geo;
 
 // _____________________________________________________________________________
-void GeoTest::testDE9IM() {
+static void testDE9IMEmpty() {
+  auto point = pointFromWKT<double>("POINT(4.5 4.5)");
+  auto line = lineFromWKT<double>("LINESTRING(10 4.5, 12 4.5)");
+  auto poly = polygonFromWKT<double>("POLYGON((0 0, 10 0, 10 10, 0 10, 0 0))");
+  auto polyWithInner = polygonFromWKT<double>(
+      "POLYGON((0 0, 10 0, 10 10, 0 10, 0 0), (4 4, 5 4, 5 5, 4 5, 4 4))");
 
+  auto emptyLine = lineFromWKT<double>("LINESTRING EMPTY");
+  auto emptyPoly = polygonFromWKT<double>("POLYGON EMPTY");
+  // a polygon with an empty outer ring is empty, even if it has inner rings
+  Polygon<double> emptyOuter(
+      Ring<double>(),
+      {lineFromWKT<double>("LINESTRING(4 4, 5 4, 5 5, 4 5, 4 4)")});
+
+  XSortedLine<double> lineX(line);
+  XSortedPolygon<double> polyX(poly);
+  XSortedPolygon<double> polyWithInnerX(polyWithInner);
+
+  XSortedLine<double> emptyLineX(emptyLine);
+  XSortedPolygon<double> emptyPolyX(emptyPoly);
+  XSortedPolygon<double> emptyOuterX(emptyOuter);
+
+  // point / empty
+  TEST(geo::DE9IM(point, emptyLineX), ==, "FF0FFFFF2");
+  TEST(geo::DE9IM(emptyLineX, point), ==, "FFFFFF0F2");
+  TEST(geo::DE9IM(point, emptyPolyX), ==, "FF0FFFFF2");
+  TEST(geo::DE9IM(emptyPolyX, point), ==, "FFFFFF0F2");
+  TEST(geo::DE9IM(point, emptyOuterX), ==, "FF0FFFFF2");
+  TEST(geo::DE9IM(emptyOuterX, point), ==, "FFFFFF0F2");
+
+  // line / empty
+  TEST(geo::DE9IM(lineX, emptyLineX), ==, "FF1FF0FF2");
+  TEST(geo::DE9IM(emptyLineX, lineX), ==, "FFFFFF102");
+  TEST(geo::DE9IM(lineX, emptyPolyX), ==, "FF1FF0FF2");
+  TEST(geo::DE9IM(emptyPolyX, lineX), ==, "FFFFFF102");
+  TEST(geo::DE9IM(lineX, emptyOuterX), ==, "FF1FF0FF2");
+  TEST(geo::DE9IM(emptyOuterX, lineX), ==, "FFFFFF102");
+
+  // polygon / empty
+  TEST(geo::DE9IM(polyX, emptyLineX), ==, "FF2FF1FF2");
+  TEST(geo::DE9IM(emptyLineX, polyX), ==, "FFFFFF212");
+  TEST(geo::DE9IM(polyX, emptyPolyX), ==, "FF2FF1FF2");
+  TEST(geo::DE9IM(emptyPolyX, polyX), ==, "FFFFFF212");
+  TEST(geo::DE9IM(polyX, emptyOuterX), ==, "FF2FF1FF2");
+  TEST(geo::DE9IM(emptyOuterX, polyX), ==, "FFFFFF212");
+  TEST(geo::DE9IM(polyWithInnerX, emptyPolyX), ==, "FF2FF1FF2");
+  TEST(geo::DE9IM(emptyPolyX, polyWithInnerX), ==, "FFFFFF212");
+
+  // empty / empty
+  TEST(geo::DE9IM(emptyLineX, emptyLineX), ==, "FFFFFFFF2");
+  TEST(geo::DE9IM(emptyLineX, emptyPolyX), ==, "FFFFFFFF2");
+  TEST(geo::DE9IM(emptyPolyX, emptyLineX), ==, "FFFFFFFF2");
+  TEST(geo::DE9IM(emptyPolyX, emptyPolyX), ==, "FFFFFFFF2");
+  TEST(geo::DE9IM(emptyOuterX, emptyOuterX), ==, "FFFFFFFF2");
+  TEST(geo::DE9IM(emptyOuterX, emptyPolyX), ==, "FFFFFFFF2");
+  TEST(geo::DE9IM(emptyPolyX, emptyOuterX), ==, "FFFFFFFF2");
+  TEST(geo::DE9IM(emptyLineX, emptyOuterX), ==, "FFFFFFFF2");
+  TEST(geo::DE9IM(emptyOuterX, emptyLineX), ==, "FFFFFFFF2");
+}
+
+// _____________________________________________________________________________
+void GeoTest::testDE9IM() {
   {
     util::geo::DE9IMatrix de9im1 = "FFFFFFFF2";
     util::geo::DE9IMatrix de9im2 = "FFFFFFFF2";
@@ -193,4 +253,6 @@ void GeoTest::testDE9IM() {
     de9im = geo::DE9IM(bx, ax);
     TEST(de9im, ==, "101FF0FF2");
   }
+
+  testDE9IMEmpty();
 }

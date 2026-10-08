@@ -453,4 +453,20 @@ void GeoTest::testLinePolygonPredicates() {
     de9im = DE9IM(bx, ax);
     TEST(de9im, ==, "FF2F011F2");
   }
+
+  {
+    XSortedPolygon<double> poly(
+        polygonFromWKT<double>("POLYGON((0 0, 10 0, 10 10, 0 10, 0 0))"));
+    XSortedPolygon<double> polyWithInner(polygonFromWKT<double>(
+        "POLYGON((0 0, 10 0, 10 10, 0 10, 0 0), (2 2, 8 2, 8 8, 2 8, 2 2))"));
+    XSortedLine<double> farLine(lineFromWKT<double>("LINESTRING(20 0, 30 0)"));
+    XSortedLine<double> lineInHole(lineFromWKT<double>("LINESTRING(4 5, 6 5)"));
+
+    TEST(geo::DE9IM(farLine, poly), ==, "FF1FF0212");
+    TEST(geo::DE9IM(poly, farLine), ==, "FF2FF1102");
+
+    // a line completely inside a hole of the polygon is disjoint, too
+    TEST(geo::DE9IM(lineInHole, polyWithInner), ==, "FF1FF0212");
+    TEST(geo::DE9IM(polyWithInner, lineInHole), ==, "FF2FF1102");
+  }
 }
