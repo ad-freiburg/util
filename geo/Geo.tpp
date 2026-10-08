@@ -1456,6 +1456,7 @@ std::tuple<bool, bool> intersectsContains(const Point<T>& p,
 // _____________________________________________________________________________
 template <typename T>
 DE9IMatrix DE9IM(const Point<T>& p, const XSortedLine<T>& line, size_t i) {
+  if (line.empty()) return MFF0FFFFF2;
   auto res = intersectsContains(p, line, i);
   if (std::get<1>(res)) return M0FFFFF102;
   if (std::get<0>(res)) return MF0FFFF102;
@@ -1471,6 +1472,7 @@ DE9IMatrix DE9IM(const Point<T>& p, const XSortedLine<T>& line) {
 // _____________________________________________________________________________
 template <typename T>
 DE9IMatrix DE9IM(const XSortedLine<T>& line, size_t i, const Point<T>& p) {
+  if (line.empty()) return MFFFFFF0F2;
   auto res = intersectsContains(p, line, i);
   if (std::get<1>(res)) return M0F1FF0FF2;
   if (std::get<0>(res)) return MFF10F0FF2;
@@ -1529,6 +1531,7 @@ std::pair<bool, bool> containsCovers(const Point<T>& p,
 // _____________________________________________________________________________
 template <typename T>
 DE9IMatrix DE9IM(const Point<T>& p, const XSortedPolygon<T>& poly, size_t i) {
+  if (poly.empty()) return MFF0FFFFF2;
   auto res = containsCovers(p, poly, i);
   if (std::get<0>(res)) return M0FFFFF212;
   if (std::get<1>(res)) return MF0FFFF212;
@@ -1544,6 +1547,7 @@ DE9IMatrix DE9IM(const Point<T>& p, const XSortedPolygon<T>& poly) {
 // _____________________________________________________________________________
 template <typename T>
 DE9IMatrix DE9IM(const XSortedPolygon<T>& poly, size_t i, const Point<T>& p) {
+  if (poly.empty()) return MFFFFFF0F2;
   auto res = containsCovers(p, poly, i);
   if (std::get<0>(res)) return M0F2FF1FF2;
   if (std::get<1>(res)) return MFF20F1FF2;
@@ -2084,6 +2088,10 @@ template <typename T>
 DE9IMatrix DE9IM(const util::geo::XSortedLine<T>& a,
                  const util::geo::XSortedLine<T>& b, size_t* firstRelIn1,
                  size_t* firstRelIn2) {
+  if (a.empty() && b.empty()) return MFFFFFFFF2;
+  if (b.empty()) return MFF1FF0FF2;
+  if (a.empty()) return MFFFFFF102;
+
   uint8_t ret = intersectsHelper<T, IntersectorLine>(
       a.rawLine(), b.rawLine(), a.getMaxSegLen(), b.getMaxSegLen(),
       a.boundingBox(), b.boundingBox(), firstRelIn1, firstRelIn2);
@@ -2900,7 +2908,9 @@ template <typename T>
 DE9IMatrix DE9IM(const util::geo::XSortedLine<T>& a,
                  const util::geo::XSortedPolygon<T>& b, size_t* firstRel1,
                  size_t* firstRel2) {
-  if (a.rawLine().size() == 0) return MFF1FF0212;
+  if (a.empty() && b.empty()) return MFFFFFFFF2;
+  if (b.empty()) return MFF1FF0FF2;
+  if (a.empty()) return MFFFFFF212;
   if (b.getOuter().size() < 2) return MFF1FF0212;
 
   const auto boxA = a.boundingBox();
@@ -3061,6 +3071,9 @@ template <typename T>
 DE9IMatrix DE9IM(const util::geo::XSortedPolygon<T>& a,
                  const util::geo::XSortedPolygon<T>& b, size_t* firstRel1,
                  size_t* firstRel2) {
+  if (a.empty() && b.empty()) return MFFFFFFFF2;
+  if (b.empty()) return MFF2FF1FF2;
+  if (a.empty()) return MFFFFFF212;
   if (a.getOuter().rawRing().size() < 2) return MFF2FF1212;
   if (b.getOuter().rawRing().size() < 2) return MFF2FF1212;
 
