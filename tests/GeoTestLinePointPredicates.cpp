@@ -29,4 +29,12 @@ void GeoTest::testLinePointPredicates() {
     TEST(geo::DE9IM(pOutside, line), ==, "FF0FFF102");
     TEST(geo::DE9IM(line, pOutside), ==, "FF1FF00F2");
   }
+
+  {
+    XSortedLine<double> emptyLine(lineFromWKT<double>("LINESTRING EMPTY"));
+    auto p = pointFromWKT<double>("POINT(5 0)");
+
+    TEST(geo::intersectsContains(p, emptyLine) ==
+         std::make_tuple(false, false));
+  }
 }

@@ -31,4 +31,22 @@ void GeoTest::testPolyPointPredicates() {
     TEST(geo::DE9IM(pOutside, poly), ==, "FF0FFF212");
     TEST(geo::DE9IM(poly, pOutside), ==, "FF2FF10F2");
   }
+
+  {
+    auto emptyPoly = polygonFromWKT<double>("POLYGON EMPTY");
+    Polygon<double> emptyOuter(
+        Ring<double>(),
+        {lineFromWKT<double>("LINESTRING(4 4, 5 4, 5 5, 4 5, 4 4)")});
+    XSortedPolygon<double> emptyPolyX(emptyPoly);
+    XSortedPolygon<double> emptyOuterX(emptyOuter);
+    auto pInner = pointFromWKT<double>("POINT(4.5 4.5)");
+    auto pOuter = pointFromWKT<double>("POINT(2 2)");
+
+    TEST(geo::containsCovers(pInner, emptyPolyX) ==
+         std::make_pair(false, false));
+    TEST(geo::containsCovers(pInner, emptyOuterX) ==
+         std::make_pair(false, false));
+    TEST(geo::containsCovers(pOuter, emptyOuterX) ==
+         std::make_pair(false, false));
+  }
 }

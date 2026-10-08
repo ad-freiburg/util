@@ -1094,4 +1094,29 @@ void GeoTest::testPolygonPolygonPredicates() {
     de9im = geo::DE9IM(ax, bx);
     TEST(de9im, ==, "FF2F01212");
   }
+
+  {
+    auto emptyPoly = polygonFromWKT<double>("POLYGON EMPTY");
+    Polygon<double> emptyOuter(
+        Ring<double>(),
+        {lineFromWKT<double>("LINESTRING(4 4, 5 4, 5 5, 4 5, 4 4)")});
+    XSortedPolygon<double> poly(
+        polygonFromWKT<double>("POLYGON((0 0, 10 0, 10 10, 0 10, 0 0))"));
+    XSortedPolygon<double> polyWithInner(polygonFromWKT<double>(
+        "POLYGON((0 0, 10 0, 10 10, 0 10, 0 0), (4 4, 5 4, 5 5, 4 5, 4 4))"));
+    XSortedPolygon<double> emptyPolyX(emptyPoly);
+    XSortedPolygon<double> emptyOuterX(emptyOuter);
+    const auto allFalse = std::make_tuple(false, false, false, false, false);
+
+    TEST(geo::intersectsContainsCovers(poly, emptyPolyX) == allFalse);
+    TEST(geo::intersectsContainsCovers(emptyPolyX, poly) == allFalse);
+    TEST(geo::intersectsContainsCovers(poly, emptyOuterX) == allFalse);
+    TEST(geo::intersectsContainsCovers(emptyOuterX, poly) == allFalse);
+    TEST(geo::intersectsContainsCovers(polyWithInner, emptyOuterX) == allFalse);
+    TEST(geo::intersectsContainsCovers(emptyOuterX, polyWithInner) == allFalse);
+    TEST(geo::intersectsContainsCovers(emptyPolyX, emptyPolyX) == allFalse);
+    TEST(geo::intersectsContainsCovers(emptyOuterX, emptyOuterX) == allFalse);
+    TEST(geo::intersectsContainsCovers(emptyPolyX, emptyOuterX) == allFalse);
+    TEST(geo::intersectsContainsCovers(emptyOuterX, emptyPolyX) == allFalse);
+  }
 }
