@@ -252,6 +252,9 @@ Req HttpServer::getReq(int connection) {
     if (rcvd == BSIZE) throw HttpErr("431 Request Header Fields Too Large");
   }
 
+  // may happen if loop above breaks
+  if (!brk) throw HttpErr("400 Bad Request");
+
   // POST payload
   if (ret.cmd == "POST") {
     size_t size = 0;
@@ -271,10 +274,11 @@ Req HttpServer::getReq(int connection) {
       rcvd = 0;
 
       if (rem < size) {
-        while ((curRcvd = read(connection, postBuf + rcvd + rem, size - rem))) {
+        while ((curRcvd = read(connection, postBuf + rcvd + rem,
+                               size - rem - rcvd))) {
           if (curRcvd == -1 && (errno == EAGAIN || errno == EINTR)) continue;
           if (curRcvd == -1) {
-            postBuf[rcvd + 1] = 0;
+            postBuf[rcvd + rem] = 0;
             break;
           }
           rcvd += curRcvd;

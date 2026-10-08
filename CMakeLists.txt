@@ -5,7 +5,7 @@ if(CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR)
 	set(PB_UTIL_STANDALONE ON)
 
 	# we have several projects using this lib which are still on C++11
-	set(CMAKE_CXX_STANDARD 11)
+	set(CMAKE_CXX_STANDARD 11 CACHE STRING "C++ standard to build with")
 	set(CMAKE_CXX_STANDARD_REQUIRED ON)
 	set(CMAKE_BUILD_TYPE Release)
 
@@ -89,6 +89,8 @@ if (ZLIB_FOUND)
 	target_include_directories(pb_util_xml PUBLIC ${ZLIB_INCLUDE_DIRS} )
 	target_link_libraries(pb_util_xml ${ZLIB_LIBRARIES})
 endif(ZLIB_FOUND)
+
+target_link_libraries(pb_util -pthread)
 
 if(CMAKE_TESTING_ENABLED)
     add_subdirectory(tests)

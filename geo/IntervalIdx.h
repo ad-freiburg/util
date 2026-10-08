@@ -4,8 +4,12 @@
 #ifndef UTIL_GEO_INTERVALIDX_H_
 #define UTIL_GEO_INTERVALIDX_H_
 
+#include <array>
+#include <cstdint>
 #include <fstream>
+#include <functional>
 #include <iostream>
+#include <limits>
 #include <list>
 #include <memory>
 #include <set>
@@ -28,24 +32,25 @@ inline bool operator<(const IntervalVal<K, V>& l, const IntervalVal<K, V>& r) {
          (l.l == r.l && l.r == r.r && l.v < r.v);
 }
 
+// number of buckets, this only depends on K and can be computed on compile
+// time
+template <typename K>
+constexpr size_t numBuckets(double cur = 10) {
+  return cur <= std::numeric_limits<K>::max() && cur <= 100000000
+             ? 1 + numBuckets<K>(cur * 10)
+             : 0;
+}
+
 template <typename K, typename V>
 class IntervalIdx {
  public:
-  IntervalIdx() {
-    K cur = 1;
-    while (cur * 1.0 * 10 <= std::numeric_limits<K>::max() && cur * 10 <= 100000000) {
-      cur *= 10;
-      _ts.push_back(cur);
-    }
-    _ivals.resize(_ts.size() + 1);
-  }
-
   // insert an interval s = [a, b] with value val
   void insert(const std::pair<K, K> s, const V val) {
     const K span = s.second - s.first;
 
-    for (size_t i = 0; i < _ts.size(); i++) {
-      if (span < _ts[i]) {
+    int64_t t = 10;
+    for (size_t i = 0; i < NUM_BUCKS; i++, t *= 10) {
+      if (span < t) {
         _ivals[i].insert({s.first, s.second, val});
         return;
       }
@@ -60,8 +65,9 @@ class IntervalIdx {
   void erase(const std::pair<K, K> s, const V val) {
     const K span = s.second - s.first;
 
-    for (size_t i = 0; i < _ts.size(); i++) {
-      if (span < _ts[i]) {
+    int64_t t = 10;
+    for (size_t i = 0; i < NUM_BUCKS; i++, t *= 10) {
+      if (span < t) {
         _ivals[i].erase({s.first, s.second, val});
         return;
       }
@@ -78,7 +84,9 @@ class IntervalIdx {
     ret.reserve(15);
 
     // retrieve from each sub-list
-    for (size_t j = 0; j < _ts.size(); j++) get(s, _ivals[j], _ts[j], ret);
+    int64_t t = 10;
+    for (size_t j = 0; j < NUM_BUCKS; j++, t *= 10)
+      get(s, _ivals[j], static_cast<K>(t), ret);
 
     // also retrieve from largest sub-list
     get(s, _ivals.back(), _maxSpan, ret);
@@ -93,7 +101,9 @@ class IntervalIdx {
     ret.reserve(15);
 
     // retrieve from each sub-list
-    for (size_t j = 0; j < _ts.size(); j++) get(s, _ivals[j], _ts[j], ret);
+    int64_t t = 10;
+    for (size_t j = 0; j < NUM_BUCKS; j++, t *= 10)
+      get(s, _ivals[j], static_cast<K>(t), ret);
 
     // also retrieve from largest sub-list
     get(s, _ivals.back(), _maxSpan, ret);
@@ -104,8 +114,9 @@ class IntervalIdx {
   bool overlap_find_all(const std::pair<K, K> s,
                         std::function<bool(IntervalVal<K, V>)> cb) const {
     // retrieve from each sub-list
-    for (size_t j = 0; j < _ts.size(); j++) {
-      if (get(s, _ivals[j], _ts[j], cb)) return true;
+    int64_t t = 10;
+    for (size_t j = 0; j < NUM_BUCKS; j++, t *= 10) {
+      if (get(s, _ivals[j], static_cast<K>(t), cb)) return true;
     }
 
     // also retrieve from largest sub-list
@@ -135,8 +146,10 @@ class IntervalIdx {
   }
 
  private:
-  std::vector<K> _ts;
-  std::vector<std::set<IntervalVal<K, V>>> _ivals;
+  static constexpr size_t NUM_BUCKS = numBuckets<K>();
+
+  // last +1 bucket holds the overflow
+  std::array<std::set<IntervalVal<K, V>>, NUM_BUCKS + 1> _ivals;
 
   K _maxSpan = 0;
 
