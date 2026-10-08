@@ -83,6 +83,20 @@ int main(int argc, char** argv) {
     TEST(util::atof("-45.534215"), ==, approx(-45.534215));
     TEST(util::atof("-45.534215", 2), ==, approx(-45.53));
     TEST(util::atof("-45.53421544345"), ==, approx(-45.5342154435));
+    TEST(util::atof(".5"), ==, approx(0.5));
+    TEST(util::atof("-.5"), ==, approx(-0.5));
+    TEST(util::atof("5."), ==, approx(5));
+    TEST(util::atof("  5"), ==, approx(5));
+    TEST(util::atof("5abc"), ==, approx(5));
+
+    // not a number
+    TEST(std::isnan(util::atof("")));
+    TEST(std::isnan(util::atof("   ")));
+    TEST(std::isnan(util::atof("abc")));
+    TEST(std::isnan(util::atof("-")));
+    TEST(std::isnan(util::atof(".")));
+    TEST(std::isnan(util::atof("-.")));
+    TEST(std::isnan(util::atof(")")));
 
     // TODO: more test cases
   }

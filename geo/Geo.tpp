@@ -4457,7 +4457,14 @@ Line<T> lineFromWKTProj(const char* c, const char** endr, F projFunc,
 
     double y = util::atof(next, 10);
 
-    line.push_back(projFunc(util::geo::DPoint(x, y), sourceCRS));
+    if (std::isnan(x) || std::isnan(y)) {
+      if (strict)
+        throw WKTParseException(
+            "Could not parse WKT linestring, coordinate is not a number");
+    } else {
+      // in non strict mode, simply skip NaN values
+      line.push_back(projFunc(util::geo::DPoint(x, y), sourceCRS));
+    }
 
     auto n = strchr(next, ',');
     if (!n || n > end) break;
@@ -4627,6 +4634,10 @@ Point<T> pointFromWKTProj(const char* c, const char** endr, F projFunc,
     throw WKTParseException(
         "Could not parse WKT point, expected coordinate pair");
   double y = util::atof(next, 10);
+
+  if (strict && (std::isnan(x) || std::isnan(y)))
+    throw WKTParseException(
+        "Could not parse WKT point, coordinate is not a number");
 
   if (endr) (*endr) = strchr(next, ')');
 

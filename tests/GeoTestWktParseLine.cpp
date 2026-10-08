@@ -247,6 +247,11 @@ void GeoTest::testWktParseLine() {
                 util::geo::lineFromWKT<double>("linestring emptay", true));
     TEST(util::geo::lineFromWKT<double>("linestring emptay", false).size(), ==,
          0);
+
+    TEST_THROWS(util::geo::WKTParseException,
+                util::geo::lineFromWKT<double>("linestring(a b) ", true));
+    TEST_THROWS(util::geo::WKTParseException,
+                util::geo::lineFromWKT<double>("linestring(1 1, a b) ", true));
   }
 
   {

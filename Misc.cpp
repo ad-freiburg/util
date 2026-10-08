@@ -13,6 +13,7 @@
 #include <cstdio>
 #include <cstdlib>
 #include <iomanip>
+#include <limits>
 #include <sstream>
 #include <thread>
 
@@ -71,11 +72,14 @@ std::string util::formatFloat(double f, int DIGITS) {
 // _____________________________________________________________________________
 double util::atof(const char* p, uint8_t mn) {
   // this atof implementation works only on "normal" float strings like
-  // 56.445 or -345.00, but should be faster than std::atof
+  // 56.445 or -345.00, but should be faster than std::atof. Different to
+  // std::atof, it returns NaN if p does not start with a number (if it starts
+  // with a number any non-nuermic suffix is simply ignored!)
   while (*p && (*p == ' ' || *p == '\n' || *p == '\t' || *p == '\r')) p++;
 
   double ret = 0.0;
   bool neg = false;
+  bool digits = false;
   if (*p == '-') {
     neg = true;
     p++;
@@ -84,6 +88,7 @@ double util::atof(const char* p, uint8_t mn) {
   while (*p >= '0' && *p <= '9') {
     ret = ret * 10.0 + (*p - '0');
     p++;
+    digits = true;
   }
 
   if (*p == '.') {
@@ -94,6 +99,7 @@ double util::atof(const char* p, uint8_t mn) {
     for (; n < mn && *p >= '0' && *p <= '9'; n++, p++) {
       f = f * 10.0 + (*p - '0');
     }
+    if (n > 0) digits = true;
 
     if (n < 10) {
       ret += f / util_first_10_pow_10[n];
@@ -109,6 +115,7 @@ double util::atof(const char* p, uint8_t mn) {
     }
   }
 
+  if (!digits) return std::numeric_limits<double>::quiet_NaN();
   if (neg) return -ret;
   return ret;
 }

@@ -3,11 +3,11 @@
 // Authors: Patrick Brosi <brosi@informatik.uni-freiburg.de>
 
 #include "util/Test.h"
-#include "util/log/Log.h"
 #include "util/geo/Geo.h"
 #include "util/geo/Grid.h"
 #include "util/geo/RTree.h"
 #include "util/geo/output/GeoJsonOutput.h"
+#include "util/log/Log.h"
 #include "util/tests/GeoTest.h"
 
 using namespace util;
@@ -15,7 +15,6 @@ using namespace util::geo;
 
 // _____________________________________________________________________________
 void GeoTest::testWktParsePolygon() {
-
   {
     TEST(util::geo::getWKTType("POLYGON(0 0, 1 1)"), ==, WKTType::POLYGON);
     TEST(util::geo::getWKTType("POLYGO(0 0, 1 1)"), ==, WKTType::NONE);
@@ -85,6 +84,12 @@ void GeoTest::testWktParsePolygon() {
              "POLYGON((0 0, 4 0, 4 4, 0 0), (1 1, 2 1, 2 2, 1 1))", false)),
          ==, "POLYGON((0 0,4 0,4 4,0 0),(2 2,2 1,1 1,2 2))");
 
+    // non strict mode simply skips NaN coordinates
+    TEST(
+        getWKT(util::geo::polygonFromWKT<double>(
+            "POLYGON((0 0, 3 a, 4 0, 4 4, 0 0), (1 1, 2 1, 2 2, 1 1))", false)),
+        ==, "POLYGON((0 0,4 0,4 4,0 0),(2 2,2 1,1 1,2 2))");
+
     TEST(getWKT(util::geo::polygonFromWKT<double>("POLYGON EMPTY", true)), ==,
          "POLYGON()");
     TEST(getWKT(util::geo::polygonFromWKT<double>("POLYGON Z EMPTY", true)), ==,
@@ -116,6 +121,9 @@ void GeoTest::testWktParsePolygon() {
     TEST_THROWS(util::geo::WKTParseException,
                 util::geo::polygonFromWKT<double>(
                     "polygon((0 0,4 0,4 4,0 0),(2 2,2 1,1 1,2 2)", true));
+    TEST_THROWS(util::geo::WKTParseException,
+                util::geo::polygonFromWKT<double>(
+                    "polygon((0 0,4 0,4 4,0 0, blablablabla b))", true));
   }
 
   {

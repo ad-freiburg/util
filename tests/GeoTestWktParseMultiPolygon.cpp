@@ -3,11 +3,11 @@
 // Authors: Patrick Brosi <brosi@informatik.uni-freiburg.de>
 
 #include "util/Test.h"
-#include "util/log/Log.h"
 #include "util/geo/Geo.h"
 #include "util/geo/Grid.h"
 #include "util/geo/RTree.h"
 #include "util/geo/output/GeoJsonOutput.h"
+#include "util/log/Log.h"
 #include "util/tests/GeoTest.h"
 
 using namespace util;
@@ -15,7 +15,6 @@ using namespace util::geo;
 
 // _____________________________________________________________________________
 void GeoTest::testWktParseMultiPolygon() {
-
   {
     TEST(util::geo::getWKTType(
              "MULTIPOLYGON(((1 1,3 3,1 1), (0 0,1 1,0 0)),((1 3,3 1, 1 3)))"),
@@ -119,6 +118,10 @@ void GeoTest::testWktParseMultiPolygon() {
     TEST_THROWS(util::geo::WKTParseException,
                 util::geo::multiPolygonFromWKT<double>(
                     "MULTIPOLYGON(((0 0, 1)))", true));
+
+    TEST_THROWS(util::geo::WKTParseException,
+                util::geo::multiPolygonFromWKT<double>(
+                    "MULTIPOLYGON(((0 0, 1 b2)))", true));
   }
 
   {

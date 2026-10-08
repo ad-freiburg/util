@@ -3,11 +3,11 @@
 // Authors: Patrick Brosi <brosi@informatik.uni-freiburg.de>
 
 #include "util/Test.h"
-#include "util/log/Log.h"
 #include "util/geo/Geo.h"
 #include "util/geo/Grid.h"
 #include "util/geo/RTree.h"
 #include "util/geo/output/GeoJsonOutput.h"
+#include "util/log/Log.h"
 #include "util/tests/GeoTest.h"
 
 using namespace util;
@@ -15,7 +15,6 @@ using namespace util::geo;
 
 // _____________________________________________________________________________
 void GeoTest::testWktParseMultiLine() {
-
   {
     TEST(util::geo::getWKTType("MULTILINESTRIN((1 1,3 3),(1 3,3 1))"), ==,
          WKTType::NONE);
@@ -122,6 +121,14 @@ void GeoTest::testWktParseMultiLine() {
     TEST_THROWS(
         util::geo::WKTParseException,
         util::geo::multiLineFromWKT<double>("MULTILINESTRING(0 0, 1 1)", true));
+
+    TEST_THROWS(util::geo::WKTParseException,
+                util::geo::multiLineFromWKT<double>(
+                    "MULTILINESTRING((0 0, 1 1)", true));
+
+    TEST_THROWS(util::geo::WKTParseException,
+                util::geo::multiLineFromWKT<double>(
+                    "MULTILINESTRING((0 0, 1 c))", true));
   }
 
   {

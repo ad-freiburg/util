@@ -56,6 +56,10 @@ void GeoTest::testWktParsePoint() {
          "POINT(1 1)");
     TEST(util::geo::getWKT(pointFromWKT<int>("   MPOINT    (   1  1 0.5  )")),
          ==, "POINT(1 1)");
+
+    TEST(util::geo::getWKT(
+             pointFromWKT<double>("   MPOINT    (   1  .5 0.5  )")),
+         ==, "POINT(1 0.5)");
   }
 
   {
@@ -103,6 +107,9 @@ void GeoTest::testWktParsePoint() {
 
     TEST_THROWS(util::geo::WKTParseException,
                 util::geo::pointFromWKT<double>("POINT(a b)", true));
+
+    TEST_THROWS(util::geo::WKTParseException,
+                util::geo::pointFromWKT<double>("POINT(.b 1)", true));
   }
 
   {
