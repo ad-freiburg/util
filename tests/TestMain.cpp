@@ -31,6 +31,13 @@ int main(int argc, char** argv) {
   std::setlocale(LC_ALL, "en_US.utf8");
   TEST(strncicmp("LINESTRING", "LINESTRING(0 0, 1 1))", 10), ==, 0);
 
+  // ___________________________________________________________________________
+  {
+    TEST_THROWS(std::runtime_error, throw std::runtime_error("x"));
+    TEST_THROWS(std::exception, throw std::runtime_error("x"));
+    TEST_THROWS(std::out_of_range, std::vector<int>{1, 2}.at(2));
+  }
+
 
 
   // ___________________________________________________________________________

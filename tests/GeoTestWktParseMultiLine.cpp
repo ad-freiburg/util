@@ -47,4 +47,103 @@ void GeoTest::testWktParseMultiLine() {
              " MULTILINESTRING Z  ( (1 1  ,3 3) ,(1   3 ,  3 1 ) )")),
          ==, "MULTILINESTRING((1 1,3 3),(1 3,3 1))");
   }
+
+  {
+    // strict
+
+    TEST(getWKT(util::geo::multiLineFromWKT<double>(
+             "MULTILINESTRING((0 0, 1 1), (2 2, 3 3))", true)),
+         ==, "MULTILINESTRING((0 0,1 1),(2 2,3 3))");
+    TEST(getWKT(util::geo::multiLineFromWKT<double>(
+             "MULTILINESTRING((0 0, 1 1), (2 2, 3 3))", false)),
+         ==, "MULTILINESTRING((0 0,1 1),(2 2,3 3))");
+
+    TEST(getWKT(util::geo::multiLineFromWKT<double>("MULTILINESTRING EMPTY",
+                                                    true)),
+         ==, "MULTILINESTRING()");
+
+    TEST(getWKT(util::geo::multiLineFromWKT<double>(
+             "MULTILINESTRING(EMPTY, (0 0, 1 1))", true)),
+         ==, "MULTILINESTRING((0 0,1 1))");
+    TEST(getWKT(util::geo::multiLineFromWKT<double>(
+             "MULTILINESTRING(EMPTY, (0 0, 1 1))", false)),
+         ==, "MULTILINESTRING((0 0,1 1))");
+
+    TEST(getWKT(util::geo::multiLineFromWKT<double>(
+             "MULTILINESTRING((0 0, 1 1), EMPTY)", true)),
+         ==, "MULTILINESTRING((0 0,1 1))");
+    TEST(getWKT(util::geo::multiLineFromWKT<double>(
+             "MULTILINESTRING((0 0, 1 1), EMPTY)", false)),
+         ==, "MULTILINESTRING((0 0,1 1))");
+
+    TEST(getWKT(util::geo::multiLineFromWKT<double>("MULTILINESTRING(EMPTY)",
+                                                    true)),
+         ==, "MULTILINESTRING()");
+    TEST(getWKT(util::geo::multiLineFromWKT<double>("MULTILINESTRING(EMPTY)",
+                                                    false)),
+         ==, "MULTILINESTRING()");
+
+    TEST(getWKT(util::geo::multiLineFromWKT<double>(
+             "MULTILINESTRING(EMPTY, EMPTY)", true)),
+         ==, "MULTILINESTRING()");
+    TEST(getWKT(util::geo::multiLineFromWKT<double>(
+             "MULTILINESTRING(EMPTY, EMPTY)", false)),
+         ==, "MULTILINESTRING()");
+
+    TEST_THROWS(util::geo::WKTParseException,
+                util::geo::multiLineFromWKT<double>("", true));
+
+    TEST_THROWS(util::geo::WKTParseException,
+                util::geo::multiLineFromWKT<double>("MULTILINESTRING", true));
+
+    TEST_THROWS(util::geo::WKTParseException,
+                util::geo::multiLineFromWKT<double>("MULTILINESTRING()", true));
+
+    TEST_THROWS(util::geo::WKTParseException,
+                util::geo::multiLineFromWKT<double>(
+                    "MULTILINESTRING((0 0, 1 1), (2 2, 3 3)", true));
+
+    TEST_THROWS(util::geo::WKTParseException,
+                util::geo::multiLineFromWKT<double>(
+                    "MULTILINESTRING((0 0, 1 1), emptay)", true));
+
+    TEST_THROWS(util::geo::WKTParseException,
+                util::geo::multiLineFromWKT<double>(
+                    "MULTILINESTRING((0 0, 1 1), ())", true));
+
+    TEST_THROWS(util::geo::WKTParseException,
+                util::geo::multiLineFromWKT<double>(
+                    "MULTILINESTRING((0 0, 1 1),)", true));
+
+    TEST_THROWS(
+        util::geo::WKTParseException,
+        util::geo::multiLineFromWKT<double>("MULTILINESTRING((0 0, 1))", true));
+
+    TEST_THROWS(
+        util::geo::WKTParseException,
+        util::geo::multiLineFromWKT<double>("MULTILINESTRING(0 0, 1 1)", true));
+  }
+
+  {
+    TEST(getWKT(util::geo::multiLineFromWKTProj<double>(
+             std::string("MULTILINESTRING((0 0, 1 1))"),
+             util::geo::projectToCRS84<double>, true)),
+         ==, "MULTILINESTRING((0 0,1 1))");
+    TEST(getWKT(util::geo::multiLineFromWKTProj<double>(
+             "MULTILINESTRING((0 0, 1 1))", 0,
+             util::geo::projectToCRS84<double>, true)),
+         ==, "MULTILINESTRING((0 0,1 1))");
+    TEST_THROWS(util::geo::WKTParseException,
+                util::geo::multiLineFromWKTProj<double>(
+                    std::string("MULTILINESTRING((0 0, 1 1),)"),
+                    util::geo::projectToCRS84<double>, true));
+    TEST_THROWS(util::geo::WKTParseException,
+                util::geo::multiLineFromWKTProj<double>(
+                    "MULTILINESTRING((0 0, 1 1),)", 0,
+                    util::geo::projectToCRS84<double>, true));
+    TEST(getWKT(util::geo::multiLineFromWKTProj<double>(
+             std::string("MULTILINESTRING((0 0, 1 1),)"),
+             util::geo::projectToCRS84<double>)),
+         ==, "MULTILINESTRING((0 0,1 1))");
+  }
 }

@@ -70,4 +70,171 @@ void GeoTest::testWktParseCollection() {
          "GEOMETRYCOLLECTION(MULTIPOLYGON(((1 1,3 3,1 1),(0 0,1 1,0 0)),((1 "
          "3,3 1,1 3))))"); 
   }
+
+  {
+    // strict
+    TEST(getWKT(util::geo::collectionFromWKT<double>(
+             "GEOMETRYCOLLECTION(POINT(1 2), LINESTRING(0 0, 1 1))", true)),
+         ==, "GEOMETRYCOLLECTION(POINT(1 2),LINESTRING(0 0,1 1))");
+    TEST(getWKT(util::geo::collectionFromWKT<double>(
+             "GEOMETRYCOLLECTION(POINT(1 2), LINESTRING(0 0, 1 1))", false)),
+         ==, "GEOMETRYCOLLECTION(POINT(1 2),LINESTRING(0 0,1 1))");
+
+    TEST(getWKT(util::geo::collectionFromWKT<double>(
+             "GEOMETRYCOLLECTION(POLYGON((0 0, 1 0, 1 1, 0 0)), MULTIPOINT(1 "
+             "2, 3 4))",
+             true)),
+         ==,
+         "GEOMETRYCOLLECTION(POLYGON((0 0,1 0,1 1,0 0)),MULTIPOINT(1 2,3 4))");
+    TEST(getWKT(util::geo::collectionFromWKT<double>(
+             "GEOMETRYCOLLECTION(POLYGON((0 0, 1 0, 1 1, 0 0)), MULTIPOINT(1 "
+             "2, 3 4))",
+             false)),
+         ==,
+         "GEOMETRYCOLLECTION(POLYGON((0 0,1 0,1 1,0 0)),MULTIPOINT(1 2,3 4))");
+
+    TEST(getWKT(util::geo::collectionFromWKT<double>("GEOMETRYCOLLECTION EMPTY",
+                                                     true)),
+         ==, "GEOMETRYCOLLECTION()");
+
+    TEST(getWKT(util::geo::collectionFromWKT<double>(
+             "GEOMETRYCOLLECTION(LINESTRING EMPTY, POINT(1 2))", true)),
+         ==, "GEOMETRYCOLLECTION(POINT(1 2))");
+    TEST(getWKT(util::geo::collectionFromWKT<double>(
+             "GEOMETRYCOLLECTION(LINESTRING EMPTY, POINT(1 2))", false)),
+         ==, "GEOMETRYCOLLECTION(POINT(1 2))");
+
+    TEST(getWKT(util::geo::collectionFromWKT<double>(
+             "GEOMETRYCOLLECTION(POINT(1 2), POINT EMPTY)", true)),
+         ==, "GEOMETRYCOLLECTION(POINT(1 2))");
+    TEST(getWKT(util::geo::collectionFromWKT<double>(
+             "GEOMETRYCOLLECTION(POINT(1 2), POINT EMPTY)", false)),
+         ==, "GEOMETRYCOLLECTION(POINT(1 2))");
+
+    TEST(getWKT(util::geo::collectionFromWKT<double>(
+             "GEOMETRYCOLLECTION(POINT Z EMPTY, POINT(1 2))", true)),
+         ==, "GEOMETRYCOLLECTION(POINT(1 2))");
+    TEST(getWKT(util::geo::collectionFromWKT<double>(
+             "GEOMETRYCOLLECTION(POINT Z EMPTY, POINT(1 2))", false)),
+         ==, "GEOMETRYCOLLECTION(POINT(1 2))");
+
+    TEST(getWKT(util::geo::collectionFromWKT<double>(
+             "GEOMETRYCOLLECTION(POLYGON EMPTY, MULTIPOINT EMPTY, "
+             "LINESTRING(0 0, 1 1))",
+             true)),
+         ==, "GEOMETRYCOLLECTION(LINESTRING(0 0,1 1))");
+    TEST(getWKT(util::geo::collectionFromWKT<double>(
+             "GEOMETRYCOLLECTION(POINT EMPTY, LINESTRING EMPTY)", true)),
+         ==, "GEOMETRYCOLLECTION()");
+
+    TEST(getWKT(util::geo::collectionFromWKT<double>(
+             "GEOMETRYCOLLECTION(POLYGON EMPTY, MULTIPOINT EMPTY, "
+             "LINESTRING(0 0, 1 1))",
+             false)),
+         ==, "GEOMETRYCOLLECTION(LINESTRING(0 0,1 1))");
+    TEST(getWKT(util::geo::collectionFromWKT<double>(
+             "GEOMETRYCOLLECTION(POINT EMPTY, LINESTRING EMPTY)", false)),
+         ==, "GEOMETRYCOLLECTION()");
+
+    TEST(getWKT(util::geo::collectionFromWKT<double>(
+             "GEOMETRYCOLLECTION(MULTILINESTRING(EMPTY), POINT(1 2))", true)),
+         ==, "GEOMETRYCOLLECTION(POINT(1 2))");
+    TEST(getWKT(util::geo::collectionFromWKT<double>(
+             "GEOMETRYCOLLECTION(MULTILINESTRING(EMPTY), POINT(1 2))", false)),
+         ==, "GEOMETRYCOLLECTION(POINT(1 2))");
+
+    TEST(getWKT(util::geo::collectionFromWKT<double>(
+             "GEOMETRYCOLLECTION(MULTIPOLYGON(EMPTY), LINESTRING(0 0, 1 1))",
+             true)),
+         ==, "GEOMETRYCOLLECTION(LINESTRING(0 0,1 1))");
+    TEST(getWKT(util::geo::collectionFromWKT<double>(
+             "GEOMETRYCOLLECTION(MULTIPOLYGON(EMPTY), LINESTRING(0 0, 1 1))",
+             false)),
+         ==, "GEOMETRYCOLLECTION(LINESTRING(0 0,1 1))");
+
+    TEST(getWKT(util::geo::collectionFromWKT<double>(
+             "GEOMETRYCOLLECTION(MULTIPOINT(EMPTY), POINT(1 2))", true)),
+         ==, "GEOMETRYCOLLECTION(POINT(1 2))");
+    TEST(getWKT(util::geo::collectionFromWKT<double>(
+             "GEOMETRYCOLLECTION(MULTIPOINT(EMPTY), POINT(1 2))", false)),
+         ==, "GEOMETRYCOLLECTION(POINT(1 2))");
+
+    TEST_THROWS(util::geo::WKTParseException,
+                util::geo::collectionFromWKT<double>("", true));
+
+    TEST_THROWS(
+        util::geo::WKTParseException,
+        util::geo::collectionFromWKT<double>("GEOMETRYCOLLECTION", true));
+
+    TEST_THROWS(
+        util::geo::WKTParseException,
+        util::geo::collectionFromWKT<double>("GEOMETRYCOLLECTION()", true));
+
+    TEST_THROWS(util::geo::WKTParseException,
+                util::geo::collectionFromWKT<double>(
+                    "GEOMETRYCOLLECTION(FOO(1 2))", true));
+
+    TEST_THROWS(util::geo::WKTParseException,
+                util::geo::collectionFromWKT<double>(
+                    "GEOMETRYCOLLECTION(POINT(1 2)", true));
+
+    TEST_THROWS(util::geo::WKTParseException,
+                util::geo::collectionFromWKT<double>(
+                    "GEOMETRYCOLLECTION(POINT(1 2),)", true));
+
+    TEST_THROWS(util::geo::WKTParseException,
+                util::geo::collectionFromWKT<double>(
+                    "GEOMETRYCOLLECTION(POINT(1))", true));
+
+    TEST_THROWS(util::geo::WKTParseException,
+                util::geo::collectionFromWKT<double>(
+                    "GEOMETRYCOLLECTION(LINESTRING(0 0, 1))", true));
+
+    TEST_THROWS(util::geo::WKTParseException,
+                util::geo::collectionFromWKT<double>(
+                    "GEOMETRYCOLLECTION(LINESTRING(0 0, 1 1)", true));
+
+    TEST_THROWS(util::geo::WKTParseException,
+                util::geo::collectionFromWKT<double>(
+                    "GEOMETRYCOLLECTION(POLYGON((0 0, 1 1)", true));
+
+    TEST_THROWS(util::geo::WKTParseException,
+                util::geo::collectionFromWKT<double>(
+                    "GEOMETRYCOLLECTION(POLYGON((0 0, 1 1))", true));
+
+    TEST_THROWS(util::geo::WKTParseException,
+                util::geo::collectionFromWKT<double>(
+                    "GEOMETRYCOLLECTION(POLYGON(0 0, 1 1))", true));
+
+    TEST_THROWS(util::geo::WKTParseException,
+                util::geo::collectionFromWKT<double>(
+                    "GEOMETRYCOLLECTION(POINT)", true));
+
+    TEST_THROWS(util::geo::WKTParseException,
+                util::geo::collectionFromWKT<double>(
+                    "GEOMETRYCOLLECTION(POINT EMPTaY)", true));
+  }
+
+  {
+    TEST(getWKT(util::geo::collectionFromWKTProj<double>(
+             std::string("GEOMETRYCOLLECTION(POINT(1 2))"),
+             util::geo::projectToCRS84<double>, true)),
+         ==, "GEOMETRYCOLLECTION(POINT(1 2))");
+    TEST(getWKT(util::geo::collectionFromWKTProj<double>(
+             "GEOMETRYCOLLECTION(POINT(1 2))", 0,
+             util::geo::projectToCRS84<double>, true)),
+         ==, "GEOMETRYCOLLECTION(POINT(1 2))");
+    TEST_THROWS(util::geo::WKTParseException,
+                util::geo::collectionFromWKTProj<double>(
+                    std::string("GEOMETRYCOLLECTION(FOO(1 2))"),
+                    util::geo::projectToCRS84<double>, true));
+    TEST_THROWS(util::geo::WKTParseException,
+                util::geo::collectionFromWKTProj<double>(
+                    "GEOMETRYCOLLECTION(FOO(1 2))", 0,
+                    util::geo::projectToCRS84<double>, true));
+    TEST(getWKT(util::geo::collectionFromWKTProj<double>(
+             std::string("GEOMETRYCOLLECTION(FOO(1 2))"),
+             util::geo::projectToCRS84<double>)),
+         ==, "GEOMETRYCOLLECTION()");
+  }
 }
