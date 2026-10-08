@@ -484,7 +484,7 @@ RotatedBox<T> shrink(const RotatedBox<T>& b, double d) {
 // _____________________________________________________________________________
 template <typename T>
 util::geo::Point<double> util::geo::appendPoint(std::string& ret, const util::geo::Point<T>& point, uint16_t prec, CRSType currentCRS, CRSType targetCRS) {
-  Point<double> projected = projectToCRS(Point<double>{point.getX(), point.getY()}, currentCRS, targetCRS);
+  Point<double> projected = projectToCRS(point.asDPoint(), currentCRS, targetCRS);
   ret.append(formatFloat(projected.getX(), prec));
   ret.push_back(' ');
   ret.append(formatFloat(projected.getY(), prec));
