@@ -12,6 +12,7 @@
 #include <cstring>
 #include <iomanip>
 #include <iostream>
+#include <limits>
 #include <map>
 #include <vector>
 #ifdef PBUTIL_ZLIB_FOUND
@@ -261,13 +262,91 @@ class SparseMatrix {
 
 uint64_t factorial(uint64_t n);
 
-uint64_t atoul(const char* p);
+// _____________________________________________________________________________
+inline uint64_t atoul(const char* p) {
+  uint64_t ret = 0;
+
+  while (*p) {
+    ret = ret * 10 + (*p++ - '0');
+  }
+
+  return ret;
+}
 
 bool isFloatingPoint(const std::string& str);
 
 std::string formatFloat(double f, int DIGITS);
 
-double atof(const char* p, uint8_t mn);
+// _____________________________________________________________________________
+inline double atof(const char* p, uint8_t mn, const char** end) {
+  // this atof implementation works only on "normal" float strings like
+  // 56.445 or -345.00, but should be faster than std::atof. Different to
+  // std::atof, it returns NaN if p does not start with a number (if it starts
+  // with a number any non-nuermic suffix is simply ignored!)
+  static const int pow10[10] = {1,         10,        100,     1000,
+                                10000,     100000,    1000000, 10000000,
+                                100000000, 1000000000};
+  const char* start = p;
+  while (*p && (*p == ' ' || *p == '\n' || *p == '\t' || *p == '\r')) p++;
+
+  double ret = 0.0;
+  bool neg = false;
+  bool digits = false;
+  if (*p == '-') {
+    neg = true;
+    p++;
+  }
+
+  while (*p >= '0' && *p <= '9') {
+    ret = ret * 10.0 + (*p - '0');
+    p++;
+    digits = true;
+  }
+
+  if (*p == '.') {
+    p++;
+    double f = 0;
+    uint8_t n = 0;
+
+    for (; n < mn && *p >= '0' && *p <= '9'; n++, p++) {
+      f = f * 10.0 + (*p - '0');
+    }
+    if (n > 0) digits = true;
+
+    // skip digits beyond the prec
+    while (*p >= '0' && *p <= '9') p++;
+
+    if (n < 10) {
+      ret += f / pow10[n];
+    } else {
+      double res = 1;
+      double base = 10;
+      while (n > 0) {
+        if (n & 1) res *= base;
+        base *= base;
+        n >>= 1;
+      }
+      ret += f / res;
+    }
+  }
+
+  if (!digits) {
+    *end = start;
+    return std::numeric_limits<double>::quiet_NaN();
+  }
+  *end = p;
+  if (neg) return -ret;
+  return ret;
+}
+
+// _____________________________________________________________________________
+inline double atof(const char* p, uint8_t mn) {
+  const char* end;
+  return atof(p, mn, &end);
+}
+
+// _____________________________________________________________________________
+inline double atof(const char* p) { return atof(p, 38); }
 
 ssize_t preadAll(int file, unsigned char* buf, size_t count, size_t offset);
 
@@ -285,8 +364,6 @@ ssize_t pwriteAll(int file, const unsigned char* buf, size_t count,
                   size_t offset);
 
 ssize_t writeAll(int file, const unsigned char* buf, size_t count);
-
-double atof(const char* p);
 
 // Taken from
 // https://stackoverflow.com/questions/41049143/

@@ -4432,30 +4432,26 @@ Line<T> lineFromWKTProj(const char* c, const char** endr, F projFunc,
   line.reserve((end - c) / 20);
 
   while (true) {
-    while (*c && *c != ')' &&
-           (*c == ' ' || *c == '\n' || *c == '\t' || *c == '\r'))
-      c++;
+    const char* p;
+    double x = util::atof(c, 10, &p);
 
-    double x = util::atof(c, 10);
+    if (std::isnan(x))
+      while (p < end && !strchr(" \n\t\r,", *p)) p++;
 
-    const char* next = strchr(c, ' ');
-
-    if (!next || next >= end) {
+    if (p >= end || !(*p == ' ' || *p == '\n' || *p == '\t' || *p == '\r')) {
       if (strict)
         throw WKTParseException(
             "Could not parse WKT linestring, expected coordinate pair");
       return {};  // parse error
     }
 
-    while (*next && *next != ')' &&
-           (*next == ' ' || *next == '\n' || *next == '\t' || *next == '\r'))
-      next++;
+    while (*p == ' ' || *p == '\n' || *p == '\t' || *p == '\r') p++;
 
-    if (strict && (*next == ')' || *next == ','))
+    if (strict && (*p == ')' || *p == ','))
       throw WKTParseException(
           "Could not parse WKT linestring, expected coordinate pair");
 
-    double y = util::atof(next, 10);
+    double y = util::atof(p, 10, &p);
 
     if (std::isnan(x) || std::isnan(y)) {
       if (strict)
@@ -4466,9 +4462,9 @@ Line<T> lineFromWKTProj(const char* c, const char** endr, F projFunc,
       line.push_back(projFunc(util::geo::DPoint(x, y), sourceCRS));
     }
 
-    auto n = strchr(next, ',');
-    if (!n || n > end) break;
-    c = n + 1;
+    while (p < end && *p != ',') p++;
+    if (p >= end) break;
+    c = p + 1;
   }
   return line;
 }
@@ -4614,32 +4610,38 @@ Point<T> pointFromWKTProj(const char* c, const char** endr, F projFunc,
   }
 
   c += 1;
-  while (*c && *c != ')' &&
-         (*c == ' ' || *c == '\n' || *c == '\t' || *c == '\r'))
-    c++;
 
-  if (strict && !strchr(c, ')'))
+  const char* end = strchr(c, ')');
+  if (strict && !end)
     throw WKTParseException("Could not parse WKT point, missing ')'");
 
-  double x = util::atof(c, 10);
-  const char* next = strchr(c, ' ');
-  if (strict && (!next || next > strchr(c, ')')))
+  const char* p;
+  double x = util::atof(c, 10, &p);
+
+  if (std::isnan(x))
+    while (*p && !strchr(" \n\t\r,)", *p)) p++;
+
+  if ((end && p >= end) ||
+      !(*p == ' ' || *p == '\n' || *p == '\t' || *p == '\r')) {
+    if (strict)
+      throw WKTParseException(
+          "Could not parse WKT point, expected coordinate pair");
+    return {0, 0};  // TODO!
+  }
+
+  while (*p == ' ' || *p == '\n' || *p == '\t' || *p == '\r') p++;
+
+  if (strict && (*p == ')' || *p == ','))
     throw WKTParseException(
         "Could not parse WKT point, expected coordinate pair");
-  if (!next) return {0, 0};  // TODO!
-  while (*next && *next != ')' &&
-         (*next == ' ' || *next == '\n' || *next == '\t' || *next == '\r'))
-    next++;
-  if (strict && (*next == ')' || *next == ','))
-    throw WKTParseException(
-        "Could not parse WKT point, expected coordinate pair");
-  double y = util::atof(next, 10);
+
+  double y = util::atof(p, 10, &p);
 
   if (strict && (std::isnan(x) || std::isnan(y)))
     throw WKTParseException(
         "Could not parse WKT point, coordinate is not a number");
 
-  if (endr) (*endr) = strchr(next, ')');
+  if (endr) (*endr) = strchr(p, ')');
 
   return projFunc(util::geo::DPoint(x, y), sourceCRS);
 }
