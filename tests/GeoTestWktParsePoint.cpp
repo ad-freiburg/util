@@ -100,6 +100,9 @@ void GeoTest::testWktParsePoint() {
 
     TEST_THROWS(util::geo::WKTParseException,
                 util::geo::pointFromWKT<double>("POINT()", true));
+
+    TEST_THROWS(util::geo::WKTParseException,
+                util::geo::pointFromWKT<double>("POINT(a b)", true));
   }
 
   {
