@@ -2,6 +2,8 @@
 // Chair of Algorithms and Data Structures.
 // Authors: Patrick Brosi <brosi@informatik.uni-freiburg.de>
 
+#include <cmath>
+#include <limits>
 #include <random>
 
 #include "util/Test.h"
@@ -626,19 +628,15 @@ static void testDistCollections() {
                        XSortedCollection<double>(col4)),
        ==, approx(0));
 
-  TEST(util::geo::withinDist(XSortedCollection<double>(),
-                             XSortedCollection<double>(col4), 20),
-       >, 20);
-  TEST(util::geo::dist(XSortedCollection<double>(),
-                       XSortedCollection<double>(col4)),
-       >, 20);
+  TEST(std::isnan(util::geo::withinDist(XSortedCollection<double>(),
+                                        XSortedCollection<double>(col4), 20)));
+  TEST(std::isnan(util::geo::dist(XSortedCollection<double>(),
+                                  XSortedCollection<double>(col4))));
 
-  TEST(util::geo::withinDist(XSortedCollection<double>(),
-                             XSortedCollection<double>(), 20),
-       >, 20);
-  TEST(
-      util::geo::dist(XSortedCollection<double>(), XSortedCollection<double>()),
-      >, 20);
+  TEST(std::isnan(util::geo::withinDist(XSortedCollection<double>(),
+                                        XSortedCollection<double>(), 20)));
+  TEST(std::isnan(util::geo::dist(XSortedCollection<double>(),
+                                  XSortedCollection<double>())));
 
   TEST(util::geo::withinDist(XSortedCollection<double>(col),
                              XSortedCollection<double>(col), 20),
@@ -1158,11 +1156,166 @@ static void testDistToSegmentExtreme() {
 }
 
 // _____________________________________________________________________________
+static void testDistWithinEmpty() {
+  // any distance involving an empty geometry is undefined and should return nan
+  auto point = pointFromWKT<double>("POINT(4.5 4.5)");
+  auto line = lineFromWKT<double>("LINESTRING(10 4.5, 12 4.5)");
+  auto poly = polygonFromWKT<double>("POLYGON((0 0, 10 0, 10 10, 0 10, 0 0))");
+  auto multiLine =
+      multiLineFromWKT<double>("MULTILINESTRING((10 4.5, 12 4.5), (0 0, 1 1))");
+  auto multiPoly = multiPolygonFromWKT<double>(
+      "MULTIPOLYGON(((0 0, 10 0, 10 10, 0 10, 0 0)), "
+      "((20 20, 30 20, 30 30, 20 30, 20 20)))");
+  Collection<double> col{line, point, poly};
+
+  auto emptyLine = lineFromWKT<double>("LINESTRING EMPTY");
+  auto emptyPoly = polygonFromWKT<double>("POLYGON EMPTY");
+  auto emptyMultiLine = multiLineFromWKT<double>("MULTILINESTRING EMPTY");
+  auto emptyMultiPoint = multiPointFromWKT<double>("MULTIPOINT EMPTY");
+  auto emptyMultiPoly = multiPolygonFromWKT<double>("MULTIPOLYGON EMPTY");
+  auto emptyCol = collectionFromWKT<double>("GEOMETRYCOLLECTION EMPTY");
+
+  TEST(emptyLine.size(), ==, 0);
+  TEST(emptyPoly.getOuter().size(), ==, 0);
+  TEST(emptyMultiLine.size(), ==, 0);
+  TEST(emptyMultiPoint.size(), ==, 0);
+  TEST(emptyMultiPoly.size(), ==, 0);
+  TEST(emptyCol.size(), ==, 0);
+
+  Collection<double> colOfEmpties{emptyLine, emptyPoly};
+
+  for (double maxDist :
+       {0.0, 1.0, 20.0, 1000.0, std::numeric_limits<double>::infinity()}) {
+    // unsorted, empty line
+    TEST(std::isnan(util::geo::withinDist(point, emptyLine, maxDist)));
+    TEST(std::isnan(util::geo::withinDist(emptyLine, point, maxDist)));
+    TEST(std::isnan(util::geo::withinDist(line, emptyLine, maxDist)));
+    TEST(std::isnan(util::geo::withinDist(emptyLine, line, maxDist)));
+    TEST(std::isnan(util::geo::withinDist(emptyLine, emptyLine, maxDist)));
+    TEST(std::isnan(util::geo::withinDist(emptyLine, poly, maxDist)));
+    TEST(std::isnan(util::geo::withinDist(poly, emptyLine, maxDist)));
+
+    // unsorted, empty polygon
+    TEST(std::isnan(util::geo::withinDist(point, emptyPoly, maxDist)));
+    TEST(std::isnan(util::geo::withinDist(emptyPoly, point, maxDist)));
+    TEST(std::isnan(util::geo::withinDist(line, emptyPoly, maxDist)));
+    TEST(std::isnan(util::geo::withinDist(emptyPoly, line, maxDist)));
+    TEST(std::isnan(util::geo::withinDist(poly, emptyPoly, maxDist)));
+    TEST(std::isnan(util::geo::withinDist(emptyPoly, poly, maxDist)));
+    TEST(std::isnan(util::geo::withinDist(emptyPoly, emptyPoly, maxDist)));
+    TEST(std::isnan(util::geo::withinDist(emptyLine, emptyPoly, maxDist)));
+    TEST(std::isnan(util::geo::withinDist(emptyPoly, emptyLine, maxDist)));
+
+    // unsorted, empty multi geometries
+    TEST(std::isnan(util::geo::withinDist(emptyMultiLine, multiLine, maxDist)));
+    TEST(std::isnan(util::geo::withinDist(multiLine, emptyMultiLine, maxDist)));
+    TEST(std::isnan(util::geo::withinDist(emptyMultiPoly, multiPoly, maxDist)));
+    TEST(std::isnan(util::geo::withinDist(multiPoly, emptyMultiPoly, maxDist)));
+    TEST(std::isnan(
+        util::geo::withinDist(emptyMultiLine, emptyMultiPoly, maxDist)));
+    TEST(std::isnan(
+        util::geo::withinDist(emptyMultiPoint, emptyMultiPoint, maxDist)));
+    TEST(std::isnan(
+        util::geo::withinDist(emptyMultiPoly, emptyMultiPoly, maxDist)));
+
+    // unsorted, empty collections
+    TEST(std::isnan(util::geo::withinDist(emptyCol, col, maxDist)));
+    TEST(std::isnan(util::geo::withinDist(col, emptyCol, maxDist)));
+    TEST(std::isnan(util::geo::withinDist(emptyCol, emptyCol, maxDist)));
+    TEST(std::isnan(util::geo::withinDist(colOfEmpties, col, maxDist)));
+    TEST(std::isnan(util::geo::withinDist(col, colOfEmpties, maxDist)));
+
+    // x-sorted, empty line
+    TEST(std::isnan(
+        util::geo::withinDist(point, XSortedLine<double>(emptyLine), maxDist)));
+    TEST(std::isnan(
+        util::geo::withinDist(XSortedLine<double>(emptyLine), point, maxDist)));
+    TEST(std::isnan(util::geo::withinDist(
+        XSortedLine<double>(line), XSortedLine<double>(emptyLine), maxDist)));
+    TEST(std::isnan(util::geo::withinDist(XSortedLine<double>(emptyLine),
+                                          XSortedLine<double>(line), maxDist)));
+    TEST(std::isnan(util::geo::withinDist(XSortedLine<double>(emptyLine),
+                                          XSortedLine<double>(emptyLine),
+                                          maxDist)));
+    TEST(std::isnan(util::geo::withinDist(XSortedLine<double>(emptyLine),
+                                          XSortedPolygon<double>(poly),
+                                          maxDist)));
+    TEST(std::isnan(util::geo::withinDist(XSortedPolygon<double>(poly),
+                                          XSortedLine<double>(emptyLine),
+                                          maxDist)));
+
+    // x-sorted, empty polygon
+    TEST(std::isnan(util::geo::withinDist(
+        point, XSortedPolygon<double>(emptyPoly), maxDist)));
+    TEST(std::isnan(util::geo::withinDist(XSortedPolygon<double>(emptyPoly),
+                                          point, maxDist)));
+    TEST(std::isnan(util::geo::withinDist(XSortedLine<double>(line),
+                                          XSortedPolygon<double>(emptyPoly),
+                                          maxDist)));
+    TEST(std::isnan(util::geo::withinDist(XSortedPolygon<double>(emptyPoly),
+                                          XSortedLine<double>(line), maxDist)));
+    TEST(std::isnan(util::geo::withinDist(XSortedPolygon<double>(poly),
+                                          XSortedPolygon<double>(emptyPoly),
+                                          maxDist)));
+    TEST(std::isnan(util::geo::withinDist(XSortedPolygon<double>(emptyPoly),
+                                          XSortedPolygon<double>(poly),
+                                          maxDist)));
+    TEST(std::isnan(util::geo::withinDist(XSortedPolygon<double>(emptyPoly),
+                                          XSortedPolygon<double>(emptyPoly),
+                                          maxDist)));
+    TEST(std::isnan(util::geo::withinDist(XSortedLine<double>(emptyLine),
+                                          XSortedPolygon<double>(emptyPoly),
+                                          maxDist)));
+
+    // x-sorted, empty multi polygon
+    TEST(std::isnan(util::geo::withinDist(
+        XSortedMultiPolygon<double>(emptyMultiPoly),
+        XSortedMultiPolygon<double>(multiPoly), maxDist)));
+    TEST(std::isnan(util::geo::withinDist(
+        XSortedMultiPolygon<double>(multiPoly),
+        XSortedMultiPolygon<double>(emptyMultiPoly), maxDist)));
+
+    // x-sorted, empty collections
+    TEST(std::isnan(util::geo::withinDist(XSortedCollection<double>(emptyCol),
+                                          XSortedCollection<double>(col),
+                                          maxDist)));
+    TEST(std::isnan(util::geo::withinDist(XSortedCollection<double>(col),
+                                          XSortedCollection<double>(emptyCol),
+                                          maxDist)));
+    TEST(std::isnan(util::geo::withinDist(XSortedCollection<double>(emptyCol),
+                                          XSortedCollection<double>(emptyCol),
+                                          maxDist)));
+    TEST(std::isnan(
+        util::geo::withinDist(XSortedCollection<double>(colOfEmpties),
+                              XSortedCollection<double>(col), maxDist)));
+    TEST(std::isnan(util::geo::withinDist(
+        XSortedCollection<double>(col), XSortedCollection<double>(colOfEmpties),
+        maxDist)));
+    TEST(std::isnan(util::geo::withinDist(XSortedCollection<double>(emptyCol),
+                                          point, maxDist)));
+    TEST(std::isnan(util::geo::withinDist(
+        point, XSortedCollection<double>(emptyCol), maxDist)));
+    TEST(std::isnan(util::geo::withinDist(XSortedCollection<double>(emptyCol),
+                                          XSortedLine<double>(line), maxDist)));
+    TEST(std::isnan(util::geo::withinDist(XSortedCollection<double>(emptyCol),
+                                          XSortedPolygon<double>(poly),
+                                          maxDist)));
+    TEST(std::isnan(util::geo::withinDist(XSortedCollection<double>(col),
+                                          XSortedLine<double>(emptyLine),
+                                          maxDist)));
+    TEST(std::isnan(util::geo::withinDist(XSortedCollection<double>(col),
+                                          XSortedPolygon<double>(emptyPoly),
+                                          maxDist)));
+  }
+}
+
+// _____________________________________________________________________________
 void GeoTest::testDist() {
   testDistCombinations();
   testDistWithinRealisticMaxDist();
   testDistWithinInfinityMaxDist();
   testDistWithinExactMaxDist();
+  testDistWithinEmpty();
 
   LargeTestGeoms large;
 
