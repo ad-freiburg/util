@@ -27,6 +27,8 @@ void GeoTest::run() {
   testDE9IM();
   testLineLinePredicates();
   testLinePolygonPredicates();
+  testLinePointPredicates();
+  testPolyPointPredicates();
   testPolygonPolygonPredicates();
   testSegmentOrdering();
   testPolygonInternals();

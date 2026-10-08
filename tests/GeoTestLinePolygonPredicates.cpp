@@ -453,4 +453,42 @@ void GeoTest::testLinePolygonPredicates() {
     de9im = DE9IM(bx, ax);
     TEST(de9im, ==, "FF2F011F2");
   }
+
+  {
+    XSortedPolygon<double> poly(
+        polygonFromWKT<double>("POLYGON((0 0, 10 0, 10 10, 0 10, 0 0))"));
+    XSortedPolygon<double> polyWithInner(polygonFromWKT<double>(
+        "POLYGON((0 0, 10 0, 10 10, 0 10, 0 0), (2 2, 8 2, 8 8, 2 8, 2 2))"));
+    XSortedLine<double> farLine(lineFromWKT<double>("LINESTRING(20 0, 30 0)"));
+    XSortedLine<double> lineInHole(lineFromWKT<double>("LINESTRING(4 5, 6 5)"));
+
+    TEST(geo::DE9IM(farLine, poly), ==, "FF1FF0212");
+    TEST(geo::DE9IM(poly, farLine), ==, "FF2FF1102");
+
+    // a line completely inside a hole of the polygon is disjoint, too
+    TEST(geo::DE9IM(lineInHole, polyWithInner), ==, "FF1FF0212");
+    TEST(geo::DE9IM(polyWithInner, lineInHole), ==, "FF2FF1102");
+  }
+
+  {
+    auto emptyLine = lineFromWKT<double>("LINESTRING EMPTY");
+    auto emptyPoly = polygonFromWKT<double>("POLYGON EMPTY");
+    Polygon<double> emptyOuter(
+        Ring<double>(),
+        {lineFromWKT<double>("LINESTRING(4 4, 5 4, 5 5, 4 5, 4 4)")});
+    XSortedLine<double> line(
+        lineFromWKT<double>("LINESTRING(4.2 4.5, 4.8 4.5)"));
+    XSortedPolygon<double> poly(
+        polygonFromWKT<double>("POLYGON((0 0, 10 0, 10 10, 0 10, 0 0))"));
+    XSortedLine<double> emptyLineX(emptyLine);
+    XSortedPolygon<double> emptyPolyX(emptyPoly);
+    XSortedPolygon<double> emptyOuterX(emptyOuter);
+    const auto allFalse = std::make_tuple(false, false, false, false, false);
+
+    TEST(geo::intersectsContainsCovers(line, emptyPolyX) == allFalse);
+    TEST(geo::intersectsContainsCovers(line, emptyOuterX) == allFalse);
+    TEST(geo::intersectsContainsCovers(emptyLineX, poly) == allFalse);
+    TEST(geo::intersectsContainsCovers(emptyLineX, emptyPolyX) == allFalse);
+    TEST(geo::intersectsContainsCovers(emptyLineX, emptyOuterX) == allFalse);
+  }
 }

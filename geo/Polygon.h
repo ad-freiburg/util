@@ -61,6 +61,8 @@ class Polygon {
     return ret;
   }
 
+  bool empty() const { return _outer.size() == 0; };
+
  private:
   Ring<T> _outer;
   std::vector<Ring<T>> _inners;
@@ -371,6 +373,8 @@ class XSortedRing {
   void setBoundingBox(const Box<T>& bbox) { _bbox = bbox; }
   double area() const { return _area; }
   void setArea(double area) { _area = area; }
+  size_t size() const { return _ring.size(); }
+  bool empty() const { return size() == 0; }
 
  private:
   std::vector<XSortedTuple<T>> _ring;
@@ -442,10 +446,10 @@ class XSortedPolygon {
   bool empty() const { return _outer.rawRing().size() == 0; };
 
   size_t size() const {
-    size_t size = _outer.rawRing().size();
+    size_t size = _outer.size();
 
     for (const auto& inner : _inners) {
-      size += inner.rawRing().size();
+      size += inner.size();
     }
     return size;
   }
