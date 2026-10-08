@@ -1811,12 +1811,19 @@ double withinDist(const Line<T>& b, const Point<T>& a, double maxDist) {
   return withinDist(a, b, maxDist);
 }
 
-// CAREFUL: this overload is required, otherwise the line/line case
+// CAREFUL: these overloads are required, otherwise the line/line case
 // would match the multigeometry/line case, as line is a descendant of
 // std::vector<Point>
 template <typename T, typename PF, typename DF>
 double withinDist(const Line<T>& la, const Line<T>& lb, double maxDist,
                   PF&& paddingFunc, double maxEuclideanDist, DF&& distFunc);
+template <typename T>
+double withinDist(const Line<T>& la, const Line<T>& lb, double maxDist) {
+  return withinDist(
+      la, lb, maxDist, defaultPaddingFunc<T>(), maxDist,
+      std::function<double(const Point<T>&, const Point<T>&, double)>(
+          euclideanDistFunc<T>));
+}
 
 template <typename T, typename PF, typename DF>
 double withinDist(const Line<T>& l, const Polygon<T>& poly, double maxDist,

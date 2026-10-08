@@ -54,16 +54,20 @@ struct LargeTestGeoms {
         saimaaX(saimaa),
         vaubanX(vauban),
         flixbusX(flixbus),
-        germanyM(multiPolygonFromWKTProj<double>(readTestDataset("germany.tsv"),
-                                                util::geo::projectToWebMerc<double>)),
-        spainM(multiPolygonFromWKTProj<double>(readTestDataset("spain.tsv"),
-                                              util::geo::projectToWebMerc<double>)),
-        saimaaM(polygonFromWKTProj<double>(readTestDataset("saimaa.tsv"),
+        germanyM(multiPolygonFromWKTProj<double>(
+            readTestDataset("germany.tsv"),
+            util::geo::projectToWebMerc<double>)),
+        spainM(multiPolygonFromWKTProj<double>(
+            readTestDataset("spain.tsv"), util::geo::projectToWebMerc<double>)),
+        saimaaM(
+            polygonFromWKTProj<double>(readTestDataset("saimaa.tsv"),
+                                       util::geo::projectToWebMerc<double>)),
+        vaubanM(
+            polygonFromWKTProj<double>(readTestDataset("vauban.tsv"),
+                                       util::geo::projectToWebMerc<double>)),
+        flixbusM(
+            collectionFromWKTProj<double>(readTestDataset("flixbus.tsv"),
                                           util::geo::projectToWebMerc<double>)),
-        vaubanM(polygonFromWKTProj<double>(readTestDataset("vauban.tsv"),
-                                          util::geo::projectToWebMerc<double>)),
-        flixbusM(collectionFromWKTProj<double>(readTestDataset("flixbus.tsv"),
-                                              util::geo::projectToWebMerc<double>)),
         germanyMX(germanyM),
         spainMX(spainM),
         saimaaMX(saimaaM),
@@ -182,17 +186,13 @@ static void testDistWithinRealisticMaxDist() {
        approx(5.5));
   TEST(util::geo::withinDist(XSortedLine<double>(line), point, 10.0), ==,
        approx(5.5));
-  TEST(util::geo::withinDist(XSortedLine<double>(line), point, 5.4), >,
-       5.4);
-  TEST(util::geo::withinDist(XSortedLine<double>(line), point, 5.0), >,
-       5.0);
-  TEST(util::geo::withinDist(XSortedLine<double>(line), point, 1.0), >,
-       1.0);
+  TEST(util::geo::withinDist(XSortedLine<double>(line), point, 5.4), >, 5.4);
+  TEST(util::geo::withinDist(XSortedLine<double>(line), point, 5.0), >, 5.0);
+  TEST(util::geo::withinDist(XSortedLine<double>(line), point, 1.0), >, 1.0);
 
   TEST(util::geo::withinDist(XSortedPolygon<double>(poly), point2, 10.0), ==,
        approx(sqrt(2)));
-  TEST(util::geo::withinDist(XSortedPolygon<double>(poly), point2, 1.0), >,
-       1);
+  TEST(util::geo::withinDist(XSortedPolygon<double>(poly), point2, 1.0), >, 1);
   TEST(util::geo::withinDist(point2, XSortedPolygon<double>(poly), 10.0), ==,
        approx(sqrt(2)));
 
@@ -209,14 +209,13 @@ static void testDistWithinRealisticMaxDist() {
   TEST(util::geo::withinDist(XSortedPolygon<double>(polyWithInner),
                              XSortedLine<double>(line2), 10.0),
        ==, approx(0.25));
-  TEST(util::geo::withinDist(XSortedPolygon<double>(polyWithInner),
-                             point, 10.0),
-       ==, approx(0.5));
+  TEST(
+      util::geo::withinDist(XSortedPolygon<double>(polyWithInner), point, 10.0),
+      ==, approx(0.5));
   TEST(util::geo::withinDist(XSortedPolygon<double>(polyWithInner),
                              XSortedLine<double>(line2), .2),
        >, 0.2);
-  TEST(util::geo::withinDist(XSortedPolygon<double>(polyWithInner),
-                             point, .4),
+  TEST(util::geo::withinDist(XSortedPolygon<double>(polyWithInner), point, .4),
        >, 0.4);
 
   TEST(util::geo::withinDist(XSortedPolygon<double>(poly2),
@@ -442,7 +441,10 @@ static void testDistComplexGeoms(const LargeTestGeoms& g) {
   TEST(util::geo::webMercMeterDist(g.spainM, g.flixbusM), ==,
        approx(703461.25144));
 
-  auto line = lineFromWKTProj<double>("LINESTRING(7.8824970  48.0228303,7.8823288 48.0227874,7.8820604 48.0227417,7.8819946 48.0227305)", util::geo::projectToWebMerc<double>);
+  auto line = lineFromWKTProj<double>(
+      "LINESTRING(7.8824970  48.0228303,7.8823288 48.0227874,7.8820604 "
+      "48.0227417,7.8819946 48.0227305)",
+      util::geo::projectToWebMerc<double>);
   auto lineX = XSortedLine<double>(line);
 
   TEST(util::geo::withinDist(g.vaubanM, line, 10), ==, approx(9638.74057));
@@ -464,11 +466,9 @@ static void testDistComplexGeoms(const LargeTestGeoms& g) {
   TEST(util::geo::webMercMeterDist(line, g.vaubanM), ==,
        util::geo::webMercMeterDist(g.vaubanMX, lineX));
 
-  TEST(util::geo::webMercMeterDist(g.vaubanM, line), ==,
-       approx(6449.59555));
+  TEST(util::geo::webMercMeterDist(g.vaubanM, line), ==, approx(6449.59555));
 
-  TEST(util::geo::webMercMeterDist(line, g.vaubanM), ==,
-       approx(6449.59555));
+  TEST(util::geo::webMercMeterDist(line, g.vaubanM), ==, approx(6449.59555));
 }
 
 // _____________________________________________________________________________
@@ -503,7 +503,8 @@ static void testDistHaversineNoPadding(const LargeTestGeoms& g) {
   TEST(std::round(
            util::geo::withinDist(
                XSortedCollection<double>(MultiPolygon<double>{g.germanyM}),
-               XSortedCollection<double>(Collection<double>{g.spainM, g.saimaaM}),
+               XSortedCollection<double>(
+                   Collection<double>{g.spainM, g.saimaaM}),
                10000000, defaultPaddingFunc<double>(), 1e8,
                [](const Point<double> a, const Point<double> b,
                   double) -> double { return haversineWebMerc(a, b); }) *
@@ -511,24 +512,24 @@ static void testDistHaversineNoPadding(const LargeTestGeoms& g) {
            10.0,
        ==, approx(653276.6));
 
-  TEST(std::round(
-           util::geo::withinDist(
-               g.germanyMX,
-               XSortedCollection<double>(Collection<double>{g.spainM, g.saimaaM}),
-               10000000, defaultPaddingFunc<double>(), 1e8,
-               [](const Point<double> a, const Point<double> b,
-                  double) -> double { return haversineWebMerc(a, b); }) *
-           10.0) /
+  TEST(std::round(util::geo::withinDist(
+                      g.germanyMX,
+                      XSortedCollection<double>(
+                          Collection<double>{g.spainM, g.saimaaM}),
+                      10000000, defaultPaddingFunc<double>(), 1e8,
+                      [](const Point<double> a, const Point<double> b,
+                         double) -> double { return haversineWebMerc(a, b); }) *
+                  10.0) /
            10.0,
        ==, approx(653276.6));
 
-  TEST(std::round(
-           util::geo::withinDist(
-               XSortedCollection<double>(Collection<double>{g.spainM, g.saimaaM}),
-               g.germanyMX, 10000000, defaultPaddingFunc<double>(), 1e8,
-               [](const Point<double> a, const Point<double> b,
-                  double) -> double { return haversineWebMerc(a, b); }) *
-           10.0) /
+  TEST(std::round(util::geo::withinDist(
+                      XSortedCollection<double>(
+                          Collection<double>{g.spainM, g.saimaaM}),
+                      g.germanyMX, 10000000, defaultPaddingFunc<double>(), 1e8,
+                      [](const Point<double> a, const Point<double> b,
+                         double) -> double { return haversineWebMerc(a, b); }) *
+                  10.0) /
            10.0,
        ==, approx(653276.6));
 }
@@ -577,9 +578,10 @@ static void testDistHaversineMeterDistPadding(const LargeTestGeoms& g) {
   TEST(std::round(util::geo::webMercMeterDist(g.germanyMX, g.spainMX) * 10.0) /
            10.0,
        ==, approx(653276.6));
-  TEST(std::round(util::geo::webMercMeterDist(g.germanyMX, g.flixbusMX) * 10.0) /
-           10.0,
-       ==, approx(0));
+  TEST(
+      std::round(util::geo::webMercMeterDist(g.germanyMX, g.flixbusMX) * 10.0) /
+          10.0,
+      ==, approx(0));
   TEST(std::round(util::geo::webMercMeterDist(g.spainMX, g.flixbusMX) * 10.0) /
            10.0,
        ==, approx(703461.3));
@@ -780,12 +782,10 @@ static void testDistOther() {
   // standard line/line
   auto segLineA = lineFromWKT<double>("LINESTRING(0 0, 1 0)");
   auto segLineB = lineFromWKT<double>("LINESTRING(0.5 0.001, 1.5 0.001)");
-  auto segLineAM = lineFromWKTProj<double>(
-      "LINESTRING(0 0, 1 0)",
-      util::geo::projectToWebMerc<double>);
-  auto segLineBM = lineFromWKTProj<double>(
-      "LINESTRING(0.5 0.001, 1.5 0.001)",
-      util::geo::projectToWebMerc<double>);
+  auto segLineAM = lineFromWKTProj<double>("LINESTRING(0 0, 1 0)",
+                                           util::geo::projectToWebMerc<double>);
+  auto segLineBM = lineFromWKTProj<double>("LINESTRING(0.5 0.001, 1.5 0.001)",
+                                           util::geo::projectToWebMerc<double>);
 
   TEST(util::geo::dist(segLineA, segLineB), ==, approx(0.001));
   TEST(util::geo::dist(segLineB, segLineA), ==, approx(0.001));
@@ -799,15 +799,14 @@ static void testDistOther() {
 
   auto projSeg = lineFromWKT<double>("LINESTRING(0.5 0.001, 1.5 0.001)");
   const Point<double> projP{1.0, 0.0};
-  auto projSegM = lineFromWKTProj<double>(
-      "LINESTRING(0.5 0.001, 1.5 0.001)",
-      util::geo::projectToWebMerc<double>);
+  auto projSegM = lineFromWKTProj<double>("LINESTRING(0.5 0.001, 1.5 0.001)",
+                                          util::geo::projectToWebMerc<double>);
   const auto projPM = latLngToWebMerc(projP);
 
   TEST(util::geo::dist(projP, projSeg), ==, approx(0.001));
   TEST(util::geo::webMercMeterDist(projPM, projSegM), ==,
-       approx(haversineWebMerc(
-           projPM, latLngToWebMerc(Point<double>{1.0, 0.001}))));
+       approx(haversineWebMerc(projPM,
+                               latLngToWebMerc(Point<double>{1.0, 0.001}))));
 
   auto probeA = lineFromWKT<double>(
       "LINESTRING(0.007055 0.000076, 0.000170 0.005777, 0.007176 0.009889)");
@@ -1044,8 +1043,8 @@ static void testDistLimitedPrecision() {
             DPoint bReal{(b.getX() * 1.0) / 10.0, (b.getY() * 1.0) / 10.0};
             return haversineWebMerc(aReal, bReal);
           }),
-    // NOTE: difference because of precision to only 10 cm because of coarse
-    // projection
+      // NOTE: difference because of precision to only 10 cm because of coarse
+      // projection
       ==, approx(426521.18896));
 }
 
@@ -1072,7 +1071,8 @@ static void testDistSyntheticWebMerc() {
 
           Line<double> a, b;
           for (size_t i = 0; i < na; i++)
-            a.push_back(latLngToWebMerc(Point<double>{distri(rnd), lat + distri(rnd)}));
+            a.push_back(
+                latLngToWebMerc(Point<double>{distri(rnd), lat + distri(rnd)}));
           for (size_t i = 0; i < nb; i++)
             b.push_back(latLngToWebMerc(
                 Point<double>{span + sep + distri(rnd), lat + distri(rnd)}));
@@ -1082,8 +1082,7 @@ static void testDistSyntheticWebMerc() {
           // bound, real distance cannot exceed it
           double ref = std::numeric_limits<double>::infinity();
           for (const auto& p : a)
-            for (const auto& q : b)
-              ref = std::min(ref, haversineWebMerc(p, q));
+            for (const auto& q : b) ref = std::min(ref, haversineWebMerc(p, q));
 
           TEST(util::geo::webMercMeterDist(a, b), <=, ref * (1.0 + EXACT_TOL));
           TEST(util::geo::webMercWithinMeterDist(
@@ -1108,11 +1107,10 @@ static void testDistSyntheticWebMerc() {
 static void testDistToSegmentExtreme() {
   {
     // true distance witness point is at the endpoint
-    auto seg = lineFromWKTProj<double>(
-        "LINESTRING(-60.0 85.0, -5.657479 -80.733430)",
-        util::geo::projectToWebMerc<double>);
-    auto p =
-        latLngToWebMerc(Point<double>{60.0, 67.410787});
+    auto seg =
+        lineFromWKTProj<double>("LINESTRING(-60.0 85.0, -5.657479 -80.733430)",
+                                util::geo::projectToWebMerc<double>);
+    auto p = latLngToWebMerc(Point<double>{60.0, 67.410787});
 
     double ref = haversineWebMerc(p, seg.front());
     TEST(ref, >, 2832051.0);
@@ -1128,10 +1126,10 @@ static void testDistToSegmentExtreme() {
         "LINESTRING(0.094603 74.851933, 0.290393 77.089685)",
         util::geo::projectToWebMerc<double>);
     auto p = pointFromWKTProj<double>("POINT(7.902886 76.813064)",
-                                            util::geo::projectToWebMerc<double>);
+                                      util::geo::projectToWebMerc<double>);
 
-    double ref =
-        haversineWebMerc(p, latLngToWebMerc(Point<double>{0.278391, 76.962378}));
+    double ref = haversineWebMerc(
+        p, latLngToWebMerc(Point<double>{0.278391, 76.962378}));
     TEST(ref, >, 193127.0);
     TEST(ref, <, 193128.0);
 
@@ -1141,9 +1139,9 @@ static void testDistToSegmentExtreme() {
 
   {
     // another error class: lines spanning the antimeridian (datumsgrenze)
-    auto seg = lineFromWKTProj<double>(
-        "LINESTRING(-150.0 85.0, 98.805598 -72.825412)",
-        util::geo::projectToWebMerc<double>);
+    auto seg =
+        lineFromWKTProj<double>("LINESTRING(-150.0 85.0, 98.805598 -72.825412)",
+                                util::geo::projectToWebMerc<double>);
     auto p = latLngToWebMerc(Point<double>{150.0, 84.994120});
 
     double ref = haversineWebMerc(p, seg.front());
@@ -1310,12 +1308,339 @@ static void testDistWithinEmpty() {
 }
 
 // _____________________________________________________________________________
+static void testDistWithinMixedEmpty() {
+  auto point = pointFromWKT<double>("POINT(4.5 4.5)");
+  auto point2 = pointFromWKT<double>("POINT(4.5 10.5)");
+  auto line = lineFromWKT<double>("LINESTRING(10 4.5, 12 4.5)");
+  auto vertLine = lineFromWKT<double>("LINESTRING(4.5 0, 4.5 9)");
+  auto farPoly =
+      polygonFromWKT<double>("POLYGON((20 0, 30 0, 30 10, 20 10, 20 0))");
+
+  auto emptyLine = lineFromWKT<double>("LINESTRING EMPTY");
+  auto emptyPoly = polygonFromWKT<double>("POLYGON EMPTY");
+
+  Collection<double> mixedCol{emptyLine, line, emptyPoly};
+  Collection<double> mixedColPoly{emptyPoly, farPoly, emptyLine};
+  Collection<double> mixedColPoint{emptyLine, emptyPoly, point2};
+  MultiLine<double> mixedMultiLine{emptyLine, line, emptyLine};
+  MultiPolygon<double> mixedMultiPoly{emptyPoly, farPoly, emptyPoly};
+  MultiPoint<double> multiPoint{point};
+  MultiLine<double> multiVertLine{vertLine};
+
+  // sanity tests
+  TEST(util::geo::dist(line, point), ==, approx(5.5));
+  TEST(util::geo::dist(farPoly, point), ==, approx(15.5));
+  TEST(util::geo::dist(point2, point), ==, approx(6));
+
+  for (double maxDist :
+       {20.0, 1000.0, std::numeric_limits<double>::infinity()}) {
+    // unsorted collections
+    TEST(util::geo::withinDist(mixedCol, point, maxDist), ==, approx(5.5));
+    TEST(util::geo::withinDist(point, mixedCol, maxDist), ==, approx(5.5));
+    TEST(util::geo::withinDist(mixedColPoly, point, maxDist), ==, approx(15.5));
+    TEST(util::geo::withinDist(point, mixedColPoly, maxDist), ==, approx(15.5));
+    TEST(util::geo::withinDist(mixedColPoint, point, maxDist), ==, approx(6));
+    TEST(util::geo::withinDist(point, mixedColPoint, maxDist), ==, approx(6));
+    TEST(util::geo::withinDist(mixedCol, mixedColPoly, maxDist), ==, approx(8));
+    TEST(util::geo::withinDist(mixedColPoly, mixedCol, maxDist), ==, approx(8));
+    TEST(util::geo::withinDist(mixedCol, farPoly, maxDist), ==, approx(8));
+    TEST(util::geo::withinDist(farPoly, mixedCol, maxDist), ==, approx(8));
+
+    // x-sorted collections
+    TEST(util::geo::withinDist(XSortedCollection<double>(mixedCol), point,
+                               maxDist),
+         ==, approx(5.5));
+    TEST(util::geo::withinDist(point, XSortedCollection<double>(mixedCol),
+                               maxDist),
+         ==, approx(5.5));
+    TEST(util::geo::withinDist(XSortedCollection<double>(mixedColPoly), point,
+                               maxDist),
+         ==, approx(15.5));
+    TEST(util::geo::withinDist(XSortedCollection<double>(mixedColPoint), point,
+                               maxDist),
+         ==, approx(6));
+    TEST(
+        util::geo::withinDist(XSortedCollection<double>(mixedCol),
+                              XSortedCollection<double>(mixedColPoly), maxDist),
+        ==, approx(8));
+    TEST(util::geo::withinDist(XSortedCollection<double>(mixedColPoly),
+                               XSortedCollection<double>(mixedCol), maxDist),
+         ==, approx(8));
+    TEST(util::geo::withinDist(XSortedCollection<double>(mixedCol),
+                               XSortedLine<double>(vertLine), maxDist),
+         ==, approx(5.5));
+    TEST(util::geo::withinDist(XSortedCollection<double>(mixedCol),
+                               XSortedPolygon<double>(farPoly), maxDist),
+         ==, approx(8));
+
+    // unsorted multi geometries
+    TEST(util::geo::withinDist(mixedMultiLine, multiPoint, maxDist), ==,
+         approx(5.5));
+    TEST(util::geo::withinDist(multiPoint, mixedMultiLine, maxDist), ==,
+         approx(5.5));
+    TEST(util::geo::withinDist(mixedMultiLine, multiVertLine, maxDist), ==,
+         approx(5.5));
+    TEST(util::geo::withinDist(multiVertLine, mixedMultiLine, maxDist), ==,
+         approx(5.5));
+    TEST(util::geo::withinDist(mixedMultiPoly, multiPoint, maxDist), ==,
+         approx(15.5));
+    TEST(util::geo::withinDist(multiPoint, mixedMultiPoly, maxDist), ==,
+         approx(15.5));
+    TEST(util::geo::withinDist(mixedMultiLine, mixedMultiPoly, maxDist), ==,
+         approx(8));
+    TEST(util::geo::withinDist(mixedMultiPoly, mixedMultiLine, maxDist), ==,
+         approx(8));
+  }
+
+  // maxDist too small, the result must be > maxDist, but not nan
+  for (double maxDist : {0.0, 1.0}) {
+    double d = util::geo::withinDist(mixedCol, point, maxDist);
+    TEST(!std::isnan(d));
+    TEST(d, >, maxDist);
+    d = util::geo::withinDist(XSortedCollection<double>(mixedCol), point,
+                              maxDist);
+    TEST(!std::isnan(d));
+    TEST(d, >, maxDist);
+    d = util::geo::withinDist(XSortedCollection<double>(mixedColPoint), point,
+                              maxDist);
+    TEST(!std::isnan(d));
+    TEST(d, >, maxDist);
+    d = util::geo::withinDist(mixedMultiLine, multiPoint, maxDist);
+    TEST(!std::isnan(d));
+    TEST(d, >, maxDist);
+    d = util::geo::withinDist(mixedMultiPoly, multiPoint, maxDist);
+    TEST(!std::isnan(d));
+    TEST(d, >, maxDist);
+  }
+}
+
+// _____________________________________________________________________________
+static void testDistPolygonClosingEdge() {
+  auto poly =
+      polygonFromWKT<double>("POLYGON((20 0, 30 0, 30 10, 20 10, 20 0))");
+  auto holed = polygonFromWKT<double>(
+      "POLYGON((-100 -100, 100 -100, 100 100, -100 100, -100 -100), "
+      "(10 -10, 40 -10, 40 20, 10 20, 10 -10))");
+
+  struct Probe {
+    Point<double> point;
+    Line<double> line;
+    Polygon<double> poly;
+  };
+
+  std::vector<Probe> probes{
+      // south
+      {pointFromWKT<double>("POINT(25 -5)"),
+       lineFromWKT<double>("LINESTRING(24 -5, 26 -5)"),
+       polygonFromWKT<double>("POLYGON((24 -6, 26 -6, 26 -5, 24 -5, 24 -6))")},
+      // east
+      {pointFromWKT<double>("POINT(35 5)"),
+       lineFromWKT<double>("LINESTRING(35 4, 35 6)"),
+       polygonFromWKT<double>("POLYGON((35 4, 36 4, 36 6, 35 6, 35 4))")},
+      // north
+      {pointFromWKT<double>("POINT(25 15)"),
+       lineFromWKT<double>("LINESTRING(24 15, 26 15)"),
+       polygonFromWKT<double>("POLYGON((24 15, 26 15, 26 16, 24 16, 24 15))")},
+      // west
+      {pointFromWKT<double>("POINT(15 5)"),
+       lineFromWKT<double>("LINESTRING(15 4, 15 6)"),
+       polygonFromWKT<double>("POLYGON((14 4, 15 4, 15 6, 14 6, 14 4))")}};
+
+  XSortedPolygon<double> polyX(poly);
+  XSortedPolygon<double> holedX(holed);
+
+  for (const auto& pr : probes) {
+    XSortedLine<double> lineX(pr.line);
+    XSortedPolygon<double> probePolyX(pr.poly);
+
+    // outer ring, unsorted
+    TEST(util::geo::dist(pr.point, poly), ==, approx(5));
+    TEST(util::geo::dist(poly, pr.point), ==, approx(5));
+    TEST(util::geo::withinDist(pr.point, poly, 10), ==, approx(5));
+    TEST(util::geo::withinDist(poly, pr.point, 10), ==, approx(5));
+    TEST(util::geo::withinDist(pr.point, poly, 5), ==, approx(5));
+    TEST(util::geo::withinDist(pr.point, poly, 4), >, 4);
+
+    TEST(util::geo::dist(pr.line, poly), ==, approx(5));
+    TEST(util::geo::dist(poly, pr.line), ==, approx(5));
+    TEST(util::geo::withinDist(pr.line, poly, 10), ==, approx(5));
+    TEST(util::geo::withinDist(poly, pr.line, 10), ==, approx(5));
+    TEST(util::geo::withinDist(pr.line, poly, 5), ==, approx(5));
+    TEST(util::geo::withinDist(pr.line, poly, 4), >, 4);
+
+    TEST(util::geo::dist(pr.poly, poly), ==, approx(5));
+    TEST(util::geo::dist(poly, pr.poly), ==, approx(5));
+    TEST(util::geo::withinDist(pr.poly, poly, 10), ==, approx(5));
+    TEST(util::geo::withinDist(poly, pr.poly, 10), ==, approx(5));
+    TEST(util::geo::withinDist(pr.poly, poly, 5), ==, approx(5));
+    TEST(util::geo::withinDist(pr.poly, poly, 4), >, 4);
+
+    // outer ring, x-sorted
+    TEST(util::geo::withinDist(pr.point, polyX, 10), ==, approx(5));
+    TEST(util::geo::withinDist(polyX, pr.point, 10), ==, approx(5));
+    TEST(util::geo::withinDist(lineX, polyX, 10), ==, approx(5));
+    TEST(util::geo::withinDist(polyX, lineX, 10), ==, approx(5));
+    TEST(util::geo::withinDist(probePolyX, polyX, 10), ==, approx(5));
+    TEST(util::geo::withinDist(polyX, probePolyX, 10), ==, approx(5));
+
+    // inside the hole, unsorted
+    TEST(util::geo::dist(pr.point, holed), ==, approx(5));
+    TEST(util::geo::dist(holed, pr.point), ==, approx(5));
+    TEST(util::geo::withinDist(pr.point, holed, 10), ==, approx(5));
+    TEST(util::geo::withinDist(pr.point, holed, 4), >, 4);
+
+    TEST(util::geo::dist(pr.line, holed), ==, approx(5));
+    TEST(util::geo::dist(holed, pr.line), ==, approx(5));
+    TEST(util::geo::withinDist(pr.line, holed, 10), ==, approx(5));
+    TEST(util::geo::withinDist(pr.line, holed, 4), >, 4);
+
+    TEST(util::geo::dist(pr.poly, holed), ==, approx(4));
+    TEST(util::geo::dist(holed, pr.poly), ==, approx(4));
+    TEST(util::geo::withinDist(pr.poly, holed, 10), ==, approx(4));
+    TEST(util::geo::withinDist(pr.poly, holed, 3), >, 3);
+
+    // inside the hole, x-sorted
+    TEST(util::geo::withinDist(pr.point, holedX, 10), ==, approx(5));
+    TEST(util::geo::withinDist(lineX, holedX, 10), ==, approx(5));
+    TEST(util::geo::withinDist(probePolyX, holedX, 10), ==, approx(4));
+  }
+}
+
+// _____________________________________________________________________________
+static void testDistWithinEmptyOuter() {
+  // a polygon with an empty outer ring is empty, even if it has inner rings
+  auto point = pointFromWKT<double>("POINT(4.5 4.5)");
+  auto pointFar = pointFromWKT<double>("POINT(50 50)");
+  auto line = lineFromWKT<double>("LINESTRING(10 4.5, 12 4.5)");
+  auto lineInHole = lineFromWKT<double>("LINESTRING(4.2 4.5, 4.8 4.5)");
+  auto poly = polygonFromWKT<double>("POLYGON((0 0, 10 0, 10 10, 0 10, 0 0))");
+  auto farPoly =
+      polygonFromWKT<double>("POLYGON((20 0, 30 0, 30 10, 20 10, 20 0))");
+  auto emptyLine = lineFromWKT<double>("LINESTRING EMPTY");
+  auto emptyPoly = polygonFromWKT<double>("POLYGON EMPTY");
+
+  // inner rings close to the probe geometries, so ignoring the empty outer
+  // ring and measuring the distance to the inner rings gives a small value
+  auto hole1 = lineFromWKT<double>("LINESTRING(4 4, 5 4, 5 5, 4 5, 4 4)");
+  auto hole2 = lineFromWKT<double>("LINESTRING(6 6, 8 6, 8 8, 6 8, 6 6)");
+  Polygon<double> emptyOuter(Ring<double>(), {hole1});
+  Polygon<double> emptyOuter2(Ring<double>(), {hole1, hole2});
+
+  TEST(emptyOuter.getOuter().size(), ==, 0);
+  TEST(emptyOuter.getInners().size(), ==, 1);
+  TEST(emptyOuter2.getOuter().size(), ==, 0);
+  TEST(emptyOuter2.getInners().size(), ==, 2);
+
+  MultiPolygon<double> multiEmptyOuter{emptyOuter, emptyOuter2};
+  MultiPolygon<double> multiPoly{poly};
+  MultiPoint<double> multiPoint{point};
+  Collection<double> colEmptyOuter{emptyOuter, emptyOuter2};
+  Collection<double> col{line, point, poly};
+
+  for (double maxDist :
+       {0.0, 1.0, 20.0, 1000.0, std::numeric_limits<double>::infinity()}) {
+    for (const auto& eo : {emptyOuter, emptyOuter2}) {
+      XSortedPolygon<double> eoX(eo);
+
+      // unsorted
+      TEST(std::isnan(util::geo::withinDist(point, eo, maxDist)));
+      TEST(std::isnan(util::geo::withinDist(eo, point, maxDist)));
+      TEST(std::isnan(util::geo::withinDist(pointFar, eo, maxDist)));
+      TEST(std::isnan(util::geo::withinDist(eo, pointFar, maxDist)));
+      TEST(std::isnan(util::geo::withinDist(line, eo, maxDist)));
+      TEST(std::isnan(util::geo::withinDist(eo, line, maxDist)));
+      TEST(std::isnan(util::geo::withinDist(lineInHole, eo, maxDist)));
+      TEST(std::isnan(util::geo::withinDist(eo, lineInHole, maxDist)));
+      TEST(std::isnan(util::geo::withinDist(poly, eo, maxDist)));
+      TEST(std::isnan(util::geo::withinDist(eo, poly, maxDist)));
+      TEST(std::isnan(util::geo::withinDist(eo, eo, maxDist)));
+      TEST(std::isnan(util::geo::withinDist(eo, emptyPoly, maxDist)));
+      TEST(std::isnan(util::geo::withinDist(emptyPoly, eo, maxDist)));
+      TEST(std::isnan(util::geo::withinDist(emptyLine, eo, maxDist)));
+      TEST(std::isnan(util::geo::withinDist(eo, emptyLine, maxDist)));
+
+      // x-sorted
+      TEST(std::isnan(util::geo::withinDist(point, eoX, maxDist)));
+      TEST(std::isnan(util::geo::withinDist(eoX, point, maxDist)));
+      TEST(std::isnan(util::geo::withinDist(pointFar, eoX, maxDist)));
+      TEST(std::isnan(
+          util::geo::withinDist(XSortedLine<double>(line), eoX, maxDist)));
+      TEST(std::isnan(
+          util::geo::withinDist(eoX, XSortedLine<double>(line), maxDist)));
+      TEST(std::isnan(util::geo::withinDist(XSortedLine<double>(lineInHole),
+                                            eoX, maxDist)));
+      TEST(std::isnan(
+          util::geo::withinDist(XSortedPolygon<double>(poly), eoX, maxDist)));
+      TEST(std::isnan(
+          util::geo::withinDist(eoX, XSortedPolygon<double>(poly), maxDist)));
+      TEST(std::isnan(util::geo::withinDist(eoX, eoX, maxDist)));
+      TEST(std::isnan(util::geo::withinDist(
+          eoX, XSortedPolygon<double>(emptyPoly), maxDist)));
+    }
+
+    // multi polygons / collections consisting only of such polygons are empty
+    TEST(
+        std::isnan(util::geo::withinDist(multiEmptyOuter, multiPoly, maxDist)));
+    TEST(
+        std::isnan(util::geo::withinDist(multiPoly, multiEmptyOuter, maxDist)));
+    TEST(std::isnan(
+        util::geo::withinDist(multiEmptyOuter, multiPoint, maxDist)));
+    TEST(std::isnan(
+        util::geo::withinDist(multiEmptyOuter, multiEmptyOuter, maxDist)));
+    TEST(std::isnan(util::geo::withinDist(
+        XSortedMultiPolygon<double>(multiEmptyOuter),
+        XSortedMultiPolygon<double>(multiPoly), maxDist)));
+
+    TEST(std::isnan(util::geo::withinDist(colEmptyOuter, col, maxDist)));
+    TEST(std::isnan(util::geo::withinDist(col, colEmptyOuter, maxDist)));
+    TEST(std::isnan(util::geo::withinDist(colEmptyOuter, point, maxDist)));
+    TEST(std::isnan(util::geo::withinDist(point, colEmptyOuter, maxDist)));
+    TEST(std::isnan(
+        util::geo::withinDist(XSortedCollection<double>(colEmptyOuter),
+                              XSortedCollection<double>(col), maxDist)));
+    TEST(std::isnan(util::geo::withinDist(
+        XSortedCollection<double>(colEmptyOuter), point, maxDist)));
+    TEST(std::isnan(util::geo::withinDist(
+        point, XSortedCollection<double>(colEmptyOuter), maxDist)));
+  }
+
+  // polygons with an empty outer ring should be ignored as members
+  MultiPolygon<double> mixedMultiPoly{emptyOuter, farPoly, emptyOuter2};
+  Collection<double> mixedCol{emptyOuter, line, emptyOuter2};
+
+  for (double maxDist :
+       {20.0, 1000.0, std::numeric_limits<double>::infinity()}) {
+    TEST(util::geo::withinDist(mixedMultiPoly, multiPoint, maxDist), ==,
+         approx(15.5));
+    TEST(util::geo::withinDist(multiPoint, mixedMultiPoly, maxDist), ==,
+         approx(15.5));
+    TEST(util::geo::withinDist(mixedCol, point, maxDist), ==, approx(5.5));
+    TEST(util::geo::withinDist(point, mixedCol, maxDist), ==, approx(5.5));
+    TEST(util::geo::withinDist(XSortedCollection<double>(mixedCol), point,
+                               maxDist),
+         ==, approx(5.5));
+    TEST(util::geo::withinDist(point, XSortedCollection<double>(mixedCol),
+                               maxDist),
+         ==, approx(5.5));
+  }
+
+  MultiPolygon<double> test2{emptyOuter, emptyOuter2};
+  for (double maxDist :
+       {20.0, 1000.0, std::numeric_limits<double>::infinity()}) {
+    TEST(std::isnan(util::geo::withinDist(test2, line, maxDist)));
+  }
+}
+
+// _____________________________________________________________________________
 void GeoTest::testDist() {
   testDistCombinations();
   testDistWithinRealisticMaxDist();
   testDistWithinInfinityMaxDist();
   testDistWithinExactMaxDist();
   testDistWithinEmpty();
+  testDistWithinMixedEmpty();
+  testDistPolygonClosingEdge();
+  testDistWithinEmptyOuter();
 
   LargeTestGeoms large;
 
