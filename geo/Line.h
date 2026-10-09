@@ -5,10 +5,11 @@
 #ifndef UTIL_GEO_LINE_H_
 #define UTIL_GEO_LINE_H_
 
-#include <vector>
+#include <math.h>
+
 #include <algorithm>
 #include <cstdint>
-#include <math.h>
+#include <vector>
 
 #include "./Point.h"
 
@@ -152,15 +153,37 @@ struct XSortedTuple {
 
   AngledLineSegment<T> origSegAng() const {
     if (vals & 4) {
-      return {{{0, 0}, {0, 0}}, rawPrevAng(), firstIsBoundary(), rawNextAng(), secondIsBoundary()};
+      return {{{0, 0}, {0, 0}},
+              rawPrevAng(),
+              firstIsBoundary(),
+              rawNextAng(),
+              secondIsBoundary()};
     }
     if (vals & 2) {
-      if (vals & 8) return {{other, p}, rawPrevAng(), firstIsBoundary(), rawNextAng(), secondIsBoundary()};
-      return {{p, other}, rawPrevAng(), firstIsBoundary(), rawNextAng(), secondIsBoundary()};
+      if (vals & 8)
+        return {{other, p},
+                rawPrevAng(),
+                firstIsBoundary(),
+                rawNextAng(),
+                secondIsBoundary()};
+      return {{p, other},
+              rawPrevAng(),
+              firstIsBoundary(),
+              rawNextAng(),
+              secondIsBoundary()};
     }
 
-    if (vals & 8) return {{p, other}, rawPrevAng(), firstIsBoundary(), rawNextAng(), secondIsBoundary()};
-    return {{other, p}, rawPrevAng(), firstIsBoundary(), rawNextAng(), secondIsBoundary()};
+    if (vals & 8)
+      return {{p, other},
+              rawPrevAng(),
+              firstIsBoundary(),
+              rawNextAng(),
+              secondIsBoundary()};
+    return {{other, p},
+            rawPrevAng(),
+            firstIsBoundary(),
+            rawNextAng(),
+            secondIsBoundary()};
   }
 
   bool out() const { return vals & 1; }
@@ -299,9 +322,16 @@ class XSortedLine {
     _first = line.front();
     _last = line.back();
 
+    const bool open = line.front() != line.back();
+
+    bool haveLastNextAng = false;
+    double lastNextAng = 0;
+    bool haveLastDir = false;
+    double lastDir = 0;
+
     _line.reserve(2 * line.size());
     for (size_t i = 1; i < line.size(); i++) {
-      _bbox = extendBox(LineSegment<T>{line[i-1], line[i]}, _bbox);
+      _bbox = extendBox(LineSegment<T>{line[i - 1], line[i]}, _bbox);
 
       if (line[i - 1].getX() == line[i].getX() &&
           line[i - 1].getY() == line[i].getY())
@@ -312,35 +342,46 @@ class XSortedLine {
       double prevAng = 0;
       double nextAng = 0;
 
-      size_t prev;
+      if (open && i == 1) {
+        prevAng = 2 * M_PI;
+      } else if (haveLastDir) {
+        prevAng = lastDir > 0 ? lastDir - M_PI : lastDir + M_PI;
+      } else {
+        size_t prev;
 
-      if (i > 1)
-        prev = i - 2;
-      else
-        prev = line.size() - 1;
-
-      while (line[prev].getX() == line[i - 1].getX() &&
-             line[prev].getY() == line[i - 1].getY() && prev != i - 1) {
-        if (prev > 0)
-          prev = prev - 1;
+        if (i > 1)
+          prev = i - 2;
         else
           prev = line.size() - 1;
+
+        while (line[prev].getX() == line[i - 1].getX() &&
+               line[prev].getY() == line[i - 1].getY() && prev != i - 1) {
+          if (prev > 0)
+            prev = prev - 1;
+          else
+            prev = line.size() - 1;
+        }
+
+        prevAng = util::geo::angBetween(line[i - 1], line[prev]);
       }
 
-      prevAng = util::geo::angBetween(line[i - 1], line[prev]);
+      // direction of the current segment
+      haveLastDir = haveLastNextAng;
+      lastDir = lastNextAng;
 
-      size_t next = (i + 1) % line.size();
+      if (open && i == line.size() - 1) {
+        nextAng = 2 * M_PI;
+      } else {
+        size_t next = (i + 1) % line.size();
 
-      while (line[next].getX() == line[i].getX() &&
-             line[next].getY() == line[i].getY() && next != i) {
-        next = (next + 1) % line.size();
-      }
+        while (line[next].getX() == line[i].getX() &&
+               line[next].getY() == line[i].getY() && next != i) {
+          next = (next + 1) % line.size();
+        }
 
-      nextAng = util::geo::angBetween(line[i], line[next]);
-
-      if (line.front() != line.back()) {
-        if (i == 1) prevAng = 2 * M_PI;
-        if (i == line.size() - 1) nextAng = 2 * M_PI;
+        nextAng = util::geo::angBetween(line[i], line[next]);
+        haveLastNextAng = true;
+        lastNextAng = nextAng;
       }
 
       if (line[i - 1].getX() < line[i].getX()) {

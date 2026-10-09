@@ -396,7 +396,7 @@ ssize_t util::externalSort(int file, int newFile, size_t size, size_t numobjs,
 
   auto pqComp = [cmpf](const std::pair<const void*, size_t>& a,
                        const std::pair<const void*, size_t>& b) {
-    return cmpf(a.first, b.first) != -1;
+    return cmpf(a.first, b.first) > 0;
   };
   std::priority_queue<std::pair<const void*, size_t>,
                       std::vector<std::pair<const void*, size_t>>,

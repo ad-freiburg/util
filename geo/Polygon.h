@@ -204,9 +204,16 @@ class XSortedRing {
                 true};
   }
 
-  XSortedRing(const Ring<T>& ring) {
-    _area = ringArea(ring);
-    _ring.reserve(ring.size());
+  XSortedRing(const Ring<T>& ring) : XSortedRing(ring, ringArea(ring)) {}
+
+  // area must be ringArea(ring)
+  XSortedRing(const Ring<T>& ring, double area) {
+    _area = area;
+    _ring.reserve(2 * ring.size());
+
+    bool haveLastNext = false;
+    double lastNextAng = 0;
+    double lastNextY = 0;
 
     for (size_t i = 1; i < ring.size(); i++) {
       if (ring[i - 1].getX() == ring[i].getX() &&
@@ -220,27 +227,31 @@ class XSortedRing {
       double prevAng = 0;
       double nextAng = 0;
 
-      size_t prev;
+      if (haveLastNext) {
+        prevAng = lastNextY == 0 ? lastNextAng : -lastNextAng;
+      } else {
+        size_t prev;
 
-      if (i > 1)
-        prev = i - 2;
-      else
-        prev = ring.size() - 1;
-
-      while (ring[prev].getX() == ring[i - 1].getX() &&
-             ring[prev].getY() == ring[i - 1].getY() && prev != i - 1) {
-        if (prev > 0)
-          prev = prev - 1;
+        if (i > 1)
+          prev = i - 2;
         else
           prev = ring.size() - 1;
-      }
 
-      prevAng = util::geo::angBetween(
-          ring[i].asDPoint(), ring[i - 1].asDPoint(),
-          {ring[prev].getX() * 1.0 -
-               (ring[i - 1].getX() * 1.0 - ring[i].getX() * 1.0),
-           ring[prev].getY() * 1.0 -
-               (ring[i - 1].getY() * 1.0 - ring[i].getY() * 1.0)});
+        while (ring[prev].getX() == ring[i - 1].getX() &&
+               ring[prev].getY() == ring[i - 1].getY() && prev != i - 1) {
+          if (prev > 0)
+            prev = prev - 1;
+          else
+            prev = ring.size() - 1;
+        }
+
+        prevAng = util::geo::angBetween(
+            ring[i].asDPoint(), ring[i - 1].asDPoint(),
+            {ring[prev].getX() * 1.0 -
+                 (ring[i - 1].getX() * 1.0 - ring[i].getX() * 1.0),
+             ring[prev].getY() * 1.0 -
+                 (ring[i - 1].getY() * 1.0 - ring[i].getY() * 1.0)});
+      }
 
       size_t next = (i + 1) % ring.size();
 
@@ -249,12 +260,9 @@ class XSortedRing {
         next = (next + 1) % ring.size();
       }
 
-      nextAng = util::geo::angBetween(
-          ring[i - 1].asDPoint(), ring[i].asDPoint(),
-          {ring[next].getX() * 1.0 -
-               (ring[i].getX() * 1.0 - ring[i - 1].getX() * 1.0),
-           ring[next].getY() * 1.0 -
-               (ring[i].getY() * 1.0 - ring[i - 1].getY() * 1.0)});
+      nextAng = nextAngle(ring[i - 1], ring[i], ring[next], &lastNextY);
+      lastNextAng = nextAng;
+      haveLastNext = true;
 
       if (len > _maxSegLen) _maxSegLen = len;
 
@@ -285,27 +293,33 @@ class XSortedRing {
       T len = fabs(ring[i - 1].getX() - ring[0].getX());
       if (len > _maxSegLen) _maxSegLen = len;
 
-      size_t prev;
+      double prevAng;
 
-      if (i > 1)
-        prev = i - 2;
-      else
-        prev = ring.size() - 1;
+      if (haveLastNext) {
+        prevAng = lastNextY == 0 ? lastNextAng : -lastNextAng;
+      } else {
+        size_t prev;
 
-      while (ring[prev].getX() == ring[i - 1].getX() &&
-             ring[prev].getY() == ring[i - 1].getY() && prev != i - 1) {
-        if (prev > 0)
-          prev = prev - 1;
+        if (i > 1)
+          prev = i - 2;
         else
           prev = ring.size() - 1;
-      }
 
-      double prevAng = util::geo::angBetween(
-          ring[0].asDPoint(), ring[i - 1].asDPoint(),
-          {ring[prev].getX() * 1.0 -
-               (ring[i - 1].getX() * 1.0 - ring[0].getX() * 1.0),
-           ring[prev].getY() * 1.0 -
-               (ring[i - 1].getY() * 1.0 - ring[0].getY() * 1.0)});
+        while (ring[prev].getX() == ring[i - 1].getX() &&
+               ring[prev].getY() == ring[i - 1].getY() && prev != i - 1) {
+          if (prev > 0)
+            prev = prev - 1;
+          else
+            prev = ring.size() - 1;
+        }
+
+        prevAng = util::geo::angBetween(
+            ring[0].asDPoint(), ring[i - 1].asDPoint(),
+            {ring[prev].getX() * 1.0 -
+                 (ring[i - 1].getX() * 1.0 - ring[0].getX() * 1.0),
+             ring[prev].getY() * 1.0 -
+                 (ring[i - 1].getY() * 1.0 - ring[0].getY() * 1.0)});
+      }
 
       size_t next = 1;
 
@@ -343,6 +357,19 @@ class XSortedRing {
     }
 
     std::sort(_ring.begin(), _ring.end());
+  }
+
+  static double nextAngle(const Point<T>& a, const Point<T>& b,
+                          const Point<T>& c, double* y) {
+    double dy1 = b.getY() * 1.0 - a.getY() * 1.0;
+    double dx1 = b.getX() * 1.0 - a.getX() * 1.0;
+    double dy2 =
+        (c.getY() * 1.0 - (b.getY() * 1.0 - a.getY() * 1.0)) - a.getY() * 1.0;
+    double dx2 =
+        (c.getX() * 1.0 - (b.getX() * 1.0 - a.getX() * 1.0)) - a.getX() * 1.0;
+
+    *y = dy1 * dx2 - dy2 * dx1;
+    return atan2(*y, dx1 * dx2 + dy1 * dy2);
   }
 
   bool operator==(const XSortedRing<T>& other) const {
@@ -385,36 +412,52 @@ class XSortedPolygon {
   XSortedPolygon() {}
   XSortedPolygon(const Box<T>& box) : _outer(box) {}
   XSortedPolygon(const Ring<T>& ring) {
-    auto outer = ring;
+    double area = signedRingArea(ring);
 
-    // outer ring  must be oriented counter-clockwise
-    if (signedRingArea(outer) > 0) std::reverse(outer.begin(), outer.end());
-
-    _outer = outer;
+    // outer ring  must be oriented counter-clockwise, only copy if we have to
+    // reverse it
+    if (area > 0) {
+      auto outer = ring;
+      std::reverse(outer.begin(), outer.end());
+      _outer = XSortedRing<T>(outer);
+    } else {
+      _outer = XSortedRing<T>(ring, fabs(area));
+    }
   }
 
   XSortedPolygon(const Polygon<T>& poly) {
-    auto outer = poly.getOuter();
+    double area = signedRingArea(poly.getOuter());
 
-    // outer ring  must be oriented counter-clockwise
-    if (signedRingArea(outer) > 0) std::reverse(outer.begin(), outer.end());
+    // outer ring  must be oriented counter-clockwise, only copy if we have to
+    // reverse it
+    if (area > 0) {
+      auto outer = poly.getOuter();
+      std::reverse(outer.begin(), outer.end());
+      _outer = XSortedRing<T>(outer);
+    } else {
+      _outer = XSortedRing<T>(poly.getOuter(), fabs(area));
+    }
 
-    _outer = outer;
-
-    for (const auto& innerRaw : poly.getInners()) {
+    for (const auto& inner : poly.getInners()) {
       // skip empty polygons
-      if (innerRaw.size() < 2) continue;
-      auto inner = innerRaw;
+      if (inner.size() < 2) continue;
 
-      // inner rings must be oriented clockwise
-      if (signedRingArea(inner) < 0) std::reverse(inner.begin(), inner.end());
+      double innerArea = signedRingArea(inner);
 
-      _inners.push_back(inner);
+      // inner rings must be oriented clockwise, only copy if we have to
+      // reverse them
+      if (innerArea < 0) {
+        auto reversed = inner;
+        std::reverse(reversed.begin(), reversed.end());
+        _inners.push_back(XSortedRing<T>(reversed));
+      } else {
+        _inners.push_back(XSortedRing<T>(inner, innerArea));
+      }
 
       Box<T> box;
       for (const auto& p : inner) box = extendBox(p, box);
       _innerBoxes.push_back(box);
-      _innerAreas.push_back(ringArea(inner));
+      _innerAreas.push_back(_inners.back().area());
       _boxIdx.push_back({box.getLowerLeft().getX(), _innerAreas.size() - 1});
       if (box.getUpperRight().getX() - box.getLowerLeft().getX() >
           _innerMaxSegLen)
