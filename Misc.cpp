@@ -20,40 +20,6 @@
 #include "String.h"
 
 // _____________________________________________________________________________
-uint64_t util::factorial(uint64_t n) {
-  if (n < 2) return 1;
-  return n * factorial(n - 1);
-}
-
-// _____________________________________________________________________________
-bool util::isFloatingPoint(const std::string& str) {
-  std::stringstream ss(str);
-  double f;
-  ss >> std::noskipws >> f;
-  return ss.eof() && !ss.fail();
-}
-
-// _____________________________________________________________________________
-std::string util::formatFloat(double f, int DIGITS) {
-  std::string fStr = "{:." + std::to_string(DIGITS) + "f}";
-
-  fmt::memory_buffer buf;
-  fmt::vformat_to(std::back_inserter(buf), fStr, fmt::make_format_args(f));
-
-  auto ret = fmt::to_string(buf);
-
-  if (ret.back() == '0') {
-    if (ret.find('.') != std::string::npos) {
-      auto p = ret.find_last_not_of('0');
-      if (ret[p] == '.') return ret.substr(0, p);
-      return ret.substr(0, p + 1);
-    }
-  }
-
-  return ret;
-}
-
-// _____________________________________________________________________________
 ssize_t util::preadAll(int file, unsigned char* buf, size_t count,
                        size_t offset) {
   ssize_t r;

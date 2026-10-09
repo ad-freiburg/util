@@ -14,6 +14,7 @@
 #include <iostream>
 #include <limits>
 #include <map>
+#include <sstream>
 #include <vector>
 #ifdef PBUTIL_ZLIB_FOUND
 #include <zlib.h>
@@ -260,8 +261,6 @@ class SparseMatrix {
   std::map<std::pair<Key, Key>, Val> _m;
 };
 
-uint64_t factorial(uint64_t n);
-
 // _____________________________________________________________________________
 inline uint64_t atoul(const char* p) {
   uint64_t ret = 0;
@@ -273,9 +272,19 @@ inline uint64_t atoul(const char* p) {
   return ret;
 }
 
-bool isFloatingPoint(const std::string& str);
+// _____________________________________________________________________________
+inline uint64_t factorial(uint64_t n) {
+  if (n < 2) return 1;
+  return n * factorial(n - 1);
+}
 
-std::string formatFloat(double f, int DIGITS);
+// _____________________________________________________________________________
+inline bool isFloatingPoint(const std::string& str) {
+  std::stringstream ss(str);
+  double f;
+  ss >> std::noskipws >> f;
+  return ss.eof() && !ss.fail();
+}
 
 // _____________________________________________________________________________
 inline double atof(const char* p, uint8_t mn, const char** end) {
@@ -401,41 +410,31 @@ class no_init_allocator : public A {
 
   template <typename U>
   struct rebind {
-    using other =
-        no_init_allocator<U, typename a_t::template rebind_alloc<U>>;
+    using other = no_init_allocator<U, typename a_t::template rebind_alloc<U>>;
   };
 
   template <typename U>
-  void construct(U*) noexcept(
-      std::is_nothrow_default_constructible<U>::value) {
-		// empty
+  void construct(U*) noexcept(std::is_nothrow_default_constructible<U>::value) {
+    // empty
   }
 
   template <typename U, typename... Args>
   void construct(U*, Args&&...) {
-		// empty
+    // empty
   }
 };
 
 // _____________________________________________________________________________
-inline float boundedSub(const float a, const float b) {
-  return a - b;
-}
+inline float boundedSub(const float a, const float b) { return a - b; }
 
 // _____________________________________________________________________________
-inline float boundedAdd(const float a, const float b) {
-  return a + b;
-}
+inline float boundedAdd(const float a, const float b) { return a + b; }
 
 // _____________________________________________________________________________
-inline double boundedSub(const double a, const double b) {
-  return a - b;
-}
+inline double boundedSub(const double a, const double b) { return a - b; }
 
 // _____________________________________________________________________________
-inline double boundedAdd(const double a, const double b) {
-  return a + b;
-}
+inline double boundedAdd(const double a, const double b) { return a + b; }
 
 // _____________________________________________________________________________
 template <typename T>
@@ -454,7 +453,6 @@ inline T boundedAdd(const T a, const double b) {
              ? std::numeric_limits<T>::max()
              : static_cast<T>(sum);
 }
-
 
 // _____________________________________________________________________________
 template <typename T>

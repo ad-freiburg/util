@@ -25,6 +25,7 @@
 #include <stdexcept>
 #include <string>
 #include <vector>
+#include "3rdparty/fmt/core.h"
 
 namespace util {
 
@@ -60,6 +61,26 @@ inline int strncicmp(char const* left, char const* right, size_t n) {
   }
 
   return 0;
+}
+
+// _____________________________________________________________________________
+inline std::string formatFloat(double f, int DIGITS) {
+  std::string fStr = "{:." + std::to_string(DIGITS) + "f}";
+
+  fmt::memory_buffer buf;
+  fmt::vformat_to(std::back_inserter(buf), fStr, fmt::make_format_args(f));
+
+  auto ret = fmt::to_string(buf);
+
+  if (ret.back() == '0') {
+    if (ret.find('.') != std::string::npos) {
+      auto p = ret.find_last_not_of('0');
+      if (ret[p] == '.') return ret.substr(0, p);
+      return ret.substr(0, p + 1);
+    }
+  }
+
+  return ret;
 }
 
 // _____________________________________________________________________________
