@@ -107,24 +107,46 @@ util::geo::CRSType util::geo::getCRSType(const char* c, const char** endr) {
 
   if (*c != '<') {
     if (endr) (*endr) = c;
-    return CRS84;  // Default.
+    return util::geo::CRSType::CRS84;  // Default.
   }
 
-  if (strncicmp("<http://www.opengis.net/def/crs/OGC/1.3/CRS84>", c, 46) == 0) {
-    if (endr) (*endr) = c + 46;
-    return CRS84;
+  if (strncicmp(crs84Iri, c, crs84IriLen) == 0) {
+    if (endr) (*endr) = c + crs84IriLen;
+    return util::geo::CRSType::CRS84;
   }
-  if (strncicmp("<http://www.opengis.net/def/crs/EPSG/0/4326>", c, 44) == 0) {
-    if (endr) (*endr) = c + 44;
-    return WGS84;
+  if (strncicmp(wgs84Iri, c, wgs84IriLen) == 0) {
+    if (endr) (*endr) = c + wgs84IriLen;
+    return util::geo::CRSType::WGS84;
   }
-  if (strncicmp("<http://www.opengis.net/def/crs/EPSG/0/3857>", c, 44) == 0) {
-    if (endr) (*endr) = c + 44;
-    return WEB_MERCATOR;
+  if (strncicmp(webMercIri, c, webMercIriLen) == 0) {
+    if (endr) (*endr) = c + webMercIriLen;
+    return util::geo::CRSType::WEB_MERCATOR;
   }
 
   if (endr) (*endr) = c;
-  return UNSUPPORTED;
+  return util::geo::CRSType::UNSUPPORTED;
+}
+
+// _____________________________________________________________________________
+const std::string& util::geo::getCrsIri(util::geo::CRSType targetCRS, bool hideIri) {
+  static const std::string empty{""};
+  static const std::string wgs84 = std::string{wgs84Iri} + " ";
+  static const std::string webMerc = std::string{webMercIri} + " ";
+
+  if (hideIri) return empty;
+
+  switch (targetCRS)
+  {
+  case util::geo::CRSType::CRS84:
+    // Not attaching IRI as CRS84 is the default.
+    return empty;
+  case util::geo::CRSType::WGS84:
+    return wgs84;
+  case util::geo::CRSType::WEB_MERCATOR:
+    return webMerc;
+  default:
+    throw std::runtime_error("Trying to get CRS IRI for unsupported CRS type.");
+  }
 }
 
 // _____________________________________________________________________________
