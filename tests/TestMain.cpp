@@ -31,6 +31,13 @@ int main(int argc, char** argv) {
   std::setlocale(LC_ALL, "en_US.utf8");
   TEST(strncicmp("LINESTRING", "LINESTRING(0 0, 1 1))", 10), ==, 0);
 
+  // ___________________________________________________________________________
+  {
+    TEST_THROWS(std::runtime_error, throw std::runtime_error("x"));
+    TEST_THROWS(std::exception, throw std::runtime_error("x"));
+    TEST_THROWS(std::out_of_range, std::vector<int>{1, 2}.at(2));
+  }
+
 
 
   // ___________________________________________________________________________
@@ -76,6 +83,20 @@ int main(int argc, char** argv) {
     TEST(util::atof("-45.534215"), ==, approx(-45.534215));
     TEST(util::atof("-45.534215", 2), ==, approx(-45.53));
     TEST(util::atof("-45.53421544345"), ==, approx(-45.5342154435));
+    TEST(util::atof(".5"), ==, approx(0.5));
+    TEST(util::atof("-.5"), ==, approx(-0.5));
+    TEST(util::atof("5."), ==, approx(5));
+    TEST(util::atof("  5"), ==, approx(5));
+    TEST(util::atof("5abc"), ==, approx(5));
+
+    // not a number
+    TEST(std::isnan(util::atof("")));
+    TEST(std::isnan(util::atof("   ")));
+    TEST(std::isnan(util::atof("abc")));
+    TEST(std::isnan(util::atof("-")));
+    TEST(std::isnan(util::atof(".")));
+    TEST(std::isnan(util::atof("-.")));
+    TEST(std::isnan(util::atof(")")));
 
     // TODO: more test cases
   }

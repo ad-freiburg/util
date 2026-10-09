@@ -13,6 +13,8 @@
 #include <array>
 #include <functional>
 #include <sstream>
+#include <stdexcept>
+#include <type_traits>
 
 #include "util/Misc.h"
 #include "util/String.h"
@@ -163,7 +165,11 @@ enum CRSType : uint8_t {
   WEB_MERCATOR = 3,
 };
 
-uint8_t boolArrToInt8(const std::array<bool, 8> arr);
+inline uint8_t boolArrToInt8(const std::array<bool, 8> arr) {
+  uint8_t ret = 0;
+  for (size_t i = 0; i < 8; i++) ret |= (uint8_t)arr[i] << i;
+  return ret;
+}
 
 template <typename T>
 Box<T> pad(const Box<T>& box, double xPadding, double yPadding);
@@ -296,7 +302,7 @@ Box<T> minbox();
 template <typename T>
 RotatedBox<T> shrink(const RotatedBox<T>& b, double d);
 
-bool doubleEq(double a, double b);
+inline bool doubleEq(double a, double b) { return fabs(a - b) < EPSILON; }
 
 template <typename T>
 std::string getWKT(const Point<T>& p, uint16_t prec);
@@ -718,7 +724,7 @@ template <typename T>
 bool lineIntersects(const Point<T>& p1, const Point<T>& q1, const Point<T>& p2,
                     const Point<T>& q2);
 
-double angBetween(double p1x, double p1y);
+inline double angBetween(double p1x, double p1y) { return atan2(p1x, p1y); }
 
 template <typename T>
 double angBetween(const Point<T>& p1);
@@ -726,8 +732,12 @@ double angBetween(const Point<T>& p1);
 template <typename T>
 double angBetween(const Point<T>& p1, const MultiPoint<T>& points);
 
-double dist(double x1, double y1, double x2, double y2);
-double distSquared(double x1, double y1, double x2, double y2);
+inline double dist(double x1, double y1, double x2, double y2) {
+  return sqrt((x2 - x1) * (x2 - x1) + (y2 - y1) * (y2 - y1));
+}
+inline double distSquared(double x1, double y1, double x2, double y2) {
+  return (x2 - x1) * (x2 - x1) + (y2 - y1) * (y2 - y1);
+}
 
 template <typename T, typename DF>
 double dist(const LineSegment<T>& ls, const Point<T>& p, DF&& distFunc);
@@ -900,13 +910,25 @@ double dist(const std::vector<GeometryA<T>>& multigeomA,
                   euclideanDistFunc<T>));
 }
 
-double innerProd(double x1, double y1, double x2, double y2, double x3,
-                 double y3);
+inline double innerProd(double x1, double y1, double x2, double y2, double x3,
+                        double y3) {
+  double dx21 = x2 - x1;
+  double dx31 = x3 - x1;
+  double dy21 = y2 - y1;
+  double dy31 = y3 - y1;
+  double m12 = sqrt(dx21 * dx21 + dy21 * dy21);
+  double m13 = sqrt(dx31 * dx31 + dy31 * dy31);
+  double theta = acos(std::min((dx21 * dx31 + dy21 * dy31) / (m12 * m13), 1.0));
+
+  return theta * IRAD;
+}
 
 template <typename T>
 double innerProd(const Point<T>& a, const Point<T>& b, const Point<T>& c);
 
-double crossProd(double x1, double y1, double x2, double y2);
+inline double crossProd(double x1, double y1, double x2, double y2) {
+  return x1 * y2 - x2 * y1;
+}
 
 template <typename T>
 double crossProd(const Point<T>& a, const Point<T>& b);
@@ -963,103 +985,135 @@ size_t empty(const std::vector<Geometry<T>>& pol);
 template <typename T>
 bool empty(const Collection<T>& g);
 
+// True if F is a projection function. Used to disable the std::string
+// overloads of the *FromWKTProj functions for calls like
+// lineFromWKTProj<T>(c, 0, projFunc)
+template <typename F>
+struct IsProjFunc {
+  typedef typename std::decay<F>::type D;
+  static const bool value =
+      !std::is_integral<D>::value && !std::is_same<D, std::nullptr_t>::value &&
+      !(std::is_pointer<D>::value &&
+        !std::is_function<typename std::remove_pointer<D>::type>::value);
+};
+
+class WKTParseException : public std::runtime_error {
+ public:
+  explicit WKTParseException(std::string const& msg)
+      : std::runtime_error(msg) {}
+};
+
 template <typename T, typename F>
-Line<T> lineFromWKTProj(const char* c, const char** endr, F projFunc);
+Line<T> lineFromWKTProj(const char* c, const char** endr, F projFunc,
+                        bool strict = false);
 
 // Overload used internally by other geometry parsers (e.g.
 // 'multiPointFromWKTProj'), which detect their 'CRSType' and pass it down to
 // this function. Otherwise the CRS IRI would be lost.
 template <typename T, typename F>
 Line<T> lineFromWKTProj(const char* c, const char** endr, F projFunc,
-                        CRSType sourceCRS);
+                        CRSType sourceCRS, bool strict = false);
 
 template <typename T>
-Line<T> lineFromWKT(const char* c, const char** endr);
+Line<T> lineFromWKT(const char* c, const char** endr, bool strict = false);
 
 template <typename T>
-MultiLine<T> multiLineFromWKT(const char* c, const char** endr);
+MultiLine<T> multiLineFromWKT(const char* c, const char** endr,
+                              bool strict = false);
 
 template <typename T, typename F>
 MultiPoint<T> multiPointFromWKTProj(const char* c, const char** endr,
-                                    F projFunc);
+                                    F projFunc, bool strict = false);
 
 // Overload used internally by other geometry parsers (e.g.
 // 'multiPointFromWKT'), which detect their 'CRSType' and pass it down to this
 // function. Otherwise the CRS IRI would be lost.
 template <typename T, typename F>
 MultiPoint<T> multiPointFromWKTProj(const char* c, const char** endr,
-                                    F projFunc, CRSType sourceCRS);
+                                    F projFunc, CRSType sourceCRS,
+                                    bool strict = false);
 
 template <typename T>
-MultiPoint<T> multiPointFromWKT(const char* c, const char** endr);
+MultiPoint<T> multiPointFromWKT(const char* c, const char** endr,
+                                bool strict = false);
 
 template <typename T>
-MultiPoint<T> multiPointFromWKT(const std::string& wkt);
+MultiPoint<T> multiPointFromWKT(const std::string& wkt, bool strict = false);
+
+template <typename T, typename F,
+          typename = typename std::enable_if<IsProjFunc<F>::value>::type>
+MultiPoint<T> multiPointFromWKTProj(const std::string& wkt, F&& projFunc,
+                                    bool strict = false);
 
 template <typename T, typename F>
-MultiPoint<T> multiPointFromWKTProj(const std::string& wkt, F&& projFunc);
-
-template <typename T, typename F>
-Point<T> pointFromWKTProj(const char* c, const char** endr, F projFunc);
+Point<T> pointFromWKTProj(const char* c, const char** endr, F projFunc,
+                          bool strict = false);
 
 // Overload used internally by other geometry parsers (e.g.
 // 'collectionFromWKTProj'), which detect their 'CRSType' and pass it down to
 // this function. Otherwise the CRS IRI would be lost.
 template <typename T, typename F>
 Point<T> pointFromWKTProj(const char* c, const char** endr, F projFunc,
-                          CRSType sourceCRS);
+                          CRSType sourceCRS, bool strict = false);
 
 template <typename T>
-Point<T> pointFromWKT(const char* c, const char** endr);
+Point<T> pointFromWKT(const char* c, const char** endr, bool strict = false);
 
 template <typename T>
-Point<T> pointFromWKT(std::string wkt);
+Point<T> pointFromWKT(std::string wkt, bool strict = false);
+
+template <typename T, typename F,
+          typename = typename std::enable_if<IsProjFunc<F>::value>::type>
+Point<T> pointFromWKTProj(std::string wkt, F&& projFunc, bool strict = false);
 
 template <typename T, typename F>
-Point<T> pointFromWKTProj(std::string wkt, F&& projFunc);
-
-template <typename T, typename F>
-Polygon<T> polygonFromWKTProj(const char* c, const char** endr, F projFunc);
+Polygon<T> polygonFromWKTProj(const char* c, const char** endr, F projFunc,
+                              bool strict = false);
 
 // Overload used internally by other geometry parsers (e.g.
 // 'multiPolygonFromWKTProj'), which detect their 'CRSType' and pass it down to
 // this function. Otherwise the CRS IRI would be lost.
 template <typename T, typename F>
 Polygon<T> polygonFromWKTProj(const char* c, const char** endr, F projFunc,
-                              CRSType sourceCRS);
+                              CRSType sourceCRS, bool strict = false);
 
 template <typename T>
-Polygon<T> polygonFromWKT(const char* c, const char** endr);
+Polygon<T> polygonFromWKT(const char* c, const char** endr,
+                          bool strict = false);
 
 template <typename T>
-Polygon<T> polygonFromWKT(std::string wkt);
+Polygon<T> polygonFromWKT(std::string wkt, bool strict = false);
+
+template <typename T, typename F,
+          typename = typename std::enable_if<IsProjFunc<F>::value>::type>
+Polygon<T> polygonFromWKTProj(std::string wkt, F projFunc, bool strict = false);
 
 template <typename T, typename F>
-Polygon<T> polygonFromWKTProj(std::string wkt, F projFunc);
-
-template <typename T, typename F>
-MultiLine<T> multiLineFromWKTProj(const char* c, const char** endr, F projFunc);
+MultiLine<T> multiLineFromWKTProj(const char* c, const char** endr, F projFunc,
+                                  bool strict = false);
 
 // Overload used internally by other geometry parsers (e.g.
 // 'multiPointFromWKTProj'), which detect their 'CRSType' and pass it down to
 // this function. Otherwise the CRS IRI would be lost.
 template <typename T, typename F>
 MultiLine<T> multiLineFromWKTProj(const char* c, const char** endr, F projFunc,
-                                  CRSType sourceCRS);
+                                  CRSType sourceCRS, bool strict = false);
 
 template <typename T, typename F>
 MultiPolygon<T> multiPolygonFromWKTProj(const char* c, const char** endr,
-                                        F projFunc);
+                                        F projFunc, bool strict = false);
 
 // Overload used internally by other geometry parsers (e.g.
 // 'collectionFromWKTProj'), which detect their 'CRSType' and pass it down to
 // this function. Otherwise the CRS IRI would be lost.
 template <typename T, typename F>
 MultiPolygon<T> multiPolygonFromWKTProj(const char* c, const char** endr,
-                                        F projFunc, CRSType sourceCRS);
+                                        F projFunc, CRSType sourceCRS,
+                                        bool strict = false);
 
 template <typename T>
-MultiPolygon<T> multiPolygonFromWKT(const char* c, const char** endr);
+MultiPolygon<T> multiPolygonFromWKT(const char* c, const char** endr,
+                                    bool strict = false);
 
 WKTType getWKTType(const char* c, const char** endr);
 
@@ -1075,41 +1129,52 @@ CRSType getCRSType(const std::string& str);
 
 template <typename T, typename F>
 Collection<T> collectionFromWKTProj(const char* c, const char** endr,
-                                    F&& projFunc);
+                                    F&& projFunc, bool strict = false);
 
 // Overload used internally by other geometry parsers (e.g.
 // 'collectionFromWKT'), which detect their 'CRSType' and pass it down to this
 // function. Otherwise the CRS IRI would be lost.
 template <typename T, typename F>
 Collection<T> collectionFromWKTProj(const char* c, const char** endr,
-                                    F projFunc, CRSType sourceCRS);
+                                    F projFunc, CRSType sourceCRS,
+                                    bool strict = false);
 
 template <typename T>
-Collection<T> collectionFromWKT(const char* c, const char** endr);
+Collection<T> collectionFromWKT(const char* c, const char** endr,
+                                bool strict = false);
 
 template <typename T>
-Line<T> lineFromWKT(const std::string& wkt);
+Line<T> lineFromWKT(const std::string& wkt, bool strict = false);
 
-template <typename T, typename F>
-Line<T> lineFromWKTProj(const std::string& wkt, F&& projFunc);
-
-template <typename T>
-MultiLine<T> multiLineFromWKT(const std::string& wkt);
-
-template <typename T, typename F>
-MultiLine<T> multiLineFromWKTProj(const std::string& wkt, F&& projFunc);
+template <typename T, typename F,
+          typename = typename std::enable_if<IsProjFunc<F>::value>::type>
+Line<T> lineFromWKTProj(const std::string& wkt, F&& projFunc,
+                        bool strict = false);
 
 template <typename T>
-MultiPolygon<T> multiPolygonFromWKT(const std::string& wkt);
+MultiLine<T> multiLineFromWKT(const std::string& wkt, bool strict = false);
 
-template <typename T, typename F>
-MultiPolygon<T> multiPolygonFromWKTProj(const std::string& wkt, F&& projFunc);
+template <typename T, typename F,
+          typename = typename std::enable_if<IsProjFunc<F>::value>::type>
+MultiLine<T> multiLineFromWKTProj(const std::string& wkt, F&& projFunc,
+                                  bool strict = false);
 
 template <typename T>
-Collection<T> collectionFromWKT(const std::string& wkt);
+MultiPolygon<T> multiPolygonFromWKT(const std::string& wkt,
+                                    bool strict = false);
 
-template <typename T, typename F>
-Collection<T> collectionFromWKTProj(const std::string& wkt, F&& projFunc);
+template <typename T, typename F,
+          typename = typename std::enable_if<IsProjFunc<F>::value>::type>
+MultiPolygon<T> multiPolygonFromWKTProj(const std::string& wkt, F&& projFunc,
+                                        bool strict = false);
+
+template <typename T>
+Collection<T> collectionFromWKT(const std::string& wkt, bool strict = false);
+
+template <typename T, typename F,
+          typename = typename std::enable_if<IsProjFunc<F>::value>::type>
+Collection<T> collectionFromWKTProj(const std::string& wkt, F&& projFunc,
+                                    bool strict = false);
 
 template <typename T>
 double len(const Point<T>&);
@@ -1180,11 +1245,35 @@ template <typename T, typename DF>
 double distToSegment(const LineSegment<T>& ls, const Point<T>& p,
                      DF&& distFunc);
 
-double distToSegment(double lax, double lay, double lbx, double lby, double px,
-                     double py);
+inline double distToSegment(double lax, double lay, double lbx, double lby,
+                            double px, double py) {
+  double dx = lbx - lax;
+  double dy = lby - lay;
+  double d = dx * dx + dy * dy;
+  if (d == 0) return dist(px, py, lax, lay);
 
-double distToSegmentSquared(double lax, double lay, double lbx, double lby,
-                            double px, double py);
+  double dot = (px - lax) * dx + (py - lay) * dy;
+  if (dot <= 0) return dist(px, py, lax, lay);
+  if (dot >= d) return dist(px, py, lbx, lby);
+
+  double t = dot / d;
+  return dist(px, py, lax + t * dx, lay + t * dy);
+}
+
+inline double distToSegmentSquared(double lax, double lay, double lbx,
+                                   double lby, double px, double py) {
+  double dx = lbx - lax;
+  double dy = lby - lay;
+  double d = dx * dx + dy * dy;
+  if (d == 0) return distSquared(px, py, lax, lay);
+
+  double dot = (px - lax) * dx + (py - lay) * dy;
+  if (dot <= 0) return distSquared(px, py, lax, lay);
+  if (dot >= d) return distSquared(px, py, lbx, lby);
+
+  double t = dot / d;
+  return distSquared(px, py, lax + t * dx, lay + t * dy);
+}
 
 template <typename T>
 double distToSegment(const Point<T>& la, const Point<T>& lb, const Point<T>& p);
