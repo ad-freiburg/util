@@ -165,7 +165,11 @@ enum CRSType : uint8_t {
   WEB_MERCATOR = 3,
 };
 
-uint8_t boolArrToInt8(const std::array<bool, 8> arr);
+inline uint8_t boolArrToInt8(const std::array<bool, 8> arr) {
+  uint8_t ret = 0;
+  for (size_t i = 0; i < 8; i++) ret |= (uint8_t)arr[i] << i;
+  return ret;
+}
 
 template <typename T>
 Box<T> pad(const Box<T>& box, double xPadding, double yPadding);
@@ -298,7 +302,7 @@ Box<T> minbox();
 template <typename T>
 RotatedBox<T> shrink(const RotatedBox<T>& b, double d);
 
-bool doubleEq(double a, double b);
+inline bool doubleEq(double a, double b) { return fabs(a - b) < EPSILON; }
 
 template <typename T>
 std::string getWKT(const Point<T>& p, uint16_t prec);
@@ -720,7 +724,7 @@ template <typename T>
 bool lineIntersects(const Point<T>& p1, const Point<T>& q1, const Point<T>& p2,
                     const Point<T>& q2);
 
-double angBetween(double p1x, double p1y);
+inline double angBetween(double p1x, double p1y) { return atan2(p1x, p1y); }
 
 template <typename T>
 double angBetween(const Point<T>& p1);
@@ -728,8 +732,12 @@ double angBetween(const Point<T>& p1);
 template <typename T>
 double angBetween(const Point<T>& p1, const MultiPoint<T>& points);
 
-double dist(double x1, double y1, double x2, double y2);
-double distSquared(double x1, double y1, double x2, double y2);
+inline double dist(double x1, double y1, double x2, double y2) {
+  return sqrt((x2 - x1) * (x2 - x1) + (y2 - y1) * (y2 - y1));
+}
+inline double distSquared(double x1, double y1, double x2, double y2) {
+  return (x2 - x1) * (x2 - x1) + (y2 - y1) * (y2 - y1);
+}
 
 template <typename T, typename DF>
 double dist(const LineSegment<T>& ls, const Point<T>& p, DF&& distFunc);
@@ -902,13 +910,25 @@ double dist(const std::vector<GeometryA<T>>& multigeomA,
                   euclideanDistFunc<T>));
 }
 
-double innerProd(double x1, double y1, double x2, double y2, double x3,
-                 double y3);
+inline double innerProd(double x1, double y1, double x2, double y2, double x3,
+                        double y3) {
+  double dx21 = x2 - x1;
+  double dx31 = x3 - x1;
+  double dy21 = y2 - y1;
+  double dy31 = y3 - y1;
+  double m12 = sqrt(dx21 * dx21 + dy21 * dy21);
+  double m13 = sqrt(dx31 * dx31 + dy31 * dy31);
+  double theta = acos(std::min((dx21 * dx31 + dy21 * dy31) / (m12 * m13), 1.0));
+
+  return theta * IRAD;
+}
 
 template <typename T>
 double innerProd(const Point<T>& a, const Point<T>& b, const Point<T>& c);
 
-double crossProd(double x1, double y1, double x2, double y2);
+inline double crossProd(double x1, double y1, double x2, double y2) {
+  return x1 * y2 - x2 * y1;
+}
 
 template <typename T>
 double crossProd(const Point<T>& a, const Point<T>& b);
@@ -1225,11 +1245,35 @@ template <typename T, typename DF>
 double distToSegment(const LineSegment<T>& ls, const Point<T>& p,
                      DF&& distFunc);
 
-double distToSegment(double lax, double lay, double lbx, double lby, double px,
-                     double py);
+inline double distToSegment(double lax, double lay, double lbx, double lby,
+                            double px, double py) {
+  double dx = lbx - lax;
+  double dy = lby - lay;
+  double d = dx * dx + dy * dy;
+  if (d == 0) return dist(px, py, lax, lay);
 
-double distToSegmentSquared(double lax, double lay, double lbx, double lby,
-                            double px, double py);
+  double dot = (px - lax) * dx + (py - lay) * dy;
+  if (dot <= 0) return dist(px, py, lax, lay);
+  if (dot >= d) return dist(px, py, lbx, lby);
+
+  double t = dot / d;
+  return dist(px, py, lax + t * dx, lay + t * dy);
+}
+
+inline double distToSegmentSquared(double lax, double lay, double lbx,
+                                   double lby, double px, double py) {
+  double dx = lbx - lax;
+  double dy = lby - lay;
+  double d = dx * dx + dy * dy;
+  if (d == 0) return distSquared(px, py, lax, lay);
+
+  double dot = (px - lax) * dx + (py - lay) * dy;
+  if (dot <= 0) return distSquared(px, py, lax, lay);
+  if (dot >= d) return distSquared(px, py, lbx, lby);
+
+  double t = dot / d;
+  return distSquared(px, py, lax + t * dx, lay + t * dy);
+}
 
 template <typename T>
 double distToSegment(const Point<T>& la, const Point<T>& lb, const Point<T>& p);
