@@ -275,5 +275,13 @@ void GeoTest::testWktParseLine() {
              std::string("LINESTRING(0 0, 1)"),
              util::geo::projectToCRS84<double>)),
          ==, "LINESTRING()");
+
+    TEST(getWKT(util::geo::lineFromWKTProj<double>(
+             "LINESTRING(0 0, 1 1)", 0, util::geo::projectToCRS84<double>)),
+         ==, "LINESTRING(0 0,1 1)");
+    TEST(getWKT(util::geo::lineFromWKTProj<double>(
+             "LINESTRING(0 0, 1 1)", nullptr,
+             [](const util::geo::DPoint& p, util::geo::CRSType) { return p; })),
+         ==, "LINESTRING(0 0,1 1)");
   }
 }

@@ -145,5 +145,10 @@ void GeoTest::testWktParsePolygon() {
     TEST(getWKT(util::geo::polygonFromWKTProj<double>(
              std::string("POLYGON()"), util::geo::projectToCRS84<double>)),
          ==, "POLYGON()");
+
+    TEST(getWKT(util::geo::polygonFromWKTProj<double>(
+             "POLYGON((0 0, 1 0, 1 1, 0 0))", 0,
+             util::geo::projectToCRS84<double>)),
+         ==, "POLYGON((0 0,1 0,1 1,0 0))");
   }
 }

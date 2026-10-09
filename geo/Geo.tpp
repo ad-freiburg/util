@@ -4574,7 +4574,7 @@ MultiPoint<T> multiPointFromWKT(const std::string& wkt, bool strict) {
 }
 
 // _____________________________________________________________________________
-template <typename T, typename F>
+template <typename T, typename F, typename>
 MultiPoint<T> multiPointFromWKTProj(const std::string& wkt, F&& projFunc,
                                     bool strict) {
   return multiPointFromWKTProj<T>(wkt.c_str(), 0, projFunc, strict);
@@ -4666,7 +4666,7 @@ Point<T> pointFromWKT(std::string wkt, bool strict) {
 }
 
 // _____________________________________________________________________________
-template <typename T, typename F>
+template <typename T, typename F, typename>
 Point<T> pointFromWKTProj(std::string wkt, F&& projFunc, bool strict) {
   return pointFromWKTProj<T>(wkt.c_str(), 0, projFunc, strict);
 }
@@ -4761,7 +4761,7 @@ Polygon<T> polygonFromWKT(std::string wkt, bool strict) {
 }
 
 // _____________________________________________________________________________
-template <typename T, typename F>
+template <typename T, typename F, typename>
 Polygon<T> polygonFromWKTProj(std::string wkt, F projFunc, bool strict) {
   return polygonFromWKTProj<T>(wkt.c_str(), 0, projFunc, strict);
 }
@@ -5095,7 +5095,7 @@ Line<T> lineFromWKT(const std::string& wkt, bool strict) {
 }
 
 // _____________________________________________________________________________
-template <typename T, typename F>
+template <typename T, typename F, typename>
 Line<T> lineFromWKTProj(const std::string& wkt, F&& projFunc, bool strict) {
   return lineFromWKTProj<T>(wkt.c_str(), 0, projFunc, strict);
 }
@@ -5107,7 +5107,7 @@ MultiLine<T> multiLineFromWKT(const std::string& wkt, bool strict) {
 }
 
 // _____________________________________________________________________________
-template <typename T, typename F>
+template <typename T, typename F, typename>
 MultiLine<T> multiLineFromWKTProj(const std::string& wkt, F&& projFunc,
                                   bool strict) {
   return multiLineFromWKTProj<T>(wkt.c_str(), 0, projFunc, strict);
@@ -5120,7 +5120,7 @@ MultiPolygon<T> multiPolygonFromWKT(const std::string& wkt, bool strict) {
 }
 
 // _____________________________________________________________________________
-template <typename T, typename F>
+template <typename T, typename F, typename>
 MultiPolygon<T> multiPolygonFromWKTProj(const std::string& wkt, F&& projFunc,
                                         bool strict) {
   return multiPolygonFromWKTProj<T>(wkt.c_str(), 0, projFunc, strict);
@@ -5133,7 +5133,7 @@ Collection<T> collectionFromWKT(const std::string& wkt, bool strict) {
 }
 
 // _____________________________________________________________________________
-template <typename T, typename F>
+template <typename T, typename F, typename>
 Collection<T> collectionFromWKTProj(const std::string& wkt, F&& projFunc,
                                     bool strict) {
   return collectionFromWKTProj<T>(wkt.c_str(), 0, projFunc, strict);
@@ -6546,8 +6546,6 @@ Point<T> latLngToLngLat(Point<T> latLng) {
 }
 
 // _____________________________________________________________________________
-// This function can be used to transform a `Point` with any valid `CRSType`
-// into a `Point` of a desired valid `CRSType` `crs`.
 template <typename T>
 Point<T> projectToCRS(const Point<T>& p, CRSType baseCRS, CRSType goalCRS) {
   if (baseCRS == goalCRS) return p;

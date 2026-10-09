@@ -14,6 +14,7 @@
 #include <functional>
 #include <sstream>
 #include <stdexcept>
+#include <type_traits>
 
 #include "util/Misc.h"
 #include "util/String.h"
@@ -964,6 +965,18 @@ size_t empty(const std::vector<Geometry<T>>& pol);
 template <typename T>
 bool empty(const Collection<T>& g);
 
+// True if F is a projection function. Used to disable the std::string
+// overloads of the *FromWKTProj functions for calls like
+// lineFromWKTProj<T>(c, 0, projFunc)
+template <typename F>
+struct IsProjFunc {
+  typedef typename std::decay<F>::type D;
+  static const bool value =
+      !std::is_integral<D>::value && !std::is_same<D, std::nullptr_t>::value &&
+      !(std::is_pointer<D>::value &&
+        !std::is_function<typename std::remove_pointer<D>::type>::value);
+};
+
 class WKTParseException : public std::runtime_error {
  public:
   explicit WKTParseException(std::string const& msg)
@@ -1007,7 +1020,8 @@ MultiPoint<T> multiPointFromWKT(const char* c, const char** endr,
 template <typename T>
 MultiPoint<T> multiPointFromWKT(const std::string& wkt, bool strict = false);
 
-template <typename T, typename F>
+template <typename T, typename F,
+          typename = typename std::enable_if<IsProjFunc<F>::value>::type>
 MultiPoint<T> multiPointFromWKTProj(const std::string& wkt, F&& projFunc,
                                     bool strict = false);
 
@@ -1028,7 +1042,8 @@ Point<T> pointFromWKT(const char* c, const char** endr, bool strict = false);
 template <typename T>
 Point<T> pointFromWKT(std::string wkt, bool strict = false);
 
-template <typename T, typename F>
+template <typename T, typename F,
+          typename = typename std::enable_if<IsProjFunc<F>::value>::type>
 Point<T> pointFromWKTProj(std::string wkt, F&& projFunc, bool strict = false);
 
 template <typename T, typename F>
@@ -1049,7 +1064,8 @@ Polygon<T> polygonFromWKT(const char* c, const char** endr,
 template <typename T>
 Polygon<T> polygonFromWKT(std::string wkt, bool strict = false);
 
-template <typename T, typename F>
+template <typename T, typename F,
+          typename = typename std::enable_if<IsProjFunc<F>::value>::type>
 Polygon<T> polygonFromWKTProj(std::string wkt, F projFunc, bool strict = false);
 
 template <typename T, typename F>
@@ -1110,14 +1126,16 @@ Collection<T> collectionFromWKT(const char* c, const char** endr,
 template <typename T>
 Line<T> lineFromWKT(const std::string& wkt, bool strict = false);
 
-template <typename T, typename F>
+template <typename T, typename F,
+          typename = typename std::enable_if<IsProjFunc<F>::value>::type>
 Line<T> lineFromWKTProj(const std::string& wkt, F&& projFunc,
                         bool strict = false);
 
 template <typename T>
 MultiLine<T> multiLineFromWKT(const std::string& wkt, bool strict = false);
 
-template <typename T, typename F>
+template <typename T, typename F,
+          typename = typename std::enable_if<IsProjFunc<F>::value>::type>
 MultiLine<T> multiLineFromWKTProj(const std::string& wkt, F&& projFunc,
                                   bool strict = false);
 
@@ -1125,14 +1143,16 @@ template <typename T>
 MultiPolygon<T> multiPolygonFromWKT(const std::string& wkt,
                                     bool strict = false);
 
-template <typename T, typename F>
+template <typename T, typename F,
+          typename = typename std::enable_if<IsProjFunc<F>::value>::type>
 MultiPolygon<T> multiPolygonFromWKTProj(const std::string& wkt, F&& projFunc,
                                         bool strict = false);
 
 template <typename T>
 Collection<T> collectionFromWKT(const std::string& wkt, bool strict = false);
 
-template <typename T, typename F>
+template <typename T, typename F,
+          typename = typename std::enable_if<IsProjFunc<F>::value>::type>
 Collection<T> collectionFromWKTProj(const std::string& wkt, F&& projFunc,
                                     bool strict = false);
 
