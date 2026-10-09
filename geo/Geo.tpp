@@ -789,14 +789,10 @@ std::string getWKT(const Collection<T>& coll) {
 template <typename T>
 bool contains(const Point<T>& p, const Box<T>& box) {
   // check if point lies in box
-  return (fabs(p.getX() - box.getLowerLeft().getX()) < EPSILON ||
-          p.getX() > box.getLowerLeft().getX()) &&
-         (fabs(p.getX() - box.getUpperRight().getX()) < EPSILON ||
-          p.getX() < box.getUpperRight().getX()) &&
-         (fabs(p.getY() - box.getLowerLeft().getY()) < EPSILON ||
-          p.getY() > box.getLowerLeft().getY()) &&
-         (fabs(p.getY() - box.getUpperRight().getY()) < EPSILON ||
-          p.getY() < box.getUpperRight().getY());
+  return p.getX() > box.getLowerLeft().getX() - EPSILON &&
+         p.getX() < box.getUpperRight().getX() + EPSILON &&
+         p.getY() > box.getLowerLeft().getY() - EPSILON &&
+         p.getY() < box.getUpperRight().getY() + EPSILON;
 }
 
 // _____________________________________________________________________________
