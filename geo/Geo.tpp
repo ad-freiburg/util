@@ -90,7 +90,7 @@ Point<T> ringCentroid(const Line<T>& ls) {
 // _____________________________________________________________________________
 template <typename T>
 Point<T> centroid(const Polygon<T>& o) {
-  if (o.getOuter().size() == 0) return {0, 0};  // undefined behavior
+  if (o.empty()) return {0, 0};  // undefined behavior
   double sumA = 0, x = 0, y = 0;
 
   double outerArea = ringArea(o.getOuter());
@@ -655,7 +655,7 @@ std::string getWKT(const Box<T>& l) {
 // _____________________________________________________________________________
 template <typename T>
 std::string getWKT(const Polygon<T>& p, uint16_t prec) {
-  if (p.getOuter().size() == 0) return "POLYGON()";
+  if (p.empty()) return "POLYGON()";
   std::string ret = "POLYGON((";
   ret.reserve(7 + 2 + p.getOuter().size() * (prec + 3) * 2 + 2);
 
@@ -1011,8 +1011,8 @@ double withinDist(const XSortedCollection<T>& a, const XSortedCollection<T>& b,
                   DF&& distFunc) {
   double minDist = nextafter(maxDist, std::numeric_limits<double>::infinity());
 
-  if (a.size() == 0 || b.size() == 0)
-    return std::numeric_limits<double>::infinity();
+  if (a.empty() || b.empty())
+    return std::numeric_limits<double>::quiet_NaN();
 
   const auto& boxA = a.boundingBox();
   const auto& boxB = b.boundingBox();
@@ -1174,8 +1174,8 @@ std::pair<double, bool> withinDist(const Point<T>& p, const XSortedRing<T>& ph,
   //
   // returns {distance, contained}
 
-  if (ph.rawRing().size() == 0)
-    return {std::numeric_limits<double>::max(), false};
+  if (ph.empty())
+    return {std::numeric_limits<double>::quiet_NaN(), false};
 
   int8_t c = -1;
 
@@ -1271,6 +1271,9 @@ template <typename T, typename PF, typename DF>
 double withinDist(const Point<T>& p, const XSortedPolygon<T>& poly,
                   double maxDist, PF&& paddingFunc, double maxEuclideanDist,
                   DF&& distFunc) {
+  if (poly.empty())
+    return std::numeric_limits<double>::quiet_NaN();
+
   // first do the check in the outer boundary
   auto r = withinDist(p, poly.getOuter(), maxDist, paddingFunc,
                       maxEuclideanDist, distFunc);
@@ -1382,7 +1385,8 @@ double withinDist(const Point<T>& p, const XSortedLine<T>& line, double maxDist,
                   PF&& paddingFunc, double maxEuclideanDist, DF&& distFunc) {
   // check if point p lies on line
 
-  if (line.rawLine().size() == 0) return std::numeric_limits<double>::max();
+  if (line.empty())
+    return std::numeric_limits<double>::quiet_NaN();
 
   size_t i = 0;
 
@@ -1498,6 +1502,7 @@ std::tuple<bool, bool> intersectsContains(const Point<T>& p,
 // _____________________________________________________________________________
 template <typename T>
 DE9IMatrix DE9IM(const Point<T>& p, const XSortedLine<T>& line, size_t i) {
+  if (line.empty()) return MFF0FFFFF2;
   auto res = intersectsContains(p, line, i);
   if (std::get<1>(res)) return M0FFFFF102;
   if (std::get<0>(res)) return MF0FFFF102;
@@ -1513,9 +1518,10 @@ DE9IMatrix DE9IM(const Point<T>& p, const XSortedLine<T>& line) {
 // _____________________________________________________________________________
 template <typename T>
 DE9IMatrix DE9IM(const XSortedLine<T>& line, size_t i, const Point<T>& p) {
+  if (line.empty()) return MFFFFFF0F2;
   auto res = intersectsContains(p, line, i);
-  if (res.first) return M0F1FF0FF2;
-  if (res.second) return MFF1F00FF2;
+  if (std::get<1>(res)) return M0F1FF0FF2;
+  if (std::get<0>(res)) return MFF10F0FF2;
   return MFF1FF00F2;
 }
 
@@ -1571,6 +1577,7 @@ std::pair<bool, bool> containsCovers(const Point<T>& p,
 // _____________________________________________________________________________
 template <typename T>
 DE9IMatrix DE9IM(const Point<T>& p, const XSortedPolygon<T>& poly, size_t i) {
+  if (poly.empty()) return MFF0FFFFF2;
   auto res = containsCovers(p, poly, i);
   if (std::get<0>(res)) return M0FFFFF212;
   if (std::get<1>(res)) return MF0FFFF212;
@@ -1586,9 +1593,10 @@ DE9IMatrix DE9IM(const Point<T>& p, const XSortedPolygon<T>& poly) {
 // _____________________________________________________________________________
 template <typename T>
 DE9IMatrix DE9IM(const XSortedPolygon<T>& poly, size_t i, const Point<T>& p) {
+  if (poly.empty()) return MFFFFFF0F2;
   auto res = containsCovers(p, poly, i);
-  if (res.first) return M0F2FF1FF2;
-  if (res.second) return MFF20F1FF2;
+  if (std::get<0>(res)) return M0F2FF1FF2;
+  if (std::get<1>(res)) return MFF20F1FF2;
   return MFF2FF10F2;
 }
 
@@ -1805,7 +1813,7 @@ uint8_t intersectsHelper(const std::vector<XSortedTuple<T>>& ls1,
   // returns {intersects, strict intersects, inside, overlaps}
 
   // ls2 is assumed to be a polygon ring
-  if (ls1.size() == 0 || ls2.size() == 0) return 0;
+  if (ls1.empty() || ls2.empty()) return 0;
 
   // shortcuts
   if (ls1.front().p.getX() > ls2.back().p.getX()) return 0;
@@ -2126,6 +2134,10 @@ template <typename T>
 DE9IMatrix DE9IM(const util::geo::XSortedLine<T>& a,
                  const util::geo::XSortedLine<T>& b, size_t* firstRelIn1,
                  size_t* firstRelIn2) {
+  if (a.empty() && b.empty()) return MFFFFFFFF2;
+  if (b.empty()) return MFF1FF0FF2;
+  if (a.empty()) return MFFFFFF102;
+
   uint8_t ret = intersectsHelper<T, IntersectorLine>(
       a.rawLine(), b.rawLine(), a.getMaxSegLen(), b.getMaxSegLen(),
       a.boundingBox(), b.boundingBox(), firstRelIn1, firstRelIn2);
@@ -2840,7 +2852,7 @@ std::tuple<bool, bool, bool, bool, bool, bool> intersectsContainsInner(
   size_t firstRel1 = 0;
   size_t firstRel2 = 0;
 
-  if (a.rawLine().size() == 0 || b.rawRing().size() == 0)
+  if (a.empty() || b.empty())
     return {0, 0, 0, 0, 0, 0};
 
   auto borderInt = util::geo::intersectsPoly(
@@ -2885,7 +2897,7 @@ std::tuple<bool, bool, bool, bool, bool, bool, bool> intersectsContainsInner(
   // returns {intersects, contains, covered, border isect, border isect strict,
   // border overlaps, border isect strict reverse}
 
-  if (a.rawRing().size() == 0 || b.rawRing().size() == 0)
+  if (a.empty() || b.empty())
     return {0, 0, 0, 0, 0, 0, 0};
 
   size_t firstRel1 = 0;
@@ -2942,8 +2954,10 @@ template <typename T>
 DE9IMatrix DE9IM(const util::geo::XSortedLine<T>& a,
                  const util::geo::XSortedPolygon<T>& b, size_t* firstRel1,
                  size_t* firstRel2) {
-  if (a.rawLine().size() == 0) return MFF1FF0102;
-  if (b.getOuter().rawRing().size() < 2) return MFF1FF0102;
+  if (a.empty() && b.empty()) return MFFFFFFFF2;
+  if (b.empty()) return MFF1FF0FF2;
+  if (a.empty()) return MFFFFFF212;
+  if (b.getOuter().size() < 2) return MFF1FF0212;
 
   const auto boxA = a.boundingBox();
   const auto boxB = b.boundingBox();
@@ -3014,7 +3028,7 @@ DE9IMatrix DE9IM(const util::geo::XSortedLine<T>& a,
       auto res = intersectsContainsInner(a, b.getInners()[i]);
 
       if (std::get<1>(res)) {
-        return MFF1FF0102;  // a is completely contained by innerB
+        return MFF1FF0212;  // a is completely contained by innerB
       }
 
       if (std::get<2>(res)) {
@@ -3044,7 +3058,7 @@ DE9IMatrix DE9IM(const util::geo::XSortedLine<T>& a,
            (be << 10) | (ei << 12) | (eb << 14);
   }
 
-  return MFF1FF0102;
+  return MFF1FF0212;
 }
 
 // _____________________________________________________________________________
@@ -3103,6 +3117,9 @@ template <typename T>
 DE9IMatrix DE9IM(const util::geo::XSortedPolygon<T>& a,
                  const util::geo::XSortedPolygon<T>& b, size_t* firstRel1,
                  size_t* firstRel2) {
+  if (a.empty() && b.empty()) return MFFFFFFFF2;
+  if (b.empty()) return MFF2FF1FF2;
+  if (a.empty()) return MFFFFFF212;
   if (a.getOuter().rawRing().size() < 2) return MFF2FF1212;
   if (b.getOuter().rawRing().size() < 2) return MFF2FF1212;
 
@@ -3753,6 +3770,8 @@ double dist(const Point<T>& p, const Line<T>& l) {
 // _____________________________________________________________________________
 template <typename T>
 double withinDist(const Point<T>& p, const Line<T>& l, double maxD) {
+  if (l.empty()) return std::numeric_limits<double>::quiet_NaN();
+
   if (l.size() > 1000) {
     return withinDist(p, XSortedLine<T>(l), maxD);
   }
@@ -3770,6 +3789,7 @@ double withinDist(const Point<T>& p, const Line<T>& l, double maxD) {
 template <typename T, typename PF, typename DF>
 double withinDist(const Point<T>& p, const Line<T>& l, double maxDist,
                   PF&& paddingFunc, double maxEuclideanDist, DF&& distFunc) {
+  if (l.empty()) return std::numeric_limits<double>::quiet_NaN();
   if (l.size() > 1000) {
     return withinDist(p, XSortedLine<T>(l), maxDist, paddingFunc,
                       maxEuclideanDist, distFunc);
@@ -3851,6 +3871,9 @@ double dist(const Line<T>& la, const Line<T>& lb) {
 template <typename T, typename PF, typename DF>
 double withinDist(const Line<T>& la, const Line<T>& lb, double maxDist,
                   PF&& paddingFunc, double maxEuclideanDist, DF&& distFunc) {
+  if (la.empty() || lb.empty())
+    return std::numeric_limits<double>::quiet_NaN();
+
   if (la.size() * lb.size() > EST_CHECKS_THRESHOLD_XSORTED) {
     return withinDist(XSortedLine<T>(la), XSortedLine<T>(lb), maxDist,
                       paddingFunc, maxEuclideanDist, distFunc);
@@ -4143,10 +4166,28 @@ double crossProd(const Point<T>& p, const LineSegment<T>& ls) {
 }
 
 // _____________________________________________________________________________
+template <typename T, typename DF>
+double ringDist(const Ring<T>& a, const Ring<T>& b, DF&& distFunc) {
+  double d = dist(a, b, distFunc);
+  if (b.size() > 1)
+    d = std::min(d, dist(LineSegment<T>(b.back(), b.front()), a, distFunc));
+  if (a.size() > 1) {
+    LineSegment<T> closingA(a.back(), a.front());
+    d = std::min(d, dist(closingA, b, distFunc));
+    if (b.size() > 1)
+      d = std::min(
+          d, dist(closingA, LineSegment<T>(b.back(), b.front()), distFunc));
+  }
+  return d;
+};
+
+// _____________________________________________________________________________
 template <typename T, typename DF, typename PF>
 double withinDist(const Polygon<T>& poly1, const Polygon<T>& poly2,
                   double maxDist, PF&& paddingFunc, double maxEuclideanDist,
                   DF&& distFunc) {
+  if (poly1.empty() || poly2.empty())
+    return std::numeric_limits<double>::quiet_NaN();
   if (poly1.size() * poly2.size() > EST_CHECKS_THRESHOLD_XSORTED) {
     return withinDist(XSortedPolygon<T>(poly1), XSortedPolygon<T>(poly2),
                       maxDist, paddingFunc, maxEuclideanDist, distFunc);
@@ -4154,19 +4195,19 @@ double withinDist(const Polygon<T>& poly1, const Polygon<T>& poly2,
 
   if (intersects(poly1, poly2) || intersects(poly2, poly1)) return 0;
 
-  double d = dist(poly1.getOuter(), poly2.getOuter(), distFunc);
+  double d = ringDist(poly1.getOuter(), poly2.getOuter(), distFunc);
 
   for (const auto& inner1 : poly1.getInners()) {
-    d = std::min(d, dist(poly2.getOuter(), inner1, distFunc));
+    d = std::min(d, ringDist(poly2.getOuter(), inner1, distFunc));
   }
 
   for (const auto& inner2 : poly2.getInners()) {
-    d = std::min(d, dist(poly1.getOuter(), inner2, distFunc));
+    d = std::min(d, ringDist(poly1.getOuter(), inner2, distFunc));
   }
 
   for (const auto& inner1 : poly1.getInners()) {
     for (const auto& inner2 : poly2.getInners()) {
-      d = std::min(d, dist(inner1, inner2, distFunc));
+      d = std::min(d, ringDist(inner1, inner2, distFunc));
     }
   }
 
@@ -4190,6 +4231,8 @@ template <template <typename> class GeometryA,
 double withinDist(const std::vector<GeometryA<T>>& multi,
                   const GeometryB<T>& geom, double maxDist, PF&& paddingFunc,
                   double maxEuclideanDist, DF&& distFunc) {
+  if (multi.empty()) return std::numeric_limits<double>::quiet_NaN();
+
   // for larger multigeometries, fall back to pre-sorted implementation to avoid
   // unnecessary checks
   if (multi.size() > EST_MULTI_CHECKS_THRESHOLD_XSORTED)
@@ -4197,10 +4240,15 @@ double withinDist(const std::vector<GeometryA<T>>& multi,
                       maxDist, paddingFunc, maxEuclideanDist, distFunc);
 
   double minD = nextafter(maxDist, std::numeric_limits<double>::infinity());
+  bool nonEmptyFound = false;
   for (const auto& g1 : multi) {
-    minD = std::min(minD, withinDist(g1, geom, minD, paddingFunc,
-                                     maxEuclideanDist, distFunc));
+    double d =
+        withinDist(g1, geom, minD, paddingFunc, maxEuclideanDist, distFunc);
+    if (!std::isnan(d)) nonEmptyFound = true;
+    minD = std::min(minD, d);
   }
+
+  if (!nonEmptyFound) return std::numeric_limits<double>::quiet_NaN();
 
   return minD;
 }
@@ -4212,6 +4260,9 @@ template <template <typename> class GeometryA,
 double withinDist(const std::vector<GeometryA<T>>& multi1,
                   const std::vector<GeometryB<T>>& multi2, double maxDist,
                   PF&& paddingFunc, double maxEuclideanDist, DF&& distFunc) {
+  if (multi1.empty() || multi2.empty())
+    return std::numeric_limits<double>::quiet_NaN();
+
   // for larger multigeometries, fall back to pre-sorted implementation to avoid
   // quadratic pairwise checks
   if (multi1.size() * multi2.size() > EST_MULTI_CHECKS_THRESHOLD_XSORTED)
@@ -4220,12 +4271,17 @@ double withinDist(const std::vector<GeometryA<T>>& multi1,
                       maxEuclideanDist, distFunc);
 
   double minD = nextafter(maxDist, std::numeric_limits<double>::infinity());
+  bool nonEmptyFound = false;
   for (const auto& g1 : multi1) {
     for (const auto& g2 : multi2) {
-      minD = std::min(minD, withinDist(g1, g2, minD, paddingFunc,
-                                       maxEuclideanDist, distFunc));
+      double d =
+          withinDist(g1, g2, minD, paddingFunc, maxEuclideanDist, distFunc);
+      if (!std::isnan(d)) nonEmptyFound = true;
+      minD = std::min(minD, d);
     }
   }
+
+  if (!nonEmptyFound) return std::numeric_limits<double>::quiet_NaN();
 
   return minD;
 }
@@ -4271,16 +4327,30 @@ double dist(const Polygon<T>& poly, const Line<T>& l, DF&& distFunc) {
 template <typename T, typename PF, typename DF>
 double withinDist(const Polygon<T>& poly, const Line<T>& l, double maxDist,
                   PF&& paddingFunc, double maxEuclideanDist, DF&& distFunc) {
+  if (poly.empty() || l.empty())
+    return std::numeric_limits<double>::quiet_NaN();
   if (l.size() * poly.size() > EST_CHECKS_THRESHOLD_XSORTED) {
     return withinDist(XSortedPolygon<T>(poly), XSortedLine<T>(l), maxDist,
                       paddingFunc, maxEuclideanDist, distFunc);
   }
 
   if (intersects(l, poly)) return 0;
-  double d = dist(l, poly.getOuter(), distFunc);
+
+  const auto& outer = poly.getOuter();
+  double d = dist(l, outer, distFunc);
+
+  // also check closing seg
+  if (outer.size() > 1)
+    d = std::min(
+        d, dist(LineSegment<T>(outer.back(), outer.front()), l, distFunc));
 
   for (const auto& inner : poly.getInners()) {
     d = std::min(d, dist(l, inner, distFunc));
+
+    // also check closing seg
+    if (inner.size() > 1)
+      d = std::min(
+          d, dist(LineSegment<T>(inner.back(), inner.front()), l, distFunc));
   }
 
   return d;
@@ -4310,16 +4380,28 @@ double dist(const Polygon<T>& poly, const Point<T>& p, DF&& distFunc) {
 template <typename T, typename PF, typename DF>
 double withinDist(const Point<T>& p, const Polygon<T>& poly, double maxDist,
                   PF&& paddingFunc, double maxEuclideanDist, DF&& distFunc) {
+  if (poly.empty())
+    return std::numeric_limits<double>::quiet_NaN();
   if (poly.size() > EST_CHECKS_THRESHOLD_XSORTED) {
     return withinDist(p, XSortedPolygon<T>(poly), maxDist, paddingFunc,
                       maxEuclideanDist, distFunc);
   }
 
   if (contains(p, poly)) return 0;
-  double d = dist(p, poly.getOuter(), distFunc);
+
+  const auto& outer = poly.getOuter();
+  double d = dist(p, outer, distFunc);
+
+  // also check closing seg
+  if (outer.size() > 1)
+    d = std::min(d, distToSegment(outer.back(), outer.front(), p, distFunc));
 
   for (const auto& inner : poly.getInners()) {
     d = std::min(d, dist(p, inner, distFunc));
+
+    // also check closing seg
+    if (inner.size() > 1)
+      d = std::min(d, distToSegment(inner.back(), inner.front(), p, distFunc));
   }
 
   return d;
@@ -6666,6 +6748,9 @@ double withinDist(const std::vector<XSortedTuple<T>>& ls1,
                   T maxSegLenB, const Box<T>& boxA, const Box<T>& boxB,
                   double maxDist, PF&& paddingFunc, double maxEuclideanDist,
                   DF&& distFunc) {
+  if (ls1.empty() || ls2.empty())
+    return std::numeric_limits<double>::quiet_NaN();
+
   if (util::geo::dist(boxA, boxB) > maxEuclideanDist) {
     return std::numeric_limits<double>::max();
   }
@@ -6674,9 +6759,6 @@ double withinDist(const std::vector<XSortedTuple<T>>& ls1,
   if (ls1.size() < ls2.size())
     return withinDist(ls2, ls1, maxSegLenB, maxSegLenA, boxB, boxA, maxDist,
                       paddingFunc, maxEuclideanDist, distFunc);
-
-  if (ls1.size() == 0 || ls2.size() == 0)
-    return std::numeric_limits<double>::max();
 
   auto probeDists =
       probeDistanceUpperBound(100, ls1, ls2, boxA, boxB, maxSegLenA, maxSegLenB,
@@ -6924,10 +7006,10 @@ std::pair<double, std::pair<bool, bool>> withinDist(
     return {a.first, {a.second, false}};
   }
 
-  if (p1.rawRing().size() == 0)
-    return {std::numeric_limits<double>::max(), {false, false}};
-  if (p2.rawRing().size() == 0)
-    return {std::numeric_limits<double>::max(), {false, false}};
+  if (p1.empty())
+    return {std::numeric_limits<double>::quiet_NaN(), {false, false}};
+  if (p2.empty())
+    return {std::numeric_limits<double>::quiet_NaN(), {false, false}};
 
   const Box<T> boxA = p1.boundingBox();
   const Box<T> boxB = p2.boundingBox();
@@ -6968,10 +7050,10 @@ std::pair<double, bool> withinDist(const XSortedLine<T>& ls1,
             false};
   }
 
-  if (ls1.rawLine().size() == 0)
-    return {std::numeric_limits<double>::max(), false};
-  if (p2.rawRing().size() == 0)
-    return {std::numeric_limits<double>::max(), false};
+  if (ls1.empty())
+    return {std::numeric_limits<double>::quiet_NaN(), false};
+  if (p2.empty())
+    return {std::numeric_limits<double>::quiet_NaN(), false};
 
   double ringDist = util::geo::withinDist(
       ls1.rawLine(), p2.rawRing(), ls1.getMaxSegLen(), p2.getMaxSegLen(),
@@ -6991,6 +7073,9 @@ template <typename T, typename PF, typename DF>
 double withinDist(const XSortedLine<T>& a, const XSortedPolygon<T>& b,
                   double maxDist, PF&& paddingFunc, double maxEuclideanDist,
                   DF&& distFunc) {
+  if (a.empty() || b.empty())
+    return std::numeric_limits<double>::quiet_NaN();
+
   if (util::geo::dist(a.boundingBox(), b.boundingBox()) > maxEuclideanDist)
     return nextafter(maxDist, std::numeric_limits<double>::infinity());
 
@@ -7055,10 +7140,9 @@ template <typename T, typename PF, typename DF>
 double withinDist(const XSortedPolygon<T>& p1, const XSortedPolygon<T>& p2,
                   double maxDist, PF&& paddingFunc, double maxEuclideanDist,
                   DF&& distFunc) {
-  if (p1.getOuter().rawRing().size() == 0)
-    return nextafter(maxDist, std::numeric_limits<double>::infinity());
-  if (p2.getOuter().rawRing().size() == 0)
-    return nextafter(maxDist, std::numeric_limits<double>::infinity());
+  if (p1.empty() || p2.empty())
+    return std::numeric_limits<double>::quiet_NaN();
+
   if (util::geo::dist(p1.boundingBox(), p2.boundingBox()) > maxEuclideanDist)
     return nextafter(maxDist, std::numeric_limits<double>::infinity());
 

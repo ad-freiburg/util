@@ -131,6 +131,7 @@ void XSortedCollection<T>::add(const Point<T>& p) {
 // _____________________________________________________________________________
 template <typename T>
 void XSortedCollection<T>::add(const XSortedLine<T>& l) {
+  if (l.size() == 0) return;
   _lines.push_back(l);
   _bbox = util::geo::extendBox(_lines.back().boundingBox(), _bbox);
   _sweepEvents.push_back({_lines.back().boundingBox().getLowerLeft().getX(),
@@ -148,6 +149,7 @@ void XSortedCollection<T>::add(const XSortedLine<T>& l) {
 // _____________________________________________________________________________
 template <typename T>
 void XSortedCollection<T>::add(const XSortedPolygon<T>& p) {
+  if (p.empty()) return;
   _polygons.push_back(p);
   _bbox = util::geo::extendBox(_polygons.back().boundingBox(), _bbox);
   _sweepEvents.push_back({_polygons.back().boundingBox().getLowerLeft().getX(),
