@@ -15,4 +15,6 @@
 #define _GET_TEST_MACRO(_1,_2,_3,NAME,...) NAME
 #define TEST(...) _GET_TEST_MACRO(__VA_ARGS__, _TEST3, _TEST2, _TEST1, UNUSED)(__VA_ARGS__)
 
+#define TEST_THROWS(e, ...) {bool __thrown = false; try { (void)(__VA_ARGS__); } catch (const e&) { __thrown = true; } catch (...) {  std::cerr << "\n" << __FILE__ << ":" << __LINE__ << ": Test failed!\n  Expected " << #__VA_ARGS__ << " throw " <<  #e << ", threw something else" << std::endl;  exit(1);} if (!__thrown) {  std::cerr << "\n" << __FILE__ << ":" << __LINE__ << ": Test failed!\n  Expected " << #__VA_ARGS__ << " throw " << #e << ", threw nothing" << std::endl;  exit(1);}}
+
 #endif  // UTIL_TEST_H_

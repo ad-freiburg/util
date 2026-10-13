@@ -19,100 +19,6 @@
 #include "3rdparty/fmt/core.h"
 #include "String.h"
 
-// cached first 10 powers of 10
-static int util_first_10_pow_10[10] = {1,      10,      100,      1000,      10000,
-                        100000, 1000000, 10000000, 100000000, 1000000000};
-
-// _____________________________________________________________________________
-uint64_t util::factorial(uint64_t n) {
-  if (n < 2) return 1;
-  return n * factorial(n - 1);
-}
-
-// _____________________________________________________________________________
-uint64_t util::atoul(const char* p) {
-  uint64_t ret = 0;
-
-  while (*p) {
-    ret = ret * 10 + (*p++ - '0');
-  }
-
-  return ret;
-}
-
-// _____________________________________________________________________________
-bool util::isFloatingPoint(const std::string& str) {
-  std::stringstream ss(str);
-  double f;
-  ss >> std::noskipws >> f;
-  return ss.eof() && !ss.fail();
-}
-
-// _____________________________________________________________________________
-std::string util::formatFloat(double f, int DIGITS) {
-  std::string fStr = "{:." + std::to_string(DIGITS) + "f}";
-
-  fmt::memory_buffer buf;
-  fmt::vformat_to(std::back_inserter(buf), fStr, fmt::make_format_args(f));
-
-  auto ret = fmt::to_string(buf);
-
-  if (ret.back() == '0') {
-    if (ret.find('.') != std::string::npos) {
-      auto p = ret.find_last_not_of('0');
-      if (ret[p] == '.') return ret.substr(0, p);
-      return ret.substr(0, p + 1);
-    }
-  }
-
-  return ret;
-}
-
-// _____________________________________________________________________________
-double util::atof(const char* p, uint8_t mn) {
-  // this atof implementation works only on "normal" float strings like
-  // 56.445 or -345.00, but should be faster than std::atof
-  while (*p && (*p == ' ' || *p == '\n' || *p == '\t' || *p == '\r')) p++;
-
-  double ret = 0.0;
-  bool neg = false;
-  if (*p == '-') {
-    neg = true;
-    p++;
-  }
-
-  while (*p >= '0' && *p <= '9') {
-    ret = ret * 10.0 + (*p - '0');
-    p++;
-  }
-
-  if (*p == '.') {
-    p++;
-    double f = 0;
-    uint8_t n = 0;
-
-    for (; n < mn && *p >= '0' && *p <= '9'; n++, p++) {
-      f = f * 10.0 + (*p - '0');
-    }
-
-    if (n < 10) {
-      ret += f / util_first_10_pow_10[n];
-    } else {
-      double res = 1;
-      double base = 10;
-      while (n > 0) {
-        if (n & 1) res *= base;
-        base *= base;
-        n >>= 1;
-      }
-      ret += f / res;
-    }
-  }
-
-  if (neg) return -ret;
-  return ret;
-}
-
 // _____________________________________________________________________________
 ssize_t util::preadAll(int file, unsigned char* buf, size_t count,
                        size_t offset) {
@@ -203,9 +109,6 @@ ssize_t util::writeAll(int file, const unsigned char* buf, size_t count) {
 
   return count - rem;
 }
-
-// _____________________________________________________________________________
-double util::atof(const char* p) { return atof(p, 38); }
 
 // _____________________________________________________________________________
 std::string util::getHomeDir() {
