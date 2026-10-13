@@ -995,7 +995,7 @@ static void testDistLimitedPrecision() {
       "49.01783, 6.50056816701192 49.535220384133375, 6.0391423781112 "
       "51.804566644690524, 7.20369317867016 53.62121249029073))",
       [](const DPoint& p, CRSType) {
-        auto proj = util::geo::projectToWebMerc<double>(p, CRS84);
+        auto proj = util::geo::projectToWebMerc<double>(p, util::geo::CRSType::CRS84);
         return Point<int32_t>{static_cast<int32_t>(proj.getX() * 10),
                               static_cast<int32_t>(proj.getY() * 10)};
       });
@@ -1003,7 +1003,7 @@ static void testDistLimitedPrecision() {
       "POLYGON((-0.1198608 51.5027451,-0.1197395 51.5027354,-0.1194922 "
       "51.5039381,-0.1196135 51.5039478,-0.1198608 51.5027451))",
       [](const DPoint& p, CRSType) {
-        auto proj = util::geo::projectToWebMerc<double>(p, CRS84);
+        auto proj = util::geo::projectToWebMerc<double>(p, util::geo::CRSType::CRS84);
         return Point<int32_t>{static_cast<int32_t>(proj.getX() * 10),
                               static_cast<int32_t>(proj.getY() * 10)};
       });
