@@ -167,4 +167,78 @@ void GeoTest::testLineOps() {
     ml = rotate(ml, 45);
     TEST(parallelity(box, ml), ==, approx(1));
   }
+
+  // ___________________________________________________________________________
+  {
+    Line<int32_t> l{{0, 0}, {10, 0}, {12, 5}};
+    auto d = densifyX(l, 3);
+    TEST(d.size(), ==, 6);
+    TEST(d[0] == Point<int32_t>(0, 0));
+    TEST(d[1] == Point<int32_t>(3, 0));
+    TEST(d[2] == Point<int32_t>(5, 0));
+    TEST(d[3] == Point<int32_t>(8, 0));
+    TEST(d[4] == Point<int32_t>(10, 0));
+    TEST(d[5] == Point<int32_t>(12, 5));
+    for (size_t i = 1; i < d.size(); i++) {
+      TEST(std::abs(d[i].getX() - d[i - 1].getX()), <=, 3);
+    }
+
+    // nothing to split
+    TEST(densifyX(l, 10) == l);
+    TEST(densifyY(l, 5) == l);
+
+    // y direction
+    d = densifyY(l, 2);
+    TEST(d.size(), ==, 5);
+    TEST(d[2] == Point<int32_t>(11, 2));
+    TEST(d[3] == Point<int32_t>(11, 3));
+    TEST(d[4] == Point<int32_t>(12, 5));
+
+    Line<int32_t> r{{0, 0}, {2, 0}, {2, 2}, {-10, 2}};
+    TEST(densifyY(r, 1).size(), ==, 5);
+    TEST(densifyX(r, 4).size(), ==, 6);
+    TEST(densifyRingX(r, 4).size(), ==, 8);
+    TEST(densifyRingY(r, 1).size(), ==, 6);
+
+    Ring<int32_t> r2{{0, 0}, {-10, 2}, {2, 2}, {2, 0}};
+    d = densifyRingX(r2, 4);
+    TEST(d.size(), ==, 8);
+    TEST(d.front() == Point<int32_t>(0, 0));
+    TEST(d.back() == Point<int32_t>(2, 0));
+    for (size_t i = 0; i < d.size(); i++) {
+      TEST(std::abs(d[(i + 1) % d.size()].getX() - d[i].getX()), <=, 4);
+    }
+
+    Ring<int32_t> r3{{0, 0}, {10, 0}, {10, 1}, {0, 0}};
+    d = densifyRingX(r3, 5);
+    TEST(d.size(), ==, 6);
+    TEST(d.back() == Point<int32_t>(0, 0));
+
+    // floating point coordinates are not rounded
+    Line<double> ld{{0, 0}, {1, 1}};
+    auto dd = densifyX(ld, 0.4);
+    TEST(dd.size(), ==, 4);
+    TEST(dd[1].getX(), ==, approx(1.0 / 3));
+    TEST(dd[1].getY(), ==, approx(1.0 / 3));
+
+    // polygon, outer and inner rings
+    Polygon<int32_t> poly(Line<int32_t>{{0, 0}, {100, 0}, {100, 10}, {0, 10}},
+                          {Line<int32_t>{{10, 2}, {10, 8}, {90, 8}, {90, 2}}});
+    auto dp = densifyX(poly, 10);
+    TEST(dp.getOuter().size(), ==, 4 + 2 * 9);
+    TEST(dp.getInners().size(), ==, 1);
+    TEST(dp.getInners()[0].size(), ==, 4 + 2 * 7);
+    TEST(signedRingArea(dp.getOuter()), ==,
+         approx(signedRingArea(poly.getOuter())));
+    TEST(signedRingArea(dp.getInners()[0]), ==,
+         approx(signedRingArea(poly.getInners()[0])));
+
+    auto dpy = densifyY(poly, 2);
+    TEST(dpy.getOuter().size(), ==, 4 + 2 * 4);
+    TEST(dpy.getInners()[0].size(), ==, 4 + 2 * 2);
+    TEST(signedRingArea(dpy.getOuter()), ==,
+         approx(signedRingArea(poly.getOuter())));
+    TEST(signedRingArea(dpy.getInners()[0]), ==,
+         approx(signedRingArea(poly.getInners()[0])));
+  }
 }
