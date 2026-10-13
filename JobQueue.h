@@ -24,7 +24,13 @@ class JobQueue {
   }
 
   void reset() {
-    _jobs = {};
+    {
+      std::unique_lock<std::mutex> lock(_mut);
+      _jobs = {};
+    }
+
+    // wake up producers waiting for free space
+    _notFull.notify_all();
   }
 
   void add(const T &job) {
@@ -49,8 +55,10 @@ class JobQueue {
       // wait until a job arrives, but only block iff we do not have job
       _hasNew.wait(lockWaitHave, [this] { return !_jobs.empty(); });
 
-      next = _jobs.front();
-      if (next != T()) _jobs.pop();
+      if (_jobs.front() != T()) {
+        next = std::move(_jobs.front());
+        _jobs.pop();
+      }
     }
 
     // notify that we are not full anymore, but only if this is not the
