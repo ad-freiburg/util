@@ -1170,4 +1170,14 @@ void GeoTest::testLineLinePredicates() {
     TEST(!geo::intersects(a, b));
     TEST(!geo::intersects(b, a));
   }
+
+  {
+    XSortedLine<double> line(lineFromWKT<double>("LINESTRING(0 0, 10 0)"));
+    XSortedLine<double> emptyLine(lineFromWKT<double>("LINESTRING EMPTY"));
+    const auto allFalse = std::make_tuple(false, false, false, false, false);
+
+    TEST(geo::intersectsCovers(line, emptyLine) == allFalse);
+    TEST(geo::intersectsCovers(emptyLine, line) == allFalse);
+    TEST(geo::intersectsCovers(emptyLine, emptyLine) == allFalse);
+  }
 }

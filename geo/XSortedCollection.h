@@ -68,6 +68,8 @@ class XSortedCollection {
     return _polygons.size() + _lines.size() + _points.size();
   }
 
+  bool empty() const { return size() == 0; }
+
  private:
   std::vector<XSortedPolygon<T>> _polygons;
   std::vector<XSortedLine<T>> _lines;
