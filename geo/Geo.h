@@ -1040,7 +1040,8 @@ Line<T> lineFromWKTProj(const char* c, const char** endr, F projFunc,
 // this function. Otherwise the CRS IRI would be lost.
 template <typename T, typename F>
 Line<T> lineFromWKTProj(const char* c, const char** endr, F projFunc,
-                        CRSType sourceCRS, bool strict = false);
+                        CRSType sourceCRS, bool strict = false,
+                        bool allowSinglePoint = false);
 
 template <typename T>
 Line<T> lineFromWKT(const char* c, const char** endr, bool strict = false);
@@ -1125,7 +1126,8 @@ MultiLine<T> multiLineFromWKTProj(const char* c, const char** endr, F projFunc,
 // this function. Otherwise the CRS IRI would be lost.
 template <typename T, typename F>
 MultiLine<T> multiLineFromWKTProj(const char* c, const char** endr, F projFunc,
-                                  CRSType sourceCRS, bool strict = false);
+                                  CRSType sourceCRS, bool strict = false,
+                                  bool allowSinglePoint = false);
 
 template <typename T, typename F>
 MultiPolygon<T> multiPolygonFromWKTProj(const char* c, const char** endr,
@@ -1703,139 +1705,139 @@ double withinDist(const XSORTED<T>& b, const XSortedCollection<T>& a,
 template <typename T>
 double withinDist(const XSortedPolygon<T>& a, const XSortedPolygon<T>& b,
                   double maxDist) {
-  return withinDist(
-      a, b, maxDist, defaultPaddingFunc<T>(), maxDist, defaultDistFunc<T>());
+  return withinDist(a, b, maxDist, defaultPaddingFunc<T>(), maxDist,
+                    defaultDistFunc<T>());
 }
 
 template <typename T>
 double withinDist(const XSortedPolygon<T>& a, const XSortedLine<T>& b,
                   double maxDist) {
-  return withinDist(
-      a, b, maxDist, defaultPaddingFunc<T>(), maxDist, defaultDistFunc<T>());
+  return withinDist(a, b, maxDist, defaultPaddingFunc<T>(), maxDist,
+                    defaultDistFunc<T>());
 }
 
 template <typename T>
 double withinDist(const XSortedPolygon<T>& a, const XSortedCollection<T>& b,
                   double maxDist) {
-  return withinDist(
-      a, b, maxDist, defaultPaddingFunc<T>(), maxDist, defaultDistFunc<T>());
+  return withinDist(a, b, maxDist, defaultPaddingFunc<T>(), maxDist,
+                    defaultDistFunc<T>());
 }
 
 template <typename T>
 double withinDist(const XSortedPolygon<T>& a, const Point<T>& b,
                   double maxDist) {
-  return withinDist(
-      a, b, maxDist, defaultPaddingFunc<T>(), maxDist, defaultDistFunc<T>());
+  return withinDist(a, b, maxDist, defaultPaddingFunc<T>(), maxDist,
+                    defaultDistFunc<T>());
 }
 
 template <typename T>
 double withinDist(const XSortedLine<T>& a, const XSortedLine<T>& b,
                   double maxDist) {
-  return withinDist(
-      a, b, maxDist, defaultPaddingFunc<T>(), maxDist, defaultDistFunc<T>());
+  return withinDist(a, b, maxDist, defaultPaddingFunc<T>(), maxDist,
+                    defaultDistFunc<T>());
 }
 
 template <typename T>
 double withinDist(const XSortedLine<T>& a, const XSortedPolygon<T>& b,
                   double maxDist) {
-  return withinDist(
-      a, b, maxDist, defaultPaddingFunc<T>(), maxDist, defaultDistFunc<T>());
+  return withinDist(a, b, maxDist, defaultPaddingFunc<T>(), maxDist,
+                    defaultDistFunc<T>());
 }
 
 template <typename T>
 double withinDist(const XSortedLine<T>& a, const XSortedCollection<T>& b,
                   double maxDist) {
-  return withinDist(
-      a, b, maxDist, defaultPaddingFunc<T>(), maxDist, defaultDistFunc<T>());
+  return withinDist(a, b, maxDist, defaultPaddingFunc<T>(), maxDist,
+                    defaultDistFunc<T>());
 }
 
 template <typename T>
 double withinDist(const XSortedLine<T>& a, const Point<T>& b, double maxDist) {
-  return withinDist(
-      a, b, maxDist, defaultPaddingFunc<T>(), maxDist, defaultDistFunc<T>());
+  return withinDist(a, b, maxDist, defaultPaddingFunc<T>(), maxDist,
+                    defaultDistFunc<T>());
 }
 
 template <typename T>
 double withinDist(const XSortedCollection<T>& a, const XSortedCollection<T>& b,
                   double maxDist) {
-  return withinDist(
-      a, b, maxDist, defaultPaddingFunc<T>(), maxDist, defaultDistFunc<T>());
+  return withinDist(a, b, maxDist, defaultPaddingFunc<T>(), maxDist,
+                    defaultDistFunc<T>());
 }
 
 template <typename T, template <typename> class Geometry>
 double withinDist(const Collection<T>& a, const std::vector<Geometry<T>>& b,
                   double maxDist) {
-  return withinDist(
-      a, b, maxDist, defaultPaddingFunc<T>(), maxDist, defaultDistFunc<T>());
+  return withinDist(a, b, maxDist, defaultPaddingFunc<T>(), maxDist,
+                    defaultDistFunc<T>());
 }
 
 template <typename T, template <typename> class Geometry>
 double withinDist(const Collection<T>& a, const Geometry<T>& b,
                   double maxDist) {
-  return withinDist(
-      a, b, maxDist, defaultPaddingFunc<T>(), maxDist, defaultDistFunc<T>());
+  return withinDist(a, b, maxDist, defaultPaddingFunc<T>(), maxDist,
+                    defaultDistFunc<T>());
 }
 
 template <typename T, template <typename> class Geometry>
 double withinDist(const Geometry<T>& b, const Collection<T>& a,
                   double maxDist) {
-  return withinDist(
-      a, b, maxDist, defaultPaddingFunc<T>(), maxDist, defaultDistFunc<T>());
+  return withinDist(a, b, maxDist, defaultPaddingFunc<T>(), maxDist,
+                    defaultDistFunc<T>());
 }
 
 template <typename T, template <typename> class Geometry>
 double withinDist(const std::vector<Geometry<T>>& b, const Collection<T>& a,
                   double maxDist) {
-  return withinDist(
-      a, b, maxDist, defaultPaddingFunc<T>(), maxDist, defaultDistFunc<T>());
+  return withinDist(a, b, maxDist, defaultPaddingFunc<T>(), maxDist,
+                    defaultDistFunc<T>());
 }
 
 template <typename T>
 double withinDist(const Collection<T>& a, const Collection<T>& b,
                   double maxDist) {
-  return withinDist(
-      a, b, maxDist, defaultPaddingFunc<T>(), maxDist, defaultDistFunc<T>());
+  return withinDist(a, b, maxDist, defaultPaddingFunc<T>(), maxDist,
+                    defaultDistFunc<T>());
 }
 
 template <typename T>
 double withinDist(const XSortedCollection<T>& a, const XSortedLine<T>& b,
                   double maxDist) {
-  return withinDist(
-      a, b, maxDist, defaultPaddingFunc<T>(), maxDist, defaultDistFunc<T>());
+  return withinDist(a, b, maxDist, defaultPaddingFunc<T>(), maxDist,
+                    defaultDistFunc<T>());
 }
 
 template <typename T>
 double withinDist(const XSortedCollection<T>& a, const XSortedPolygon<T>& b,
                   double maxDist) {
-  return withinDist(
-      a, b, maxDist, defaultPaddingFunc<T>(), maxDist, defaultDistFunc<T>());
+  return withinDist(a, b, maxDist, defaultPaddingFunc<T>(), maxDist,
+                    defaultDistFunc<T>());
 }
 
 template <typename T>
 double withinDist(const XSortedCollection<T>& a, const Point<T>& b,
                   double maxDist) {
-  return withinDist(
-      a, b, maxDist, defaultPaddingFunc<T>(), maxDist, defaultDistFunc<T>());
+  return withinDist(a, b, maxDist, defaultPaddingFunc<T>(), maxDist,
+                    defaultDistFunc<T>());
 }
 
 template <typename T>
 double withinDist(const Point<T>& a, const XSortedCollection<T>& b,
                   double maxDist) {
-  return withinDist(
-      a, b, maxDist, defaultPaddingFunc<T>(), maxDist, defaultDistFunc<T>());
+  return withinDist(a, b, maxDist, defaultPaddingFunc<T>(), maxDist,
+                    defaultDistFunc<T>());
 }
 
 template <typename T>
 double withinDist(const Point<T>& a, const XSortedLine<T>& b, double maxDist) {
-  return withinDist(
-      a, b, maxDist, defaultPaddingFunc<T>(), maxDist, defaultDistFunc<T>());
+  return withinDist(a, b, maxDist, defaultPaddingFunc<T>(), maxDist,
+                    defaultDistFunc<T>());
 }
 
 template <typename T>
 double withinDist(const Point<T>& a, const XSortedPolygon<T>& b,
                   double maxDist) {
-  return withinDist(
-      a, b, maxDist, defaultPaddingFunc<T>(), maxDist, defaultDistFunc<T>());
+  return withinDist(a, b, maxDist, defaultPaddingFunc<T>(), maxDist,
+                    defaultDistFunc<T>());
 }
 
 template <typename T, typename PF, typename DF>
@@ -1846,8 +1848,8 @@ double withinDist(const Polygon<T>& poly, const Point<T>& p, double maxDist,
 
 template <typename T>
 double withinDist(const Point<T>& a, const Polygon<T>& b, double maxDist) {
-  return withinDist(
-      a, b, maxDist, defaultPaddingFunc<T>(), maxDist, defaultDistFunc<T>());
+  return withinDist(a, b, maxDist, defaultPaddingFunc<T>(), maxDist,
+                    defaultDistFunc<T>());
 }
 
 template <typename T>
@@ -1893,8 +1895,8 @@ template <template <typename> class GeometryA,
           template <typename> class GeometryB, typename T>
 double withinDist(const std::vector<GeometryA<T>>& a,
                   const std::vector<GeometryB<T>>& b, double maxDist) {
-  return withinDist(
-      a, b, maxDist, defaultPaddingFunc<T>(), maxDist, defaultDistFunc<T>());
+  return withinDist(a, b, maxDist, defaultPaddingFunc<T>(), maxDist,
+                    defaultDistFunc<T>());
 }
 
 template <typename T, typename PF, typename DF>
@@ -1903,8 +1905,8 @@ double withinDist(const Point<T>& p1, const Point<T>& p2, double maxDist,
 
 template <typename T>
 double withinDist(const Point<T>& p1, const Point<T>& p2, double maxDist) {
-  return withinDist(
-      p1, p2, maxDist, defaultPaddingFunc<T>(), maxDist, defaultDistFunc<T>());
+  return withinDist(p1, p2, maxDist, defaultPaddingFunc<T>(), maxDist,
+                    defaultDistFunc<T>());
 }
 
 template <typename T, typename PF, typename DF>
@@ -1943,14 +1945,14 @@ double withinDist(const Line<T>& l, const Polygon<T>& poly, double maxDist,
 
 template <typename T>
 double withinDist(const Line<T>& a, const Polygon<T>& b, double maxDist) {
-  return withinDist(
-      a, b, maxDist, defaultPaddingFunc<T>(), maxDist, defaultDistFunc<T>());
+  return withinDist(a, b, maxDist, defaultPaddingFunc<T>(), maxDist,
+                    defaultDistFunc<T>());
 }
 
 template <typename T>
 double withinDist(const Polygon<T>& a, const Polygon<T>& b, double maxD) {
-  return withinDist(
-      a, b, maxD, defaultPaddingFunc<T>(), maxD, defaultDistFunc<T>());
+  return withinDist(a, b, maxD, defaultPaddingFunc<T>(), maxD,
+                    defaultDistFunc<T>());
 }
 
 template <typename T>

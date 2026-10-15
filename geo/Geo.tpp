@@ -1007,8 +1007,7 @@ double withinDist(const XSortedCollection<T>& a, const XSortedCollection<T>& b,
                   DF&& distFunc) {
   double minDist = nextafter(maxDist, std::numeric_limits<double>::infinity());
 
-  if (a.empty() || b.empty())
-    return std::numeric_limits<double>::quiet_NaN();
+  if (a.empty() || b.empty()) return std::numeric_limits<double>::quiet_NaN();
 
   const auto& boxA = a.boundingBox();
   const auto& boxB = b.boundingBox();
@@ -1170,8 +1169,7 @@ std::pair<double, bool> withinDist(const Point<T>& p, const XSortedRing<T>& ph,
   //
   // returns {distance, contained}
 
-  if (ph.empty())
-    return {std::numeric_limits<double>::quiet_NaN(), false};
+  if (ph.empty()) return {std::numeric_limits<double>::quiet_NaN(), false};
 
   int8_t c = -1;
 
@@ -1230,12 +1228,11 @@ std::pair<double, bool> withinDist(const Point<T>& p, const XSortedRing<T>& ph,
     // can neither update minDist nor the upper bound
     double boxDist = std::max(
         std::max(0.0, 1.0 * seg.first.getX() - p.getX()),
-        std::max(
-            std::max(0.0, 1.0 * p.getX() - seg.second.getX()),
-            std::max(1.0 * std::min(seg.first.getY(), seg.second.getY()) -
-                         p.getY(),
-                     1.0 * p.getY() -
-                         std::max(seg.first.getY(), seg.second.getY()))));
+        std::max(std::max(0.0, 1.0 * p.getX() - seg.second.getX()),
+                 std::max(1.0 * std::min(seg.first.getY(), seg.second.getY()) -
+                              p.getY(),
+                          1.0 * p.getY() -
+                              std::max(seg.first.getY(), seg.second.getY()))));
     if (boxDist > padding && boxDist > euclideanDistUpperBound) continue;
 
     double euclideanDist = dist(seg, p);
@@ -1267,8 +1264,7 @@ template <typename T, typename PF, typename DF>
 double withinDist(const Point<T>& p, const XSortedPolygon<T>& poly,
                   double maxDist, PF&& paddingFunc, double maxEuclideanDist,
                   DF&& distFunc) {
-  if (poly.empty())
-    return std::numeric_limits<double>::quiet_NaN();
+  if (poly.empty()) return std::numeric_limits<double>::quiet_NaN();
 
   // first do the check in the outer boundary
   auto r = withinDist(p, poly.getOuter(), maxDist, paddingFunc,
@@ -1381,8 +1377,7 @@ double withinDist(const Point<T>& p, const XSortedLine<T>& line, double maxDist,
                   PF&& paddingFunc, double maxEuclideanDist, DF&& distFunc) {
   // check if point p lies on line
 
-  if (line.empty())
-    return std::numeric_limits<double>::quiet_NaN();
+  if (line.empty()) return std::numeric_limits<double>::quiet_NaN();
 
   size_t i = 0;
 
@@ -2848,8 +2843,7 @@ std::tuple<bool, bool, bool, bool, bool, bool> intersectsContainsInner(
   size_t firstRel1 = 0;
   size_t firstRel2 = 0;
 
-  if (a.empty() || b.empty())
-    return {0, 0, 0, 0, 0, 0};
+  if (a.empty() || b.empty()) return {0, 0, 0, 0, 0, 0};
 
   auto borderInt = util::geo::intersectsPoly(
       a.rawLine(), b.rawRing(), a.getMaxSegLen(), b.getMaxSegLen(),
@@ -2893,8 +2887,7 @@ std::tuple<bool, bool, bool, bool, bool, bool, bool> intersectsContainsInner(
   // returns {intersects, contains, covered, border isect, border isect strict,
   // border overlaps, border isect strict reverse}
 
-  if (a.empty() || b.empty())
-    return {0, 0, 0, 0, 0, 0, 0};
+  if (a.empty() || b.empty()) return {0, 0, 0, 0, 0, 0, 0};
 
   size_t firstRel1 = 0;
   size_t firstRel2 = 0;
@@ -3867,8 +3860,7 @@ double dist(const Line<T>& la, const Line<T>& lb) {
 template <typename T, typename PF, typename DF>
 double withinDist(const Line<T>& la, const Line<T>& lb, double maxDist,
                   PF&& paddingFunc, double maxEuclideanDist, DF&& distFunc) {
-  if (la.empty() || lb.empty())
-    return std::numeric_limits<double>::quiet_NaN();
+  if (la.empty() || lb.empty()) return std::numeric_limits<double>::quiet_NaN();
 
   if (la.size() * lb.size() > EST_CHECKS_THRESHOLD_XSORTED) {
     return withinDist(XSortedLine<T>(la), XSortedLine<T>(lb), maxDist,
@@ -4376,8 +4368,7 @@ double dist(const Polygon<T>& poly, const Point<T>& p, DF&& distFunc) {
 template <typename T, typename PF, typename DF>
 double withinDist(const Point<T>& p, const Polygon<T>& poly, double maxDist,
                   PF&& paddingFunc, double maxEuclideanDist, DF&& distFunc) {
-  if (poly.empty())
-    return std::numeric_limits<double>::quiet_NaN();
+  if (poly.empty()) return std::numeric_limits<double>::quiet_NaN();
   if (poly.size() > EST_CHECKS_THRESHOLD_XSORTED) {
     return withinDist(p, XSortedPolygon<T>(poly), maxDist, paddingFunc,
                       maxEuclideanDist, distFunc);
@@ -4534,15 +4525,14 @@ inline bool isEmptyWKTMember(const char* c) {
 // _____________________________________________________________________________
 template <typename T, typename F>
 Line<T> lineFromWKTProj(const char* c, const char** endr, F projFunc,
-                        CRSType sourceCRS, bool strict) {
+                        CRSType sourceCRS, bool strict, bool allowSinglePoint) {
   Line<T> line;
   const char* start = c;
   c = strchr(c, '(');
   if (!c) {
     if (endr) (*endr) = 0;
     if (strict && !isEmptyWKT(start))
-      throw WKTParseException(
-          "Could not parse WKT linestring, expected '(' or EMPTY");
+      throw WKTParseException("Could not parse WKT, expected '(' or EMPTY");
     return line;  // parse error, or EMPTY
   }
   c++;
@@ -4551,8 +4541,7 @@ Line<T> lineFromWKTProj(const char* c, const char** endr, F projFunc,
   if (endr) (*endr) = end;
   if (!end) {
     if (endr) (*endr) = 0;
-    if (strict)
-      throw WKTParseException("Could not parse WKT linestring, missing ')'");
+    if (strict) throw WKTParseException("Could not parse WKT, missing ')'");
     return line;  // parse error
   }
 
@@ -4568,22 +4557,21 @@ Line<T> lineFromWKTProj(const char* c, const char** endr, F projFunc,
     if (p >= end || !(*p == ' ' || *p == '\n' || *p == '\t' || *p == '\r')) {
       if (strict)
         throw WKTParseException(
-            "Could not parse WKT linestring, expected coordinate pair");
+            "Could not parse WKT, expected coordinate pair");
       return {};  // parse error
     }
 
     while (*p == ' ' || *p == '\n' || *p == '\t' || *p == '\r') p++;
 
     if (strict && (*p == ')' || *p == ','))
-      throw WKTParseException(
-          "Could not parse WKT linestring, expected coordinate pair");
+      throw WKTParseException("Could not parse WKT, expected coordinate pair");
 
     double y = util::atof(p, 10, &p);
 
     if (std::isnan(x) || std::isnan(y)) {
       if (strict)
         throw WKTParseException(
-            "Could not parse WKT linestring, coordinate is not a number");
+            "Could not parse WKT, coordinate is not a number");
     } else {
       // in non strict mode, simply skip NaN values
       line.push_back(projFunc(util::geo::DPoint(x, y), sourceCRS));
@@ -4592,6 +4580,10 @@ Line<T> lineFromWKTProj(const char* c, const char** endr, F projFunc,
     while (p < end && *p != ',') p++;
     if (p >= end) break;
     c = p + 1;
+  }
+
+  if (strict && !allowSinglePoint && line.size() == 1) {
+    throw WKTParseException("Could not parse WKT without a full segment");
   }
   return line;
 }
@@ -4646,8 +4638,8 @@ MultiPoint<T> multiPointFromWKTProj(const char* c, const char** endr,
 
     if (first && (*first == '(' || isEmptyWKTMember(first))) {
       // MULTIPOINT((1 1), (2 2)) syntax, members may be EMPTY
-      const auto& mline =
-          multiLineFromWKTProj<T, F>(c, endr, projFunc, sourceCRS, true);
+      const auto& mline = multiLineFromWKTProj<T, F>(c, endr, projFunc,
+                                                     sourceCRS, strict, true);
       MultiPoint<T> ret;
       for (const auto& l : mline) {
         if (l.size() != 1)
@@ -4661,11 +4653,12 @@ MultiPoint<T> multiPointFromWKTProj(const char* c, const char** endr,
 
     // MULTIPOINT(1 1, 2 2) syntax, or EMPTY
     return MultiPoint<T>(
-        lineFromWKTProj<T, F>(c, endr, projFunc, sourceCRS, true));
+        lineFromWKTProj<T, F>(c, endr, projFunc, sourceCRS, strict, true));
   }
 
   // try MULTIPOINT((1 1), (2 2)) syntax
-  const auto& mline = multiLineFromWKTProj<T, F>(c, endr, projFunc, sourceCRS);
+  const auto& mline =
+      multiLineFromWKTProj<T, F>(c, endr, projFunc, sourceCRS, strict, true);
 
   MultiPoint<T> ret;
   for (const auto& l : mline) {
@@ -4675,7 +4668,8 @@ MultiPoint<T> multiPointFromWKTProj(const char* c, const char** endr,
   if (ret.size()) return ret;
 
   // try MULTIPOINT(1 1, 2 2) syntax
-  const auto& line = lineFromWKTProj<T, F>(c, endr, projFunc, sourceCRS);
+  const auto& line =
+      lineFromWKTProj<T, F>(c, endr, projFunc, sourceCRS, strict, true);
   if (line.size() > 0) return MultiPoint<T>(std::move(line));
 
   return ret;
@@ -4730,7 +4724,7 @@ Point<T> pointFromWKTProj(const char* c, const char** endr, F projFunc,
     if (strict) {
       if (isEmptyWKT(start))
         throw WKTParseException(
-            "Could not parse WKT point, empty point not allowed");
+            "Could not parse WKT point, empty point not representable");
       throw WKTParseException("Could not parse WKT point, expected '('");
     }
     return {0, 0};
@@ -4738,37 +4732,55 @@ Point<T> pointFromWKTProj(const char* c, const char** endr, F projFunc,
 
   c += 1;
 
-  const char* end = strchr(c, ')');
-  if (strict && !end)
-    throw WKTParseException("Could not parse WKT point, missing ')'");
+  // skip whitespace
+  while (*c == ' ' || *c == '\n' || *c == '\t' || *c == '\r') c++;
 
-  const char* p;
-  double x = util::atof(c, 10, &p);
+  double x = util::atof(c, 10, &c);
 
-  if (std::isnan(x))
-    while (*p && !strchr(" \n\t\r,)", *p)) p++;
-
-  if ((end && p >= end) ||
-      !(*p == ' ' || *p == '\n' || *p == '\t' || *p == '\r')) {
+  if (std::isnan(x)) {
     if (strict)
       throw WKTParseException(
-          "Could not parse WKT point, expected coordinate pair");
-    return {0, 0};  // TODO!
+          "Could not parse WKT point, coordinate is not a number");
+
+    // set end ptr if requested
+    if (endr) (*endr) = strchr(c, ')');
+    return {0, 0};
   }
 
-  while (*p == ' ' || *p == '\n' || *p == '\t' || *p == '\r') p++;
+  // skip whitespace
+  while (*c == ' ' || *c == '\n' || *c == '\t' || *c == '\r') c++;
 
-  if (strict && (*p == ')' || *p == ','))
-    throw WKTParseException(
-        "Could not parse WKT point, expected coordinate pair");
+  double y = util::atof(c, 10, &c);
 
-  double y = util::atof(p, 10, &p);
+  if (std::isnan(y)) {
+    if (strict)
+      throw WKTParseException(
+          "Could not parse WKT point, coordinate is not a number");
 
-  if (strict && (std::isnan(x) || std::isnan(y)))
-    throw WKTParseException(
-        "Could not parse WKT point, coordinate is not a number");
+    // set end ptr if requested
+    if (endr) (*endr) = strchr(c, ')');
+    return {0, 0};
+  }
 
-  if (endr) (*endr) = strchr(p, ')');
+  // skip whitespace
+  while (*c == ' ' || *c == '\n' || *c == '\t' || *c == '\r') c++;
+
+  // there may be an optional measurement, check in strict mode!
+  if (strict && *c != ')') {
+    double m = util::atof(c, 10, &c);
+    if (std::isnan(m))
+      throw WKTParseException(
+          "Could not parse WKT point, missing closing ')' or invalid "
+          "measurement");
+
+    // skip whitespace
+    while (*c == ' ' || *c == '\n' || *c == '\t' || *c == '\r') c++;
+    if (*c != ')') {
+      throw WKTParseException("Could not parse WKT point, missing closing ')'");
+    }
+  }
+
+  if (endr) (*endr) = strchr(c, ')');
 
   return projFunc(util::geo::DPoint(x, y), sourceCRS);
 }
@@ -4908,14 +4920,14 @@ MultiLine<T> multiLineFromWKTProj(const char* c, const char** endr, F projFunc,
 // _____________________________________________________________________________
 template <typename T, typename F>
 MultiLine<T> multiLineFromWKTProj(const char* c, const char** endr, F projFunc,
-                                  CRSType sourceCRS, bool strict) {
+                                  CRSType sourceCRS, bool strict,
+                                  bool allowSinglePoint) {
   const char* start = c;
   c = strchr(c, '(');
   if (!c) {
     if (endr) (*endr) = 0;
     if (strict && !isEmptyWKT(start))
-      throw WKTParseException(
-          "Could not parse WKT multilinestring, expected '(' or EMPTY");
+      throw WKTParseException("Could not parse WKT, expected '(' or EMPTY");
     return {};  // parse error, or EMPTY
   }
   c += 1;
@@ -4929,12 +4941,12 @@ MultiLine<T> multiLineFromWKTProj(const char* c, const char** endr, F projFunc,
     } else {
       if (strict && *member != '(')
         throw WKTParseException(
-            "Could not parse WKT multilinestring, expected linestring or "
+            "Could not parse WKT, expected point list or "
             "EMPTY");
       c = strchr(c, '(');
       if (!c) break;
-      const auto& line =
-          lineFromWKTProj<T, F>(c, &end, projFunc, sourceCRS, strict);
+      const auto& line = lineFromWKTProj<T, F>(c, &end, projFunc, sourceCRS,
+                                               strict, allowSinglePoint);
       if (!end) break;
       if (line.size() != 0) ml.push_back(std::move(line));
     }
@@ -4945,8 +4957,7 @@ MultiLine<T> multiLineFromWKTProj(const char* c, const char** endr, F projFunc,
     if (!nextComma ||
         (nextComma && nextCloseBracket && nextComma > nextCloseBracket)) {
       if (strict && !nextCloseBracket)
-        throw WKTParseException(
-            "Could not parse WKT multilinestring, missing ')'");
+        throw WKTParseException("Could not parse WKT, missing ')'");
       if (endr) (*endr) = nextCloseBracket;
       return ml;
     }
@@ -4955,8 +4966,7 @@ MultiLine<T> multiLineFromWKTProj(const char* c, const char** endr, F projFunc,
   }
 
   if (strict)
-    throw WKTParseException(
-        "Could not parse WKT multilinestring, expected linestring");
+    throw WKTParseException("Could not parse WKT, expected point list");
 
   return ml;
 }
@@ -7213,8 +7223,8 @@ double withinDist(const std::vector<XSortedTuple<T>>& ls1,
 template <typename T, typename PF, typename DF>
 std::pair<double, std::pair<bool, bool>> withinDist(
     const XSortedRing<T>& p1, const XSortedRing<T>& p2, double maxDist,
-    PF&& paddingFunc, double maxEuclideanDist, DF&& distFunc,
-    bool checkP2InP1, bool checkP1InP2) {
+    PF&& paddingFunc, double maxEuclideanDist, DF&& distFunc, bool checkP2InP1,
+    bool checkP1InP2) {
   if (p1.rawRing().size() == 1) {
     auto a = withinDist(p1.rawRing().front().p, p2, maxDist, paddingFunc,
                         maxEuclideanDist, distFunc);
@@ -7270,10 +7280,8 @@ std::pair<double, bool> withinDist(const XSortedLine<T>& ls1,
             false};
   }
 
-  if (ls1.empty())
-    return {std::numeric_limits<double>::quiet_NaN(), false};
-  if (p2.empty())
-    return {std::numeric_limits<double>::quiet_NaN(), false};
+  if (ls1.empty()) return {std::numeric_limits<double>::quiet_NaN(), false};
+  if (p2.empty()) return {std::numeric_limits<double>::quiet_NaN(), false};
 
   double ringDist = util::geo::withinDist(
       ls1.rawLine(), p2.rawRing(), ls1.getMaxSegLen(), p2.getMaxSegLen(),
@@ -7293,8 +7301,7 @@ template <typename T, typename PF, typename DF>
 double withinDist(const XSortedLine<T>& a, const XSortedPolygon<T>& b,
                   double maxDist, PF&& paddingFunc, double maxEuclideanDist,
                   DF&& distFunc) {
-  if (a.empty() || b.empty())
-    return std::numeric_limits<double>::quiet_NaN();
+  if (a.empty() || b.empty()) return std::numeric_limits<double>::quiet_NaN();
 
   if (util::geo::dist(a.boundingBox(), b.boundingBox()) > maxEuclideanDist)
     return nextafter(maxDist, std::numeric_limits<double>::infinity());
@@ -7360,8 +7367,7 @@ template <typename T, typename PF, typename DF>
 double withinDist(const XSortedPolygon<T>& p1, const XSortedPolygon<T>& p2,
                   double maxDist, PF&& paddingFunc, double maxEuclideanDist,
                   DF&& distFunc) {
-  if (p1.empty() || p2.empty())
-    return std::numeric_limits<double>::quiet_NaN();
+  if (p1.empty() || p2.empty()) return std::numeric_limits<double>::quiet_NaN();
 
   if (util::geo::dist(p1.boundingBox(), p2.boundingBox()) > maxEuclideanDist)
     return nextafter(maxDist, std::numeric_limits<double>::infinity());
@@ -7378,9 +7384,9 @@ double withinDist(const XSortedPolygon<T>& p1, const XSortedPolygon<T>& p2,
     return 0;
 
   // for polygons without inner rings, the containment was already checked above
-  auto outerR = withinDist(p1.getOuter(), p2.getOuter(), maxDist, paddingFunc,
-                           maxEuclideanDist, distFunc, p1.getInners().size() > 0,
-                           p2.getInners().size() > 0);
+  auto outerR = withinDist(
+      p1.getOuter(), p2.getOuter(), maxDist, paddingFunc, maxEuclideanDist,
+      distFunc, p1.getInners().size() > 0, p2.getInners().size() > 0);
 
   // if we are not contained, directly return the distance (0 if we intersect)
   if (!outerR.second.first && !outerR.second.second) {
@@ -7424,9 +7430,9 @@ double withinDist(const XSortedPolygon<T>& p1, const XSortedPolygon<T>& p2,
                          p2.getInnerBoxes()[i].getUpperRight().getY() -
                              p2.getInnerBoxes()[i].getLowerLeft().getY()));
       // we only need to know whether p1 is contained in the inner ring
-      auto r2 = withinDist(p1.getOuter(), p2.getInners()[i], maxDist,
-                           paddingFunc, maxLocalEuclideanDist, distFunc,
-                           false, true);
+      auto r2 =
+          withinDist(p1.getOuter(), p2.getInners()[i], maxDist, paddingFunc,
+                     maxLocalEuclideanDist, distFunc, false, true);
 
       // if we are contained in the inner ring, directly return the distance to
       // it
@@ -7465,9 +7471,9 @@ double withinDist(const XSortedPolygon<T>& p1, const XSortedPolygon<T>& p2,
                          p1.getInnerBoxes()[i].getUpperRight().getY() -
                              p1.getInnerBoxes()[i].getLowerLeft().getY()));
       // we only need to know whether p2 is contained in the inner ring
-      auto r2 = withinDist(p2.getOuter(), p1.getInners()[i], maxDist,
-                           paddingFunc, maxLocalEuclideanDist, distFunc,
-                           false, true);
+      auto r2 =
+          withinDist(p2.getOuter(), p1.getInners()[i], maxDist, paddingFunc,
+                     maxLocalEuclideanDist, distFunc, false, true);
 
       // if we are contained in the inner ring, directly return the distance to
       // it
