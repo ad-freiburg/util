@@ -156,6 +156,9 @@ void GeoTest::testWktParsePoint() {
 
     TEST_THROWS(util::geo::WKTParseException,
                 util::geo::pointFromWKT<double>("POINT(1 2 3e)", true));
+
+    TEST_THROWS(util::geo::WKTParseException,
+                util::geo::pointFromWKT<double>("POINT(1 2 3) GARBAGE", true));
   }
 
   {
@@ -198,5 +201,26 @@ void GeoTest::testWktParsePoint() {
              std::string("POINT(+.5e-1 2e3)"),
              true)),
          ==, "POINT(0.05 2000)");
+  }
+
+  {
+    TEST(util::geo::getWKT(
+             util::geo::pointFromWKT<double>("POINT(1 2) \n\t", 0, true)),
+         ==, "POINT(1 2)");
+    TEST_THROWS(util::geo::WKTParseException,
+                util::geo::pointFromWKT<double>("POINT(1 2) GARBAGE", 0, true));
+    TEST_THROWS(util::geo::WKTParseException,
+                util::geo::pointFromWKT<double>("POINT(1 2))", 0, true));
+    TEST_THROWS(util::geo::WKTParseException,
+                util::geo::pointFromWKT<double>("POINT(1 2), POINT(5 5)", 0, true));
+
+    const char* in = "POINT(1 2) GARBAGE";
+    const char* end = 0;
+    TEST(util::geo::getWKT(util::geo::pointFromWKT<double>(in, &end, true)), ==,
+         "POINT(1 2)");
+    TEST(end - in, ==, 9);
+
+    TEST(util::geo::getWKT(util::geo::pointFromWKT<double>(in, 0, false)), ==,
+         "POINT(1 2)");
   }
 }

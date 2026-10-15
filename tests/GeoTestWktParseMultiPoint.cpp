@@ -222,4 +222,71 @@ void GeoTest::testWktParseMultiPoint() {
                     "MULTIPOINT((1 2, 3 4))", 0,
                     util::geo::projectToCRS84<double>, true));
   }
+
+  {
+    TEST(getWKT(util::geo::multiPointFromWKT<double>(
+             std::string("MULTIPOINT((+1 2), (2 +1), (+1 +2))"),
+             true)),
+         ==, "MULTIPOINT(1 2,2 1,1 2)");
+
+    TEST(getWKT(util::geo::multiPointFromWKT<double>(
+             std::string("MULTIPOINT((+1 2),( 2 +1.0),( +1 +2))"),
+             true)),
+         ==, "MULTIPOINT(1 2,2 1,1 2)");
+
+    TEST(getWKT(util::geo::multiPointFromWKT<double>(
+             std::string("MULTIPOINT((+1 2),( 2 +1.0e0),( +1 +2))"),
+             true)),
+         ==, "MULTIPOINT(1 2,2 1,1 2)");
+
+    TEST(getWKT(util::geo::multiPointFromWKT<double>(
+             std::string("MULTIPOINT(+1 2, 2 +1.0e1, +1 +2)"),
+             true)),
+         ==, "MULTIPOINT(1 2,2 10,1 2)");
+
+    TEST(getWKT(util::geo::multiPointFromWKT<double>(
+             std::string("MULTIPOINT(+1 2, 2 +1.0e-1, +1 +2)"),
+             true)),
+         ==, "MULTIPOINT(1 2,2 0.1,1 2)");
+
+    TEST(getWKT(util::geo::multiPointFromWKT<double>(
+             std::string("MULTIPOINT(+1 2, 2 -1.0e-1, +1 +2)"),
+             true)),
+         ==, "MULTIPOINT(1 2,2 -0.1,1 2)");
+
+    TEST(getWKT(util::geo::multiPointFromWKT<double>(
+             std::string("MULTIPOINT(+1 2, 2 -1e-1, +1 +2)"),
+             true)),
+         ==, "MULTIPOINT(1 2,2 -0.1,1 2)");
+
+    TEST(getWKT(util::geo::multiPointFromWKT<double>(
+             std::string("MULTIPOINT(+1 2, 2 -.1e-0, +1 +2)"),
+             true)),
+         ==, "MULTIPOINT(1 2,2 -0.1,1 2)");
+  }
+
+  {
+    TEST(util::geo::getWKT(
+             util::geo::multiPointFromWKT<double>("MULTIPOINT((1 2), (3 4)) \n\t", 0, true)),
+         ==, "MULTIPOINT(1 2,3 4)");
+    TEST_THROWS(util::geo::WKTParseException,
+                util::geo::multiPointFromWKT<double>("MULTIPOINT((1 2), (3 4)) GARBAGE", 0, true));
+    TEST_THROWS(util::geo::WKTParseException,
+                util::geo::multiPointFromWKT<double>("MULTIPOINT((1 2), (3 4)))", 0, true));
+    TEST_THROWS(util::geo::WKTParseException,
+                util::geo::multiPointFromWKT<double>("MULTIPOINT((1 2), (3 4)), POINT(5 5)", 0, true));
+    TEST_THROWS(util::geo::WKTParseException,
+                util::geo::multiPointFromWKT<double>("MULTIPOINT EMPTY GARBAGE", 0, true));
+    TEST_THROWS(util::geo::WKTParseException,
+                util::geo::multiPointFromWKT<double>("MULTIPOINT EMPTY)", 0, true));
+
+    const char* in = "MULTIPOINT((1 2), (3 4)) GARBAGE";
+    const char* end = 0;
+    TEST(util::geo::getWKT(util::geo::multiPointFromWKT<double>(in, &end, true)), ==,
+         "MULTIPOINT(1 2,3 4)");
+    TEST(end - in, ==, 23);
+
+    TEST(util::geo::getWKT(util::geo::multiPointFromWKT<double>(in, 0, false)), ==,
+         "MULTIPOINT(1 2,3 4)");
+  }
 }

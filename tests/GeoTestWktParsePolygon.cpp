@@ -124,6 +124,56 @@ void GeoTest::testWktParsePolygon() {
     TEST_THROWS(util::geo::WKTParseException,
                 util::geo::polygonFromWKT<double>(
                     "polygon((0 0,4 0,4 4,0 0, blablablabla b))", true));
+
+    TEST_THROWS(util::geo::WKTParseException,
+                util::geo::polygonFromWKT<double>(
+                    "polygon((0 0))", true));
+
+    TEST_THROWS(util::geo::WKTParseException,
+                util::geo::polygonFromWKT<double>(
+                    "polygon((0 0, 2 a))", true));
+  }
+
+  {
+    TEST(getWKT(util::geo::polygonFromWKT<double>(
+             std::string("POLYGON((+1 2, 2 +1, +1 +2))"),
+             true)),
+         ==, "POLYGON((1 2,2 1,1 2))");
+
+    TEST(getWKT(util::geo::polygonFromWKT<double>(
+             std::string("POLYGON((+1 2, 2 +1.0, +1 +2))"),
+             true)),
+         ==, "POLYGON((1 2,2 1,1 2))");
+
+    TEST(getWKT(util::geo::polygonFromWKT<double>(
+             std::string("POLYGON((+1 2, 2 +1.0e0, +1 +2))"),
+             true)),
+         ==, "POLYGON((1 2,2 1,1 2))");
+
+    TEST(getWKT(util::geo::polygonFromWKT<double>(
+             std::string("POLYGON((+1 2, 2 +1.0e1, +1 +2))"),
+             true)),
+         ==, "POLYGON((1 2,2 10,1 2))");
+
+    TEST(getWKT(util::geo::polygonFromWKT<double>(
+             std::string("POLYGON((+1 2, 2 +1.0e-1, +1 +2))"),
+             true)),
+         ==, "POLYGON((1 2,2 0.1,1 2))");
+
+    TEST(getWKT(util::geo::polygonFromWKT<double>(
+             std::string("POLYGON((+1 2, 2 -1.0e-1, +1 +2))"),
+             true)),
+         ==, "POLYGON((1 2,2 -0.1,1 2))");
+
+    TEST(getWKT(util::geo::polygonFromWKT<double>(
+             std::string("POLYGON((+1 2, 2 -1e-1, +1 +2))"),
+             true)),
+         ==, "POLYGON((1 2,2 -0.1,1 2))");
+
+    TEST(getWKT(util::geo::polygonFromWKT<double>(
+             std::string("POLYGON((+1 2, 2 -.1e-0, +1 +2))"),
+             true)),
+         ==, "POLYGON((1 2,2 -0.1,1 2))");
   }
 
   {
@@ -150,5 +200,30 @@ void GeoTest::testWktParsePolygon() {
              "POLYGON((0 0, 1 0, 1 1, 0 0))", 0,
              util::geo::projectToCRS84<double>)),
          ==, "POLYGON((0 0,1 0,1 1,0 0))");
+  }
+
+  {
+    TEST(util::geo::getWKT(
+             util::geo::polygonFromWKT<double>("POLYGON((0 0, 1 0, 1 1, 0 0)) \n\t", 0, true)),
+         ==, "POLYGON((0 0,1 0,1 1,0 0))");
+    TEST_THROWS(util::geo::WKTParseException,
+                util::geo::polygonFromWKT<double>("POLYGON((0 0, 1 0, 1 1, 0 0)) GARBAGE", 0, true));
+    TEST_THROWS(util::geo::WKTParseException,
+                util::geo::polygonFromWKT<double>("POLYGON((0 0, 1 0, 1 1, 0 0)))", 0, true));
+    TEST_THROWS(util::geo::WKTParseException,
+                util::geo::polygonFromWKT<double>("POLYGON((0 0, 1 0, 1 1, 0 0)), POINT(5 5)", 0, true));
+    TEST_THROWS(util::geo::WKTParseException,
+                util::geo::polygonFromWKT<double>("POLYGON EMPTY GARBAGE", 0, true));
+    TEST_THROWS(util::geo::WKTParseException,
+                util::geo::polygonFromWKT<double>("POLYGON EMPTY)", 0, true));
+
+    const char* in = "POLYGON((0 0, 1 0, 1 1, 0 0)) GARBAGE";
+    const char* end = 0;
+    TEST(util::geo::getWKT(util::geo::polygonFromWKT<double>(in, &end, true)), ==,
+         "POLYGON((0 0,1 0,1 1,0 0))");
+    TEST(end - in, ==, 28);
+
+    TEST(util::geo::getWKT(util::geo::polygonFromWKT<double>(in, 0, false)), ==,
+         "POLYGON((0 0,1 0,1 1,0 0))");
   }
 }

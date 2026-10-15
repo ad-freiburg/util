@@ -342,4 +342,29 @@ void GeoTest::testWktParseLine() {
             "LINESTRING(0 0, -1e-2 +1e1)")),
          ==, "LINESTRING(0 0,-0.01 10)");
   }
+
+  {
+    TEST(util::geo::getWKT(
+             util::geo::lineFromWKT<double>("LINESTRING(1 2, 3 4) \n\t", 0, true)),
+         ==, "LINESTRING(1 2,3 4)");
+    TEST_THROWS(util::geo::WKTParseException,
+                util::geo::lineFromWKT<double>("LINESTRING(1 2, 3 4) GARBAGE", 0, true));
+    TEST_THROWS(util::geo::WKTParseException,
+                util::geo::lineFromWKT<double>("LINESTRING(1 2, 3 4))", 0, true));
+    TEST_THROWS(util::geo::WKTParseException,
+                util::geo::lineFromWKT<double>("LINESTRING(1 2, 3 4), POINT(5 5)", 0, true));
+    TEST_THROWS(util::geo::WKTParseException,
+                util::geo::lineFromWKT<double>("LINESTRING EMPTY GARBAGE", 0, true));
+    TEST_THROWS(util::geo::WKTParseException,
+                util::geo::lineFromWKT<double>("LINESTRING EMPTY)", 0, true));
+
+    const char* in = "LINESTRING(1 2, 3 4) GARBAGE";
+    const char* end = 0;
+    TEST(util::geo::getWKT(util::geo::lineFromWKT<double>(in, &end, true)), ==,
+         "LINESTRING(1 2,3 4)");
+    TEST(end - in, ==, 19);
+
+    TEST(util::geo::getWKT(util::geo::lineFromWKT<double>(in, 0, false)), ==,
+         "LINESTRING(1 2,3 4)");
+  }
 }
