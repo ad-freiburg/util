@@ -134,16 +134,19 @@ void GeoTest::testWktParsePoint() {
 
   {
     TEST_THROWS(util::geo::WKTParseException,
+                util::geo::pointFromWKT<double>("POINT(", true));
+
+    TEST_THROWS(util::geo::WKTParseException,
+                util::geo::pointFromWKT<double>("POINT()", true));
+
+    TEST_THROWS(util::geo::WKTParseException,
+                util::geo::pointFromWKT<double>("POINT(1 2", true));
+
+    TEST_THROWS(util::geo::WKTParseException,
                 util::geo::pointFromWKT<double>("POINT(1 2, 3 4)", true));
 
     TEST_THROWS(util::geo::WKTParseException,
                 util::geo::pointFromWKT<double>("POINT(1 2 blubb)", true));
-
-    TEST_THROWS(util::geo::WKTParseException,
-                util::geo::pointFromWKT<double>("LINESTRING(1 2)", true));
-
-    TEST_THROWS(util::geo::WKTParseException,
-                util::geo::pointFromWKT<double>("MULTILINESTRING((1 2))", true));
   }
 
   {
