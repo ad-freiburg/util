@@ -99,12 +99,10 @@ util::geo::CRSType util::geo::getCRSType(const char* c, const char** endr) {
 }
 
 // _____________________________________________________________________________
-const std::string& util::geo::getCrsIri(util::geo::CRSType targetCRS, bool hideIri) {
+const std::string& util::geo::getCrsIri(util::geo::CRSType targetCRS) {
   static const std::string empty{""};
   static const std::string wgs84 = std::string{wgs84Iri} + " ";
   static const std::string webMerc = std::string{webMercIri} + " ";
-
-  if (hideIri) return empty;
 
   switch (targetCRS)
   {
