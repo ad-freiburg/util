@@ -5,7 +5,7 @@
 #include "./Geo.h"
 
 // _____________________________________________________________________________
-util::geo::WKTType util::geo::getWKTType(const char* c, const char** endr) {
+util::geo::WKTType util::geo::getWKTType(const char *c, const char **endr) {
   bool measurement = false;
   while (true) {
     // TODO: how do we handle another <, is there need for further checks?
@@ -65,7 +65,7 @@ util::geo::WKTType util::geo::getWKTType(const char* c, const char** endr) {
 }
 
 // _____________________________________________________________________________
-util::geo::CRSType util::geo::getCRSType(const char* c, const char** endr) {
+util::geo::CRSType util::geo::getCRSType(const char *c, const char **endr) {
   while (((*c == ' ' || *c == '\n' || *c == '\t' || *c == '\r') ||
           ((*c) == '"') || ((*c) == '\'')) &&
          ((*c) != '\0'))
@@ -73,7 +73,7 @@ util::geo::CRSType util::geo::getCRSType(const char* c, const char** endr) {
 
   // If 'endr == nullptr' this function should still update it, for this
   // 'endr' is replaced accordingly.
-  const char* replacement = nullptr;
+  const char *replacement = nullptr;
   endr = (endr != nullptr) ? endr : &replacement;
 
   if (*c != '<') {
@@ -99,42 +99,41 @@ util::geo::CRSType util::geo::getCRSType(const char* c, const char** endr) {
 }
 
 // _____________________________________________________________________________
-const std::string& util::geo::getCrsIri(util::geo::CRSType targetCRS) {
+const std::string &util::geo::getCrsIri(util::geo::CRSType targetCRS) {
   static const std::string empty{""};
   static const std::string wgs84 = std::string{wgs84Iri} + " ";
   static const std::string webMerc = std::string{webMercIri} + " ";
 
-  switch (targetCRS)
-  {
-  case util::geo::CRSType::CRS84:
-    // Not attaching IRI as CRS84 is the default.
-    return empty;
-  case util::geo::CRSType::WGS84:
-    return wgs84;
-  case util::geo::CRSType::WEB_MERCATOR:
-    return webMerc;
-  default:
-    throw std::runtime_error("Trying to get CRS IRI for unsupported CRS type.");
+  switch (targetCRS) {
+    case util::geo::CRSType::CRS84:
+      // Not attaching IRI as CRS84 is the default.
+      return empty;
+    case util::geo::CRSType::WGS84:
+      return wgs84;
+    case util::geo::CRSType::WEB_MERCATOR:
+      return webMerc;
+    default:
+      throw std::runtime_error(
+          "Trying to get CRS IRI for unsupported CRS type.");
   }
 }
 
 // _____________________________________________________________________________
-util::geo::WKTType util::geo::getWKTType(const char* c) {
+util::geo::WKTType util::geo::getWKTType(const char *c) {
   return util::geo::getWKTType(c, 0);
 }
 
 // _____________________________________________________________________________
-util::geo::CRSType util::geo::getCRSType(const char* c) {
+util::geo::CRSType util::geo::getCRSType(const char *c) {
   return util::geo::getCRSType(c, 0);
 }
 
 // _____________________________________________________________________________
-util::geo::WKTType util::geo::getWKTType(const std::string& str) {
+util::geo::WKTType util::geo::getWKTType(const std::string &str) {
   return util::geo::getWKTType(str.c_str(), 0);
 }
 
 // _____________________________________________________________________________
-util::geo::CRSType util::geo::getCRSType(const std::string& str) {
+util::geo::CRSType util::geo::getCRSType(const std::string &str) {
   return util::geo::getCRSType(str.c_str(), 0);
 }
-
