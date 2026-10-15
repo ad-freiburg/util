@@ -4523,6 +4523,32 @@ inline bool isEmptyWKTMember(const char* c) {
 }
 
 // _____________________________________________________________________________
+inline std::tuple<double, double, double> parseWKTPoint(const char*& c,
+                                                         bool strict) {
+  // skip whitespace
+  while (*c == ' ' || *c == '\n' || *c == '\t' || *c == '\r') c++;
+
+  double x = util::atof(c, 10, &c);
+
+  // skip whitespace
+  while (*c == ' ' || *c == '\n' || *c == '\t' || *c == '\r') c++;
+
+  double y = util::atof(c, 10, &c);
+
+  // skip whitespace
+  while (*c == ' ' || *c == '\n' || *c == '\t' || *c == '\r') c++;
+
+  double m = 0;
+
+  // there might be an optional measurement, only relevant in strict mode
+  if (strict && (*c == '+' || *c == '-' || *c == '.' || isdigit(*c))) {
+    m = util::atof(c, 10, &c);
+  }
+
+  return {x, y, m};
+}
+
+// _____________________________________________________________________________
 template <typename T, typename F>
 Line<T> lineFromWKTProj(const char* c, const char** endr, F projFunc,
                         CRSType sourceCRS, bool strict, bool allowSinglePoint) {
@@ -4537,54 +4563,46 @@ Line<T> lineFromWKTProj(const char* c, const char** endr, F projFunc,
   }
   c++;
 
-  auto end = strchr(c, ')');
-  if (endr) (*endr) = end;
-  if (!end) {
-    if (endr) (*endr) = 0;
-    if (strict) throw WKTParseException("Could not parse WKT, missing ')'");
-    return line;  // parse error
-  }
-
-  line.reserve((end - c) / 20);
+  const char* close = strchr(c, ')');
+  if (close) line.reserve((close - c) / 20);
 
   while (true) {
-    const char* p;
-    double x = util::atof(c, 10, &p);
+    double x, y, m;
+    std::tie(x, y, m) = parseWKTPoint(c, strict);
 
-    if (std::isnan(x))
-      while (p < end && !strchr(" \n\t\r,", *p)) p++;
+    // skip whitespace
+    while (*c == ' ' || *c == '\n' || *c == '\t' || *c == '\r') c++;
 
-    if (p >= end || !(*p == ' ' || *p == '\n' || *p == '\t' || *p == '\r')) {
-      if (strict)
-        throw WKTParseException(
-            "Could not parse WKT, expected coordinate pair");
-      return {};  // parse error
-    }
-
-    while (*p == ' ' || *p == '\n' || *p == '\t' || *p == '\r') p++;
-
-    if (strict && (*p == ')' || *p == ','))
-      throw WKTParseException("Could not parse WKT, expected coordinate pair");
-
-    double y = util::atof(p, 10, &p);
-
-    if (std::isnan(x) || std::isnan(y)) {
+    if (std::isnan(x) || std::isnan(y) || (strict && std::isnan(m))) {
       if (strict)
         throw WKTParseException(
             "Could not parse WKT, coordinate is not a number");
     } else {
+      if (strict && *c != ',' && *c != ')')
+        throw WKTParseException("Could not parse WKT, expected ',' or ')'");
+
       // in non strict mode, simply skip NaN values
       line.push_back(projFunc(util::geo::DPoint(x, y), sourceCRS));
     }
 
-    while (p < end && *p != ',') p++;
-    if (p >= end) break;
-    c = p + 1;
+    while (*c && *c != ',' && *c != ')') c++;
+
+    if (!*c) {
+      if (endr) (*endr) = 0;
+      if (strict) throw WKTParseException("Could not parse WKT, missing ')'");
+      return line;
+    }
+
+    if (*c == ')') break;
+    c++;
   }
+
+  if (endr) (*endr) = c;
 
   if (strict && !allowSinglePoint && line.size() == 1) {
     throw WKTParseException("Could not parse WKT without a full segment");
   }
+
   return line;
 }
 
@@ -4732,12 +4750,13 @@ Point<T> pointFromWKTProj(const char* c, const char** endr, F projFunc,
 
   c += 1;
 
+  double x, y, m;
+  std::tie(x, y, m) = parseWKTPoint(c, strict);
+
   // skip whitespace
   while (*c == ' ' || *c == '\n' || *c == '\t' || *c == '\r') c++;
 
-  double x = util::atof(c, 10, &c);
-
-  if (std::isnan(x)) {
+  if (std::isnan(x) || std::isnan(y) || (strict && std::isnan(m))) {
     if (strict)
       throw WKTParseException(
           "Could not parse WKT point, coordinate is not a number");
@@ -4747,38 +4766,8 @@ Point<T> pointFromWKTProj(const char* c, const char** endr, F projFunc,
     return {0, 0};
   }
 
-  // skip whitespace
-  while (*c == ' ' || *c == '\n' || *c == '\t' || *c == '\r') c++;
-
-  double y = util::atof(c, 10, &c);
-
-  if (std::isnan(y)) {
-    if (strict)
-      throw WKTParseException(
-          "Could not parse WKT point, coordinate is not a number");
-
-    // set end ptr if requested
-    if (endr) (*endr) = strchr(c, ')');
-    return {0, 0};
-  }
-
-  // skip whitespace
-  while (*c == ' ' || *c == '\n' || *c == '\t' || *c == '\r') c++;
-
-  // there may be an optional measurement, check in strict mode!
-  if (strict && *c != ')') {
-    double m = util::atof(c, 10, &c);
-    if (std::isnan(m))
-      throw WKTParseException(
-          "Could not parse WKT point, missing closing ')' or invalid "
-          "measurement");
-
-    // skip whitespace
-    while (*c == ' ' || *c == '\n' || *c == '\t' || *c == '\r') c++;
-    if (*c != ')') {
-      throw WKTParseException("Could not parse WKT point, missing closing ')'");
-    }
-  }
+  if (strict && *c != ')')
+    throw WKTParseException("Could not parse WKT point, missing closing ')'");
 
   if (endr) (*endr) = strchr(c, ')');
 
@@ -4841,8 +4830,7 @@ Polygon<T> polygonFromWKTProj(const char* c, const char** endr, F projFunc,
   Polygon<T> poly;
   while ((c = strchr(c, '('))) {
     const char* end = 0;
-    const auto& line =
-        lineFromWKTProj<T, F>(c, &end, projFunc, sourceCRS, strict);
+    auto line = lineFromWKTProj<T, F>(c, &end, projFunc, sourceCRS, strict);
 
     if (!end) {
       if (endr) (*endr) = 0;
@@ -4853,7 +4841,7 @@ Polygon<T> polygonFromWKTProj(const char* c, const char** endr, F projFunc,
     c = end;
 
     if (i == 0)
-      poly.getOuter() = line;
+      poly.getOuter() = std::move(line);
     else
       poly.getInners().push_back(std::move(line));
     i++;
