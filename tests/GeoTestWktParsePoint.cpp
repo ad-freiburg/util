@@ -131,4 +131,60 @@ void GeoTest::testWktParsePoint() {
              std::string("POINT(5)"), util::geo::projectToCRS84<double>)),
          ==, "POINT(0 0)");
   }
+
+  {
+    TEST_THROWS(util::geo::WKTParseException,
+                util::geo::pointFromWKT<double>("POINT(1 2, 3 4)", true));
+
+    TEST_THROWS(util::geo::WKTParseException,
+                util::geo::pointFromWKT<double>("POINT(1 2 blubb)", true));
+
+    TEST_THROWS(util::geo::WKTParseException,
+                util::geo::pointFromWKT<double>("LINESTRING(1 2)", true));
+
+    TEST_THROWS(util::geo::WKTParseException,
+                util::geo::pointFromWKT<double>("MULTILINESTRING((1 2))", true));
+  }
+
+  {
+    TEST(getWKT(util::geo::pointFromWKT<double>(
+             std::string("POINT(+1 2)"),
+             true)),
+         ==, "POINT(1 2)");
+
+    TEST(getWKT(util::geo::pointFromWKT<double>(
+             std::string("POINT(1e1 2)"),
+             true)),
+         ==, "POINT(10 2)");
+
+    TEST(getWKT(util::geo::pointFromWKT<double>(
+             std::string("POINT(1e1 2e3)"),
+             true)),
+         ==, "POINT(10 2000)");
+
+    TEST(getWKT(util::geo::pointFromWKT<double>(
+             std::string("POINT(1e-1 2e3)"),
+             true)),
+         ==, "POINT(0.1 2000)");
+
+    TEST(getWKT(util::geo::pointFromWKT<double>(
+             std::string("POINT(1.5e-1 2e3)"),
+             true)),
+         ==, "POINT(0.15 2000)");
+
+    TEST(getWKT(util::geo::pointFromWKT<double>(
+             std::string("POINT(.5e-1 2e3)"),
+             true)),
+         ==, "POINT(0.05 2000)");
+
+    TEST(getWKT(util::geo::pointFromWKT<double>(
+             std::string("POINT(-.5e-1 2e3)"),
+             true)),
+         ==, "POINT(-0.05 2000)");
+
+    TEST(getWKT(util::geo::pointFromWKT<double>(
+             std::string("POINT(+.5e-1 2e3)"),
+             true)),
+         ==, "POINT(0.05 2000)");
+  }
 }
