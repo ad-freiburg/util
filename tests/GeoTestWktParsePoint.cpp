@@ -147,6 +147,15 @@ void GeoTest::testWktParsePoint() {
 
     TEST_THROWS(util::geo::WKTParseException,
                 util::geo::pointFromWKT<double>("POINT(1 2 blubb)", true));
+
+    TEST_THROWS(util::geo::WKTParseException,
+                util::geo::pointFromWKT<double>("POINT(1 2e)", true));
+
+    TEST_THROWS(util::geo::WKTParseException,
+                util::geo::pointFromWKT<double>("POINT(1e 2)", true));
+
+    TEST_THROWS(util::geo::WKTParseException,
+                util::geo::pointFromWKT<double>("POINT(1 2 3e)", true));
   }
 
   {

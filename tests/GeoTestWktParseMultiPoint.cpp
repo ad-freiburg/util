@@ -183,6 +183,18 @@ void GeoTest::testWktParseMultiPoint() {
 
     TEST_THROWS(util::geo::WKTParseException,
                 util::geo::multiPointFromWKT<double>("MULTIPOINT(1)", true));
+    TEST_THROWS(util::geo::WKTParseException,
+                util::geo::multiPointFromWKT<double>(
+                    "MULTIPOINT(2 2 3, 4 3 2 GARBAGE)", true));
+    TEST_THROWS(util::geo::WKTParseException,
+                util::geo::multiPointFromWKT<double>(
+                    "MULTIPOINT((2 2 3), (4 3 2 GARBAGE))", true));
+    TEST(getWKT(util::geo::multiPointFromWKT<double>(
+             "MULTIPOINT(2 2 3, 4 3 2 GARBAGE)", false)),
+         ==, "MULTIPOINT(2 2,4 3)");
+    TEST(getWKT(util::geo::multiPointFromWKT<double>(
+             "MULTIPOINT((2 2 3), (4 3 2 GARBAGE))", false)),
+         ==, "MULTIPOINT(2 2,4 3)");
 
     TEST_THROWS(util::geo::WKTParseException,
                 util::geo::multiPointFromWKT<double>("MULTIPOINT()", true));
