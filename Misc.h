@@ -306,6 +306,10 @@ inline double atof(const char* p, uint8_t mn, const char** end) {
     p++;
   }
 
+  if (*p == '+') {
+    p++;
+  }
+
   while (*p >= '0' && *p <= '9') {
     ret = ret * 10.0 + (*p - '0');
     p++;
@@ -343,6 +347,42 @@ inline double atof(const char* p, uint8_t mn, const char** end) {
     *end = start;
     return std::numeric_limits<double>::quiet_NaN();
   }
+
+  // exponent notation
+  if (*p == 'e' || *p == 'E') {
+    const char* q = p + 1;
+    bool expNeg = false;
+    if (*q == '-') {
+      expNeg = true;
+      q++;
+    } else if (*q == '+') {
+      q++;
+    }
+
+    if (*q >= '0' && *q <= '9') {
+      int e = 0;
+      while (*q >= '0' && *q <= '9') {
+        if (e < 10000) e = e * 10 + (*q - '0');
+        q++;
+      }
+      p = q;
+
+      double res = 1;
+      double base = 10;
+      while (e > 0) {
+        if (e & 1) res *= base;
+        base *= base;
+        e >>= 1;
+      }
+
+      if (expNeg) {
+        ret /= res;
+      } else {
+        ret *= res;
+      }
+    }
+  }
+
   *end = p;
   if (neg) return -ret;
   return ret;
