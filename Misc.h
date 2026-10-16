@@ -289,16 +289,17 @@ inline bool isFloatingPoint(const std::string& str) {
 // _____________________________________________________________________________
 inline double atof(const char* p, uint8_t mn, const char** end) {
   // this atof implementation works only on "normal" float strings like
-  // 56.445 or -345.00, but should be faster than std::atof. Different to
-  // std::atof, it returns NaN if p does not start with a number (if it starts
-  // with a number any non-nuermic suffix is simply ignored!)
-  static const int pow10[10] = {1,         10,        100,     1000,
-                                10000,     100000,    1000000, 10000000,
-                                100000000, 1000000000};
+  // 56.445, -345.00 or 1.5e-3, but should be faster than std::atof. Different
+  // to std::atof, it returns NaN if p does not start with a number (if it
+  // starts with a number any non-nuermic suffix is simply ignored!)
+  static const double pow10[23] = {
+      1e0,  1e1,  1e2,  1e3,  1e4,  1e5,  1e6,  1e7,  1e8,  1e9,  1e10, 1e11,
+      1e12, 1e13, 1e14, 1e15, 1e16, 1e17, 1e18, 1e19, 1e20, 1e21, 1e22};
   const char* start = p;
-  while (*p && (*p == ' ' || *p == '\n' || *p == '\t' || *p == '\r')) p++;
+  while ((*p == ' ' || *p == '\n' || *p == '\t' || *p == '\r')) p++;
 
   double ret = 0.0;
+  int exp = 0;
   bool neg = false;
   bool digits = false;
   if (*p == '-') {
@@ -316,31 +317,22 @@ inline double atof(const char* p, uint8_t mn, const char** end) {
     digits = true;
   }
 
+  // NOTE: i tried combining this loop with the one above (they only differ in
+  // exp--), but checking whether we already read the decimal point was more
+  // expensive than the 2 separate loops
   if (*p == '.') {
     p++;
-    double f = 0;
     uint8_t n = 0;
-
-    for (; n < mn && *p >= '0' && *p <= '9'; n++, p++) {
-      f = f * 10.0 + (*p - '0');
+    while (n < mn && *p >= '0' && *p <= '9') {
+      ret = ret * 10.0 + (*p - '0');
+      exp--;
+      n++;
+      p++;
+      digits = true;
     }
-    if (n > 0) digits = true;
 
     // skip digits beyond the prec
     while (*p >= '0' && *p <= '9') p++;
-
-    if (n < 10) {
-      ret += f / pow10[n];
-    } else {
-      double res = 1;
-      double base = 10;
-      while (n > 0) {
-        if (n & 1) res *= base;
-        base *= base;
-        n >>= 1;
-      }
-      ret += f / res;
-    }
   }
 
   if (!digits) {
@@ -351,37 +343,34 @@ inline double atof(const char* p, uint8_t mn, const char** end) {
   // exponent notation
   if (*p == 'e' || *p == 'E') {
     const char* q = p + 1;
-    bool expNeg = false;
-    if (*q == '-') {
-      expNeg = true;
-      q++;
-    } else if (*q == '+') {
-      q++;
-    }
+    // we will check negativity later by looking at p again, see below
+    if (*q == '-' || *q == '+') q++;
 
     if (*q >= '0' && *q <= '9') {
       int e = 0;
       while (*q >= '0' && *q <= '9') {
         if (e < 10000) e = e * 10 + (*q - '0');
+        // must continue until end for correct return of end point...
         q++;
       }
+
+      exp += p[1] == '-' ? -e : e;
       p = q;
-
-      double res = 1;
-      double base = 10;
-      while (e > 0) {
-        if (e & 1) res *= base;
-        base *= base;
-        e >>= 1;
-      }
-
-      if (expNeg) {
-        ret /= res;
-      } else {
-        ret *= res;
-      }
     }
   }
+
+  // apply the decimal exponent, in steps of 22 (the largest 10 power which is
+  // exact)
+  while (exp > 22) {
+    ret *= 1e22;
+    exp -= 22;
+  }
+  while (exp < -22) {
+    ret /= 1e22;
+    exp += 22;
+  }
+  if (exp < 0) ret /= pow10[-exp];
+  if (exp > 0) ret *= pow10[exp];
 
   *end = p;
   if (neg) return -ret;
