@@ -126,17 +126,17 @@ util::geo::CRSType util::geo::getCRSType(const char* c, const char** endr) {
     return CRS84;  // Default.
   }
 
-  if (ascii_strnicmp_lower(c, "<http://www.opengis.net/def/crs/OGC/1.3/CRS84>",
+  if (ascii_strnicmp_lower(c, "<http://www.opengis.net/def/crs/ogc/1.3/crs84>",
                            46) == 0) {
     if (endr) (*endr) = c + 46;
     return CRS84;
   }
-  if (ascii_strnicmp_lower(c, "<http://www.opengis.net/def/crs/EPSG/0/4326>",
+  if (ascii_strnicmp_lower(c, "<http://www.opengis.net/def/crs/epsg/0/4326>",
                            44) == 0) {
     if (endr) (*endr) = c + 44;
     return WGS84;
   }
-  if (ascii_strnicmp_lower(c, "<http://www.opengis.net/def/crs/EPSG/0/3857>",
+  if (ascii_strnicmp_lower(c, "<http://www.opengis.net/def/crs/epsg/0/3857>",
                            44) == 0) {
     if (endr) (*endr) = c + 44;
     return WEB_MERCATOR;
