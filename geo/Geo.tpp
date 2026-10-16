@@ -4528,7 +4528,8 @@ inline bool isEmptyWKT(const char* c) {
     lastWord = c;
     while (*c && !strchr(ws, *c)) c++;
   }
-  if (!lastWord || util::strncicmp(lastWord, "EMPTY", 5) != 0) return false;
+  if (!lastWord || util::ascii_letter_strnicmp_lower(lastWord, "empty", 5) != 0)
+    return false;
   return strchr(ws, lastWord[5]);
 }
 
@@ -4542,7 +4543,8 @@ inline const char* nextWKTMember(const char* c) {
 
 // _____________________________________________________________________________
 inline bool isEmptyWKTMember(const char* c) {
-  return util::strncicmp(c, "EMPTY", 5) == 0 && strchr(" \n\t\r,)", c[5]);
+  return util::ascii_letter_strnicmp_lower(c, "empty", 5) == 0 &&
+         strchr(" \n\t\r,)", c[5]);
 }
 
 // _____________________________________________________________________________
@@ -4574,19 +4576,36 @@ inline std::tuple<double, double, double> parseWKTPoint(const char*& c,
 // _____________________________________________________________________________
 template <typename T, typename F>
 Line<T> lineFromWKTProj(const char* c, const char** endr, F projFunc,
-                        CRSType sourceCRS, bool strict, bool allowSinglePoint) {
-  Line<T> line;
+                        CRSType sourceCRS, bool strict, bool allowSinglePoint,
+                        bool allowPrefix) {
   const char* start = c;
-  c = strchr(c, '(');
+
+  if (strict && !allowPrefix) {
+    while (*c && *c != '(') {
+      if (*c == 'e' || *c == 'E') {
+        c = 0;
+        break;
+      }
+      if (!(*c == ' ' || *c == '\n' || *c == '\t' || *c == '\r')) {
+        throw WKTParseException("Could not parse WKT, expected '(' or EMPTY");
+      }
+      c++;
+    }
+  } else {
+    c = strchr(c, '(');
+  }
+
   if (!c) {
     if (endr) (*endr) = 0;
     if (strict && !isEmptyWKT(start))
       throw WKTParseException("Could not parse WKT, expected '(' or EMPTY");
-    return line;  // parse error, or EMPTY
+    return {};
   }
   c++;
 
   const char* close = strchr(c, ')');
+
+  Line<T> line;
   if (close) line.reserve((close - c) / 20);
 
   while (true) {
@@ -4850,9 +4869,25 @@ Polygon<T> polygonFromWKTProj(const char* c, const char** endr, F projFunc,
 // _____________________________________________________________________________
 template <typename T, typename F>
 Polygon<T> polygonFromWKTProj(const char* c, const char** endr, F projFunc,
-                              CRSType sourceCRS, bool strict) {
+                              CRSType sourceCRS, bool strict,
+                              bool allowPrefix) {
   const char* start = c;
-  c = strchr(c, '(');
+
+  if (strict && !allowPrefix) {
+    while (*c && *c != '(') {
+      if (*c == 'e' || *c == 'E') {
+        c = 0;
+        break;
+      }
+      if (!(*c == ' ' || *c == '\n' || *c == '\t' || *c == '\r')) {
+        throw WKTParseException("Could not parse WKT, expected '(' or EMPTY");
+      }
+      c++;
+    }
+  } else {
+    c = strchr(c, '(');
+  }
+
   if (!c) {
     if (endr) (*endr) = 0;
     if (strict && !isEmptyWKT(start))
@@ -4862,11 +4897,20 @@ Polygon<T> polygonFromWKTProj(const char* c, const char** endr, F projFunc,
   }
   c += 1;
 
+  if (strict) {
+    // only whitespace allowed before the first ring
+    const char* r = c;
+    while (*r == ' ' || *r == '\n' || *r == '\t' || *r == '\r') r++;
+    if (*r != '(')
+      throw WKTParseException("Could not parse WKT polygon, expected ring");
+  }
+
   size_t i = 0;
   Polygon<T> poly;
   while ((c = strchr(c, '('))) {
     const char* end = 0;
-    auto line = lineFromWKTProj<T, F>(c, &end, projFunc, sourceCRS, strict);
+    auto line = lineFromWKTProj<T, F>(c, &end, projFunc, sourceCRS, strict,
+                                      !strict, strict);
 
     if (!end) {
       if (endr) (*endr) = 0;
@@ -4980,8 +5024,8 @@ MultiLine<T> multiLineFromWKTProj(const char* c, const char** endr, F projFunc,
             "EMPTY");
       c = strchr(c, '(');
       if (!c) break;
-      const auto& line = lineFromWKTProj<T, F>(c, &end, projFunc, sourceCRS,
-                                               strict, allowSinglePoint);
+      const auto& line = lineFromWKTProj<T, F>(
+          c, &end, projFunc, sourceCRS, strict, allowSinglePoint, !strict);
       if (!end) break;
       if (line.size() != 0) ml.push_back(std::move(line));
     }
@@ -5053,8 +5097,8 @@ MultiPolygon<T> multiPolygonFromWKTProj(const char* c, const char** endr,
             "Could not parse WKT multipolygon, expected polygon or EMPTY");
       c = strchr(c, '(');
       if (!c) break;
-      const auto& poly =
-          polygonFromWKTProj<T, F>(c, &end, projFunc, sourceCRS, strict);
+      const auto& poly = polygonFromWKTProj<T, F>(c, &end, projFunc, sourceCRS,
+                                                  strict, !strict);
 
       if (!end) break;
 
@@ -5176,8 +5220,8 @@ Collection<T> collectionFromWKTProj(const char* c, const char** endr,
       c = const_cast<char*>(strchr(end, ','));
     } else if (wktType == POLYGON) {
       const char* end = 0;
-      const auto& poly =
-          polygonFromWKTProj<T, F>(c, &end, projFunc, sourceCRS, strict);
+      const auto& poly = polygonFromWKTProj<T, F>(c, &end, projFunc, sourceCRS,
+                                                  strict, !strict);
 
       if (!end) {
         if (endr) (*endr) = 0;
@@ -5193,7 +5237,7 @@ Collection<T> collectionFromWKTProj(const char* c, const char** endr,
     } else if (wktType == LINESTRING) {
       const char* end = 0;
       const auto& line =
-          lineFromWKTProj<T, F>(c, &end, projFunc, sourceCRS, strict);
+          lineFromWKTProj<T, F>(c, &end, projFunc, sourceCRS, strict, !strict);
 
       if (!end) {
         if (endr) (*endr) = 0;

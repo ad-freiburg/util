@@ -45,6 +45,21 @@ void GeoTest::testWktParseMultiPolygon() {
                                "1,0 0)),((1 3,3 1, 1 3)))"),
          ==, WKTType::MULTIPOLYGON);
 
+    TEST(util::geo::getWKTType("  MultiPolygon ZM (((1 1,3 3,1 1), (0 0,1 1,0 "
+                               "0)),((1 3,3 1, 1 3)))", 0, true),
+         ==, WKTType::MULTIPOLYGON);
+    TEST(util::geo::getWKTType("M MultiPolygon ZM (((1 1,3 3,1 1), (0 0,1 1,0 "
+                               "0)),((1 3,3 1, 1 3)))", 0, true),
+         ==, WKTType::MULTIPOLYGON);
+    TEST(util::geo::getWKTType("\t\tMMultipolygon Z((1 1,3 3),(1 3,3 1))", 0, true),
+         ==, WKTType::MULTIPOLYGON);
+    TEST(util::geo::getWKTType("\t\tMMultipolygon Z EMPTY((1 1,3 3),(1 3,3 1))", 0, true),
+         ==, WKTType::NONE);
+    TEST(util::geo::getWKTType("tMMultipolygon EMPTY((1 1,3 3),(1 3,3 1))", 0, true),
+         ==, WKTType::NONE);
+    TEST(util::geo::getWKTType("MULTIPOLYGON EMPTY((1 1,3 3),(1 3,3 1))", 0, true),
+         ==, WKTType::NONE);
+
     TEST(util::geo::getWKT(multiPolygonFromWKT<int>(
              "MULTIPOLYGON(((1 1,3 3,1 1), (0 0,1 1,0 0)),((1 3,3 1, 1 3)))")),
          ==, "MULTIPOLYGON(((1 1,3 3,1 1),(0 0,1 1,0 0)),((1 3,3 1,1 3)))");
@@ -122,6 +137,19 @@ void GeoTest::testWktParseMultiPolygon() {
     TEST_THROWS(util::geo::WKTParseException,
                 util::geo::multiPolygonFromWKT<double>(
                     "MULTIPOLYGON(((0 0, 1 b2)))", true));
+
+    TEST_THROWS(util::geo::WKTParseException,
+                util::geo::multiPolygonFromWKT<double>(
+                    "MULTIPOLYGON((foo(0 0, 1 0, 1 1, 0 0)))", true));
+
+    TEST_THROWS(util::geo::WKTParseException,
+                util::geo::multiPolygonFromWKT<double>(
+                    "MULTIPOLYGON(((0 0, 1 0, 1 1, 0 0)), (foo(0 0, 1 0, 1 1, 0 0)))",
+                    true));
+
+    TEST(getWKT(util::geo::multiPolygonFromWKT<double>(
+             "MULTIPOLYGON(( \n(0 0, 1 0, 1 1, 0 0)))", true)),
+         ==, "MULTIPOLYGON(((0 0,1 0,1 1,0 0)))");
   }
 
   {

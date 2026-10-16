@@ -1041,7 +1041,7 @@ Line<T> lineFromWKTProj(const char* c, const char** endr, F projFunc,
 template <typename T, typename F>
 Line<T> lineFromWKTProj(const char* c, const char** endr, F projFunc,
                         CRSType sourceCRS, bool strict = false,
-                        bool allowSinglePoint = false);
+                        bool allowSinglePoint = false, bool allowPrefx = true);
 
 template <typename T>
 Line<T> lineFromWKT(const char* c, const char** endr, bool strict = false);
@@ -1104,7 +1104,8 @@ Polygon<T> polygonFromWKTProj(const char* c, const char** endr, F projFunc,
 // this function. Otherwise the CRS IRI would be lost.
 template <typename T, typename F>
 Polygon<T> polygonFromWKTProj(const char* c, const char** endr, F projFunc,
-                              CRSType sourceCRS, bool strict = false);
+                              CRSType sourceCRS, bool strict = false,
+                              bool allowPrefix = true);
 
 template <typename T>
 Polygon<T> polygonFromWKT(const char* c, const char** endr,

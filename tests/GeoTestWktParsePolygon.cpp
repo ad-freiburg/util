@@ -132,6 +132,18 @@ void GeoTest::testWktParsePolygon() {
     TEST_THROWS(util::geo::WKTParseException,
                 util::geo::polygonFromWKT<double>(
                     "polygon((0 0, 2 a))", true));
+
+    TEST_THROWS(util::geo::WKTParseException,
+                util::geo::polygonFromWKT<double>(
+                    "POLYGON(foo(0 0, 1 0, 1 1, 0 0))", true));
+
+    TEST_THROWS(util::geo::WKTParseException,
+                util::geo::polygonFromWKT<double>(
+                    "POLYGON(,(0 0, 1 0, 1 1, 0 0))", true));
+
+    TEST(getWKT(util::geo::polygonFromWKT<double>(
+             "POLYGON( \n(0 0, 1 0, 1 1, 0 0))", true)),
+         ==, "POLYGON((0 0,1 0,1 1,0 0))");
   }
 
   {

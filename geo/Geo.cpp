@@ -18,14 +18,12 @@ util::geo::WKTType util::geo::getWKTType(const char* c, const char** endr,
       if (*c == '>') c++;  // Also skip '>'.
       continue;
     }
-    if ((*c == ' ' || *c == '\n' || *c == '\t' || *c == '\r') ||
-        ((*c) == '"') || ((*c) == '\'')) {
+    if (*c == ' ' || *c == '\n' || *c == '\t' || *c == '\r' || *c == '"' ||
+        *c == '\'') {
       c++;  // skip possible whitespace
       continue;
     }
-    if ((tolower(*c) == 'm' && ((*(c + 1) == ' ' || *(c + 1) == '\n' ||
-                                 *(c + 1) == '\t' || *(c + 1) == '\r') ||
-                                tolower(*(c + 1)) != 'u'))) {
+    if ((*c == 'M' || *c == 'm') && c[1] != 'U' && c[1] != 'u') {
       c++;  // skip possible measurement M
       measurement = true;
       continue;
@@ -35,40 +33,47 @@ util::geo::WKTType util::geo::getWKTType(const char* c, const char** endr,
 
   util::geo::WKTType ret = NONE;
 
-  if (strncicmp("POINT", c, 5) == 0) {
-    c += 5;
-    if (endr) (*endr) = c;
-    ret = POINT;
-  }
-  if (strncicmp("LINESTRING", c, 10) == 0) {
-    c += 10;
-    if (endr) (*endr) = c;
-    ret = LINESTRING;
-  }
-  if (strncicmp("POLYGON", c, 7) == 0) {
-    c += 7;
-    if (endr) (*endr) = c;
-    ret = POLYGON;
-  }
-  if (strncicmp("MULTIPOINT", c, 10) == 0) {
-    c += 10;
-    if (endr) (*endr) = c;
-    ret = MULTIPOINT;
-  }
-  if (strncicmp("MULTILINESTRING", c, 15) == 0) {
-    c += 15;
-    if (endr) (*endr) = c;
-    ret = MULTILINESTRING;
-  }
-  if (strncicmp("MULTIPOLYGON", c, 12) == 0) {
-    c += 12;
-    if (endr) (*endr) = c;
-    ret = MULTIPOLYGON;
-  }
-  if (strncicmp("GEOMETRYCOLLECTION", c, 18) == 0) {
-    c += 18;
-    if (endr) (*endr) = c;
-    ret = COLLECTION;
+  // dispatch on the first character, so at most two literals are compared
+  switch (*c) {
+    case 'P':
+    case 'p':
+      if (util::ascii_letter_strnicmp_lower(c, "point", 5) == 0) {
+        c += 5;
+        ret = POINT;
+      } else if (util::ascii_letter_strnicmp_lower(c, "polygon", 7) == 0) {
+        c += 7;
+        ret = POLYGON;
+      }
+      break;
+    case 'L':
+    case 'l':
+      if (util::ascii_letter_strnicmp_lower(c, "linestring", 10) == 0) {
+        c += 10;
+        ret = LINESTRING;
+      }
+      break;
+    case 'M':
+    case 'm':
+      if (util::ascii_letter_strnicmp_lower(c, "multi", 5) != 0) break;
+      if (util::ascii_letter_strnicmp_lower(c + 5, "point", 5) == 0) {
+        c += 10;
+        ret = MULTIPOINT;
+      } else if (util::ascii_letter_strnicmp_lower(c + 5, "linestring", 10) ==
+                 0) {
+        c += 15;
+        ret = MULTILINESTRING;
+      } else if (util::ascii_letter_strnicmp_lower(c + 5, "polygon", 7) == 0) {
+        c += 12;
+        ret = MULTIPOLYGON;
+      }
+      break;
+    case 'G':
+    case 'g':
+      if (util::ascii_letter_strnicmp_lower(c, "geometrycollection", 18) == 0) {
+        c += 18;
+        ret = COLLECTION;
+      }
+      break;
   }
 
   if (ret == NONE) {
@@ -76,7 +81,10 @@ util::geo::WKTType util::geo::getWKTType(const char* c, const char** endr,
     return NONE;
   }
 
-  if (!strict) return ret;
+  if (!strict) {
+    if (endr) (*endr) = c;
+    return ret;
+  }
 
   // skip whitespace and possible measurment markers
   while (*c == 'z' || *c == 'Z' || *c == 'm' || *c == 'M' || *c == ' ' ||
@@ -88,6 +96,11 @@ util::geo::WKTType util::geo::getWKTType(const char* c, const char** endr,
       (*c != 0 && *c != '(' && *c != 'e' && *c != 'E')) {
     // no trailing stuff allowed in strict mode, now that e and E may be the
     // begining of EMPTY
+    if (endr) (*endr) = 0;
+    return NONE;
+  }
+
+  if ((*c == 'e' || *c == 'E') && !isEmptyWKTMember(c)) {
     if (endr) (*endr) = 0;
     return NONE;
   }
@@ -113,15 +126,18 @@ util::geo::CRSType util::geo::getCRSType(const char* c, const char** endr) {
     return CRS84;  // Default.
   }
 
-  if (strncicmp("<http://www.opengis.net/def/crs/OGC/1.3/CRS84>", c, 46) == 0) {
+  if (ascii_strnicmp_lower(c, "<http://www.opengis.net/def/crs/OGC/1.3/CRS84>",
+                           46) == 0) {
     if (endr) (*endr) = c + 46;
     return CRS84;
   }
-  if (strncicmp("<http://www.opengis.net/def/crs/EPSG/0/4326>", c, 44) == 0) {
+  if (ascii_strnicmp_lower(c, "<http://www.opengis.net/def/crs/EPSG/0/4326>",
+                           44) == 0) {
     if (endr) (*endr) = c + 44;
     return WGS84;
   }
-  if (strncicmp("<http://www.opengis.net/def/crs/EPSG/0/3857>", c, 44) == 0) {
+  if (ascii_strnicmp_lower(c, "<http://www.opengis.net/def/crs/EPSG/0/3857>",
+                           44) == 0) {
     if (endr) (*endr) = c + 44;
     return WEB_MERCATOR;
   }

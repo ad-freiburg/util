@@ -33,6 +33,13 @@ void GeoTest::testWktParseMultiLine() {
     TEST(util::geo::getWKTType("\t\tMMultiLineString Z((1 1,3 3),(1 3,3 1))"),
          ==, WKTType::MULTILINESTRING);
 
+    TEST(util::geo::getWKTType("\t\tMMultiLineString Z EMPTY((1 1,3 3),(1 3,3 1))", 0, true),
+         ==, WKTType::NONE);
+    TEST(util::geo::getWKTType("MultiLineString EMPTY((1 1,3 3),(1 3,3 1))", 0, true),
+         ==, WKTType::NONE);
+    TEST(util::geo::getWKTType("MULTILINESTRING EMPTY((1 1,3 3),(1 3,3 1))", 0, true),
+         ==, WKTType::NONE);
+
     TEST(util::geo::getWKT(
              multiLineFromWKT<int>("MULTILINESTRING((1 1,3 3),(1 3,3 1))")),
          ==, "MULTILINESTRING((1 1,3 3),(1 3,3 1))");

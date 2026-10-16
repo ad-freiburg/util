@@ -263,11 +263,62 @@ void GeoTest::testWktParseCollection() {
              util::geo::projectToCRS84<double>, true)));
 
     TEST_THROWS(util::geo::WKTParseException, getWKT(util::geo::collectionFromWKTProj<double>(
+             std::string("GEOMETRYCOLLECTION(POINT     (100e-2 55), MULTILINESTRING(foo(1 2, 3 3, 1 2),(0 100e-0002, 1e0 0, 1 1e-0, 0 0e+0, 0  1), (+5 -2, 10e2 3, 5 -20e-1)))"),
+             util::geo::projectToCRS84<double>, true)));
+    TEST_THROWS(util::geo::WKTParseException, getWKT(util::geo::collectionFromWKTProj<double>(
+             std::string("GEOMETRYCOLLECTION(POINT     (100e-2 55), MULTILINESTRING((1 2, 3 3, 1 2),,(0 100e-0002, 1e0 0, 1 1e-0, 0 0e+0, 0  1), (+5 -2, 10e2 3, 5 -20e-1)))"),
+             util::geo::projectToCRS84<double>, true)));
+    TEST_THROWS(util::geo::WKTParseException, getWKT(util::geo::collectionFromWKTProj<double>(
+             std::string("GEOMETRYCOLLECTION(POINT     (100e-2 55), MULTILINESTRING((1 2, 3 3, 1 2),((0 100e-0002, 1e0 0, 1 1e-0, 0 0e+0, 0  1), (+5 -2, 10e2 3, 5 -20e-1)))"),
+             util::geo::projectToCRS84<double>, true)));
+    TEST_THROWS(util::geo::WKTParseException, getWKT(util::geo::collectionFromWKTProj<double>(
+             std::string("GEOMETRYCOLLECTION(POINT     (100e-2 55), MULTILINESTRING((1 2, 3 3, 1 2),(f0 100e-0002, 1e0 0, 1 1e-0, 0 0e+0, 0  1), (+5 -2, 10e2 3, 5 -20e-1)))"),
+             util::geo::projectToCRS84<double>, true)));
+
+    TEST_THROWS(util::geo::WKTParseException, getWKT(util::geo::collectionFromWKTProj<double>(
+             std::string("GEOMETRYCOLLECTION(MULTIPOINT     (foo(100e-2 55)), MULTIPOLYGON(((1 2, 3 3, 1 2)),((0 100e-0002, 1e0 0, 1 1e-0, 0 0e+0, 0  1), (+5 -2, 10e2 3, 5 -20e-1))))"),
+             util::geo::projectToCRS84<double>, true)));
+
+    TEST_THROWS(util::geo::WKTParseException, getWKT(util::geo::collectionFromWKTProj<double>(
              std::string("GEOMETRYCOLLECTION(POINT     (100e-2 55), MULTIPOLYGON((foo(1 2, 3 3, 1 2)),((0 100e-0002, 1e0 0, 1 1e-0, 0 0e+0, 0  1), (+5 -2, 10e2 3, 5 -20e-1))))"),
              util::geo::projectToCRS84<double>, true)));
 
     TEST_THROWS(util::geo::WKTParseException, getWKT(util::geo::collectionFromWKTProj<double>(
+             std::string("GEOMETRYCOLLECTION(POINT     (100e-2 55), MULTIPOLYGON(((1 2, 3 3, 1 2)),(foo(0 100e-0002, 1e0 0, 1 1e-0, 0 0e+0, 0  1), (+5 -2, 10e2 3, 5 -20e-1))))"),
+             util::geo::projectToCRS84<double>, true)));
+
+    TEST_THROWS(util::geo::WKTParseException, getWKT(util::geo::collectionFromWKTProj<double>(
+             std::string("GEOMETRYCOLLECTION(POINT     (100e-2 55), MULTIPOLYGON(((1 2, 3 3, 1 2)),((0 100e-0002, 1e0 0, 1 1e-0, 0 0e+0, 0  1),foo (+5 -2, 10e2 3, 5 -20e-1))))"),
+             util::geo::projectToCRS84<double>, true)));
+
+    TEST_THROWS(util::geo::WKTParseException, getWKT(util::geo::collectionFromWKTProj<double>(
+             std::string("GEOMETRYCOLLECTION(POINT     (100e-2 55), MULTIPOLYGON(((1 2, 3 3, 1 2)),((0 100e-0002, 1e0 0, 1 1e-0, 0 0e+0, 0  1),, (+5 -2, 10e2 3, 5 -20e-1))))"),
+             util::geo::projectToCRS84<double>, true)));
+    TEST_THROWS(util::geo::WKTParseException, getWKT(util::geo::collectionFromWKTProj<double>(
+             std::string("GEOMETRYCOLLECTION(POINT     (100e-2 55), MULTIPOLYGON(((1 2, 3 3, 1 2)),((0 100e-0002, 1e0 0, 1 1e-0, 0 0e+0, 0  1),( (+5 -2, 10e2 3, 5 -20e-1))))"),
+             util::geo::projectToCRS84<double>, true)));
+    TEST_THROWS(util::geo::WKTParseException, getWKT(util::geo::collectionFromWKTProj<double>(
+             std::string("GEOMETRYCOLLECTION(POINT     (100e-2 55), MULTIPOLYGON(((1 2, 3 3, 1 2)),((0 100e-0002, 1e0 0, 1 1e-0, 0 0e+0, 0  1)foo, (+5 -2, 10e2 3, 5 -20e-1))))"),
+             util::geo::projectToCRS84<double>, true)));
+
+    TEST_THROWS(util::geo::WKTParseException, getWKT(util::geo::collectionFromWKTProj<double>(
              std::string("GEOMETRYCOLLECTION(POINT     (100e-2 55), MULTIPOLYGON MULTIPOLYGON(((1 2, 3 3, 1 2)),((0 100e-0002, 1e0 0, 1 1e-0, 0 0e+0, 0  1), (+5 -2, 10e2 3, 5 -20e-1))))"),
+             util::geo::projectToCRS84<double>, true)));
+
+    TEST_THROWS(util::geo::WKTParseException, getWKT(util::geo::collectionFromWKTProj<double>(
+             std::string("GEOMETRYCOLLECTION(POINT     (100e-2 55), MULTIPOLYGON EMPTY(((1 2, 3 3, 1 2)),((0 100e-0002, 1e0 0, 1 1e-0, 0 0e+0, 0  1), (+5 -2, 10e2 3, 5 -20e-1))))"),
+             util::geo::projectToCRS84<double>, true)));
+
+    TEST_THROWS(util::geo::WKTParseException, getWKT(util::geo::collectionFromWKTProj<double>(
+             std::string("GEOMETRYCOLLECTION(POINT     (100e-2 55), MULTIPOLYGON EMPTY EMPTY)"),
+             util::geo::projectToCRS84<double>, true)));
+
+    TEST_THROWS(util::geo::WKTParseException, getWKT(util::geo::collectionFromWKTProj<double>(
+             std::string("GEOMETRYCOLLECTION(POINT     (100e-2 55), MULTIPOLYGON EMPTYY)"),
+             util::geo::projectToCRS84<double>, true)));
+
+    TEST_THROWS(util::geo::WKTParseException, getWKT(util::geo::collectionFromWKTProj<double>(
+             std::string("GEOMETRYCOLLECTION(POINT     (100e-2 55), MULTIPOLYGON EEMPTY)"),
              util::geo::projectToCRS84<double>, true)));
   }
 
