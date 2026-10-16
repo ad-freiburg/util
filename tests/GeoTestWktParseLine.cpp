@@ -416,4 +416,79 @@ void GeoTest::testWktParseLine() {
     TEST(util::geo::getWKT(util::geo::lineFromWKT<double>(in, 0, false)), ==,
          "LINESTRING(1 2,3 4)");
   }
+
+  {
+    TEST(getWKT(lineFromWKT<double>(
+             std::string("\"LINESTRING(1 2, 3 4)\"^^<>"), true)),
+         ==, "LINESTRING(1 2,3 4)");
+    TEST(getWKT(lineFromWKT<double>(
+             std::string("\"LINESTRING(1 2, 3 4)\"^^<http://www.opengis.net/ont/geosparql#wktLiteral>"), true)),
+         ==, "LINESTRING(1 2,3 4)");
+    TEST(getWKT(lineFromWKT<double>(
+             std::string("\"LINESTRING(1 2, 3 4)\"^^<http://www.opengis.net/ont/geosparql#wktLiteral> \n"), true)),
+         ==, "LINESTRING(1 2,3 4)");
+    TEST(getWKT(lineFromWKT<double>(
+             std::string("\"<http://www.opengis.net/def/crs/EPSG/0/4326> LINESTRING(1 2, 3 4)\"^^<http://www.opengis.net/ont/geosparql#wktLiteral>"), true)),
+         ==, "LINESTRING(2 1,4 3)");
+    TEST(getWKT(lineFromWKT<double>(
+             std::string("\"LINESTRING EMPTY\"^^<http://www.opengis.net/ont/geosparql#wktLiteral>"), true)),
+         ==, "LINESTRING()");
+    TEST(getWKTType("\"LINESTRING(1 2, 3 4)\"^^<http://www.opengis.net/ont/geosparql#wktLiteral>", 0, true), ==,
+         WKTType::LINESTRING);
+    TEST(getWKTType("\"LINESTRING EMPTY\"^^<http://www.opengis.net/ont/geosparql#wktLiteral>", 0, true), ==,
+         WKTType::LINESTRING);
+    TEST(getWKTType("\"LINESTRING Z EMPTY\"^^<>", 0, true), ==,
+         WKTType::LINESTRING);
+    TEST(getWKT(lineFromWKT<double>(
+             std::string("\"LINESTRING(1 2, 3 4)\"^^<>"), false)),
+         ==, "LINESTRING(1 2,3 4)");
+    TEST(getWKT(lineFromWKT<double>(
+             std::string("\"LINESTRING(1 2, 3 4)\"^^<http://www.opengis.net/ont/geosparql#wktLiteral>"), false)),
+         ==, "LINESTRING(1 2,3 4)");
+    TEST(getWKT(lineFromWKT<double>(
+             std::string("\"LINESTRING(1 2, 3 4)\"^^<http://www.opengis.net/ont/geosparql#wktLiteral> \n"), false)),
+         ==, "LINESTRING(1 2,3 4)");
+    TEST(getWKT(lineFromWKT<double>(
+             std::string("\"<http://www.opengis.net/def/crs/EPSG/0/4326> LINESTRING(1 2, 3 4)\"^^<http://www.opengis.net/ont/geosparql#wktLiteral>"), false)),
+         ==, "LINESTRING(2 1,4 3)");
+    TEST(getWKT(lineFromWKT<double>(
+             std::string("\"LINESTRING EMPTY\"^^<http://www.opengis.net/ont/geosparql#wktLiteral>"), false)),
+         ==, "LINESTRING()");
+    TEST(getWKTType("\"LINESTRING(1 2, 3 4)\"^^<http://www.opengis.net/ont/geosparql#wktLiteral>", 0, false), ==,
+         WKTType::LINESTRING);
+    TEST(getWKTType("\"LINESTRING EMPTY\"^^<http://www.opengis.net/ont/geosparql#wktLiteral>", 0, false), ==,
+         WKTType::LINESTRING);
+    TEST(getWKTType("\"LINESTRING Z EMPTY\"^^<>", 0, false), ==,
+         WKTType::LINESTRING);
+
+    // anything after the datatype, or an incomplete datatype
+    TEST_THROWS(WKTParseException,
+                lineFromWKT<double>(
+                    std::string("\"LINESTRING(1 2, 3 4)\"^^<http://www.opengis.net/ont/geosparql#wktLiteral> garbage"), true));
+    TEST_THROWS(WKTParseException,
+                lineFromWKT<double>(
+                    std::string("\"LINESTRING(1 2, 3 4)\"^^<http://www.opengis.net/ont/geosparql#wktLiteral>^^<http://www.opengis.net/ont/geosparql#wktLiteral>"), true));
+    TEST_THROWS(WKTParseException,
+                lineFromWKT<double>(
+                    std::string("\"LINESTRING(1 2, 3 4)\"^^<http://x"), true));
+    TEST_THROWS(WKTParseException,
+                lineFromWKT<double>(
+                    std::string("\"LINESTRING(1 2, 3 4)\"^<http://x>"), true));
+    TEST_THROWS(WKTParseException,
+                lineFromWKT<double>(
+                    std::string("\"LINESTRING(1 2, 3 4)\"^^http://x"), true));
+    TEST_THROWS(WKTParseException,
+                lineFromWKT<double>(
+                    std::string("\"LINESTRING(1 2, 3 4)\"^^"), true));
+    TEST(getWKTType("\"LINESTRING EMPTY\"^^<http://www.opengis.net/ont/geosparql#wktLiteral> garbage", 0, true), ==,
+         WKTType::NONE);
+    TEST(getWKTType("\"LINESTRING EMPTY\"^^<http://www.opengis.net/ont/geosparql#wktLiteral> EMPTY", 0, true), ==,
+         WKTType::NONE);
+    TEST(getWKTType("\"LINESTRING EMPTY\"^^<http://x", 0, true), ==,
+         WKTType::NONE);
+    TEST(getWKTType("\"LINESTRING^^<http://www.opengis.net/ont/geosparql#wktLiteral>(1 2, 3 4)", 0, true), ==,
+         WKTType::NONE);
+    TEST(getWKTType("\"LINESTRING EMPTY\"^^<http://www.opengis.net/ont/geosparql#wktLiteral>, POINT(1 2)", 0, true), ==,
+         WKTType::NONE);
+  }
 }

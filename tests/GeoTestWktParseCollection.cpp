@@ -528,4 +528,102 @@ void GeoTest::testWktParseCollection() {
                 collectionFromWKT<double>(
                     std::string("GEOMETRYCOLLECTION(GEOMETRYCOLLECTION"), true));
   }
+
+  {
+    TEST(getWKT(collectionFromWKT<double>(
+             std::string("GEOMETRYCOLLECTION(POINT(1 2),MULTIPOINT \"EMPTY,POINT(3 4))"),
+             true)),
+         ==, "GEOMETRYCOLLECTION(POINT(1 2),POINT(3 4))");
+    TEST(getWKT(collectionFromWKT<double>(
+             std::string("GEOMETRYCOLLECTION(POINT(1 2),MULTIPOINT ' EMPTY,POINT(3 4))"),
+             true)),
+         ==, "GEOMETRYCOLLECTION(POINT(1 2),POINT(3 4))");
+    TEST(getWKT(collectionFromWKT<double>(
+             std::string("GEOMETRYCOLLECTION(POINT(1 2),LINESTRING \"EMPTY,POINT(3 4))"),
+             true)),
+         ==, "GEOMETRYCOLLECTION(POINT(1 2),POINT(3 4))");
+    TEST(getWKT(collectionFromWKT<double>(
+             std::string("GEOMETRYCOLLECTION(POINT(1 2),POLYGON \"EMPTY,POINT(3 4))"),
+             true)),
+         ==, "GEOMETRYCOLLECTION(POINT(1 2),POINT(3 4))");
+    TEST(getWKT(collectionFromWKT<double>(
+             std::string("GEOMETRYCOLLECTION(POINT(1 2),MULTILINESTRING \"EMPTY,POINT(3 4))"),
+             true)),
+         ==, "GEOMETRYCOLLECTION(POINT(1 2),POINT(3 4))");
+    TEST(getWKT(collectionFromWKT<double>(
+             std::string("GEOMETRYCOLLECTION(POINT(1 2),MULTIPOLYGON \"EMPTY,POINT(3 4))"),
+             true)),
+         ==, "GEOMETRYCOLLECTION(POINT(1 2),POINT(3 4))");
+    TEST(getWKT(collectionFromWKT<double>(
+             std::string("GEOMETRYCOLLECTION(POINT(1 2),GEOMETRYCOLLECTION \"EMPTY,POINT(3 4))"),
+             true)),
+         ==, "GEOMETRYCOLLECTION(POINT(1 2),POINT(3 4))");
+    TEST(getWKT(collectionFromWKT<double>(
+             std::string("GEOMETRYCOLLECTION(POINT(1 2),MULTIPOINT \"EMPTY)"),
+             true)),
+         ==, "GEOMETRYCOLLECTION(POINT(1 2))");
+    TEST(getWKT(collectionFromWKT<double>(
+             std::string("GEOMETRYCOLLECTION(POINT(1 2),MULTIPOINT \"EMPTY,POINT(3 4))"),
+             false)),
+         ==, "GEOMETRYCOLLECTION(POINT(1 2),POINT(3 4))");
+    TEST(getWKT(collectionFromWKT<double>(
+             std::string("GEOMETRYCOLLECTION(POINT(1 2),MULTIPOINT ' EMPTY,POINT(3 4))"),
+             false)),
+         ==, "GEOMETRYCOLLECTION(POINT(1 2),POINT(3 4))");
+    TEST(getWKT(collectionFromWKT<double>(
+             std::string("GEOMETRYCOLLECTION(POINT(1 2),LINESTRING \"EMPTY,POINT(3 4))"),
+             false)),
+         ==, "GEOMETRYCOLLECTION(POINT(1 2),POINT(3 4))");
+    TEST(getWKT(collectionFromWKT<double>(
+             std::string("GEOMETRYCOLLECTION(POINT(1 2),POLYGON \"EMPTY,POINT(3 4))"),
+             false)),
+         ==, "GEOMETRYCOLLECTION(POINT(1 2),POINT(3 4))");
+    TEST(getWKT(collectionFromWKT<double>(
+             std::string("GEOMETRYCOLLECTION(POINT(1 2),MULTILINESTRING \"EMPTY,POINT(3 4))"),
+             false)),
+         ==, "GEOMETRYCOLLECTION(POINT(1 2),POINT(3 4))");
+    TEST(getWKT(collectionFromWKT<double>(
+             std::string("GEOMETRYCOLLECTION(POINT(1 2),MULTIPOLYGON \"EMPTY,POINT(3 4))"),
+             false)),
+         ==, "GEOMETRYCOLLECTION(POINT(1 2),POINT(3 4))");
+    TEST(getWKT(collectionFromWKT<double>(
+             std::string("GEOMETRYCOLLECTION(POINT(1 2),GEOMETRYCOLLECTION \"EMPTY,POINT(3 4))"),
+             false)),
+         ==, "GEOMETRYCOLLECTION(POINT(1 2),POINT(3 4))");
+    TEST(getWKT(collectionFromWKT<double>(
+             std::string("GEOMETRYCOLLECTION(POINT(1 2),MULTIPOINT \"EMPTY)"),
+             false)),
+         ==, "GEOMETRYCOLLECTION(POINT(1 2))");
+  }
+
+  {
+    // an RDF datatype ^^<...> may follow a collection, but not a member
+    TEST(getWKT(collectionFromWKT<double>(
+             std::string("\"GEOMETRYCOLLECTION(POINT(1 2),LINESTRING(1 2,3 4))\"^^<http://www.opengis.net/ont/geosparql#wktLiteral>"), true)),
+         ==, "GEOMETRYCOLLECTION(POINT(1 2),LINESTRING(1 2,3 4))");
+    TEST(getWKT(collectionFromWKT<double>(
+             std::string("\"GEOMETRYCOLLECTION EMPTY\"^^<http://www.opengis.net/ont/geosparql#wktLiteral>"), true)),
+         ==, "GEOMETRYCOLLECTION()");
+    TEST(getWKT(collectionFromWKT<double>(
+             std::string("\"GEOMETRYCOLLECTION(POINT(1 2),LINESTRING(1 2,3 4))\"^^<http://www.opengis.net/ont/geosparql#wktLiteral>"), false)),
+         ==, "GEOMETRYCOLLECTION(POINT(1 2),LINESTRING(1 2,3 4))");
+    TEST(getWKT(collectionFromWKT<double>(
+             std::string("\"GEOMETRYCOLLECTION EMPTY\"^^<http://www.opengis.net/ont/geosparql#wktLiteral>"), false)),
+         ==, "GEOMETRYCOLLECTION()");
+    TEST_THROWS(WKTParseException,
+                collectionFromWKT<double>(
+                    std::string("GEOMETRYCOLLECTION(\"POINT(1 2)\"^^<http://www.opengis.net/ont/geosparql#wktLiteral>)"), true));
+    TEST_THROWS(WKTParseException,
+                collectionFromWKT<double>(
+                    std::string("GEOMETRYCOLLECTION(\"POINT(1 2)\"^^<http://www.opengis.net/ont/geosparql#wktLiteral>,POINT(3 4))"), true));
+    TEST_THROWS(WKTParseException,
+                collectionFromWKT<double>(
+                    std::string("GEOMETRYCOLLECTION(\"LINESTRING EMPTY\"^^<http://www.opengis.net/ont/geosparql#wktLiteral>,POINT(1 2))"), true));
+    TEST_THROWS(WKTParseException,
+                collectionFromWKT<double>(
+                    std::string("GEOMETRYCOLLECTION(POINT(1 2))^^<http://www.opengis.net/ont/geosparql#wktLiteral>)"), true));
+    TEST_THROWS(WKTParseException,
+                multiPointFromWKT<double>(
+                    std::string("MULTIPOINT((1 2)\"^^<http://www.opengis.net/ont/geosparql#wktLiteral>,(3 4))"), true));
+  }
 }

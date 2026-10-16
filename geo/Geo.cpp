@@ -104,9 +104,13 @@ util::geo::WKTType util::geo::getWKTType(const char* c, const char** endr,
     const char* r = c;
     if (util::ascii_letter_strnicmp_lower(r, "empty", 5) == 0) {
       r += 5;
-      while (*r == ' ' || *r == '\n' || *r == '\t' || *r == '\r') r++;
+      while (*r == ' ' || *r == '\n' || *r == '\t' || *r == '\r' || *r == '"' ||
+             *r == '\'')
+        r++;
     }
-    if (r == c || (*r != 0 && *r != ',' && *r != ')')) {
+    const char* afterDatatype = skipWKTDatatype(r);
+    if (r == c || (afterDatatype != r && *afterDatatype) ||
+        (afterDatatype == r && *r != 0 && *r != ',' && *r != ')')) {
       if (endr) (*endr) = 0;
       return NONE;
     }

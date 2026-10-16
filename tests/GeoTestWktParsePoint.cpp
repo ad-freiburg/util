@@ -281,4 +281,74 @@ void GeoTest::testWktParsePoint() {
     TEST(getWKT(util::geo::pointFromWKT<double>("POINT(1-2 3)", false)), ==,
          "POINT(1 -2)");
   }
+
+  {
+    // quotes are treated like whitespace
+    TEST(getWKT(pointFromWKT<double>(
+             std::string("\"POINT(1 2)\""), true)),
+         ==, "POINT(1 2)");
+    TEST(getWKT(pointFromWKT<double>(
+             std::string("'POINT(1 2)'"), true)),
+         ==, "POINT(1 2)");
+    TEST(getWKT(pointFromWKT<double>(
+             std::string("\"POINT(1 2)"), true)),
+         ==, "POINT(1 2)");
+    TEST(getWKT(pointFromWKT<double>(
+             std::string("POINT(1 2)\""), true)),
+         ==, "POINT(1 2)");
+    TEST(getWKT(pointFromWKT<double>(
+             std::string("POINT \"(1 2)\""), true)),
+         ==, "POINT(1 2)");
+    TEST(getWKT(pointFromWKT<double>(
+             std::string("POINT(1 \"2)"), true)),
+         ==, "POINT(1 2)");
+    TEST(getWKT(pointFromWKT<double>(
+             std::string("POINT(\" 1 2 \")"), true)),
+         ==, "POINT(1 2)");
+    TEST(getWKT(pointFromWKT<double>(
+             std::string("\"POINT(1 2)\""), false)),
+         ==, "POINT(1 2)");
+    TEST(getWKT(pointFromWKT<double>(
+             std::string("'POINT(1 2)'"), false)),
+         ==, "POINT(1 2)");
+    TEST(getWKT(pointFromWKT<double>(
+             std::string("\"POINT(1 2)"), false)),
+         ==, "POINT(1 2)");
+    TEST(getWKT(pointFromWKT<double>(
+             std::string("POINT(1 2)\""), false)),
+         ==, "POINT(1 2)");
+    TEST(getWKT(pointFromWKT<double>(
+             std::string("POINT \"(1 2)\""), false)),
+         ==, "POINT(1 2)");
+    TEST(getWKT(pointFromWKT<double>(
+             std::string("POINT(1 \"2)"), false)),
+         ==, "POINT(1 2)");
+    TEST(getWKT(pointFromWKT<double>(
+             std::string("POINT(\" 1 2 \")"), false)),
+         ==, "POINT(1 2)");
+    TEST(getWKTType("\"POINT(1 2)\"", 0, true), ==,
+         WKTType::POINT);
+    TEST(getWKTType("'LINESTRING EMPTY'", 0, true), ==,
+         WKTType::LINESTRING);
+    TEST(getWKTType("LINESTRING \"EMPTY\"", 0, true), ==,
+         WKTType::LINESTRING);
+    TEST(getWKT(collectionFromWKT<double>(
+             std::string("GEOMETRYCOLLECTION(\"POINT(1 2)\", 'LINESTRING(1 2, 3 4)')"), true)),
+         ==, "GEOMETRYCOLLECTION(POINT(1 2),LINESTRING(1 2,3 4))");
+    TEST(getWKT(collectionFromWKT<double>(
+             std::string("GEOMETRYCOLLECTION(POINT(1 2),MULTIPOINT \"EMPTY,POINT(3 4))"), true)),
+         ==, "GEOMETRYCOLLECTION(POINT(1 2),POINT(3 4))");
+    TEST(getWKT(collectionFromWKT<double>(
+             std::string("GEOMETRYCOLLECTION(POINT(1 2),MULTIPOINT \"EMPTY)"), true)),
+         ==, "GEOMETRYCOLLECTION(POINT(1 2))");
+    TEST(getWKT(collectionFromWKT<double>(
+             std::string("GEOMETRYCOLLECTION(\"POINT(1 2)\", 'LINESTRING(1 2, 3 4)')"), false)),
+         ==, "GEOMETRYCOLLECTION(POINT(1 2),LINESTRING(1 2,3 4))");
+    TEST(getWKT(collectionFromWKT<double>(
+             std::string("GEOMETRYCOLLECTION(POINT(1 2),MULTIPOINT \"EMPTY,POINT(3 4))"), false)),
+         ==, "GEOMETRYCOLLECTION(POINT(1 2),POINT(3 4))");
+    TEST(getWKT(collectionFromWKT<double>(
+             std::string("GEOMETRYCOLLECTION(POINT(1 2),MULTIPOINT \"EMPTY)"), false)),
+         ==, "GEOMETRYCOLLECTION(POINT(1 2))");
+  }
 }
