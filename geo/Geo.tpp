@@ -4602,6 +4602,7 @@ Line<T> lineFromWKTProj(const char* c, const char** endr, F projFunc,
       }
       c++;
     }
+    if (c && !*c) c = 0;
   } else {
     c = strchr(c, '(');
   }
@@ -4895,6 +4896,7 @@ Polygon<T> polygonFromWKTProj(const char* c, const char** endr, F projFunc,
       }
       c++;
     }
+    if (c && !*c) c = 0;
   } else {
     c = strchr(c, '(');
   }
