@@ -422,4 +422,110 @@ void GeoTest::testWktParseCollection() {
          ==,
          "GEOMETRYCOLLECTION(MULTIPOLYGON(((0 0,4 0,4 4,0 0))),POINT(1 2))");
   }
+
+  {
+    // nested collections
+    //
+    auto nested = collectionFromWKT<double>(
+        std::string("GEOMETRYCOLLECTION(GEOMETRYCOLLECTION(POINT(1 2),"
+                    "POINT(5 6)),POINT(3 4))"),
+        true);
+    TEST(nested.size(), ==, 2);
+    TEST(nested[0].getType(), ==, 5);
+    TEST(nested[0].getCollection().size(), ==, 2);
+    TEST(nested[1].getType(), ==, 0);
+    TEST(getWKT(nested), ==,
+         "GEOMETRYCOLLECTION(GEOMETRYCOLLECTION(POINT(1 2),POINT(5 6)),"
+         "POINT(3 4))");
+
+    TEST(getWKT(collectionFromWKT<double>(
+             std::string("GEOMETRYCOLLECTION(POINT(3 4),"
+                         "GEOMETRYCOLLECTION(POINT(1 2)))"),
+             true)),
+         ==, "GEOMETRYCOLLECTION(POINT(3 4),GEOMETRYCOLLECTION(POINT(1 2)))");
+    TEST(getWKT(collectionFromWKT<double>(
+             std::string("GEOMETRYCOLLECTION(GEOMETRYCOLLECTION("
+                         "GEOMETRYCOLLECTION(POINT(1 2))))"),
+             true)),
+         ==,
+         "GEOMETRYCOLLECTION(GEOMETRYCOLLECTION(GEOMETRYCOLLECTION(POINT(1 "
+         "2))))");
+    TEST(getWKT(collectionFromWKT<double>(
+             std::string("GEOMETRYCOLLECTION(GEOMETRYCOLLECTION(POINT(1 2)),"
+                         "GEOMETRYCOLLECTION(LINESTRING(1 2,3 4),"
+                         "POLYGON((0 0,1 0,1 1,0 0))))"),
+             true)),
+         ==,
+         "GEOMETRYCOLLECTION(GEOMETRYCOLLECTION(POINT(1 2)),"
+         "GEOMETRYCOLLECTION(LINESTRING(1 2,3 4),POLYGON((0 0,1 0,1 1,0 0))))");
+
+    TEST(getWKT(collectionFromWKT<double>(
+             std::string("GEOMETRYCOLLECTION(GEOMETRYCOLLECTION (POINT(1 2)))"),
+             true)),
+         ==, "GEOMETRYCOLLECTION(GEOMETRYCOLLECTION(POINT(1 2)))");
+    TEST(getWKT(collectionFromWKT<double>(
+             std::string("GEOMETRYCOLLECTION(GEOMETRYCOLLECTION (POINT(1 2)))"),
+             false)),
+         ==, "GEOMETRYCOLLECTION(GEOMETRYCOLLECTION(POINT(1 2)))");
+    TEST(getWKT(collectionFromWKT<double>(
+             std::string("GEOMETRYCOLLECTION ( GEOMETRYCOLLECTION Z ( POINT ( 1 "
+                         "2 ) , LINESTRING(1 2,3 4) ) , POINT(3 4) )"),
+             true)),
+         ==,
+         "GEOMETRYCOLLECTION(GEOMETRYCOLLECTION(POINT(1 2),LINESTRING(1 2,3 "
+         "4)),POINT(3 4))");
+
+    TEST(getWKT(collectionFromWKT<double>(
+             std::string("GEOMETRYCOLLECTION(GEOMETRYCOLLECTION EMPTY,"
+                         "POINT(3 4))"),
+             true)),
+         ==, "GEOMETRYCOLLECTION(POINT(3 4))");
+    TEST(getWKT(collectionFromWKT<double>(
+             std::string("GEOMETRYCOLLECTION(GEOMETRYCOLLECTION(POINT EMPTY),"
+                         "POINT(3 4))"),
+             true)),
+         ==, "GEOMETRYCOLLECTION(POINT(3 4))");
+
+    Collection<double> inner;
+    inner.push_back(Point<double>(1, 2));
+    Collection<double> outer;
+    outer.push_back(inner);
+    outer.push_back(Point<double>(3, 4));
+    TEST(collectionFromWKT<double>(getWKT(outer), true) == outer);
+
+    const char* in =
+        "GEOMETRYCOLLECTION(GEOMETRYCOLLECTION(POINT(1 2)),POINT(3 4)) rest";
+    const char* end = 0;
+    collectionFromWKT<double>(in, &end, true);
+    TEST(end - in, ==, 60);
+
+    TEST_THROWS(WKTParseException,
+                collectionFromWKT<double>(
+                    std::string("GEOMETRYCOLLECTION(GEOMETRYCOLLECTION(POINT(1 "
+                                "2)) garbage,POINT(3 4))"),
+                    true));
+    TEST_THROWS(WKTParseException,
+                collectionFromWKT<double>(
+                    std::string("GEOMETRYCOLLECTION(GEOMETRYCOLLECTION(POINT(1 "
+                                "2),POINT(3 4))"),
+                    true));
+    TEST_THROWS(WKTParseException,
+                collectionFromWKT<double>(
+                    std::string("GEOMETRYCOLLECTION(GEOMETRYCOLLECTION(POINT(1 "
+                                "2)),POINT(3 4)))"),
+                    true));
+    TEST_THROWS(WKTParseException,
+                collectionFromWKT<double>(
+                    std::string("GEOMETRYCOLLECTION(GEOMETRYCOLLECTION(POINT(1 "
+                                "2),),POINT(3 4))"),
+                    true));
+    TEST_THROWS(WKTParseException,
+                collectionFromWKT<double>(
+                    std::string("GEOMETRYCOLLECTION(GEOMETRYCOLLECTION(FOO(1 2)),"
+                                "POINT(3 4))"),
+                    true));
+    TEST_THROWS(WKTParseException,
+                collectionFromWKT<double>(
+                    std::string("GEOMETRYCOLLECTION(GEOMETRYCOLLECTION"), true));
+  }
 }

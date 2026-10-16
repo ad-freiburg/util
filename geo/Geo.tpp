@@ -5195,6 +5195,7 @@ Collection<T> collectionFromWKTProj(const char* c, const char** endr,
     return col;
   }
   const char* lastEnd = c;
+
   do {
     c++;
     while ((*c == ' ' || *c == '\n' || *c == '\t' || *c == '\r'))
@@ -5217,11 +5218,7 @@ Collection<T> collectionFromWKTProj(const char* c, const char** endr,
     if (isEmptyWKTMember(p)) {
       lastEnd = p + 4;
       if (strict) checkWKTMemberEnd(lastEnd);
-      c = strchr(p + 5, ',');
-      continue;
-    }
-
-    if (wktType == POINT) {
+    } else if (wktType == POINT) {
       const char* end = 0;
       const auto& point =
           pointFromWKTProj<T, F>(c, &end, projFunc, sourceCRS, strict);
@@ -5237,7 +5234,6 @@ Collection<T> collectionFromWKTProj(const char* c, const char** endr,
       if (strict) checkWKTMemberEnd(end);
 
       col.push_back(point);
-      c = const_cast<char*>(strchr(end, ','));
     } else if (wktType == POLYGON) {
       const char* end = 0;
       const auto& poly = polygonFromWKTProj<T, F>(c, &end, projFunc, sourceCRS,
@@ -5253,7 +5249,6 @@ Collection<T> collectionFromWKTProj(const char* c, const char** endr,
       lastEnd = end;
       if (strict) checkWKTMemberEnd(end);
       if (poly.getOuter().size() > 1) col.push_back(poly);
-      c = const_cast<char*>(strchr(end, ','));
     } else if (wktType == LINESTRING) {
       const char* end = 0;
       const auto& line =
@@ -5269,7 +5264,6 @@ Collection<T> collectionFromWKTProj(const char* c, const char** endr,
       lastEnd = end;
       if (strict) checkWKTMemberEnd(end);
       if (line.size() > 1) col.push_back(line);
-      c = const_cast<char*>(strchr(end, ','));
     } else if (wktType == MULTIPOINT) {
       const char* end = 0;
       const auto& mp =
@@ -5285,7 +5279,6 @@ Collection<T> collectionFromWKTProj(const char* c, const char** endr,
       lastEnd = end;
       if (strict) checkWKTMemberEnd(end);
       if (mp.size()) col.push_back(mp);
-      c = const_cast<char*>(strchr(end, ','));
     } else if (wktType == MULTIPOLYGON) {
       const char* end = 0;
       const auto& mp =
@@ -5301,7 +5294,6 @@ Collection<T> collectionFromWKTProj(const char* c, const char** endr,
       lastEnd = end;
       if (strict) checkWKTMemberEnd(end);
       if (mp.size()) col.push_back(mp);
-      c = const_cast<char*>(strchr(end, ','));
     } else if (wktType == MULTILINESTRING) {
       const char* end = 0;
       const auto& ml =
@@ -5317,9 +5309,28 @@ Collection<T> collectionFromWKTProj(const char* c, const char** endr,
       lastEnd = end;
       if (strict) checkWKTMemberEnd(end);
       if (ml.size()) col.push_back(ml);
-      c = const_cast<char*>(strchr(end, ','));
+    } else if (wktType == COLLECTION) {
+      const char* end = 0;
+      const auto& nested =
+          collectionFromWKTProj<T, F>(c, &end, projFunc, sourceCRS, strict);
+
+      if (!end) {
+        if (endr) (*endr) = 0;
+        if (strict)
+          throw WKTParseException(
+              "Could not parse WKT geometry collection member");
+        return {};
+      }
+      lastEnd = end;
+      if (strict) checkWKTMemberEnd(end);
+      if (nested.size()) col.push_back(nested);
     }
-  } while (c && *c);
+
+    const char* nextComma = strchr(lastEnd + 1, ',');
+    const char* nextClose = strchr(lastEnd + 1, ')');
+    if (!nextComma || (nextClose && nextClose < nextComma)) break;
+    c = nextComma;
+  } while (true);
 
   const char* close = strchr(lastEnd + 1, ')');
 
