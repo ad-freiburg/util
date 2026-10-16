@@ -34,6 +34,8 @@ void GeoTest::testWktParseLine() {
          WKTType::LINESTRING);
     TEST(util::geo::getWKTType("  LINESTRING (0 0, 1 1)", 0), ==,
          WKTType::LINESTRING);
+    TEST(util::geo::getWKTType("  LINESTRING EMPTY", 0), ==,
+         WKTType::LINESTRING);
     TEST(util::geo::getWKTType("  LINESTRIN (0 0, 1 1)", 0), ==, WKTType::NONE);
     TEST(util::geo::getWKTType("  INESTRING (0 0, 1 1)", 0), ==, WKTType::NONE);
 
@@ -64,6 +66,38 @@ void GeoTest::testWktParseLine() {
          WKTType::LINESTRING);
     TEST(util::geo::getWKTType("  linestrinG (0 0, 1 1)", 0), ==,
          WKTType::LINESTRING);
+
+    TEST(util::geo::getWKTType("liNestRing(0 0, 1 1)", 0, true), ==,
+         WKTType::LINESTRING);
+    TEST(util::geo::getWKTType("liNestRing empty", 0, true), ==,
+         WKTType::LINESTRING);
+    TEST(util::geo::getWKTType("mlinestrIng(0 0, 1 1)", 0, true), ==,
+         WKTType::LINESTRING);
+    TEST(util::geo::getWKTType("  mliNestring (0 0, 1 1)", 0, true), ==,
+         WKTType::LINESTRING);
+    TEST(util::geo::getWKTType("  MlInestring z(0 0, 1 1)", 0, true), ==,
+         WKTType::LINESTRING);
+    TEST(util::geo::getWKTType("  Linestring z(0 0, 1 1)", 0, true), ==,
+         WKTType::LINESTRING);
+    TEST(util::geo::getWKTType("  Linestring ZM(0 0, 1 1)", 0, true), ==,
+         WKTType::LINESTRING);
+    TEST(util::geo::getWKTType("  linestrinG (0 0, 1 1)", 0, true), ==,
+         WKTType::LINESTRING);
+
+    TEST(util::geo::getWKTType("liNestRing foo(0 0, 1 1)", 0, true), ==,
+         WKTType::NONE);
+    TEST(util::geo::getWKTType("mlinestrIng{(0 0, 1 1)", 0, true), ==,
+         WKTType::NONE);
+    TEST(util::geo::getWKTType("  mliNestring sth(0 0, 1 1)", 0, true), ==,
+         WKTType::NONE);
+    TEST(util::geo::getWKTType("  MlInestring test z(0 0, 1 1)", 0, true), ==,
+         WKTType::NONE);
+    TEST(util::geo::getWKTType("  Linestring z test(0 0, 1 1)", 0, true), ==,
+         WKTType::NONE);
+    TEST(util::geo::getWKTType("  Linestring foo ZM(0 0, 1 1)", 0, true), ==,
+         WKTType::NONE);
+    TEST(util::geo::getWKTType("  linestrinG A(0 0, 1 1)", 0, true), ==,
+         WKTType::NONE);
 
     TEST(util::geo::getWKT(lineFromWKT<int>("LINESTRING(0 0, 1 1)", 0)), ==,
          "LINESTRING(0 0,1 1)");
@@ -113,6 +147,7 @@ void GeoTest::testWktParseLine() {
 
     TEST(getWKT(util::geo::lineFromWKT<double>(
              "   LINESTRING Z   (  0    0  , 1  1   )", true)),
+        // skip whitespace
          ==, "LINESTRING(0 0,1 1)");
     TEST(getWKT(util::geo::lineFromWKT<double>(
              "   LINESTRING Z   (  0    0  , 1  1   )", false)),

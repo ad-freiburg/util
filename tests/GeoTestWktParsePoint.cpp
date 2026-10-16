@@ -17,6 +17,7 @@ using namespace util::geo;
 void GeoTest::testWktParsePoint() {
   {
     TEST(util::geo::getWKTType("POINT(1 1)", 0), ==, WKTType::POINT);
+    TEST(util::geo::getWKTType("POINT EMPTY", 0), ==, WKTType::POINT);
     TEST(util::geo::getWKTType("POIN (1 1)", 0), ==, WKTType::NONE);
     TEST(util::geo::getWKTType(" POINT (1 1)", 0), ==, WKTType::POINT);
     TEST(util::geo::getWKTType(" Point (1 1)", 0), ==, WKTType::POINT);
@@ -26,6 +27,30 @@ void GeoTest::testWktParsePoint() {
     TEST(util::geo::getWKTType(" Point MZ (1 1)", 0), ==, WKTType::POINT);
     TEST(util::geo::getWKTType("mPoint MZ (1 1)", 0), ==, WKTType::POINT);
     TEST(util::geo::getWKTType(" oint MZ (1 1)", 0), ==, WKTType::NONE);
+
+    TEST(util::geo::getWKTType("POINT(1 1)", 0, true), ==, WKTType::POINT);
+    TEST(util::geo::getWKTType("POINT EMPTY", 0, true), ==, WKTType::POINT);
+    TEST(util::geo::getWKTType("POIN (1 1)", 0, true), ==, WKTType::NONE);
+    TEST(util::geo::getWKTType(" POINT (1 1)", 0, true), ==, WKTType::POINT);
+    TEST(util::geo::getWKTType(" Point (1 1)", 0, true), ==, WKTType::POINT);
+    TEST(util::geo::getWKTType("POINT Z(1 1)", 0, true), ==, WKTType::POINT);
+    TEST(util::geo::getWKTType("   POINT Z (1 1)", 0, true), ==, WKTType::POINT);
+    TEST(util::geo::getWKTType(" POINT ZM(1 1)", 0, true), ==, WKTType::POINT);
+    TEST(util::geo::getWKTType(" Point MZ (1 1)", 0, true), ==, WKTType::POINT);
+    TEST(util::geo::getWKTType("mPoint MZ (1 1)", 0, true), ==, WKTType::POINT);
+    TEST(util::geo::getWKTType(" oint MZ (1 1)", 0, true), ==, WKTType::NONE);
+
+    TEST(util::geo::getWKTType("POINT foo(1 1)", 0, true), ==, WKTType::NONE);
+    TEST(util::geo::getWKTType("POIN (1 1)", 0, true), ==, WKTType::NONE);
+    TEST(util::geo::getWKTType(" POINT foo M(1 1)", 0, true), ==, WKTType::NONE);
+    TEST(util::geo::getWKTType(" Point M foo(1 1)", 0, true), ==, WKTType::NONE);
+    TEST(util::geo::getWKTType("POINT Zfoo(1 1)", 0, true), ==, WKTType::NONE);
+    TEST(util::geo::getWKTType("   POINT Z M foo (1 1)", 0, true), ==, WKTType::NONE);
+    TEST(util::geo::getWKTType(" POINT ZM    foo   (1 1)", 0, true), ==, WKTType::NONE);
+    TEST(util::geo::getWKTType(" Point MZ foo(1 1)", 0, true), ==, WKTType::NONE);
+    TEST(util::geo::getWKTType("mPoint MZ foo (1 1)", 0, true), ==, WKTType::NONE);
+    TEST(util::geo::getWKTType(" oint MZ (1 1)", 0, true), ==, WKTType::NONE);
+
 
     TEST(util::geo::getWKT(pointFromWKT<int>("POINT(1 1)")), ==, "POINT(1 1)");
     TEST(util::geo::getWKT(pointFromWKT<int>("POINT (1 1)")), ==, "POINT(1 1)");

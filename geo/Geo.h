@@ -1145,7 +1145,7 @@ template <typename T>
 MultiPolygon<T> multiPolygonFromWKT(const char* c, const char** endr,
                                     bool strict = false);
 
-WKTType getWKTType(const char* c, const char** endr);
+WKTType getWKTType(const char* c, const char** endr, bool strict = false);
 
 WKTType getWKTType(const char* c);
 

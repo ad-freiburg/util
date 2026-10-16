@@ -5136,7 +5136,7 @@ Collection<T> collectionFromWKTProj(const char* c, const char** endr,
     while ((*c == ' ' || *c == '\n' || *c == '\t' || *c == '\r'))
       c++;  // skip possible whitespace
 
-    auto wktType = getWKTType(c, &c);
+    auto wktType = getWKTType(c, &c, strict);
 
     if (wktType == NONE) {
       if (endr) (*endr) = 0;
