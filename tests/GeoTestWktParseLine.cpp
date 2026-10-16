@@ -491,4 +491,17 @@ void GeoTest::testWktParseLine() {
     TEST(getWKTType("\"LINESTRING EMPTY\"^^<http://www.opengis.net/ont/geosparql#wktLiteral>, POINT(1 2)", 0, true), ==,
          WKTType::NONE);
   }
+
+  {
+    // EMPTY must be separated from the type
+    TEST(getWKTType("LINESTRINGEMPTY", 0, true), ==, WKTType::NONE);
+    TEST(getWKTType("LINESTRING ZEMPTY", 0, true), ==, WKTType::NONE);
+    TEST(getWKTType("MULTIPOLYGONEMPTY", 0, true), ==, WKTType::NONE);
+    TEST(getWKTType("GEOMETRYCOLLECTIONEMPTY", 0, true), ==, WKTType::NONE);
+    TEST(getWKTType("LINESTRING EMPTY", 0, true), ==, WKTType::LINESTRING);
+    TEST(getWKTType("LINESTRING\tEMPTY", 0, true), ==, WKTType::LINESTRING);
+    TEST(getWKTType("LINESTRING Z EMPTY", 0, true), ==, WKTType::LINESTRING);
+    TEST(getWKTType("LINESTRINGZ EMPTY", 0, true), ==, WKTType::LINESTRING);
+    TEST(getWKTType("LINESTRING\"EMPTY\"", 0, true), ==, WKTType::LINESTRING);
+  }
 }

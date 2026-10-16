@@ -102,7 +102,9 @@ util::geo::WKTType util::geo::getWKTType(const char* c, const char** endr,
 
   if (*c == 'e' || *c == 'E') {
     const char* r = c;
-    if (util::ascii_letter_strnicmp_lower(r, "empty", 5) == 0) {
+    if ((c[-1] == ' ' || c[-1] == '\n' || c[-1] == '\t' || c[-1] == '\r' ||
+         c[-1] == '"' || c[-1] == '\'') &&
+        util::ascii_letter_strnicmp_lower(r, "empty", 5) == 0) {
       r += 5;
       while (*r == ' ' || *r == '\n' || *r == '\t' || *r == '\r' || *r == '"' ||
              *r == '\'')
