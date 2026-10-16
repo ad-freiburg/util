@@ -4578,6 +4578,7 @@ inline bool isEmptyWKTMember(const char* c) {
 inline std::tuple<double, double, double> parseWKTPoint(const char*& c,
                                                         bool strict) {
   const char* start;
+  const char* numEnd;
 
   // skip whitespace
   while (*c == ' ' || *c == '\n' || *c == '\t' || *c == '\r' || *c == '"' ||
@@ -4586,32 +4587,44 @@ inline std::tuple<double, double, double> parseWKTPoint(const char*& c,
 
   start = c;
   double x = util::atof(c, 10, &c);
-  if (strict && c != start && !strchr(" \n\t\r\"',)", *c))
-    x = std::numeric_limits<double>::quiet_NaN();
+  numEnd = c;
 
   // skip whitespace
   while (*c == ' ' || *c == '\n' || *c == '\t' || *c == '\r' || *c == '"' ||
          *c == '\'')
     c++;
 
+  if (strict && numEnd != start && c == numEnd && *c && *c != ',' && *c != ')')
+    x = std::numeric_limits<double>::quiet_NaN();
+
   start = c;
   double y = util::atof(c, 10, &c);
-  if (strict && c != start && !strchr(" \n\t\r\"',)", *c))
-    y = std::numeric_limits<double>::quiet_NaN();
 
   double m = 0;
 
-  // there might be an optional measurement, only relevant in strict mode
   if (strict) {
+    numEnd = c;
+
     // skip whitespace
     while (*c == ' ' || *c == '\n' || *c == '\t' || *c == '\r' || *c == '"' ||
            *c == '\'')
       c++;
 
-    if (*c == '+' || *c == '-' || *c == '.' || isdigit(*c)) {
+    if (numEnd != start && c == numEnd && *c && *c != ',' && *c != ')')
+      y = std::numeric_limits<double>::quiet_NaN();
+
+    // there might be an optional measurement
+    if (*c == '+' || *c == '-' || *c == '.' || (*c >= '0' && *c <= '9')) {
       start = c;
       m = util::atof(c, 10, &c);
-      if (c != start && !strchr(" \n\t\r\"',)", *c))
+      numEnd = c;
+
+      // skip whitespace
+      while (*c == ' ' || *c == '\n' || *c == '\t' || *c == '\r' || *c == '"' ||
+             *c == '\'')
+        c++;
+
+      if (numEnd != start && c == numEnd && *c && *c != ',' && *c != ')')
         m = std::numeric_limits<double>::quiet_NaN();
     }
   }
@@ -4659,13 +4672,6 @@ Line<T> lineFromWKTProj(const char* c, const char** endr, F projFunc,
   while (true) {
     double x, y, m;
     std::tie(x, y, m) = parseWKTPoint(c, strict);
-
-    // skip whitespace
-    if (strict) {
-      while (*c == ' ' || *c == '\n' || *c == '\t' || *c == '\r' ||
-             *c == '"' || *c == '\'')
-        c++;
-    }
 
     if (std::isnan(x) || std::isnan(y) || (strict && std::isnan(m))) {
       if (strict)
@@ -4855,13 +4861,6 @@ Point<T> pointFromWKTProj(const char* c, const char** endr, F projFunc,
 
   double x, y, m;
   std::tie(x, y, m) = parseWKTPoint(c, strict);
-
-  // skip whitespace
-  if (strict) {
-    while (*c == ' ' || *c == '\n' || *c == '\t' || *c == '\r' || *c == '"' ||
-           *c == '\'')
-      c++;
-  }
 
   if (std::isnan(x) || std::isnan(y) || (strict && std::isnan(m))) {
     if (strict)
