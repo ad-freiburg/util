@@ -60,6 +60,54 @@ void GeoTest::testWktParseMultiPolygon() {
     TEST(util::geo::getWKTType("MULTIPOLYGON EMPTY((1 1,3 3),(1 3,3 1))", 0, true),
          ==, WKTType::NONE);
 
+    TEST(util::geo::getWKTType("POINT EMPTY (1 2)", 0, true), ==,
+         WKTType::NONE);
+    TEST(util::geo::getWKTType("LINESTRING EMPTY (1 2, 3 4)", 0, true), ==,
+         WKTType::NONE);
+    TEST(util::geo::getWKTType("POLYGON EMPTY ((0 0,1 0,1 1,0 0))", 0, true),
+         ==, WKTType::NONE);
+    TEST(util::geo::getWKTType("MULTIPOINT EMPTY ((1 2))", 0, true), ==,
+         WKTType::NONE);
+    TEST(util::geo::getWKTType("MULTILINESTRING EMPTY ((1 2,3 4))", 0, true),
+         ==, WKTType::NONE);
+    TEST(util::geo::getWKTType("MULTIPOLYGON EMPTY (((0 0,1 0,1 1,0 0)))", 0,
+                               true),
+         ==, WKTType::NONE);
+    TEST(util::geo::getWKTType("GEOMETRYCOLLECTION EMPTY (POINT(1 2))", 0,
+                               true),
+         ==, WKTType::NONE);
+    TEST(util::geo::getWKTType("MULTIPOLYGON EMPTY \n\t(((0 0,1 0,1 1,0 0)))",
+                               0, true),
+         ==, WKTType::NONE);
+    TEST(util::geo::getWKTType("MULTIPOLYGON EMPTY EMPTY", 0, true), ==,
+         WKTType::NONE);
+    TEST(util::geo::getWKTType("MULTIPOLYGON EMPTY garbage", 0, true), ==,
+         WKTType::NONE);
+    TEST(util::geo::getWKTType("MULTIPOLYGON EMPT", 0, true), ==,
+         WKTType::NONE);
+
+    TEST(util::geo::getWKTType("MULTIPOLYGON EMPTY", 0, true), ==,
+         WKTType::MULTIPOLYGON);
+    TEST(util::geo::getWKTType("multipolygon empty \n\t", 0, true), ==,
+         WKTType::MULTIPOLYGON);
+    TEST(util::geo::getWKTType("MULTIPOLYGON Z EMPTY", 0, true), ==,
+         WKTType::MULTIPOLYGON);
+    TEST(util::geo::getWKTType("MULTIPOLYGON EMPTY , POINT(1 2))", 0, true),
+         ==, WKTType::MULTIPOLYGON);
+    TEST(util::geo::getWKTType("MULTIPOLYGON EMPTY )", 0, true), ==,
+         WKTType::MULTIPOLYGON);
+    TEST(util::geo::getWKT(util::geo::collectionFromWKT<double>(
+             "GEOMETRYCOLLECTION(MULTIPOLYGON EMPTY , LINESTRING EMPTY ,"
+             "POINT(1 2), POLYGON EMPTY )",
+             0, true)),
+         ==, "GEOMETRYCOLLECTION(POINT(1 2))");
+
+    const char* emptyIn = "MULTIPOLYGON EMPTY ";
+    const char* emptyEnd = 0;
+    TEST(util::geo::getWKTType(emptyIn, &emptyEnd, true), ==,
+         WKTType::MULTIPOLYGON);
+    TEST(emptyEnd - emptyIn, ==, 13);
+
     TEST(util::geo::getWKT(multiPolygonFromWKT<int>(
              "MULTIPOLYGON(((1 1,3 3,1 1), (0 0,1 1,0 0)),((1 3,3 1, 1 3)))")),
          ==, "MULTIPOLYGON(((1 1,3 3,1 1),(0 0,1 1,0 0)),((1 3,3 1,1 3)))");

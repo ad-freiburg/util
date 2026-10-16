@@ -100,9 +100,16 @@ util::geo::WKTType util::geo::getWKTType(const char* c, const char** endr,
     return NONE;
   }
 
-  if ((*c == 'e' || *c == 'E') && !isEmptyWKTMember(c)) {
-    if (endr) (*endr) = 0;
-    return NONE;
+  if (*c == 'e' || *c == 'E') {
+    const char* r = c;
+    if (util::ascii_letter_strnicmp_lower(r, "empty", 5) == 0) {
+      r += 5;
+      while (*r == ' ' || *r == '\n' || *r == '\t' || *r == '\r') r++;
+    }
+    if (r == c || (*r != 0 && *r != ',' && *r != ')')) {
+      if (endr) (*endr) = 0;
+      return NONE;
+    }
   }
 
   if (endr) (*endr) = c;
