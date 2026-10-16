@@ -5249,8 +5249,8 @@ Collection<T> collectionFromWKTProj(const char* c, const char** endr,
     }
 
     const char* p = c;
-    while (*p && (strchr(" \n\t\r\"'", *p) || toupper(*p) == 'Z' ||
-                  toupper(*p) == 'M'))
+    while (*p && (strchr(" \n\t\r\"'", *p) || *p == 'Z' || *p == 'z' ||
+                  *p == 'M' || *p == 'm'))
       p++;
     if (isEmptyWKTMember(p)) {
       lastEnd = p + 4;
