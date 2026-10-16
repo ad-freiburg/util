@@ -4599,19 +4599,21 @@ inline std::tuple<double, double, double> parseWKTPoint(const char*& c,
   if (strict && c != start && !strchr(" \n\t\r\"',)", *c))
     y = std::numeric_limits<double>::quiet_NaN();
 
-  // skip whitespace
-  while (*c == ' ' || *c == '\n' || *c == '\t' || *c == '\r' || *c == '"' ||
-         *c == '\'')
-    c++;
-
   double m = 0;
 
   // there might be an optional measurement, only relevant in strict mode
-  if (strict && (*c == '+' || *c == '-' || *c == '.' || isdigit(*c))) {
-    start = c;
-    m = util::atof(c, 10, &c);
-    if (strict && c != start && !strchr(" \n\t\r\"',)", *c))
-      m = std::numeric_limits<double>::quiet_NaN();
+  if (strict) {
+    // skip whitespace
+    while (*c == ' ' || *c == '\n' || *c == '\t' || *c == '\r' || *c == '"' ||
+           *c == '\'')
+      c++;
+
+    if (*c == '+' || *c == '-' || *c == '.' || isdigit(*c)) {
+      start = c;
+      m = util::atof(c, 10, &c);
+      if (c != start && !strchr(" \n\t\r\"',)", *c))
+        m = std::numeric_limits<double>::quiet_NaN();
+    }
   }
 
   return {x, y, m};
@@ -4659,9 +4661,11 @@ Line<T> lineFromWKTProj(const char* c, const char** endr, F projFunc,
     std::tie(x, y, m) = parseWKTPoint(c, strict);
 
     // skip whitespace
-    while (*c == ' ' || *c == '\n' || *c == '\t' || *c == '\r' || *c == '"' ||
-           *c == '\'')
-      c++;
+    if (strict) {
+      while (*c == ' ' || *c == '\n' || *c == '\t' || *c == '\r' ||
+             *c == '"' || *c == '\'')
+        c++;
+    }
 
     if (std::isnan(x) || std::isnan(y) || (strict && std::isnan(m))) {
       if (strict)
@@ -4853,9 +4857,11 @@ Point<T> pointFromWKTProj(const char* c, const char** endr, F projFunc,
   std::tie(x, y, m) = parseWKTPoint(c, strict);
 
   // skip whitespace
-  while (*c == ' ' || *c == '\n' || *c == '\t' || *c == '\r' || *c == '"' ||
-         *c == '\'')
-    c++;
+  if (strict) {
+    while (*c == ' ' || *c == '\n' || *c == '\t' || *c == '\r' || *c == '"' ||
+           *c == '\'')
+      c++;
+  }
 
   if (std::isnan(x) || std::isnan(y) || (strict && std::isnan(m))) {
     if (strict)
