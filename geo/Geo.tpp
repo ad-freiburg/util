@@ -4550,15 +4550,23 @@ inline bool isEmptyWKTMember(const char* c) {
 // _____________________________________________________________________________
 inline std::tuple<double, double, double> parseWKTPoint(const char*& c,
                                                         bool strict) {
+  const char* start;
+
   // skip whitespace
   while (*c == ' ' || *c == '\n' || *c == '\t' || *c == '\r') c++;
 
+  start = c;
   double x = util::atof(c, 10, &c);
+  if (strict && c != start && !strchr(" \n\t\r,)", *c))
+    x = std::numeric_limits<double>::quiet_NaN();
 
   // skip whitespace
   while (*c == ' ' || *c == '\n' || *c == '\t' || *c == '\r') c++;
 
+  start = c;
   double y = util::atof(c, 10, &c);
+  if (strict && c != start && !strchr(" \n\t\r,)", *c))
+    y = std::numeric_limits<double>::quiet_NaN();
 
   // skip whitespace
   while (*c == ' ' || *c == '\n' || *c == '\t' || *c == '\r') c++;
@@ -4567,7 +4575,10 @@ inline std::tuple<double, double, double> parseWKTPoint(const char*& c,
 
   // there might be an optional measurement, only relevant in strict mode
   if (strict && (*c == '+' || *c == '-' || *c == '.' || isdigit(*c))) {
+    start = c;
     m = util::atof(c, 10, &c);
+    if (strict && c != start && !strchr(" \n\t\r,)", *c))
+      m = std::numeric_limits<double>::quiet_NaN();
   }
 
   return {x, y, m};

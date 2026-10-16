@@ -289,4 +289,18 @@ void GeoTest::testWktParseMultiPoint() {
     TEST(util::geo::getWKT(util::geo::multiPointFromWKT<double>(in, 0, false)), ==,
          "MULTIPOINT(1 2,3 4)");
   }
+
+  {
+    // numbers glued together must not be split into several coordinates
+    TEST_THROWS(util::geo::WKTParseException,
+                util::geo::multiPointFromWKT<double>("MULTIPOINT((1 2),(3-4))", true));
+    TEST_THROWS(util::geo::WKTParseException,
+                util::geo::multiPointFromWKT<double>("MULTIPOINT(1 2, 3.4.5)", true));
+    TEST_THROWS(util::geo::WKTParseException,
+                util::geo::multiPointFromWKT<double>("MULTIPOINT(1-2, 3 4)", true));
+    TEST(getWKT(util::geo::multiPointFromWKT<double>("MULTIPOINT((1 -2),(-3 4))", true)),
+         ==, "MULTIPOINT(1 -2,-3 4)");
+    TEST(getWKT(util::geo::multiPointFromWKT<double>("MULTIPOINT(1 -2, -3 4)", true)),
+         ==, "MULTIPOINT(1 -2,-3 4)");
+  }
 }

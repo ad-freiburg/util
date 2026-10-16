@@ -142,6 +142,16 @@ void GeoTest::testWktParseMultiPolygon() {
                 util::geo::multiPolygonFromWKT<double>(
                     "MULTIPOLYGON((foo(0 0, 1 0, 1 1, 0 0)))", true));
 
+    // numbers glued together must not be split into several coordinates
+    TEST_THROWS(util::geo::WKTParseException,
+                util::geo::multiPolygonFromWKT<double>(
+                    "MULTIPOLYGON(((0 0, 1 0, 1 1, 0 0)), ((0 0, 1-0, 1 1, 0 0)))",
+                    true));
+    TEST_THROWS(util::geo::WKTParseException,
+                util::geo::multiPolygonFromWKT<double>(
+                    "MULTIPOLYGON(((0 0, 1 0, 1 1, 0 0), (0.1.2 0, 1 0, 1 1, 0 0)))",
+                    true));
+
     TEST_THROWS(util::geo::WKTParseException,
                 util::geo::multiPolygonFromWKT<double>(
                     "MULTIPOLYGON(((0 0, 1 0, 1 1, 0 0)), (foo(0 0, 1 0, 1 1, 0 0)))",

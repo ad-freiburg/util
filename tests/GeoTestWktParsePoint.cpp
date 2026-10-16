@@ -248,4 +248,37 @@ void GeoTest::testWktParsePoint() {
     TEST(util::geo::getWKT(util::geo::pointFromWKT<double>(in, 0, false)), ==,
          "POINT(1 2)");
   }
+
+  {
+    // numbers glued together must not be split into several coordinates
+    TEST_THROWS(util::geo::WKTParseException,
+                util::geo::pointFromWKT<double>("POINT(1.2.3 4)", true));
+    TEST_THROWS(util::geo::WKTParseException,
+                util::geo::pointFromWKT<double>("POINT(1-2 3)", true));
+    TEST_THROWS(util::geo::WKTParseException,
+                util::geo::pointFromWKT<double>("POINT(1+2)", true));
+    TEST_THROWS(util::geo::WKTParseException,
+                util::geo::pointFromWKT<double>("POINT(1 2.3.4)", true));
+    TEST_THROWS(util::geo::WKTParseException,
+                util::geo::pointFromWKT<double>("POINT(1 2-3)", true));
+    TEST_THROWS(util::geo::WKTParseException,
+                util::geo::pointFromWKT<double>("POINT(1 2 3.4.5)", true));
+    TEST_THROWS(util::geo::WKTParseException,
+                util::geo::pointFromWKT<double>("POINT(1a 2)", true));
+    TEST_THROWS(util::geo::WKTParseException,
+                util::geo::pointFromWKT<double>("POINT(1 2a)", true));
+
+    TEST(getWKT(util::geo::pointFromWKT<double>("POINT(1 2)", true)), ==,
+         "POINT(1 2)");
+    TEST(getWKT(util::geo::pointFromWKT<double>("POINT(1\t2\n)", true)), ==,
+         "POINT(1 2)");
+    TEST(getWKT(util::geo::pointFromWKT<double>("POINT(1e-1 -2E+1)", true)), ==,
+         "POINT(0.1 -20)");
+    TEST(getWKT(util::geo::pointFromWKT<double>("POINT(1 2 3)", true)), ==,
+         "POINT(1 2)");
+
+    // non-strict parsing is unchanged
+    TEST(getWKT(util::geo::pointFromWKT<double>("POINT(1-2 3)", false)), ==,
+         "POINT(1 -2)");
+  }
 }

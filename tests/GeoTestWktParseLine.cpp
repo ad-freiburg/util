@@ -393,6 +393,20 @@ void GeoTest::testWktParseLine() {
     TEST_THROWS(util::geo::WKTParseException,
                 util::geo::lineFromWKT<double>("LINESTRING EMPTY)", 0, true));
 
+    // numbers glued together must not be split into several coordinates
+    TEST_THROWS(util::geo::WKTParseException,
+                util::geo::lineFromWKT<double>("LINESTRING(1 2,3-4)", true));
+    TEST_THROWS(util::geo::WKTParseException,
+                util::geo::lineFromWKT<double>("LINESTRING(1.2.3 4,5 6)", true));
+    TEST_THROWS(util::geo::WKTParseException,
+                util::geo::lineFromWKT<double>("LINESTRING(1 2,3 4.5.6)", true));
+    TEST_THROWS(util::geo::WKTParseException,
+                util::geo::lineFromWKT<double>("LINESTRING(1 2x,3 4)", true));
+    TEST(getWKT(util::geo::lineFromWKT<double>("LINESTRING(1 2,3 4)", true)),
+         ==, "LINESTRING(1 2,3 4)");
+    TEST(getWKT(util::geo::lineFromWKT<double>("LINESTRING(1 -2,-3 4.5)", true)),
+         ==, "LINESTRING(1 -2,-3 4.5)");
+
     const char* in = "LINESTRING(1 2, 3 4) GARBAGE";
     const char* end = 0;
     TEST(util::geo::getWKT(util::geo::lineFromWKT<double>(in, &end, true)), ==,

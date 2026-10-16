@@ -337,6 +337,12 @@ void GeoTest::testWktParseCollection() {
     TEST_THROWS(util::geo::WKTParseException,
                 util::geo::collectionFromWKT<double>("GEOMETRYCOLLECTION EMPTY)", 0, true));
 
+    // numbers glued together must not be split into several coordinates
+    TEST_THROWS(util::geo::WKTParseException,
+                util::geo::collectionFromWKT<double>("GEOMETRYCOLLECTION(POINT(1-2), LINESTRING(1 2, 3 4))", 0, true));
+    TEST_THROWS(util::geo::WKTParseException,
+                util::geo::collectionFromWKT<double>("GEOMETRYCOLLECTION(POINT(1 2), LINESTRING(1 2, 3.4.5))", 0, true));
+
     const char* in = "GEOMETRYCOLLECTION(POINT(1 2), LINESTRING(1 2, 3 4)) GARBAGE";
     const char* end = 0;
     TEST(util::geo::getWKT(util::geo::collectionFromWKT<double>(in, &end, true)), ==,
