@@ -407,4 +407,19 @@ void GeoTest::testWktParseCollection() {
     TEST(util::geo::getWKT(util::geo::collectionFromWKT<double>(in, 0, false)), ==,
          "GEOMETRYCOLLECTION(POINT(1 2),LINESTRING(1 2,3 4))");
   }
+
+  {
+    // in non-strict mode, unparsable inner rings of members are dropped
+    TEST(getWKT(collectionFromWKT<double>(
+             std::string("GEOMETRYCOLLECTION(POLYGON((0 0,4 0,4 4,0 0),(1)),"
+                         "POINT(1 2))"),
+             false)),
+         ==, "GEOMETRYCOLLECTION(POLYGON((0 0,4 0,4 4,0 0)),POINT(1 2))");
+    TEST(getWKT(collectionFromWKT<double>(
+             std::string("GEOMETRYCOLLECTION(MULTIPOLYGON(((0 0,4 0,4 4,0 0),"
+                         "(1))),POINT(1 2))"),
+             false)),
+         ==,
+         "GEOMETRYCOLLECTION(MULTIPOLYGON(((0 0,4 0,4 4,0 0))),POINT(1 2))");
+  }
 }

@@ -675,6 +675,7 @@ std::string getWKT(const Polygon<T>& p, uint16_t prec) {
   ret.push_back(')');
 
   for (const auto& inner : p.getInners()) {
+    if (inner.empty()) continue;
     ret.append(",(");
     for (size_t i = 0; i < inner.size(); i++) {
       if (i > 0) ret.push_back(',');
@@ -708,8 +709,11 @@ std::string getWKT(const std::vector<Polygon<T>>& ls, uint16_t prec) {
   if (ls.size())
     ret.reserve(12 + 2 + ls[0].getOuter().size() * (prec + 3) * 2 + 2);
 
+  bool first = true;
   for (size_t j = 0; j < ls.size(); j++) {
-    if (j) ret.push_back(',');
+    if (ls[j].empty()) continue;
+    if (!first) ret.push_back(',');
+    first = false;
     ret.push_back('(');
     ret.push_back('(');
     for (size_t i = 0; i < ls[j].getOuter().size(); i++) {
@@ -728,6 +732,7 @@ std::string getWKT(const std::vector<Polygon<T>>& ls, uint16_t prec) {
     ret.push_back(')');
 
     for (const auto& inner : ls[j].getInners()) {
+      if (inner.empty()) continue;
       ret.push_back(',');
       ret.push_back('(');
       for (size_t i = 0; i < inner.size(); i++) {
@@ -4941,7 +4946,7 @@ Polygon<T> polygonFromWKTProj(const char* c, const char** endr, F projFunc,
 
     if (i == 0)
       poly.getOuter() = std::move(line);
-    else
+    else if (!line.empty())
       poly.getInners().push_back(std::move(line));
     i++;
 
@@ -4951,6 +4956,7 @@ Polygon<T> polygonFromWKTProj(const char* c, const char** endr, F projFunc,
     if ((!cc && q) || (q && cc && q < cc)) {
       // polygon closes at q
       if (endr) (*endr) = q;
+      if (poly.getOuter().empty()) poly.getInners().clear();
       poly.fix();
       return poly;
     }
@@ -4963,6 +4969,7 @@ Polygon<T> polygonFromWKTProj(const char* c, const char** endr, F projFunc,
     throw WKTParseException("Could not parse WKT polygon, missing ')'");
   }
 
+  if (poly.getOuter().empty()) poly.getInners().clear();
   poly.fix();
   return poly;
 }

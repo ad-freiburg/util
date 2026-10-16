@@ -238,4 +238,47 @@ void GeoTest::testWktParsePolygon() {
     TEST(util::geo::getWKT(util::geo::polygonFromWKT<double>(in, 0, false)), ==,
          "POLYGON((0 0,1 0,1 1,0 0))");
   }
+
+  {
+    TEST(getWKT(polygonFromWKT<double>(
+             std::string("POLYGON((0 0,4 0,4 4,0 0),(1))"), false)),
+         ==, "POLYGON((0 0,4 0,4 4,0 0))");
+    TEST(polygonFromWKT<double>(
+             std::string("POLYGON((0 0,4 0,4 4,0 0),(1))"), false)
+             .getInners()
+             .size(),
+         ==, 0);
+    TEST(getWKT(polygonFromWKT<double>(
+             std::string("POLYGON((0 0,4 0,4 4,0 0),(1)1,2 1,2 2,1 1))"),
+             false)),
+         ==, "POLYGON((0 0,4 0,4 4,0 0))");
+    TEST(getWKT(polygonFromWKT<double>(
+             std::string("POLYGON((0 0,4 0,4 4,0 0),(foo),(1 1,2 1,2 2,1 1))"),
+             false)),
+         ==, "POLYGON((0 0,4 0,4 4,0 0),(2 2,2 1,1 1,2 2))");
+
+    TEST(getWKT(polygonFromWKT<double>(
+             std::string("POLYGON((foo),(1 1,2 1,2 2,1 1))"), false)),
+         ==, "POLYGON()");
+    TEST(polygonFromWKT<double>(
+             std::string("POLYGON((foo),(1 1,2 1,2 2,1 1))"), false)
+             .getInners()
+             .size(),
+         ==, 0);
+
+    TEST_THROWS(WKTParseException,
+                polygonFromWKT<double>(
+                    std::string("POLYGON((0 0,4 0,4 4,0 0),(1))"), true));
+
+    Polygon<double> p;
+    p.getOuter() = {{0, 0}, {4, 0}, {4, 4}};
+    p.getInners().push_back({});
+    p.getInners().push_back({{1, 1}, {2, 1}, {2, 2}});
+    p.getInners().push_back({});
+    TEST(getWKT(p), ==, "POLYGON((0 0,4 0,4 4,0 0),(1 1,2 1,2 2,1 1))");
+
+    Polygon<double> onlyInner;
+    onlyInner.getInners().push_back({});
+    TEST(getWKT(onlyInner), ==, "POLYGON()");
+  }
 }

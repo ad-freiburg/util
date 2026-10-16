@@ -268,4 +268,38 @@ void GeoTest::testWktParseMultiPolygon() {
     TEST(util::geo::getWKT(util::geo::multiPolygonFromWKT<double>(in, 0, false)), ==,
          "MULTIPOLYGON(((0 0,1 0,1 1,0 0)),((2 2,3 2,3 3,2 2)))");
   }
+
+  {
+    // in non-strict mode, unparsable inner rings are dropped, not kept empty
+    TEST(getWKT(multiPolygonFromWKT<double>(
+             std::string("MULTIPOLYGON(((0 0,4 0,4 4,0 0),(1)))"), false)),
+         ==, "MULTIPOLYGON(((0 0,4 0,4 4,0 0)))");
+    TEST(getWKT(multiPolygonFromWKT<double>(
+             std::string("MULTIPOLYGON(((0 0,4 0,4 4,0 0),(1)),"
+                         "((5 5,6 5,6 6,5 5)))"),
+             false)),
+         ==, "MULTIPOLYGON(((0 0,4 0,4 4,0 0)),((5 5,6 5,6 6,5 5)))");
+
+    // empty rings and polygons in a hand-built multipolygon are skipped when
+    // serializing
+    Polygon<double> withEmptyInner;
+    withEmptyInner.getOuter() = {{0, 0}, {4, 0}, {4, 4}};
+    withEmptyInner.getInners().push_back({});
+    Polygon<double> noOuter;
+    noOuter.getInners().push_back({});
+    Polygon<double> other;
+    other.getOuter() = {{5, 5}, {6, 5}, {6, 6}};
+
+    MultiPolygon<double> mp;
+    mp.push_back(noOuter);
+    mp.push_back(withEmptyInner);
+    mp.push_back(noOuter);
+    mp.push_back(other);
+    TEST(getWKT(mp), ==,
+         "MULTIPOLYGON(((0 0,4 0,4 4,0 0)),((5 5,6 5,6 6,5 5)))");
+
+    MultiPolygon<double> onlyEmpty;
+    onlyEmpty.push_back(noOuter);
+    TEST(getWKT(onlyEmpty), ==, "MULTIPOLYGON()");
+  }
 }
