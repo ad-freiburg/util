@@ -5,6 +5,7 @@
 #ifndef UTIL_GEO_COLLECTION_H_
 #define UTIL_GEO_COLLECTION_H_
 
+#include <utility>
 #include <vector>
 
 #include "./Box.h"
@@ -31,6 +32,12 @@ class AnyGeometry {
   AnyGeometry(const MultiPolygon<T>& mp) : _multipolygon(mp), _type(4){};
   AnyGeometry(const Collection<T>& c) : _collection(c), _type(5){};
   AnyGeometry(const MultiPoint<T>& p) : _multipoint(p), _type(6){};
+  AnyGeometry(Line<T>&& l) : _line(std::move(l)), _type(1){};
+  AnyGeometry(Polygon<T>&& p) : _polygon(std::move(p)), _type(2){};
+  AnyGeometry(MultiLine<T>&& ml) : _multiline(std::move(ml)), _type(3){};
+  AnyGeometry(MultiPolygon<T>&& mp) : _multipolygon(std::move(mp)), _type(4){};
+  AnyGeometry(Collection<T>&& c) : _collection(std::move(c)), _type(5){};
+  AnyGeometry(MultiPoint<T>&& p) : _multipoint(std::move(p)), _type(6){};
 
   const Point<T>& getPoint() const { return _point; }
   const Line<T>& getLine() const { return _line; }

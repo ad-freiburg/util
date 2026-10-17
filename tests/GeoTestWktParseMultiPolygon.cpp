@@ -45,6 +45,69 @@ void GeoTest::testWktParseMultiPolygon() {
                                "1,0 0)),((1 3,3 1, 1 3)))"),
          ==, WKTType::MULTIPOLYGON);
 
+    TEST(util::geo::getWKTType("  MultiPolygon ZM (((1 1,3 3,1 1), (0 0,1 1,0 "
+                               "0)),((1 3,3 1, 1 3)))", 0, true),
+         ==, WKTType::MULTIPOLYGON);
+    TEST(util::geo::getWKTType("M MultiPolygon ZM (((1 1,3 3,1 1), (0 0,1 1,0 "
+                               "0)),((1 3,3 1, 1 3)))", 0, true),
+         ==, WKTType::MULTIPOLYGON);
+    TEST(util::geo::getWKTType("\t\tMMultipolygon Z((1 1,3 3),(1 3,3 1))", 0, true),
+         ==, WKTType::MULTIPOLYGON);
+    TEST(util::geo::getWKTType("\t\tMMultipolygon Z EMPTY((1 1,3 3),(1 3,3 1))", 0, true),
+         ==, WKTType::NONE);
+    TEST(util::geo::getWKTType("tMMultipolygon EMPTY((1 1,3 3),(1 3,3 1))", 0, true),
+         ==, WKTType::NONE);
+    TEST(util::geo::getWKTType("MULTIPOLYGON EMPTY((1 1,3 3),(1 3,3 1))", 0, true),
+         ==, WKTType::NONE);
+
+    TEST(util::geo::getWKTType("POINT EMPTY (1 2)", 0, true), ==,
+         WKTType::NONE);
+    TEST(util::geo::getWKTType("LINESTRING EMPTY (1 2, 3 4)", 0, true), ==,
+         WKTType::NONE);
+    TEST(util::geo::getWKTType("POLYGON EMPTY ((0 0,1 0,1 1,0 0))", 0, true),
+         ==, WKTType::NONE);
+    TEST(util::geo::getWKTType("MULTIPOINT EMPTY ((1 2))", 0, true), ==,
+         WKTType::NONE);
+    TEST(util::geo::getWKTType("MULTILINESTRING EMPTY ((1 2,3 4))", 0, true),
+         ==, WKTType::NONE);
+    TEST(util::geo::getWKTType("MULTIPOLYGON EMPTY (((0 0,1 0,1 1,0 0)))", 0,
+                               true),
+         ==, WKTType::NONE);
+    TEST(util::geo::getWKTType("GEOMETRYCOLLECTION EMPTY (POINT(1 2))", 0,
+                               true),
+         ==, WKTType::NONE);
+    TEST(util::geo::getWKTType("MULTIPOLYGON EMPTY \n\t(((0 0,1 0,1 1,0 0)))",
+                               0, true),
+         ==, WKTType::NONE);
+    TEST(util::geo::getWKTType("MULTIPOLYGON EMPTY EMPTY", 0, true), ==,
+         WKTType::NONE);
+    TEST(util::geo::getWKTType("MULTIPOLYGON EMPTY garbage", 0, true), ==,
+         WKTType::NONE);
+    TEST(util::geo::getWKTType("MULTIPOLYGON EMPT", 0, true), ==,
+         WKTType::NONE);
+
+    TEST(util::geo::getWKTType("MULTIPOLYGON EMPTY", 0, true), ==,
+         WKTType::MULTIPOLYGON);
+    TEST(util::geo::getWKTType("multipolygon empty \n\t", 0, true), ==,
+         WKTType::MULTIPOLYGON);
+    TEST(util::geo::getWKTType("MULTIPOLYGON Z EMPTY", 0, true), ==,
+         WKTType::MULTIPOLYGON);
+    TEST(util::geo::getWKTType("MULTIPOLYGON EMPTY , POINT(1 2))", 0, true),
+         ==, WKTType::MULTIPOLYGON);
+    TEST(util::geo::getWKTType("MULTIPOLYGON EMPTY )", 0, true), ==,
+         WKTType::MULTIPOLYGON);
+    TEST(util::geo::getWKT(util::geo::collectionFromWKT<double>(
+             "GEOMETRYCOLLECTION(MULTIPOLYGON EMPTY , LINESTRING EMPTY ,"
+             "POINT(1 2), POLYGON EMPTY )",
+             0, true)),
+         ==, "GEOMETRYCOLLECTION(POINT(1 2))");
+
+    const char* emptyIn = "MULTIPOLYGON EMPTY ";
+    const char* emptyEnd = 0;
+    TEST(util::geo::getWKTType(emptyIn, &emptyEnd, true), ==,
+         WKTType::MULTIPOLYGON);
+    TEST(emptyEnd - emptyIn, ==, 13);
+
     TEST(util::geo::getWKT(multiPolygonFromWKT<int>(
              "MULTIPOLYGON(((1 1,3 3,1 1), (0 0,1 1,0 0)),((1 3,3 1, 1 3)))")),
          ==, "MULTIPOLYGON(((1 1,3 3,1 1),(0 0,1 1,0 0)),((1 3,3 1,1 3)))");
@@ -122,6 +185,29 @@ void GeoTest::testWktParseMultiPolygon() {
     TEST_THROWS(util::geo::WKTParseException,
                 util::geo::multiPolygonFromWKT<double>(
                     "MULTIPOLYGON(((0 0, 1 b2)))", true));
+
+    TEST_THROWS(util::geo::WKTParseException,
+                util::geo::multiPolygonFromWKT<double>(
+                    "MULTIPOLYGON((foo(0 0, 1 0, 1 1, 0 0)))", true));
+
+    // numbers glued together must not be split into several coordinates
+    TEST_THROWS(util::geo::WKTParseException,
+                util::geo::multiPolygonFromWKT<double>(
+                    "MULTIPOLYGON(((0 0, 1 0, 1 1, 0 0)), ((0 0, 1-0, 1 1, 0 0)))",
+                    true));
+    TEST_THROWS(util::geo::WKTParseException,
+                util::geo::multiPolygonFromWKT<double>(
+                    "MULTIPOLYGON(((0 0, 1 0, 1 1, 0 0), (0.1.2 0, 1 0, 1 1, 0 0)))",
+                    true));
+
+    TEST_THROWS(util::geo::WKTParseException,
+                util::geo::multiPolygonFromWKT<double>(
+                    "MULTIPOLYGON(((0 0, 1 0, 1 1, 0 0)), (foo(0 0, 1 0, 1 1, 0 0)))",
+                    true));
+
+    TEST(getWKT(util::geo::multiPolygonFromWKT<double>(
+             "MULTIPOLYGON(( \n(0 0, 1 0, 1 1, 0 0)))", true)),
+         ==, "MULTIPOLYGON(((0 0,1 0,1 1,0 0)))");
   }
 
   {
@@ -129,6 +215,18 @@ void GeoTest::testWktParseMultiPolygon() {
              std::string("MULTIPOLYGON(((0 0, 1 0, 1 1, 0 0)))"),
              util::geo::projectToCRS84<double>, true)),
          ==, "MULTIPOLYGON(((0 0,1 0,1 1,0 0)))");
+    TEST(getWKT(util::geo::multiPolygonFromWKTProj<double>(
+             std::string("MULTIPOLYGON(((0 0, 1e0 0, 1 1e-0, 0 0e+0)))"),
+             util::geo::projectToCRS84<double>, true)),
+         ==, "MULTIPOLYGON(((0 0,1 0,1 1,0 0)))");
+    TEST(getWKT(util::geo::multiPolygonFromWKTProj<double>(
+             std::string("MULTIPOLYGON(((0 100e-0002, 1e0 0, 1 1e-0, 0 0e+0, 0  1)))"),
+             util::geo::projectToCRS84<double>, true)),
+         ==, "MULTIPOLYGON(((0 1,1 0,1 1,0 0,0 1)))");
+    TEST(getWKT(util::geo::multiPolygonFromWKTProj<double>(
+             std::string("MULTIPOLYGON(((1 2, 3 3, 1 2e0)),((0 100e-0002, 1e0 0, 1 1e-0, 0 0e+0, 0  1), (+5 -2, 10e2 3, 5 -20e-1)))"),
+             util::geo::projectToCRS84<double>, true)),
+         ==, "MULTIPOLYGON(((1 2,3 3,1 2)),((0 1,1 0,1 1,0 0,0 1),(5 -2,1000 3,5 -2)))");
     TEST(getWKT(util::geo::multiPolygonFromWKTProj<double>(
              "MULTIPOLYGON(((0 0, 1 0, 1 1, 0 0)))", 0,
              util::geo::projectToCRS84<double>, true)),
@@ -144,5 +242,64 @@ void GeoTest::testWktParseMultiPolygon() {
     TEST(getWKT(util::geo::multiPolygonFromWKTProj<double>(
              std::string("MULTIPOLYGON()"), util::geo::projectToCRS84<double>)),
          ==, "MULTIPOLYGON()");
+  }
+
+  {
+    TEST(util::geo::getWKT(
+             util::geo::multiPolygonFromWKT<double>("MULTIPOLYGON(((0 0, 1 0, 1 1, 0 0)), ((2 2, 3 2, 3 3, 2 2))) \n\t", 0, true)),
+         ==, "MULTIPOLYGON(((0 0,1 0,1 1,0 0)),((2 2,3 2,3 3,2 2)))");
+    TEST_THROWS(util::geo::WKTParseException,
+                util::geo::multiPolygonFromWKT<double>("MULTIPOLYGON(((0 0, 1 0, 1 1, 0 0)), ((2 2, 3 2, 3 3, 2 2))) GARBAGE", 0, true));
+    TEST_THROWS(util::geo::WKTParseException,
+                util::geo::multiPolygonFromWKT<double>("MULTIPOLYGON(((0 0, 1 0, 1 1, 0 0)), ((2 2, 3 2, 3 3, 2 2))))", 0, true));
+    TEST_THROWS(util::geo::WKTParseException,
+                util::geo::multiPolygonFromWKT<double>("MULTIPOLYGON(((0 0, 1 0, 1 1, 0 0)), ((2 2, 3 2, 3 3, 2 2))), POINT(5 5)", 0, true));
+    TEST_THROWS(util::geo::WKTParseException,
+                util::geo::multiPolygonFromWKT<double>("MULTIPOLYGON EMPTY GARBAGE", 0, true));
+    TEST_THROWS(util::geo::WKTParseException,
+                util::geo::multiPolygonFromWKT<double>("MULTIPOLYGON EMPTY)", 0, true));
+
+    const char* in = "MULTIPOLYGON(((0 0, 1 0, 1 1, 0 0)), ((2 2, 3 2, 3 3, 2 2))) GARBAGE";
+    const char* end = 0;
+    TEST(util::geo::getWKT(util::geo::multiPolygonFromWKT<double>(in, &end, true)), ==,
+         "MULTIPOLYGON(((0 0,1 0,1 1,0 0)),((2 2,3 2,3 3,2 2)))");
+    TEST(end - in, ==, 59);
+
+    TEST(util::geo::getWKT(util::geo::multiPolygonFromWKT<double>(in, 0, false)), ==,
+         "MULTIPOLYGON(((0 0,1 0,1 1,0 0)),((2 2,3 2,3 3,2 2)))");
+  }
+
+  {
+    // in non-strict mode, unparsable inner rings are dropped, not kept empty
+    TEST(getWKT(multiPolygonFromWKT<double>(
+             std::string("MULTIPOLYGON(((0 0,4 0,4 4,0 0),(1)))"), false)),
+         ==, "MULTIPOLYGON(((0 0,4 0,4 4,0 0)))");
+    TEST(getWKT(multiPolygonFromWKT<double>(
+             std::string("MULTIPOLYGON(((0 0,4 0,4 4,0 0),(1)),"
+                         "((5 5,6 5,6 6,5 5)))"),
+             false)),
+         ==, "MULTIPOLYGON(((0 0,4 0,4 4,0 0)),((5 5,6 5,6 6,5 5)))");
+
+    // empty rings and polygons in a hand-built multipolygon are skipped when
+    // serializing
+    Polygon<double> withEmptyInner;
+    withEmptyInner.getOuter() = {{0, 0}, {4, 0}, {4, 4}};
+    withEmptyInner.getInners().push_back({});
+    Polygon<double> noOuter;
+    noOuter.getInners().push_back({});
+    Polygon<double> other;
+    other.getOuter() = {{5, 5}, {6, 5}, {6, 6}};
+
+    MultiPolygon<double> mp;
+    mp.push_back(noOuter);
+    mp.push_back(withEmptyInner);
+    mp.push_back(noOuter);
+    mp.push_back(other);
+    TEST(getWKT(mp), ==,
+         "MULTIPOLYGON(((0 0,4 0,4 4,0 0)),((5 5,6 5,6 6,5 5)))");
+
+    MultiPolygon<double> onlyEmpty;
+    onlyEmpty.push_back(noOuter);
+    TEST(getWKT(onlyEmpty), ==, "MULTIPOLYGON()");
   }
 }

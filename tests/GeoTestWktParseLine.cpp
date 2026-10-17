@@ -34,6 +34,8 @@ void GeoTest::testWktParseLine() {
          WKTType::LINESTRING);
     TEST(util::geo::getWKTType("  LINESTRING (0 0, 1 1)", 0), ==,
          WKTType::LINESTRING);
+    TEST(util::geo::getWKTType("  LINESTRING EMPTY", 0), ==,
+         WKTType::LINESTRING);
     TEST(util::geo::getWKTType("  LINESTRIN (0 0, 1 1)", 0), ==, WKTType::NONE);
     TEST(util::geo::getWKTType("  INESTRING (0 0, 1 1)", 0), ==, WKTType::NONE);
 
@@ -64,6 +66,38 @@ void GeoTest::testWktParseLine() {
          WKTType::LINESTRING);
     TEST(util::geo::getWKTType("  linestrinG (0 0, 1 1)", 0), ==,
          WKTType::LINESTRING);
+
+    TEST(util::geo::getWKTType("liNestRing(0 0, 1 1)", 0, true), ==,
+         WKTType::LINESTRING);
+    TEST(util::geo::getWKTType("liNestRing empty", 0, true), ==,
+         WKTType::LINESTRING);
+    TEST(util::geo::getWKTType("mlinestrIng(0 0, 1 1)", 0, true), ==,
+         WKTType::LINESTRING);
+    TEST(util::geo::getWKTType("  mliNestring (0 0, 1 1)", 0, true), ==,
+         WKTType::LINESTRING);
+    TEST(util::geo::getWKTType("  MlInestring z(0 0, 1 1)", 0, true), ==,
+         WKTType::LINESTRING);
+    TEST(util::geo::getWKTType("  Linestring z(0 0, 1 1)", 0, true), ==,
+         WKTType::LINESTRING);
+    TEST(util::geo::getWKTType("  Linestring ZM(0 0, 1 1)", 0, true), ==,
+         WKTType::LINESTRING);
+    TEST(util::geo::getWKTType("  linestrinG (0 0, 1 1)", 0, true), ==,
+         WKTType::LINESTRING);
+
+    TEST(util::geo::getWKTType("liNestRing foo(0 0, 1 1)", 0, true), ==,
+         WKTType::NONE);
+    TEST(util::geo::getWKTType("mlinestrIng{(0 0, 1 1)", 0, true), ==,
+         WKTType::NONE);
+    TEST(util::geo::getWKTType("  mliNestring sth(0 0, 1 1)", 0, true), ==,
+         WKTType::NONE);
+    TEST(util::geo::getWKTType("  MlInestring test z(0 0, 1 1)", 0, true), ==,
+         WKTType::NONE);
+    TEST(util::geo::getWKTType("  Linestring z test(0 0, 1 1)", 0, true), ==,
+         WKTType::NONE);
+    TEST(util::geo::getWKTType("  Linestring foo ZM(0 0, 1 1)", 0, true), ==,
+         WKTType::NONE);
+    TEST(util::geo::getWKTType("  linestrinG A(0 0, 1 1)", 0, true), ==,
+         WKTType::NONE);
 
     TEST(util::geo::getWKT(lineFromWKT<int>("LINESTRING(0 0, 1 1)", 0)), ==,
          "LINESTRING(0 0,1 1)");
@@ -113,6 +147,7 @@ void GeoTest::testWktParseLine() {
 
     TEST(getWKT(util::geo::lineFromWKT<double>(
              "   LINESTRING Z   (  0    0  , 1  1   )", true)),
+        // skip whitespace
          ==, "LINESTRING(0 0,1 1)");
     TEST(getWKT(util::geo::lineFromWKT<double>(
              "   LINESTRING Z   (  0    0  , 1  1   )", false)),
@@ -218,7 +253,12 @@ void GeoTest::testWktParseLine() {
     TEST_THROWS(util::geo::WKTParseException,
                 util::geo::lineFromWKT<double>("LINESTRING(0 0, 1 1", true));
     TEST(util::geo::lineFromWKT<double>("LINESTRING(0 0, 1 1", false).size(),
-         ==, 0);
+         ==, 2);
+
+    TEST(util::geo::lineFromWKT<double>("LINESTRING(0 0 0, 1 1 0 GARBAGE)", false).size(),
+         ==, 2);
+
+    TEST_THROWS(util::geo::WKTParseException, util::geo::lineFromWKT<double>("LINESTRING(0 0 0, 1 1 0 GARBAGE)", true));
 
     TEST_THROWS(util::geo::WKTParseException,
                 util::geo::lineFromWKT<double>("LINESTRING 0 0, 1 1)", true));
@@ -236,12 +276,12 @@ void GeoTest::testWktParseLine() {
     TEST_THROWS(util::geo::WKTParseException,
                 util::geo::lineFromWKT<double>("LINESTRING(0 0, 1)", true));
     TEST(util::geo::lineFromWKT<double>("LINESTRING(0 0, 1)", false).size(), ==,
-         0);
+         1);
 
     TEST_THROWS(util::geo::WKTParseException,
                 util::geo::lineFromWKT<double>("LINESTRING(0 0,)", true));
     TEST(util::geo::lineFromWKT<double>("LINESTRING(0 0,)", false).size(), ==,
-         0);
+         1);
 
     TEST_THROWS(util::geo::WKTParseException,
                 util::geo::lineFromWKT<double>("linestring emptay", true));
@@ -252,6 +292,28 @@ void GeoTest::testWktParseLine() {
                 util::geo::lineFromWKT<double>("linestring(a b) ", true));
     TEST_THROWS(util::geo::WKTParseException,
                 util::geo::lineFromWKT<double>("linestring(1 1, a b) ", true));
+    TEST_THROWS(util::geo::WKTParseException,
+                util::geo::lineFromWKT<double>(
+                    "LINESTRING(2 2 3, 4 3 2 GARBAGE)", true));
+    TEST(getWKT(util::geo::lineFromWKT<double>(
+             "LINESTRING(2 2 3, 4 3 2 GARBAGE)", false)),
+         ==, "LINESTRING(2 2,4 3)");
+    TEST_THROWS(util::geo::WKTParseException,
+                util::geo::lineFromWKT<double>("linestring(1 1) ", true));
+    TEST_THROWS(util::geo::WKTParseException,
+                util::geo::lineFromWKT<double>("LINESTRING(1 1) ", true));
+    TEST_THROWS(util::geo::WKTParseException,
+                util::geo::lineFromWKT<double>("linestring(1 1 ", true));
+    TEST_THROWS(util::geo::WKTParseException,
+                util::geo::lineFromWKT<double>("linestring(1)", true));
+    TEST_THROWS(util::geo::WKTParseException,
+                util::geo::lineFromWKT<double>("multilinestring((1))", true));
+    TEST_THROWS(util::geo::WKTParseException,
+                util::geo::lineFromWKT<double>("multilinestring((1 1))", true));
+    TEST_THROWS(util::geo::WKTParseException,
+                util::geo::lineFromWKT<double>("multilinestring((1 1), (1 1, 2 2))", true));
+    TEST_THROWS(util::geo::WKTParseException,
+                util::geo::lineFromWKT<double>("multilinestring((1 1, 2 2),(1 1))", true));
   }
 
   {
@@ -274,7 +336,7 @@ void GeoTest::testWktParseLine() {
     TEST(getWKT(util::geo::lineFromWKTProj<double>(
              std::string("LINESTRING(0 0, 1)"),
              util::geo::projectToCRS84<double>)),
-         ==, "LINESTRING()");
+         ==, "LINESTRING(0 0)");
 
     TEST(getWKT(util::geo::lineFromWKTProj<double>(
              "LINESTRING(0 0, 1 1)", 0, util::geo::projectToCRS84<double>)),
@@ -283,5 +345,163 @@ void GeoTest::testWktParseLine() {
              "LINESTRING(0 0, 1 1)", nullptr,
              [](const util::geo::DPoint& p, util::geo::CRSType) { return p; })),
          ==, "LINESTRING(0 0,1 1)");
+
+    TEST_THROWS(
+        util::geo::WKTParseException,
+        util::geo::lineFromWKTProj<double>(
+            "LINESTRING(0 0, 1 1e)", 0, util::geo::projectToCRS84<double>, true));
+
+    TEST_THROWS(
+        util::geo::WKTParseException,
+        util::geo::lineFromWKTProj<double>(
+            "LINESTRING(0 0, 1e- 100)", 0, util::geo::projectToCRS84<double>, true));
+  }
+
+  {
+    TEST(getWKT(util::geo::lineFromWKT<double>(
+            "LINESTRING(0 0, 1 1)")),
+         ==, "LINESTRING(0 0,1 1)");
+    TEST(getWKT(util::geo::lineFromWKT<double>(
+            "LINESTRING(0 0, 1e1 1)")),
+         ==, "LINESTRING(0 0,10 1)");
+    TEST(getWKT(util::geo::lineFromWKT<double>(
+            "LINESTRING(0 0, 1 1e1)")),
+         ==, "LINESTRING(0 0,1 10)");
+    TEST(getWKT(util::geo::lineFromWKT<double>(
+            "LINESTRING(0 0, 1e2 1e1)")),
+         ==, "LINESTRING(0 0,100 10)");
+    TEST(getWKT(util::geo::lineFromWKT<double>(
+            "LINESTRING(0 0, -1e2 +1e1)")),
+         ==, "LINESTRING(0 0,-100 10)");
+    TEST(getWKT(util::geo::lineFromWKT<double>(
+            "LINESTRING(0 0, -1e-2 +1e1)")),
+         ==, "LINESTRING(0 0,-0.01 10)");
+  }
+
+  {
+    TEST(util::geo::getWKT(
+             util::geo::lineFromWKT<double>("LINESTRING(1 2, 3 4) \n\t", 0, true)),
+         ==, "LINESTRING(1 2,3 4)");
+    TEST_THROWS(util::geo::WKTParseException,
+                util::geo::lineFromWKT<double>("LINESTRING(1 2, 3 4) GARBAGE", 0, true));
+    TEST_THROWS(util::geo::WKTParseException,
+                util::geo::lineFromWKT<double>("LINESTRING(1 2, 3 4))", 0, true));
+    TEST_THROWS(util::geo::WKTParseException,
+                util::geo::lineFromWKT<double>("LINESTRING(1 2, 3 4), POINT(5 5)", 0, true));
+    TEST_THROWS(util::geo::WKTParseException,
+                util::geo::lineFromWKT<double>("LINESTRING EMPTY GARBAGE", 0, true));
+    TEST_THROWS(util::geo::WKTParseException,
+                util::geo::lineFromWKT<double>("LINESTRING EMPTY)", 0, true));
+
+    // numbers glued together must not be split into several coordinates
+    TEST_THROWS(util::geo::WKTParseException,
+                util::geo::lineFromWKT<double>("LINESTRING(1 2,3-4)", true));
+    TEST_THROWS(util::geo::WKTParseException,
+                util::geo::lineFromWKT<double>("LINESTRING(1.2.3 4,5 6)", true));
+    TEST_THROWS(util::geo::WKTParseException,
+                util::geo::lineFromWKT<double>("LINESTRING(1 2,3 4.5.6)", true));
+    TEST_THROWS(util::geo::WKTParseException,
+                util::geo::lineFromWKT<double>("LINESTRING(1 2x,3 4)", true));
+    TEST(getWKT(util::geo::lineFromWKT<double>("LINESTRING(1 2,3 4)", true)),
+         ==, "LINESTRING(1 2,3 4)");
+    TEST(getWKT(util::geo::lineFromWKT<double>("LINESTRING(1 -2,-3 4.5)", true)),
+         ==, "LINESTRING(1 -2,-3 4.5)");
+
+    const char* in = "LINESTRING(1 2, 3 4) GARBAGE";
+    const char* end = 0;
+    TEST(util::geo::getWKT(util::geo::lineFromWKT<double>(in, &end, true)), ==,
+         "LINESTRING(1 2,3 4)");
+    TEST(end - in, ==, 19);
+
+    TEST(util::geo::getWKT(util::geo::lineFromWKT<double>(in, 0, false)), ==,
+         "LINESTRING(1 2,3 4)");
+  }
+
+  {
+    TEST(getWKT(lineFromWKT<double>(
+             std::string("\"LINESTRING(1 2, 3 4)\"^^<>"), true)),
+         ==, "LINESTRING(1 2,3 4)");
+    TEST(getWKT(lineFromWKT<double>(
+             std::string("\"LINESTRING(1 2, 3 4)\"^^<http://www.opengis.net/ont/geosparql#wktLiteral>"), true)),
+         ==, "LINESTRING(1 2,3 4)");
+    TEST(getWKT(lineFromWKT<double>(
+             std::string("\"LINESTRING(1 2, 3 4)\"^^<http://www.opengis.net/ont/geosparql#wktLiteral> \n"), true)),
+         ==, "LINESTRING(1 2,3 4)");
+    TEST(getWKT(lineFromWKT<double>(
+             std::string("\"<http://www.opengis.net/def/crs/EPSG/0/4326> LINESTRING(1 2, 3 4)\"^^<http://www.opengis.net/ont/geosparql#wktLiteral>"), true)),
+         ==, "LINESTRING(2 1,4 3)");
+    TEST(getWKT(lineFromWKT<double>(
+             std::string("\"LINESTRING EMPTY\"^^<http://www.opengis.net/ont/geosparql#wktLiteral>"), true)),
+         ==, "LINESTRING()");
+    TEST(getWKTType("\"LINESTRING(1 2, 3 4)\"^^<http://www.opengis.net/ont/geosparql#wktLiteral>", 0, true), ==,
+         WKTType::LINESTRING);
+    TEST(getWKTType("\"LINESTRING EMPTY\"^^<http://www.opengis.net/ont/geosparql#wktLiteral>", 0, true), ==,
+         WKTType::LINESTRING);
+    TEST(getWKTType("\"LINESTRING Z EMPTY\"^^<>", 0, true), ==,
+         WKTType::LINESTRING);
+    TEST(getWKT(lineFromWKT<double>(
+             std::string("\"LINESTRING(1 2, 3 4)\"^^<>"), false)),
+         ==, "LINESTRING(1 2,3 4)");
+    TEST(getWKT(lineFromWKT<double>(
+             std::string("\"LINESTRING(1 2, 3 4)\"^^<http://www.opengis.net/ont/geosparql#wktLiteral>"), false)),
+         ==, "LINESTRING(1 2,3 4)");
+    TEST(getWKT(lineFromWKT<double>(
+             std::string("\"LINESTRING(1 2, 3 4)\"^^<http://www.opengis.net/ont/geosparql#wktLiteral> \n"), false)),
+         ==, "LINESTRING(1 2,3 4)");
+    TEST(getWKT(lineFromWKT<double>(
+             std::string("\"<http://www.opengis.net/def/crs/EPSG/0/4326> LINESTRING(1 2, 3 4)\"^^<http://www.opengis.net/ont/geosparql#wktLiteral>"), false)),
+         ==, "LINESTRING(2 1,4 3)");
+    TEST(getWKT(lineFromWKT<double>(
+             std::string("\"LINESTRING EMPTY\"^^<http://www.opengis.net/ont/geosparql#wktLiteral>"), false)),
+         ==, "LINESTRING()");
+    TEST(getWKTType("\"LINESTRING(1 2, 3 4)\"^^<http://www.opengis.net/ont/geosparql#wktLiteral>", 0, false), ==,
+         WKTType::LINESTRING);
+    TEST(getWKTType("\"LINESTRING EMPTY\"^^<http://www.opengis.net/ont/geosparql#wktLiteral>", 0, false), ==,
+         WKTType::LINESTRING);
+    TEST(getWKTType("\"LINESTRING Z EMPTY\"^^<>", 0, false), ==,
+         WKTType::LINESTRING);
+
+    // anything after the datatype, or an incomplete datatype
+    TEST_THROWS(WKTParseException,
+                lineFromWKT<double>(
+                    std::string("\"LINESTRING(1 2, 3 4)\"^^<http://www.opengis.net/ont/geosparql#wktLiteral> garbage"), true));
+    TEST_THROWS(WKTParseException,
+                lineFromWKT<double>(
+                    std::string("\"LINESTRING(1 2, 3 4)\"^^<http://www.opengis.net/ont/geosparql#wktLiteral>^^<http://www.opengis.net/ont/geosparql#wktLiteral>"), true));
+    TEST_THROWS(WKTParseException,
+                lineFromWKT<double>(
+                    std::string("\"LINESTRING(1 2, 3 4)\"^^<http://x"), true));
+    TEST_THROWS(WKTParseException,
+                lineFromWKT<double>(
+                    std::string("\"LINESTRING(1 2, 3 4)\"^<http://x>"), true));
+    TEST_THROWS(WKTParseException,
+                lineFromWKT<double>(
+                    std::string("\"LINESTRING(1 2, 3 4)\"^^http://x"), true));
+    TEST_THROWS(WKTParseException,
+                lineFromWKT<double>(
+                    std::string("\"LINESTRING(1 2, 3 4)\"^^"), true));
+    TEST(getWKTType("\"LINESTRING EMPTY\"^^<http://www.opengis.net/ont/geosparql#wktLiteral> garbage", 0, true), ==,
+         WKTType::NONE);
+    TEST(getWKTType("\"LINESTRING EMPTY\"^^<http://www.opengis.net/ont/geosparql#wktLiteral> EMPTY", 0, true), ==,
+         WKTType::NONE);
+    TEST(getWKTType("\"LINESTRING EMPTY\"^^<http://x", 0, true), ==,
+         WKTType::NONE);
+    TEST(getWKTType("\"LINESTRING^^<http://www.opengis.net/ont/geosparql#wktLiteral>(1 2, 3 4)", 0, true), ==,
+         WKTType::NONE);
+    TEST(getWKTType("\"LINESTRING EMPTY\"^^<http://www.opengis.net/ont/geosparql#wktLiteral>, POINT(1 2)", 0, true), ==,
+         WKTType::NONE);
+  }
+
+  {
+    // EMPTY must be separated from the type
+    TEST(getWKTType("LINESTRINGEMPTY", 0, true), ==, WKTType::NONE);
+    TEST(getWKTType("LINESTRING ZEMPTY", 0, true), ==, WKTType::NONE);
+    TEST(getWKTType("MULTIPOLYGONEMPTY", 0, true), ==, WKTType::NONE);
+    TEST(getWKTType("GEOMETRYCOLLECTIONEMPTY", 0, true), ==, WKTType::NONE);
+    TEST(getWKTType("LINESTRING EMPTY", 0, true), ==, WKTType::LINESTRING);
+    TEST(getWKTType("LINESTRING\tEMPTY", 0, true), ==, WKTType::LINESTRING);
+    TEST(getWKTType("LINESTRING Z EMPTY", 0, true), ==, WKTType::LINESTRING);
+    TEST(getWKTType("LINESTRINGZ EMPTY", 0, true), ==, WKTType::LINESTRING);
+    TEST(getWKTType("LINESTRING\"EMPTY\"", 0, true), ==, WKTType::LINESTRING);
   }
 }

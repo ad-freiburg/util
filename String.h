@@ -25,6 +25,7 @@
 #include <stdexcept>
 #include <string>
 #include <vector>
+
 #include "3rdparty/fmt/core.h"
 
 namespace util {
@@ -57,6 +58,91 @@ inline int strncicmp(char const* left, char const* right, size_t n) {
     if (d || !*left) return d;  // if !*left, both strings are at their end
     left++;
     right++;
+    i++;
+  }
+
+  return 0;
+}
+
+// _____________________________________________________________________________
+inline int ascii_strcicmp(char const* left, char const* right) {
+  // case insensitive strncmp for ASCII (avoiding tolower)
+  size_t i = 0;
+  while (true) {
+    unsigned char l = left[i], r = right[i];
+    if (l >= 'A' && l <= 'Z') l += 'a' - 'A';
+    if (r >= 'A' && r <= 'Z') r += 'a' - 'A';
+    if (l != r || !l) return l - r;  // if !l, both strings are at their end
+    i++;
+  }
+}
+
+// _____________________________________________________________________________
+inline int ascii_strnicmp(char const* left, char const* right, size_t n) {
+  // case insensitive strncmp for ASCII (avoiding tolower)
+  size_t i = 0;
+  while (i < n) {
+    unsigned char l = left[i], r = right[i];
+    if (l >= 'A' && l <= 'Z') l += 'a' - 'A';
+    if (r >= 'A' && r <= 'Z') r += 'a' - 'A';
+    if (l != r || !l) return l - r;  // if !l, both strings are at their end
+    i++;
+  }
+
+  return 0;
+}
+
+// _____________________________________________________________________________
+inline int ascii_strnicmp_lower(char const* left, char const* lower, size_t n) {
+  // case insensitive strncmp for ASCII (avoiding tolower), but lower must
+  // already be lowercased!
+  size_t i = 0;
+  while (i < n) {
+    unsigned char l = left[i], r = lower[i];
+    if (l >= 'A' && l <= 'Z') l += 'a' - 'A';
+    if (l != r || !l) return l - r;  // if !l, both strings are at their end
+    i++;
+  }
+
+  return 0;
+}
+
+// _____________________________________________________________________________
+inline int ascii_letter_strcicmp(char const* left, char const* letters) {
+  // case insensitive strncmp for ASCII LETTERS (avoiding tolower)
+  size_t i = 0;
+  while (true) {
+    unsigned char l = left[i] | 0x20, r = letters[i];
+    if (!r) return left[i];  // equal if left also ends here
+    r |= 0x20;
+    if (l != r) return l - r;
+    i++;
+  }
+}
+
+// _____________________________________________________________________________
+inline int ascii_letter_strnicmp(char const* left, char const* letters,
+                                 size_t n) {
+  // case insensitive strncmp for ASCII LETTERS (avoiding tolower)
+  size_t i = 0;
+  while (i < n) {
+    unsigned char l = left[i] | 0x20, r = letters[i] | 0x20;
+    if (l != r) return l - r;
+    i++;
+  }
+
+  return 0;
+}
+
+// _____________________________________________________________________________
+inline int ascii_letter_strnicmp_lower(char const* left, char const* lower,
+                                       size_t n) {
+  // case insensitive strncmp for ASCII LETTERS (avoiding tolower), but lower
+  // must already be lowercased!
+  size_t i = 0;
+  while (i < n) {
+    unsigned char l = left[i] | 0x20, r = lower[i];
+    if (l != r) return l - r;
     i++;
   }
 
