@@ -318,7 +318,6 @@ class XSortedLine {
 
   XSortedLine(const Line<T>& line) {
     if (line.size() < 2) return;
-    _len = len(line);
     _first = line.front();
     _last = line.back();
 
@@ -333,6 +332,7 @@ class XSortedLine {
     _bbox = extendBox(line[0], _bbox);
     for (size_t i = 1; i < line.size(); i++) {
       _bbox = extendBox(line[i], _bbox);
+      _len += dist(line[i - 1], line[i]);
 
       if (line[i - 1].getX() == line[i].getX() &&
           line[i - 1].getY() == line[i].getY())
@@ -373,7 +373,7 @@ class XSortedLine {
       if (open && i == line.size() - 1) {
         nextAng = 2 * M_PI;
       } else {
-        size_t next = (i + 1) % line.size();
+        size_t next = i + 1 < line.size() ? i + 1 : 0;
 
         while (line[next].getX() == line[i].getX() &&
                line[next].getY() == line[i].getY() && next != i) {
@@ -403,14 +403,6 @@ class XSortedLine {
                          i == line.size() - 1,
                          true});
       } else {
-        _line.push_back({line[i],
-                         {line[i], line[i - 1]},
-                         true,
-                         prevAng,
-                         nextAng,
-                         i == 1,
-                         i == line.size() - 1,
-                         false});
         _line.push_back({line[i - 1],
                          {line[i], line[i - 1]},
                          true,
@@ -419,6 +411,14 @@ class XSortedLine {
                          i == 1,
                          i == line.size() - 1,
                          true});
+        _line.push_back({line[i],
+                         {line[i], line[i - 1]},
+                         true,
+                         prevAng,
+                         nextAng,
+                         i == 1,
+                         i == line.size() - 1,
+                         false});
       }
     }
 

@@ -278,14 +278,14 @@ class XSortedRing {
         _ring.push_back(
             {ring[i], {ring[i - 1], ring[i]}, false, prevAng, nextAng, true});
       } else {
-        _ring.push_back(
-            {ring[i], {ring[i], ring[i - 1]}, true, prevAng, nextAng, false});
         _ring.push_back({ring[i - 1],
                          {ring[i], ring[i - 1]},
                          true,
                          prevAng,
                          nextAng,
                          true});
+        _ring.push_back(
+            {ring[i], {ring[i], ring[i - 1]}, true, prevAng, nextAng, false});
       }
     }
 
@@ -347,14 +347,14 @@ class XSortedRing {
         _ring.push_back(
             {ring[0], {ring[i - 1], ring[0]}, false, prevAng, nextAng, true});
       } else {
-        _ring.push_back(
-            {ring[0], {ring[0], ring[i - 1]}, true, prevAng, nextAng, false});
         _ring.push_back({ring[i - 1],
                          {ring[0], ring[i - 1]},
                          true,
                          prevAng,
                          nextAng,
                          true});
+        _ring.push_back(
+            {ring[0], {ring[0], ring[i - 1]}, true, prevAng, nextAng, false});
       }
     }
 
@@ -441,6 +441,11 @@ class XSortedPolygon {
     } else {
       _outer = XSortedRing<T>(poly.getOuter(), fabs(area));
     }
+
+    _inners.reserve(poly.getInners().size());
+    _innerAreas.reserve(poly.getInners().size());
+    _innerBoxes.reserve(poly.getInners().size());
+    _boxIdx.reserve(poly.getInners().size());
 
     for (const auto& inner : poly.getInners()) {
       // skip empty polygons
