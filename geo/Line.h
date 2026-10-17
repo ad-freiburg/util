@@ -330,8 +330,9 @@ class XSortedLine {
     double lastDir = 0;
 
     _line.reserve(2 * line.size());
+    _bbox = extendBox(line[0], _bbox);
     for (size_t i = 1; i < line.size(); i++) {
-      _bbox = extendBox(LineSegment<T>{line[i - 1], line[i]}, _bbox);
+      _bbox = extendBox(line[i], _bbox);
 
       if (line[i - 1].getX() == line[i].getX() &&
           line[i - 1].getY() == line[i].getY())
