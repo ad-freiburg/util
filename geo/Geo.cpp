@@ -18,8 +18,8 @@ util::geo::WKTType util::geo::getWKTType(const char* c, const char** endr,
       if (*c == '>') c++;  // Also skip '>'.
       continue;
     }
-    if (*c == ' ' || *c == '\n' || *c == '\t' || *c == '\r' || *c == '"' ||
-        *c == '\'') {
+    if (*c <= '\'' && (*c == ' ' || *c == '\n' || *c == '\t' || *c == '\r' ||
+                       *c == '"' || *c == '\'')) {
       c++;  // skip possible whitespace
       continue;
     }
@@ -88,8 +88,9 @@ util::geo::WKTType util::geo::getWKTType(const char* c, const char** endr,
   }
 
   // skip whitespace and possible measurment markers
-  while (*c == 'z' || *c == 'Z' || *c == 'm' || *c == 'M' || *c == ' ' ||
-         *c == '\n' || *c == '\t' || *c == '\r' || *c == '"' || (*c) == '\'') {
+  while ((*c <= '\'' && (*c == ' ' || *c == '\n' || *c == '\t' || *c == '\r' ||
+                         *c == '"' || *c == '\'')) ||
+         *c == 'z' || *c == 'Z' || *c == 'm' || *c == 'M') {
     c++;
   }
 
@@ -107,8 +108,8 @@ util::geo::WKTType util::geo::getWKTType(const char* c, const char** endr,
          c[-1] == '"' || c[-1] == '\'') &&
         util::ascii_letter_strnicmp_lower(r, "empty", 5) == 0) {
       r += 5;
-      while (*r == ' ' || *r == '\n' || *r == '\t' || *r == '\r' || *r == '"' ||
-             *r == '\'')
+      while (*r <= '\'' && (*r == ' ' || *r == '\n' || *r == '\t' ||
+                            *r == '\r' || *r == '"' || *r == '\''))
         r++;
     }
     const char* afterDatatype = skipWKTDatatype(r);
@@ -125,9 +126,8 @@ util::geo::WKTType util::geo::getWKTType(const char* c, const char** endr,
 
 // ___________________________k_________________________________________________
 util::geo::CRSType util::geo::getCRSType(const char* c, const char** endr) {
-  while (((*c == ' ' || *c == '\n' || *c == '\t' || *c == '\r') ||
-          ((*c) == '"') || ((*c) == '\'')) &&
-         ((*c) != '\0'))
+  while (*c <= '\'' && (*c == ' ' || *c == '\n' || *c == '\t' || *c == '\r' ||
+                        *c == '"' || *c == '\''))
     c++;  // Skip possible whitespace.
 
   // If 'endr == nullptr' this function should still update it, for this
