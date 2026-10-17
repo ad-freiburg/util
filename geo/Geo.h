@@ -1031,6 +1031,11 @@ class WKTParseException : public std::runtime_error {
       : std::runtime_error(msg) {}
 };
 
+[[noreturn]] __attribute__((noinline, cold)) inline void wktParseFail(
+    const char* msg) {
+  throw WKTParseException(msg);
+}
+
 template <typename T, typename F>
 Line<T> lineFromWKTProj(const char* c, const char** endr, F projFunc,
                         bool strict = false);
