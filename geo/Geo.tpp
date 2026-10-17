@@ -4791,7 +4791,7 @@ MultiPoint<T> multiPointFromWKTProj(const char* c, const char** endr,
   if (ret.size()) return ret;
 
   // try MULTIPOINT(1 1, 2 2) syntax
-  const auto& line =
+  auto line =
       lineFromWKTProj<T, F>(c, endr, projFunc, sourceCRS, strict, true);
   if (line.size() > 0) return MultiPoint<T>(std::move(line));
 
@@ -5085,7 +5085,7 @@ MultiLine<T> multiLineFromWKTProj(const char* c, const char** endr, F projFunc,
             "EMPTY");
       c = strchr(c, '(');
       if (!c) break;
-      const auto& line = lineFromWKTProj<T, F>(
+      auto line = lineFromWKTProj<T, F>(
           c, &end, projFunc, sourceCRS, strict, allowSinglePoint, !strict);
       if (!end) break;
       if (line.size() != 0) ml.push_back(std::move(line));
@@ -5158,7 +5158,7 @@ MultiPolygon<T> multiPolygonFromWKTProj(const char* c, const char** endr,
             "Could not parse WKT multipolygon, expected polygon or EMPTY");
       c = strchr(c, '(');
       if (!c) break;
-      const auto& poly = polygonFromWKTProj<T, F>(c, &end, projFunc, sourceCRS,
+      auto poly = polygonFromWKTProj<T, F>(c, &end, projFunc, sourceCRS,
                                                   strict, !strict);
 
       if (!end) break;
@@ -5278,7 +5278,7 @@ Collection<T> collectionFromWKTProj(const char* c, const char** endr,
       col.push_back(point);
     } else if (wktType == POLYGON) {
       const char* end = 0;
-      const auto& poly = polygonFromWKTProj<T, F>(c, &end, projFunc, sourceCRS,
+      auto poly = polygonFromWKTProj<T, F>(c, &end, projFunc, sourceCRS,
                                                   strict, !strict);
 
       if (!end) {
@@ -5290,10 +5290,10 @@ Collection<T> collectionFromWKTProj(const char* c, const char** endr,
       }
       lastEnd = end;
       if (strict) checkWKTMemberEnd(end);
-      if (poly.getOuter().size() > 1) col.push_back(poly);
+      if (poly.getOuter().size() > 1) col.emplace_back(std::move(poly));
     } else if (wktType == LINESTRING) {
       const char* end = 0;
-      const auto& line =
+      auto line =
           lineFromWKTProj<T, F>(c, &end, projFunc, sourceCRS, strict, !strict);
 
       if (!end) {
@@ -5305,10 +5305,10 @@ Collection<T> collectionFromWKTProj(const char* c, const char** endr,
       }
       lastEnd = end;
       if (strict) checkWKTMemberEnd(end);
-      if (line.size() > 1) col.push_back(line);
+      if (line.size() > 1) col.emplace_back(std::move(line));
     } else if (wktType == MULTIPOINT) {
       const char* end = 0;
-      const auto& mp =
+      auto mp =
           multiPointFromWKTProj<T, F>(c, &end, projFunc, sourceCRS, strict);
 
       if (!end) {
@@ -5320,10 +5320,10 @@ Collection<T> collectionFromWKTProj(const char* c, const char** endr,
       }
       lastEnd = end;
       if (strict) checkWKTMemberEnd(end);
-      if (mp.size()) col.push_back(mp);
+      if (mp.size()) col.emplace_back(std::move(mp));
     } else if (wktType == MULTIPOLYGON) {
       const char* end = 0;
-      const auto& mp =
+      auto mp =
           multiPolygonFromWKTProj<T, F>(c, &end, projFunc, sourceCRS, strict);
 
       if (!end) {
@@ -5335,10 +5335,10 @@ Collection<T> collectionFromWKTProj(const char* c, const char** endr,
       }
       lastEnd = end;
       if (strict) checkWKTMemberEnd(end);
-      if (mp.size()) col.push_back(mp);
+      if (mp.size()) col.emplace_back(std::move(mp));
     } else if (wktType == MULTILINESTRING) {
       const char* end = 0;
-      const auto& ml =
+      auto ml =
           multiLineFromWKTProj<T, F>(c, &end, projFunc, sourceCRS, strict);
 
       if (!end) {
@@ -5350,10 +5350,10 @@ Collection<T> collectionFromWKTProj(const char* c, const char** endr,
       }
       lastEnd = end;
       if (strict) checkWKTMemberEnd(end);
-      if (ml.size()) col.push_back(ml);
+      if (ml.size()) col.emplace_back(std::move(ml));
     } else if (wktType == COLLECTION) {
       const char* end = 0;
-      const auto& nested =
+      auto nested =
           collectionFromWKTProj<T, F>(c, &end, projFunc, sourceCRS, strict);
 
       if (!end) {
@@ -5365,7 +5365,7 @@ Collection<T> collectionFromWKTProj(const char* c, const char** endr,
       }
       lastEnd = end;
       if (strict) checkWKTMemberEnd(end);
-      if (nested.size()) col.push_back(nested);
+      if (nested.size()) col.emplace_back(std::move(nested));
     }
 
     const char* nextComma = strchr(lastEnd + 1, ',');
