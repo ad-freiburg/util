@@ -1089,11 +1089,12 @@ template <typename T>
 Point<T> pointFromWKT(const char* c, const char** endr, bool strict = false);
 
 template <typename T>
-Point<T> pointFromWKT(std::string wkt, bool strict = false);
+Point<T> pointFromWKT(const std::string& wkt, bool strict = false);
 
 template <typename T, typename F,
           typename = typename std::enable_if<IsProjFunc<F>::value>::type>
-Point<T> pointFromWKTProj(std::string wkt, F&& projFunc, bool strict = false);
+Point<T> pointFromWKTProj(const std::string& wkt, F&& projFunc,
+                          bool strict = false);
 
 template <typename T, typename F>
 Polygon<T> polygonFromWKTProj(const char* c, const char** endr, F projFunc,
@@ -1112,11 +1113,12 @@ Polygon<T> polygonFromWKT(const char* c, const char** endr,
                           bool strict = false);
 
 template <typename T>
-Polygon<T> polygonFromWKT(std::string wkt, bool strict = false);
+Polygon<T> polygonFromWKT(const std::string& wkt, bool strict = false);
 
 template <typename T, typename F,
           typename = typename std::enable_if<IsProjFunc<F>::value>::type>
-Polygon<T> polygonFromWKTProj(std::string wkt, F projFunc, bool strict = false);
+Polygon<T> polygonFromWKTProj(const std::string& wkt, F projFunc,
+                              bool strict = false);
 
 template <typename T, typename F>
 MultiLine<T> multiLineFromWKTProj(const char* c, const char** endr, F projFunc,

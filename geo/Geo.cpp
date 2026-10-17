@@ -33,7 +33,8 @@ util::geo::WKTType util::geo::getWKTType(const char* c, const char** endr,
 
   util::geo::WKTType ret = NONE;
 
-  // dispatch on the first character, so at most two literals are compared
+  // switch on the first character to avoid checking the first character
+  // over and over again in strnicmp (uppercase falls through to lowercase)
   switch (*c) {
     case 'P':
     case 'p':

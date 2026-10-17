@@ -4895,13 +4895,13 @@ Point<T> pointFromWKT(const char* c, const char** endr, bool strict) {
 
 // _____________________________________________________________________________
 template <typename T>
-Point<T> pointFromWKT(std::string wkt, bool strict) {
+Point<T> pointFromWKT(const std::string& wkt, bool strict) {
   return pointFromWKT<T>(wkt.c_str(), 0, strict);
 }
 
 // _____________________________________________________________________________
 template <typename T, typename F, typename>
-Point<T> pointFromWKTProj(std::string wkt, F&& projFunc, bool strict) {
+Point<T> pointFromWKTProj(const std::string& wkt, F&& projFunc, bool strict) {
   return pointFromWKTProj<T>(wkt.c_str(), 0, projFunc, strict);
 }
 
@@ -5030,13 +5030,13 @@ Polygon<T> polygonFromWKT(const char* c, const char** endr, bool strict) {
 
 // _____________________________________________________________________________
 template <typename T>
-Polygon<T> polygonFromWKT(std::string wkt, bool strict) {
+Polygon<T> polygonFromWKT(const std::string& wkt, bool strict) {
   return polygonFromWKT<T>(wkt.c_str(), 0, strict);
 }
 
 // _____________________________________________________________________________
 template <typename T, typename F, typename>
-Polygon<T> polygonFromWKTProj(std::string wkt, F projFunc, bool strict) {
+Polygon<T> polygonFromWKTProj(const std::string& wkt, F projFunc, bool strict) {
   return polygonFromWKTProj<T>(wkt.c_str(), 0, projFunc, strict);
 }
 
