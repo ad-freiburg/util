@@ -292,6 +292,10 @@ inline double atof(const char* p, uint8_t mn, const char** end) {
   // 56.445, -345.00 or 1.5e-3, but should be faster than std::atof. Different
   // to std::atof, it returns NaN if p does not start with a number (if it
   // starts with a number any non-nuermic suffix is simply ignored!)
+  static const double atoi['9' + 1] = {
+      0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+      0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+      0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
   static const double pow10[23] = {
       1e0,  1e1,  1e2,  1e3,  1e4,  1e5,  1e6,  1e7,  1e8,  1e9,  1e10, 1e11,
       1e12, 1e13, 1e14, 1e15, 1e16, 1e17, 1e18, 1e19, 1e20, 1e21, 1e22};
@@ -312,7 +316,7 @@ inline double atof(const char* p, uint8_t mn, const char** end) {
   }
 
   while (*p >= '0' && *p <= '9') {
-    ret = ret * 10.0 + (*p - '0');
+    ret = ret * 10.0 + atoi[static_cast<unsigned char>(*p)];
     p++;
     digits = true;
   }
@@ -324,7 +328,7 @@ inline double atof(const char* p, uint8_t mn, const char** end) {
     p++;
     uint8_t n = 0;
     while (n < mn && *p >= '0' && *p <= '9') {
-      ret = ret * 10.0 + (*p - '0');
+      ret = ret * 10.0 + atoi[static_cast<unsigned char>(*p)];
       exp--;
       n++;
       p++;
