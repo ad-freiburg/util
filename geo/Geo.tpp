@@ -378,7 +378,7 @@ template <template <typename> class Geometry, typename T>
 std::vector<Geometry<T>> rotate(std::vector<Geometry<T>> multigeo, double deg,
                                 const Point<T>& c) {
   for (size_t i = 0; i < multigeo.size(); i++)
-    multigeo[i] = rotate(multigeo[i], deg, c);
+    multigeo[i] = rotate(std::move(multigeo[i]), deg, c);
   return multigeo;
 }
 
@@ -387,7 +387,7 @@ template <template <typename> class Geometry, typename T>
 std::vector<Geometry<T>> rotateRAD(std::vector<Geometry<T>> multigeo,
                                    double deg, const Point<T>& c) {
   for (size_t i = 0; i < multigeo.size(); i++)
-    multigeo[i] = rotateRAD(multigeo[i], deg, c);
+    multigeo[i] = rotateRAD(std::move(multigeo[i]), deg, c);
   return multigeo;
 }
 
@@ -396,7 +396,7 @@ template <template <typename> class Geometry, typename T>
 std::vector<Geometry<T>> rotate(std::vector<Geometry<T>> multigeo, double deg) {
   auto c = centroid(multigeo);
   for (size_t i = 0; i < multigeo.size(); i++)
-    multigeo[i] = rotate(multigeo[i], deg, c);
+    multigeo[i] = rotate(std::move(multigeo[i]), deg, c);
   return multigeo;
 }
 
@@ -406,7 +406,7 @@ std::vector<Geometry<T>> rotateRAD(std::vector<Geometry<T>> multigeo,
                                    double deg) {
   auto c = centroid(multigeo);
   for (size_t i = 0; i < multigeo.size(); i++)
-    multigeo[i] = rotateRAD(multigeo[i], deg, c);
+    multigeo[i] = rotateRAD(std::move(multigeo[i]), deg, c);
   return multigeo;
 }
 
@@ -436,6 +436,9 @@ template <typename T>
 Polygon<T> move(Polygon<T> geo, double x, double y) {
   for (size_t i = 0; i < geo.getOuter().size(); i++)
     geo.getOuter()[i] = move(geo.getOuter()[i], x, y);
+  for (size_t i = 0; i < geo.getInners().size(); i++)
+    for (size_t j = 0; j < geo.getInners()[i].size(); j++)
+      geo.getInners()[i][j] = move(geo.getInners()[i][j], x, y);
   return geo;
 }
 
@@ -452,7 +455,7 @@ template <template <typename> class Geometry, typename T>
 std::vector<Geometry<T>> move(std::vector<Geometry<T>> multigeo, double x,
                               double y) {
   for (size_t i = 0; i < multigeo.size(); i++)
-    multigeo[i] = move(multigeo[i], x, y);
+    multigeo[i] = move(std::move(multigeo[i]), x, y);
   return multigeo;
 }
 
@@ -6082,7 +6085,7 @@ Polygon<T> convexHull(const LineSegment<T>& b) {
 template <typename T>
 Polygon<T> convexHull(const RotatedBox<T>& b) {
   auto p = convexHull(b.getBox());
-  p = rotate(p, b.getDegree(), b.getCenter());
+  p = rotate(std::move(p), b.getDegree(), b.getCenter());
   return p;
 }
 
@@ -6224,25 +6227,25 @@ Box<T> extendBox(const Collection<T>& collection, Box<T> b) {
 
 // _____________________________________________________________________________
 template <typename T>
-Point<T> pointAt(const Line<T> l, double at) {
+Point<T> pointAt(const Line<T>& l, double at) {
   return pointAtDist(l, at * len(l));
 }
 
 // _____________________________________________________________________________
 template <typename T>
-Point<T> pointAt(const Line<T> l, double at, size_t* lastI, double* totPos) {
+Point<T> pointAt(const Line<T>& l, double at, size_t* lastI, double* totPos) {
   return pointAtDist(l, at * len(l), lastI, totPos);
 }
 
 // _____________________________________________________________________________
 template <typename T>
-Point<T> pointAtDist(const Line<T> l, double atDist) {
+Point<T> pointAtDist(const Line<T>& l, double atDist) {
   return pointAtDist(l, atDist, nullptr, nullptr);
 }
 
 // _____________________________________________________________________________
 template <typename T>
-Point<T> pointAtDist(const Line<T> l, double atDist, size_t* lastI,
+Point<T> pointAtDist(const Line<T>& l, double atDist, size_t* lastI,
                      double* totPos) {
   if (l.size() == 1) {
     if (lastI) *lastI = 0;
@@ -6471,9 +6474,9 @@ RotatedBox<T> getFullEnvelope(std::vector<Geometry<T>> pol) {
 
   // rotate in 5 deg steps
   for (int i = 1; i < 360; i += 1) {
-    pol = rotate(pol, 1, center);
+    pol = rotate(std::move(pol), 1, center);
     Polygon<T> hull = convexHull(pol);
-    ml.push_back(hull);
+    ml.push_back(std::move(hull));
     Box<T> e = getBoundingBox(pol);
     if (area(tmpBox) > area(e)) {
       tmpBox = e;
@@ -6488,10 +6491,10 @@ RotatedBox<T> getFullEnvelope(std::vector<Geometry<T>> pol) {
 
 // _____________________________________________________________________________
 template <template <typename> class Geometry, typename T>
-RotatedBox<T> getFullEnvelope(const Geometry<T> pol) {
+RotatedBox<T> getFullEnvelope(const Geometry<T>& pol) {
   std::vector<Geometry<T>> mult;
   mult.push_back(pol);
-  return getFullEnvelope(mult);
+  return getFullEnvelope(std::move(mult));
 }
 
 // _____________________________________________________________________________
@@ -6502,14 +6505,14 @@ RotatedBox<T> getOrientedEnvelopeAvg(MultiLine<T> ml) {
   RotatedBox<T> rbox = getFullEnvelope(ml);
   Point<T> center = centroid(rbox.getBox());
 
-  ml = rotate(ml, -rbox.getDegree() - 45, center);
+  ml = rotate(std::move(ml), -rbox.getDegree() - 45, center);
 
   double bestDeg = -45;
   double score = parallelity(rbox.getBox(), ml);
 
   double i = -45;
   while (i <= 45) {
-    ml = rotate(ml, -.5, center);
+    ml = rotate(std::move(ml), -.5, center);
     double p = parallelity(rbox.getBox(), ml);
     if (parallelity(rbox.getBox(), ml) > score) {
       bestDeg = i;
@@ -6524,10 +6527,10 @@ RotatedBox<T> getOrientedEnvelopeAvg(MultiLine<T> ml) {
   // move the box along 45deg angles from its origin until it fits the ml
   // = until the intersection of its hull and the box is largest
   Polygon<T> p = convexHull(rbox);
-  p = rotate(p, -rbox.getDegree(), rbox.getCenter());
+  p = rotate(std::move(p), -rbox.getDegree(), rbox.getCenter());
 
   Polygon<T> hull = convexHull(orig);
-  hull = rotate(hull, -rbox.getDegree(), rbox.getCenter());
+  hull = rotate(std::move(hull), -rbox.getDegree(), rbox.getCenter());
 
   Box<T> box = getBoundingBox(hull);
   rbox = RotatedBox<T>(box, rbox.getDegree(), rbox.getCenter());
@@ -6820,18 +6823,20 @@ Ring<T> densifyRingY(const Ring<T>& l, double d) {
 // _____________________________________________________________________________
 template <typename T>
 Polygon<T> densifyX(const Polygon<T>& p, double d) {
-  Polygon<T> ret = p;
+  Polygon<T> ret;
   ret.getOuter() = densifyRingX(p.getOuter(), d);
-  for (auto& inner : ret.getInners()) inner = densifyRingX(inner, d);
+  for (const auto& inner : p.getInners())
+    ret.getInners().push_back(densifyRingX(inner, d));
   return ret;
 }
 
 // _____________________________________________________________________________
 template <typename T>
 Polygon<T> densifyY(const Polygon<T>& p, double d) {
-  Polygon<T> ret = p;
+  Polygon<T> ret;
   ret.getOuter() = densifyRingY(p.getOuter(), d);
-  for (auto& inner : ret.getInners()) inner = densifyRingY(inner, d);
+  for (const auto& inner : p.getInners())
+    ret.getInners().push_back(densifyRingY(inner, d));
   return ret;
 }
 

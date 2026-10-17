@@ -1459,16 +1459,16 @@ template <typename T>
 Box<T> extendBox(const Collection<T>& collection, Box<T> b);
 
 template <typename T>
-Point<T> pointAt(const Line<T> l, double at);
+Point<T> pointAt(const Line<T>& l, double at);
 
 template <typename T>
-Point<T> pointAt(const Line<T> l, double at, size_t* lastI, double* totPos);
+Point<T> pointAt(const Line<T>& l, double at, size_t* lastI, double* totPos);
 
 template <typename T>
-Point<T> pointAtDist(const Line<T> l, double atDist);
+Point<T> pointAtDist(const Line<T>& l, double atDist);
 
 template <typename T>
-Point<T> pointAtDist(const Line<T> l, double atDist, size_t* lastI,
+Point<T> pointAtDist(const Line<T>& l, double atDist, size_t* lastI,
                      double* totPos);
 
 template <typename T>
@@ -1516,7 +1516,7 @@ template <template <typename> class Geometry, typename T>
 RotatedBox<T> getFullEnvelope(std::vector<Geometry<T>> pol);
 
 template <template <typename> class Geometry, typename T>
-RotatedBox<T> getFullEnvelope(const Geometry<T> pol);
+RotatedBox<T> getFullEnvelope(const Geometry<T>& pol);
 
 template <typename T>
 RotatedBox<T> getOrientedEnvelopeAvg(MultiLine<T> ml);
