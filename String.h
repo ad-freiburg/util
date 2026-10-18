@@ -151,22 +151,21 @@ inline int ascii_letter_strnicmp_lower(char const* left, char const* lower,
 
 // _____________________________________________________________________________
 inline std::string formatFloat(double f, int DIGITS) {
-  std::string fStr = "{:." + std::to_string(DIGITS) + "f}";
+  fmt::format_specs specs;
+  specs.precision = DIGITS;
+  specs.set_type(fmt::presentation_type::fixed);
 
   fmt::memory_buffer buf;
-  fmt::vformat_to(std::back_inserter(buf), fStr, fmt::make_format_args(f));
+  fmt::detail::write<char>(fmt::appender(buf), f, specs, {});
 
-  auto ret = fmt::to_string(buf);
-
-  if (ret.back() == '0') {
-    if (ret.find('.') != std::string::npos) {
-      auto p = ret.find_last_not_of('0');
-      if (ret[p] == '.') return ret.substr(0, p);
-      return ret.substr(0, p + 1);
-    }
+  size_t n = buf.size();
+  if (buf[n - 1] == '0' &&
+      std::find(buf.begin(), buf.end(), '.') != buf.end()) {
+    while (buf[n - 1] == '0') n--;
+    if (buf[n - 1] == '.') n--;
   }
 
-  return ret;
+  return std::string(buf.data(), n);
 }
 
 // _____________________________________________________________________________
