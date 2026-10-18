@@ -138,7 +138,7 @@ void GeoTest::testWktParseMultiPolygon() {
 
     TEST(getWKT(util::geo::multiPolygonFromWKT<double>("MULTIPOLYGON EMPTY",
                                                        true)),
-         ==, "MULTIPOLYGON()");
+         ==, "MULTIPOLYGON EMPTY");
 
     TEST(getWKT(util::geo::multiPolygonFromWKT<double>(
              "MULTIPOLYGON(EMPTY, ((0 0, 1 0, 1 1, 0 0)))", true)),
@@ -156,10 +156,10 @@ void GeoTest::testWktParseMultiPolygon() {
 
     TEST(getWKT(util::geo::multiPolygonFromWKT<double>("MULTIPOLYGON(EMPTY)",
                                                        true)),
-         ==, "MULTIPOLYGON()");
+         ==, "MULTIPOLYGON EMPTY");
     TEST(getWKT(util::geo::multiPolygonFromWKT<double>("MULTIPOLYGON(EMPTY)",
                                                        false)),
-         ==, "MULTIPOLYGON()");
+         ==, "MULTIPOLYGON EMPTY");
 
     TEST_THROWS(util::geo::WKTParseException,
                 util::geo::multiPolygonFromWKT<double>("", true));
@@ -241,7 +241,7 @@ void GeoTest::testWktParseMultiPolygon() {
             "MULTIPOLYGON()", 0, util::geo::projectToCRS84<double>, true));
     TEST(getWKT(util::geo::multiPolygonFromWKTProj<double>(
              std::string("MULTIPOLYGON()"), util::geo::projectToCRS84<double>)),
-         ==, "MULTIPOLYGON()");
+         ==, "MULTIPOLYGON EMPTY");
   }
 
   {
@@ -300,6 +300,6 @@ void GeoTest::testWktParseMultiPolygon() {
 
     MultiPolygon<double> onlyEmpty;
     onlyEmpty.push_back(noOuter);
-    TEST(getWKT(onlyEmpty), ==, "MULTIPOLYGON()");
+    TEST(getWKT(onlyEmpty), ==, "MULTIPOLYGON EMPTY");
   }
 }

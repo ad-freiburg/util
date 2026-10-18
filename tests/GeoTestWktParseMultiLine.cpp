@@ -66,7 +66,7 @@ void GeoTest::testWktParseMultiLine() {
 
     TEST(getWKT(util::geo::multiLineFromWKT<double>("MULTILINESTRING EMPTY",
                                                     true)),
-         ==, "MULTILINESTRING()");
+         ==, "MULTILINESTRING EMPTY");
 
     TEST(getWKT(util::geo::multiLineFromWKT<double>(
              "MULTILINESTRING(EMPTY, (0 0, 1 1))", true)),
@@ -84,17 +84,17 @@ void GeoTest::testWktParseMultiLine() {
 
     TEST(getWKT(util::geo::multiLineFromWKT<double>("MULTILINESTRING(EMPTY)",
                                                     true)),
-         ==, "MULTILINESTRING()");
+         ==, "MULTILINESTRING EMPTY");
     TEST(getWKT(util::geo::multiLineFromWKT<double>("MULTILINESTRING(EMPTY)",
                                                     false)),
-         ==, "MULTILINESTRING()");
+         ==, "MULTILINESTRING EMPTY");
 
     TEST(getWKT(util::geo::multiLineFromWKT<double>(
              "MULTILINESTRING(EMPTY, EMPTY)", true)),
-         ==, "MULTILINESTRING()");
+         ==, "MULTILINESTRING EMPTY");
     TEST(getWKT(util::geo::multiLineFromWKT<double>(
              "MULTILINESTRING(EMPTY, EMPTY)", false)),
-         ==, "MULTILINESTRING()");
+         ==, "MULTILINESTRING EMPTY");
 
     TEST_THROWS(util::geo::WKTParseException,
                 util::geo::multiLineFromWKT<double>("", true));

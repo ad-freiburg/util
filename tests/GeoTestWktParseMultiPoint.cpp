@@ -134,10 +134,10 @@ void GeoTest::testWktParseMultiPoint() {
          ==, "MULTIPOINT(1 2,3 4)");
 
     TEST(getWKT(util::geo::multiPointFromWKT<double>("MULTIPOINT EMPTY", true)),
-         ==, "MULTIPOINT()");
+         ==, "MULTIPOINT EMPTY");
 
     TEST(getWKT(util::geo::multiPointFromWKT<double>("multipoint empty", true)),
-         ==, "MULTIPOINT()");
+         ==, "MULTIPOINT EMPTY");
 
     TEST(getWKT(util::geo::multiPointFromWKT<double>("MULTIPOINT(EMPTY, (1 2))",
                                                      true)),
@@ -158,10 +158,10 @@ void GeoTest::testWktParseMultiPoint() {
 
     TEST(
         getWKT(util::geo::multiPointFromWKT<double>("MULTIPOINT(EMPTY)", true)),
-        ==, "MULTIPOINT()");
+        ==, "MULTIPOINT EMPTY");
     TEST(getWKT(
              util::geo::multiPointFromWKT<double>("MULTIPOINT(EMPTY)", false)),
-         ==, "MULTIPOINT()");
+         ==, "MULTIPOINT EMPTY");
 
     TEST_THROWS(util::geo::WKTParseException,
                 util::geo::multiPointFromWKT<double>("", true));

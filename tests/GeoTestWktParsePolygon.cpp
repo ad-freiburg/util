@@ -91,9 +91,9 @@ void GeoTest::testWktParsePolygon() {
         ==, "POLYGON((0 0,4 0,4 4,0 0),(2 2,2 1,1 1,2 2))");
 
     TEST(getWKT(util::geo::polygonFromWKT<double>("POLYGON EMPTY", true)), ==,
-         "POLYGON()");
+         "POLYGON EMPTY");
     TEST(getWKT(util::geo::polygonFromWKT<double>("POLYGON Z EMPTY", true)), ==,
-         "POLYGON()");
+         "POLYGON EMPTY");
 
     TEST_THROWS(util::geo::WKTParseException,
                 util::geo::polygonFromWKT<double>("", true));
@@ -206,7 +206,7 @@ void GeoTest::testWktParsePolygon() {
                     "POLYGON()", 0, util::geo::projectToCRS84<double>, true));
     TEST(getWKT(util::geo::polygonFromWKTProj<double>(
              std::string("POLYGON()"), util::geo::projectToCRS84<double>)),
-         ==, "POLYGON()");
+         ==, "POLYGON EMPTY");
 
     TEST(getWKT(util::geo::polygonFromWKTProj<double>(
              "POLYGON((0 0, 1 0, 1 1, 0 0))", 0,
@@ -259,7 +259,7 @@ void GeoTest::testWktParsePolygon() {
 
     TEST(getWKT(polygonFromWKT<double>(
              std::string("POLYGON((foo),(1 1,2 1,2 2,1 1))"), false)),
-         ==, "POLYGON()");
+         ==, "POLYGON EMPTY");
     TEST(polygonFromWKT<double>(
              std::string("POLYGON((foo),(1 1,2 1,2 2,1 1))"), false)
              .getInners()
@@ -279,6 +279,6 @@ void GeoTest::testWktParsePolygon() {
 
     Polygon<double> onlyInner;
     onlyInner.getInners().push_back({});
-    TEST(getWKT(onlyInner), ==, "POLYGON()");
+    TEST(getWKT(onlyInner), ==, "POLYGON EMPTY");
   }
 }

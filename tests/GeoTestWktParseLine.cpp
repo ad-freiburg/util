@@ -432,7 +432,7 @@ void GeoTest::testWktParseLine() {
          ==, "LINESTRING(2 1,4 3)");
     TEST(getWKT(lineFromWKT<double>(
              std::string("\"LINESTRING EMPTY\"^^<http://www.opengis.net/ont/geosparql#wktLiteral>"), true)),
-         ==, "LINESTRING()");
+         ==, "LINESTRING EMPTY");
     TEST(getWKTType("\"LINESTRING(1 2, 3 4)\"^^<http://www.opengis.net/ont/geosparql#wktLiteral>", 0, true), ==,
          WKTType::LINESTRING);
     TEST(getWKTType("\"LINESTRING EMPTY\"^^<http://www.opengis.net/ont/geosparql#wktLiteral>", 0, true), ==,
@@ -453,7 +453,7 @@ void GeoTest::testWktParseLine() {
          ==, "LINESTRING(2 1,4 3)");
     TEST(getWKT(lineFromWKT<double>(
              std::string("\"LINESTRING EMPTY\"^^<http://www.opengis.net/ont/geosparql#wktLiteral>"), false)),
-         ==, "LINESTRING()");
+         ==, "LINESTRING EMPTY");
     TEST(getWKTType("\"LINESTRING(1 2, 3 4)\"^^<http://www.opengis.net/ont/geosparql#wktLiteral>", 0, false), ==,
          WKTType::LINESTRING);
     TEST(getWKTType("\"LINESTRING EMPTY\"^^<http://www.opengis.net/ont/geosparql#wktLiteral>", 0, false), ==,

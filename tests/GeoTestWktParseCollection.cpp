@@ -94,7 +94,7 @@ void GeoTest::testWktParseCollection() {
 
     TEST(getWKT(util::geo::collectionFromWKT<double>("GEOMETRYCOLLECTION EMPTY",
                                                      true)),
-         ==, "GEOMETRYCOLLECTION()");
+         ==, "GEOMETRYCOLLECTION EMPTY");
 
     TEST(getWKT(util::geo::collectionFromWKT<double>(
              "GEOMETRYCOLLECTION(LINESTRING EMPTY, POINT(1 2))", true)),
@@ -124,7 +124,7 @@ void GeoTest::testWktParseCollection() {
          ==, "GEOMETRYCOLLECTION(LINESTRING(0 0,1 1))");
     TEST(getWKT(util::geo::collectionFromWKT<double>(
              "GEOMETRYCOLLECTION(POINT EMPTY, LINESTRING EMPTY)", true)),
-         ==, "GEOMETRYCOLLECTION()");
+         ==, "GEOMETRYCOLLECTION EMPTY");
 
     TEST(getWKT(util::geo::collectionFromWKT<double>(
              "GEOMETRYCOLLECTION(POLYGON EMPTY, MULTIPOINT EMPTY, "
@@ -133,7 +133,7 @@ void GeoTest::testWktParseCollection() {
          ==, "GEOMETRYCOLLECTION(LINESTRING(0 0,1 1))");
     TEST(getWKT(util::geo::collectionFromWKT<double>(
              "GEOMETRYCOLLECTION(POINT EMPTY, LINESTRING EMPTY)", false)),
-         ==, "GEOMETRYCOLLECTION()");
+         ==, "GEOMETRYCOLLECTION EMPTY");
 
     TEST(getWKT(util::geo::collectionFromWKT<double>(
              "GEOMETRYCOLLECTION(MULTILINESTRING(EMPTY), POINT(1 2))", true)),
@@ -243,7 +243,7 @@ void GeoTest::testWktParseCollection() {
     TEST(getWKT(util::geo::collectionFromWKTProj<double>(
              std::string("GEOMETRYCOLLECTION(FOO(1 2))"),
              util::geo::projectToCRS84<double>)),
-         ==, "GEOMETRYCOLLECTION()");
+         ==, "GEOMETRYCOLLECTION EMPTY");
 
     TEST(getWKT(util::geo::collectionFromWKTProj<double>(
              std::string("GEOMETRYCOLLECTION(POINT(100e-2 55), MULTIPOLYGON(((1 2, 3 3, 1 2e0)),((0 100e-0002, 1e0 0, 1 1e-0, 0 0e+0, 0  1), (+5 -2, 10e2 3, 5 -20e-1))))"),
@@ -366,31 +366,31 @@ void GeoTest::testWktParseCollection() {
                     std::string("GEOMETRYCOLLECTION(POINT(1 2),LINESTRING \n"), true));
     TEST(getWKT(util::geo::collectionFromWKT<double>(
              std::string("GEOMETRYCOLLECTION(POINT(1 2),POINT"), false)),
-         ==, "GEOMETRYCOLLECTION()");
+         ==, "GEOMETRYCOLLECTION EMPTY");
     TEST(getWKT(util::geo::collectionFromWKT<double>(
              std::string("GEOMETRYCOLLECTION(POINT(1 2),LINESTRING"), false)),
-         ==, "GEOMETRYCOLLECTION()");
+         ==, "GEOMETRYCOLLECTION EMPTY");
     TEST(getWKT(util::geo::collectionFromWKT<double>(
              std::string("GEOMETRYCOLLECTION(POINT(1 2),POLYGON"), false)),
-         ==, "GEOMETRYCOLLECTION()");
+         ==, "GEOMETRYCOLLECTION EMPTY");
     TEST(getWKT(util::geo::collectionFromWKT<double>(
              std::string("GEOMETRYCOLLECTION(POINT(1 2),MULTIPOINT"), false)),
-         ==, "GEOMETRYCOLLECTION()");
+         ==, "GEOMETRYCOLLECTION EMPTY");
     TEST(getWKT(util::geo::collectionFromWKT<double>(
              std::string("GEOMETRYCOLLECTION(POINT(1 2),MULTILINESTRING"), false)),
-         ==, "GEOMETRYCOLLECTION()");
+         ==, "GEOMETRYCOLLECTION EMPTY");
     TEST(getWKT(util::geo::collectionFromWKT<double>(
              std::string("GEOMETRYCOLLECTION(POINT(1 2),MULTIPOLYGON"), false)),
-         ==, "GEOMETRYCOLLECTION()");
+         ==, "GEOMETRYCOLLECTION EMPTY");
     TEST(getWKT(util::geo::collectionFromWKT<double>(
              std::string("GEOMETRYCOLLECTION(POINT(1 2),POLYGON "), false)),
-         ==, "GEOMETRYCOLLECTION()");
+         ==, "GEOMETRYCOLLECTION EMPTY");
     TEST(getWKT(util::geo::collectionFromWKT<double>(
              std::string("GEOMETRYCOLLECTION(POINT(1 2),POLYGON Z"), false)),
-         ==, "GEOMETRYCOLLECTION()");
+         ==, "GEOMETRYCOLLECTION EMPTY");
     TEST(getWKT(util::geo::collectionFromWKT<double>(
              std::string("GEOMETRYCOLLECTION(POINT(1 2),LINESTRING \n"), false)),
-         ==, "GEOMETRYCOLLECTION()");
+         ==, "GEOMETRYCOLLECTION EMPTY");
 
     // numbers glued together must not be split into several coordinates
     TEST_THROWS(util::geo::WKTParseException,
@@ -603,13 +603,13 @@ void GeoTest::testWktParseCollection() {
          ==, "GEOMETRYCOLLECTION(POINT(1 2),LINESTRING(1 2,3 4))");
     TEST(getWKT(collectionFromWKT<double>(
              std::string("\"GEOMETRYCOLLECTION EMPTY\"^^<http://www.opengis.net/ont/geosparql#wktLiteral>"), true)),
-         ==, "GEOMETRYCOLLECTION()");
+         ==, "GEOMETRYCOLLECTION EMPTY");
     TEST(getWKT(collectionFromWKT<double>(
              std::string("\"GEOMETRYCOLLECTION(POINT(1 2),LINESTRING(1 2,3 4))\"^^<http://www.opengis.net/ont/geosparql#wktLiteral>"), false)),
          ==, "GEOMETRYCOLLECTION(POINT(1 2),LINESTRING(1 2,3 4))");
     TEST(getWKT(collectionFromWKT<double>(
              std::string("\"GEOMETRYCOLLECTION EMPTY\"^^<http://www.opengis.net/ont/geosparql#wktLiteral>"), false)),
-         ==, "GEOMETRYCOLLECTION()");
+         ==, "GEOMETRYCOLLECTION EMPTY");
     TEST_THROWS(WKTParseException,
                 collectionFromWKT<double>(
                     std::string("GEOMETRYCOLLECTION(\"POINT(1 2)\"^^<http://www.opengis.net/ont/geosparql#wktLiteral>)"), true));

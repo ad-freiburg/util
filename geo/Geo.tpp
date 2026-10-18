@@ -506,6 +506,7 @@ std::string getWKT(const Point<T>& p) {
 // _____________________________________________________________________________
 template <typename T>
 std::string getWKT(const std::vector<Point<T>>& p, uint16_t prec) {
+  if (p.size() == 0) return "MULTIPOINT EMPTY";
   std::string ret = "MULTIPOINT(";
   ret.reserve(10 + 1 + p.size() * (prec + 3) * 2 + 1);
   for (size_t i = 0; i < p.size(); i++) {
@@ -527,6 +528,7 @@ std::string getWKT(const std::vector<Point<T>>& p) {
 // _____________________________________________________________________________
 template <typename T>
 std::string getWKT(const Line<T>& l, uint16_t prec) {
+  if (l.empty()) return "LINESTRING EMPTY";
   std::string ret = "LINESTRING(";
   ret.reserve(10 + 1 + l.size() * (prec + 3) * 2 + 1);
   for (size_t i = 0; i < l.size(); i++) {
@@ -548,11 +550,13 @@ std::string getWKT(const Line<T>& l) {
 // _____________________________________________________________________________
 template <typename T>
 std::string getWKT(const std::vector<Line<T>>& ls, uint16_t prec) {
+  if (ls.size() == 0) return "MULTILINESTRING EMPTY";
   std::string ret = "MULTILINESTRING(";
 
   if (ls.size()) ret.reserve(15 + 2 + ls[0].size() * (prec + 3) * 2 + 2);
 
   for (size_t j = 0; j < ls.size(); j++) {
+    if (ls.empty()) continue;
     if (j) ret.push_back(',');
     ret.push_back('(');
     for (size_t i = 0; i < ls[j].size(); i++) {
@@ -658,7 +662,7 @@ std::string getWKT(const Box<T>& l) {
 // _____________________________________________________________________________
 template <typename T>
 std::string getWKT(const Polygon<T>& p, uint16_t prec) {
-  if (p.empty()) return "POLYGON()";
+  if (p.empty()) return "POLYGON EMPTY";
   std::string ret = "POLYGON((";
   ret.reserve(7 + 2 + p.getOuter().size() * (prec + 3) * 2 + 2);
 
@@ -708,6 +712,8 @@ std::string getWKT(const Polygon<T>& p) {
 // _____________________________________________________________________________
 template <typename T>
 std::string getWKT(const std::vector<Polygon<T>>& ls, uint16_t prec) {
+  if (ls.size() == 0) return "MULTIPOLYGON EMPTY";
+  bool nonEmpty = false;
   std::string ret = "MULTIPOLYGON(";
   if (ls.size())
     ret.reserve(12 + 2 + ls[0].getOuter().size() * (prec + 3) * 2 + 2);
@@ -715,6 +721,7 @@ std::string getWKT(const std::vector<Polygon<T>>& ls, uint16_t prec) {
   bool first = true;
   for (size_t j = 0; j < ls.size(); j++) {
     if (ls[j].empty()) continue;
+    nonEmpty = true;
     if (!first) ret.push_back(',');
     first = false;
     ret.push_back('(');
@@ -755,6 +762,8 @@ std::string getWKT(const std::vector<Polygon<T>>& ls, uint16_t prec) {
     ret.push_back(')');
   }
 
+  if (!nonEmpty) return "MULTIPOLYGON EMPTY";
+
   ret.push_back(')');
   return ret;
 }
@@ -768,6 +777,7 @@ std::string getWKT(const std::vector<Polygon<T>>& ls) {
 // _____________________________________________________________________________
 template <typename T>
 std::string getWKT(const Collection<T>& coll, uint16_t prec) {
+  if (coll.size() == 0) return "GEOMETRYCOLLECTION EMPTY";
   std::string ret = "GEOMETRYCOLLECTION(";
 
   std::string delim = "";
