@@ -551,13 +551,17 @@ std::string getWKT(const Line<T>& l) {
 template <typename T>
 std::string getWKT(const std::vector<Line<T>>& ls, uint16_t prec) {
   if (ls.size() == 0) return "MULTILINESTRING EMPTY";
+  bool nonEmpty = false;
   std::string ret = "MULTILINESTRING(";
 
   if (ls.size()) ret.reserve(15 + 2 + ls[0].size() * (prec + 3) * 2 + 2);
 
+  bool first = true;
   for (size_t j = 0; j < ls.size(); j++) {
-    if (ls.empty()) continue;
-    if (j) ret.push_back(',');
+    if (ls[j].empty()) continue;
+    nonEmpty = true;
+    if (!first) ret.push_back(',');
+    first = false;
     ret.push_back('(');
     for (size_t i = 0; i < ls[j].size(); i++) {
       if (i) ret.push_back(',');
@@ -567,6 +571,8 @@ std::string getWKT(const std::vector<Line<T>>& ls, uint16_t prec) {
     }
     ret.push_back(')');
   }
+
+  if (!nonEmpty) return "MULTILINESTRING EMPTY";
 
   ret.push_back(')');
   return ret;
