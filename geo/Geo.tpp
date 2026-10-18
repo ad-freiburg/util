@@ -4853,7 +4853,8 @@ template <typename T, typename F>
 Point<T> pointFromWKTProj(const char* c, const char** endr, F projFunc,
                           CRSType sourceCRS, bool strict) {
   const char* start = c;
-  c = strchr(c, '(');
+  while (*c && *c != '(') c++;
+  if (!*c) c = 0;
   if (!c) {
     if (endr) (*endr) = 0;
     if (strict) {
@@ -4882,7 +4883,7 @@ Point<T> pointFromWKTProj(const char* c, const char** endr, F projFunc,
   if (strict && *c != ')')
     wktParseFail("Could not parse WKT point, missing closing ')'");
 
-  if (endr) (*endr) = strchr(c, ')');
+  if (endr) (*endr) = *c == ')' ? c : strchr(c, ')');
 
   return projFunc(util::geo::DPoint(x, y), sourceCRS);
 }
