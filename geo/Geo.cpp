@@ -93,8 +93,7 @@ util::geo::WKTType util::geo::getWKTType(const char* c, const char** endr,
     c++;
   }
 
-  if (ret != NONE && strict &&
-      (*c != 0 && *c != '(' && *c != 'e' && *c != 'E')) {
+  if (*c != 0 && *c != '(' && *c != 'e' && *c != 'E') {
     // no trailing stuff allowed in strict mode, note that e and E may be the
     // begining of EMPTY
     if (endr) (*endr) = 0;
