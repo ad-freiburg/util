@@ -524,6 +524,7 @@ template <typename T>
 std::string util::geo::getWKT(const std::vector<Point<T>> &p, uint16_t prec,
                               CRSType sourceCRS, CRSType targetCRS,
                               bool hideIri) {
+  if (p.size() == 0) return hideIri ? "MULTIPOINT EMPTY" : getCrsIri(targetCRS) + "MULTIPOINT EMPTY";
   std::string ret;
   const std::string &iri = hideIri ? emptyIri() : getCrsIri(targetCRS);
   ret.reserve(iri.size() + 10 + 1 + p.size() * (2 * prec + 11) + 1);
@@ -549,6 +550,7 @@ template <typename T>
 std::string util::geo::getWKT(const Line<T> &l, uint16_t prec,
                               CRSType sourceCRS, CRSType targetCRS,
                               bool hideIri) {
+  if (l.empty()) return hideIri ? "LINESTRING EMPTY" : getCrsIri(targetCRS) + "LINESTRING EMPTY";
   std::string ret;
   const std::string &iri = hideIri ? emptyIri() : getCrsIri(targetCRS);
   ret.reserve(iri.size() + 10 + 1 + l.size() * (2 * prec + 11) + 1);
@@ -574,7 +576,7 @@ template <typename T>
 std::string util::geo::getWKT(const std::vector<Line<T>> &ls, uint16_t prec,
                               CRSType sourceCRS, CRSType targetCRS,
                               bool hideIri) {
-  if (ls.size() == 0) return "MULTILINESTRING EMPTY";
+  if (ls.size() == 0) return hideIri ? "MULTILINESTRING EMPTY" : getCrsIri(targetCRS) + "MULTILINESTRING EMPTY";
   bool nonEmpty = false;
   std::string ret;
   const std::string &iri = hideIri ? emptyIri() : getCrsIri(targetCRS);
@@ -598,7 +600,7 @@ std::string util::geo::getWKT(const std::vector<Line<T>> &ls, uint16_t prec,
     ret.push_back(')');
   }
 
-  if (!nonEmpty) return "MULTILINESTRING EMPTY";
+  if (!nonEmpty) return hideIri ? "MULTILINESTRING EMPTY" : getCrsIri(targetCRS) + "MULTILINESTRING EMPTY";
 
   ret.push_back(')');
   return ret;
@@ -697,7 +699,7 @@ template <typename T>
 std::string util::geo::getWKT(const Polygon<T> &p, uint16_t prec,
                               CRSType sourceCRS, CRSType targetCRS,
                               bool hideIri) {
-  if (p.empty()) return "POLYGON EMPTY";
+  if (p.empty()) return hideIri ? "POLYGON EMPTY" : getCrsIri(targetCRS) + "POLYGON EMPTY";
 
   std::string ret;
   const std::string &iri = hideIri ? emptyIri() : getCrsIri(targetCRS);
@@ -721,6 +723,7 @@ std::string util::geo::getWKT(const Polygon<T> &p, uint16_t prec,
   ret.push_back(')');
 
   for (const auto &inner : p.getInners()) {
+    if (inner.empty()) continue;
     ret.append(",(");
     for (size_t i = 0; i < inner.size(); i++) {
       if (i > 0) ret.push_back(',');
@@ -752,7 +755,7 @@ template <typename T>
 std::string util::geo::getWKT(const std::vector<Polygon<T>> &ls, uint16_t prec,
                               CRSType sourceCRS, CRSType targetCRS,
                               bool hideIri) {
-  if (ls.size() == 0) return "MULTIPOLYGON EMPTY";
+  if (ls.size() == 0) return hideIri ? "MULTIPOLYGON EMPTY" : getCrsIri(targetCRS) + "MULTIPOLYGON EMPTY";
   bool nonEmpty = false;
   std::string ret;
   const std::string &iri = hideIri ? emptyIri() : getCrsIri(targetCRS);
@@ -789,6 +792,7 @@ std::string util::geo::getWKT(const std::vector<Polygon<T>> &ls, uint16_t prec,
     ret.push_back(')');
 
     for (const auto &inner : ls[j].getInners()) {
+      if (inner.empty()) continue;
       ret.push_back(',');
       ret.push_back('(');
       for (size_t i = 0; i < inner.size(); i++) {
@@ -807,7 +811,7 @@ std::string util::geo::getWKT(const std::vector<Polygon<T>> &ls, uint16_t prec,
     ret.push_back(')');
   }
 
-  if (!nonEmpty) return "MULTIPOLYGON EMPTY";
+  if (!nonEmpty) return hideIri ? "MULTIPOLYGON EMPTY" : getCrsIri(targetCRS) + "MULTIPOLYGON EMPTY";
 
   ret.push_back(')');
   return ret;
@@ -826,7 +830,7 @@ template <typename T>
 std::string util::geo::getWKT(const Collection<T> &coll, uint16_t prec,
                               CRSType sourceCRS, CRSType targetCRS,
                               bool hideIri) {
-  if (coll.size() == 0) return "GEOMETRYCOLLECTION EMPTY";
+  if (coll.size() == 0) return hideIri ? "GEOMETRYCOLLECTION EMPTY" : getCrsIri(targetCRS) + "GEOMETRYCOLLECTION EMPTY";
   std::string ret;
   const std::string &iri = hideIri ? emptyIri() : getCrsIri(targetCRS);
   ret += iri;
@@ -4609,7 +4613,7 @@ Line<T> lineFromWKTProj(const char *c, const char **endr, F projFunc,
   const char *replacement = nullptr;
   endr = (endr != nullptr) ? endr : &replacement;
   CRSType sourceCRS = getCRSType(c, endr);
-  if (sourceCRS == UNSUPPORTED) wktParseFail("unsupported CRS");
+  if (sourceCRS == util::geo::CRSType::UNSUPPORTED) wktParseFail("unsupported CRS");
   auto ret = lineFromWKTProj<T, F>(*endr, endr, projFunc, sourceCRS, strict);
   if (checkEnd) checkWKTEnd(*endr);
   return ret;
@@ -4816,7 +4820,7 @@ MultiPoint<T> multiPointFromWKTProj(const char *c, const char **endr,
   const char *replacement = nullptr;
   endr = (endr != nullptr) ? endr : &replacement;
   CRSType sourceCRS = getCRSType(c, endr);
-  if (sourceCRS == UNSUPPORTED) wktParseFail("unsupported CRS");
+  if (sourceCRS == util::geo::CRSType::UNSUPPORTED) wktParseFail("unsupported CRS");
   auto ret =
       multiPointFromWKTProj<T, F>(*endr, endr, projFunc, sourceCRS, strict);
   if (checkEnd) checkWKTEnd(*endr);
@@ -4906,7 +4910,7 @@ Point<T> pointFromWKTProj(const char *c, const char **endr, F projFunc,
   const char *replacement = nullptr;
   endr = (endr != nullptr) ? endr : &replacement;
   CRSType sourceCRS = getCRSType(c, endr);
-  if (sourceCRS == UNSUPPORTED) wktParseFail("unsupported CRS");
+  if (sourceCRS == util::geo::CRSType::UNSUPPORTED) wktParseFail("unsupported CRS");
   auto ret = pointFromWKTProj<T, F>(*endr, endr, projFunc, sourceCRS, strict);
   if (checkEnd) checkWKTEnd(*endr);
   return ret;
@@ -4985,7 +4989,7 @@ Polygon<T> polygonFromWKTProj(const char *c, const char **endr, F projFunc,
   const char *replacement = nullptr;
   endr = (endr != nullptr) ? endr : &replacement;
   CRSType sourceCRS = getCRSType(c, endr);
-  if (sourceCRS == UNSUPPORTED) wktParseFail("unsupported CRS");
+  if (sourceCRS == util::geo::CRSType::UNSUPPORTED) wktParseFail("unsupported CRS");
   auto ret = polygonFromWKTProj<T, F>(*endr, endr, projFunc, sourceCRS, strict);
   if (checkEnd) checkWKTEnd(*endr);
   return ret;
@@ -5118,7 +5122,7 @@ MultiLine<T> multiLineFromWKTProj(const char *c, const char **endr, F projFunc,
   const char *replacement = nullptr;
   endr = (endr != nullptr) ? endr : &replacement;
   CRSType sourceCRS = getCRSType(c, endr);
-  if (sourceCRS == UNSUPPORTED) wktParseFail("unsupported CRS");
+  if (sourceCRS == util::geo::CRSType::UNSUPPORTED) wktParseFail("unsupported CRS");
   auto ret =
       multiLineFromWKTProj<T, F>(*endr, endr, projFunc, sourceCRS, strict);
   if (checkEnd) checkWKTEnd(*endr);
@@ -5190,7 +5194,7 @@ MultiPolygon<T> multiPolygonFromWKTProj(const char *c, const char **endr,
   const char *replacement = nullptr;
   endr = (endr != nullptr) ? endr : &replacement;
   CRSType sourceCRS = getCRSType(c, endr);
-  if (sourceCRS == UNSUPPORTED) wktParseFail("unsupported CRS");
+  if (sourceCRS == util::geo::CRSType::UNSUPPORTED) wktParseFail("unsupported CRS");
   auto ret =
       multiPolygonFromWKTProj<T, F>(*endr, endr, projFunc, sourceCRS, strict);
   if (checkEnd) checkWKTEnd(*endr);
@@ -5278,7 +5282,7 @@ Collection<T> collectionFromWKTProj(const char* c, const char** endr,
   const char *replacement = nullptr;
   endr = (endr != nullptr) ? endr : &replacement;
   CRSType sourceCRS = getCRSType(c, endr);
-  if (sourceCRS == UNSUPPORTED) wktParseFail("unsupported CRS");
+  if (sourceCRS == util::geo::CRSType::UNSUPPORTED) wktParseFail("unsupported CRS");
   auto ret = collectionFromWKTProj<T, F>(c, endr, projFunc, sourceCRS, strict);
   if (checkEnd) checkWKTEnd(*endr);
   return ret;

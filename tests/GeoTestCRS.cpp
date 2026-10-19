@@ -720,9 +720,9 @@ void GeoTest::testCRS() {
 
     // Empty POLYGON
     util::geo::DPolygon polyEmpty{};
-    TEST(getWKT(polyEmpty, util::geo::CRSType::CRS84, util::geo::CRSType::CRS84), ==, "POLYGON()");
-    TEST(getWKT(polyEmpty, util::geo::CRSType::CRS84, util::geo::CRSType::WGS84), ==, "<http://www.opengis.net/def/crs/EPSG/0/4326> POLYGON()");
-    TEST(getWKT(polyEmpty, util::geo::CRSType::CRS84, util::geo::CRSType::WEB_MERCATOR), ==, "<http://www.opengis.net/def/crs/EPSG/0/3857> POLYGON()");
+    TEST(getWKT(polyEmpty, util::geo::CRSType::CRS84, util::geo::CRSType::CRS84), ==, "POLYGON EMPTY");
+    TEST(getWKT(polyEmpty, util::geo::CRSType::CRS84, util::geo::CRSType::WGS84), ==, "<http://www.opengis.net/def/crs/EPSG/0/4326> POLYGON EMPTY");
+    TEST(getWKT(polyEmpty, util::geo::CRSType::CRS84, util::geo::CRSType::WEB_MERCATOR), ==, "<http://www.opengis.net/def/crs/EPSG/0/3857> POLYGON EMPTY");
 
     // MULTIPOLYGON
     auto projCRS84_6 = util::geo::multiPolygonFromWKT<double>(

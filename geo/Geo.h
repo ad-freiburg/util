@@ -183,15 +183,23 @@ inline const std::string &emptyIri() {
   return empty;
 }
 
-constexpr const char crs84Iri[] =
-    "<http://www.opengis.net/def/crs/OGC/1.3/CRS84>";
-constexpr size_t crs84IriLen = sizeof(crs84Iri) - 1;
+// The IRIs are stored in lowercase because `getCRSType` compares them via
+// `ascii_strnicmp_lower`, which expects its second argument to already be
+// lowercase.
+constexpr const char crs84IriLower[] =
+    "<http://www.opengis.net/def/crs/ogc/1.3/crs84>";
+constexpr size_t crs84IriLen = sizeof(crs84IriLower) - 1;
+constexpr const char wgs84IriLower[] =
+    "<http://www.opengis.net/def/crs/epsg/0/4326>";
+constexpr size_t wgs84IriLen = sizeof(wgs84IriLower) - 1;
+constexpr const char webMercIriLower[] =
+    "<http://www.opengis.net/def/crs/epsg/0/3857>";
+constexpr size_t webMercIriLen = sizeof(webMercIriLower) - 1;
+// These correct IRIs are used for the `getWKT` functions.
 constexpr const char wgs84Iri[] =
     "<http://www.opengis.net/def/crs/EPSG/0/4326>";
-constexpr size_t wgs84IriLen = sizeof(wgs84Iri) - 1;
 constexpr const char webMercIri[] =
     "<http://www.opengis.net/def/crs/EPSG/0/3857>";
-constexpr size_t webMercIriLen = sizeof(webMercIri) - 1;
 
 inline uint8_t boolArrToInt8(const std::array<bool, 8> arr) {
   uint8_t ret = 0;

@@ -121,7 +121,7 @@ util::geo::WKTType util::geo::getWKTType(const char* c, const char** endr,
   return ret;
 }
 
-// ___________________________k_________________________________________________
+// _____________________________________________________________________________
 util::geo::CRSType util::geo::getCRSType(const char* c, const char** endr) {
   while (*c <= '\'' && (*c == ' ' || *c == '\n' || *c == '\t' || *c == '\r' ||
                         *c == '"' || *c == '\''))
@@ -137,15 +137,15 @@ util::geo::CRSType util::geo::getCRSType(const char* c, const char** endr) {
     return util::geo::CRSType::CRS84;  // Default.
   }
 
-  if (ascii_strnicmp_lower(c, crs84Iri, crs84IriLen) == 0) {
+  if (ascii_strnicmp_lower(c, crs84IriLower, crs84IriLen) == 0) {
     if (endr) (*endr) = c + crs84IriLen;
     return util::geo::CRSType::CRS84;
   }
-  if (ascii_strnicmp_lower(c, wgs84Iri, wgs84IriLen) == 0) {
+  if (ascii_strnicmp_lower(c, wgs84IriLower, wgs84IriLen) == 0) {
     if (endr) (*endr) = c + wgs84IriLen;
     return util::geo::CRSType::WGS84;
   }
-  if (ascii_strnicmp_lower(c, webMercIri, webMercIriLen) == 0) {
+  if (ascii_strnicmp_lower(c, webMercIriLower, webMercIriLen) == 0) {
     if (endr) (*endr) = c + webMercIriLen;
     return util::geo::CRSType::WEB_MERCATOR;
   }
