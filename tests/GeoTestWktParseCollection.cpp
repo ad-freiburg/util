@@ -530,38 +530,30 @@ void GeoTest::testWktParseCollection() {
   }
 
   {
-    TEST(getWKT(collectionFromWKT<double>(
-             std::string("GEOMETRYCOLLECTION(POINT(1 2),MULTIPOINT \"EMPTY,POINT(3 4))"),
-             true)),
-         ==, "GEOMETRYCOLLECTION(POINT(1 2),POINT(3 4))");
-    TEST(getWKT(collectionFromWKT<double>(
-             std::string("GEOMETRYCOLLECTION(POINT(1 2),MULTIPOINT ' EMPTY,POINT(3 4))"),
-             true)),
-         ==, "GEOMETRYCOLLECTION(POINT(1 2),POINT(3 4))");
-    TEST(getWKT(collectionFromWKT<double>(
-             std::string("GEOMETRYCOLLECTION(POINT(1 2),LINESTRING \"EMPTY,POINT(3 4))"),
-             true)),
-         ==, "GEOMETRYCOLLECTION(POINT(1 2),POINT(3 4))");
-    TEST(getWKT(collectionFromWKT<double>(
-             std::string("GEOMETRYCOLLECTION(POINT(1 2),POLYGON \"EMPTY,POINT(3 4))"),
-             true)),
-         ==, "GEOMETRYCOLLECTION(POINT(1 2),POINT(3 4))");
-    TEST(getWKT(collectionFromWKT<double>(
-             std::string("GEOMETRYCOLLECTION(POINT(1 2),MULTILINESTRING \"EMPTY,POINT(3 4))"),
-             true)),
-         ==, "GEOMETRYCOLLECTION(POINT(1 2),POINT(3 4))");
-    TEST(getWKT(collectionFromWKT<double>(
-             std::string("GEOMETRYCOLLECTION(POINT(1 2),MULTIPOLYGON \"EMPTY,POINT(3 4))"),
-             true)),
-         ==, "GEOMETRYCOLLECTION(POINT(1 2),POINT(3 4))");
-    TEST(getWKT(collectionFromWKT<double>(
-             std::string("GEOMETRYCOLLECTION(POINT(1 2),GEOMETRYCOLLECTION \"EMPTY,POINT(3 4))"),
-             true)),
-         ==, "GEOMETRYCOLLECTION(POINT(1 2),POINT(3 4))");
-    TEST(getWKT(collectionFromWKT<double>(
-             std::string("GEOMETRYCOLLECTION(POINT(1 2),MULTIPOINT \"EMPTY)"),
-             true)),
-         ==, "GEOMETRYCOLLECTION(POINT(1 2))");
+    TEST_THROWS(WKTParseException,
+                collectionFromWKT<double>(
+                    std::string("GEOMETRYCOLLECTION(POINT(1 2),MULTIPOINT \"EMPTY,POINT(3 4))"), true));
+    TEST_THROWS(WKTParseException,
+                collectionFromWKT<double>(
+                    std::string("GEOMETRYCOLLECTION(POINT(1 2),MULTIPOINT ' EMPTY,POINT(3 4))"), true));
+    TEST_THROWS(WKTParseException,
+                collectionFromWKT<double>(
+                    std::string("GEOMETRYCOLLECTION(POINT(1 2),LINESTRING \"EMPTY,POINT(3 4))"), true));
+    TEST_THROWS(WKTParseException,
+                collectionFromWKT<double>(
+                    std::string("GEOMETRYCOLLECTION(POINT(1 2),POLYGON \"EMPTY,POINT(3 4))"), true));
+    TEST_THROWS(WKTParseException,
+                collectionFromWKT<double>(
+                    std::string("GEOMETRYCOLLECTION(POINT(1 2),MULTILINESTRING \"EMPTY,POINT(3 4))"), true));
+    TEST_THROWS(WKTParseException,
+                collectionFromWKT<double>(
+                    std::string("GEOMETRYCOLLECTION(POINT(1 2),MULTIPOLYGON \"EMPTY,POINT(3 4))"), true));
+    TEST_THROWS(WKTParseException,
+                collectionFromWKT<double>(
+                    std::string("GEOMETRYCOLLECTION(POINT(1 2),GEOMETRYCOLLECTION \"EMPTY,POINT(3 4))"), true));
+    TEST_THROWS(WKTParseException,
+                collectionFromWKT<double>(
+                    std::string("GEOMETRYCOLLECTION(POINT(1 2),MULTIPOINT \"EMPTY)"), true));
     TEST(getWKT(collectionFromWKT<double>(
              std::string("GEOMETRYCOLLECTION(POINT(1 2),MULTIPOINT \"EMPTY,POINT(3 4))"),
              false)),
@@ -661,10 +653,8 @@ void GeoTest::testWktParseCollection() {
              std::string("GEOMETRYCOLLECTION(POINT(1 2), LINESTRING\tEMPTY, POINT(3 4))"),
              true)),
          ==, "GEOMETRYCOLLECTION(POINT(1 2),POINT(3 4))");
-    TEST(getWKT(collectionFromWKT<double>(
-             std::string("GEOMETRYCOLLECTION(POINT(1 2), LINESTRING \"EMPTY\", POINT(3 4))"),
-             true)),
-         ==, "GEOMETRYCOLLECTION(POINT(1 2),POINT(3 4))");
+    TEST_THROWS(WKTParseException, collectionFromWKT<double>(
+             std::string("GEOMETRYCOLLECTION(POINT(1 2), LINESTRING \"EMPTY\", POINT(3 4))"), true));
     // non-strict mode still accepts them as empty members
     TEST(getWKT(collectionFromWKT<double>(
              std::string("GEOMETRYCOLLECTION(POINT(1 2), LINESTRINGEMPTY)"),

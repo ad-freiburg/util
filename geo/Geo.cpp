@@ -88,8 +88,7 @@ util::geo::WKTType util::geo::getWKTType(const char* c, const char** endr,
   }
 
   // skip whitespace and possible measurment markers
-  while ((*c <= '\'' && (*c == ' ' || *c == '\n' || *c == '\t' || *c == '\r' ||
-                         *c == '"' || *c == '\'')) ||
+  while ((*c <= ' ' && (*c == ' ' || *c == '\n' || *c == '\t' || *c == '\r')) ||
          *c == 'z' || *c == 'Z' || *c == 'm' || *c == 'M') {
     c++;
   }
@@ -104,8 +103,7 @@ util::geo::WKTType util::geo::getWKTType(const char* c, const char** endr,
 
   if (*c == 'e' || *c == 'E') {
     const char* r = c;
-    if ((c[-1] == ' ' || c[-1] == '\n' || c[-1] == '\t' || c[-1] == '\r' ||
-         c[-1] == '"' || c[-1] == '\'') &&
+    if ((c[-1] == ' ' || c[-1] == '\n' || c[-1] == '\t' || c[-1] == '\r') &&
         util::ascii_letter_strnicmp_lower(r, "empty", 5) == 0) {
       r += 5;
       while (*r <= '\'' && (*r == ' ' || *r == '\n' || *r == '\t' ||

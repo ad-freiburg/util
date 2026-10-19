@@ -502,6 +502,6 @@ void GeoTest::testWktParseLine() {
     TEST(getWKTType("LINESTRING\tEMPTY", 0, true), ==, WKTType::LINESTRING);
     TEST(getWKTType("LINESTRING Z EMPTY", 0, true), ==, WKTType::LINESTRING);
     TEST(getWKTType("LINESTRINGZ EMPTY", 0, true), ==, WKTType::LINESTRING);
-    TEST(getWKTType("LINESTRING\"EMPTY\"", 0, true), ==, WKTType::LINESTRING);
+    TEST(getWKTType("LINESTRING\"EMPTY\"", 0, true), ==, WKTType::NONE);
   }
 }

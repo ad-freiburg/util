@@ -4533,8 +4533,7 @@ inline void checkWKTEnd(const char* c) {
 // _____________________________________________________________________________
 inline const char* checkWKTMemberEnd(const char* c) {
   c++;
-  while (*c <= '\'' && (*c == ' ' || *c == '\n' || *c == '\t' || *c == '\r' ||
-                        *c == '"' || *c == '\''))
+  while (*c <= '\'' && (*c == ' ' || *c == '\n' || *c == '\t' || *c == '\r'))
     c++;
   if (*c != ',' && *c != ')')
     wktParseFail("unexpected input after member", c);
@@ -4561,10 +4560,9 @@ Line<T> lineFromWKTProj(const char* c, const char** endr, F projFunc,
 
 // _____________________________________________________________________________
 inline bool isEmptyWKT(const char* c) {
-  const char* ws = " \n\t\r\"'";
   const char* lastWord = nullptr;
   while (*c) {
-    while (*c && strchr(ws, *c)) c++;
+    while (*c && strchr(" \n\t\r\"'", *c)) c++;
     if (!*c) break;
     const char* afterDatatype = skipWKTDatatype(c);
     if (afterDatatype != c) {
@@ -4572,19 +4570,18 @@ inline bool isEmptyWKT(const char* c) {
       break;
     }
     lastWord = c;
-    while (*c && !strchr(ws, *c)) c++;
+    while (*c && !strchr(" \n\t\r", *c)) c++;
   }
   if (!lastWord || util::ascii_letter_strnicmp_lower(lastWord, "empty", 5) != 0)
     return false;
-  return strchr(ws, lastWord[5]);
+  return strchr(" \n\t\r\"'", lastWord[5]);
 }
 
 // _____________________________________________________________________________
 inline const char* nextWKTMember(const char* c) {
   // skip the ',' separating the members of a multi geometry, and whitespace
   if (*c == ',') c++;
-  while (*c <= '\'' && (*c == ' ' || *c == '\n' || *c == '\t' || *c == '\r' ||
-                        *c == '"' || *c == '\''))
+  while (*c <= '\'' && (*c == ' ' || *c == '\n' || *c == '\t' || *c == '\r'))
     c++;
   return c;
 }
@@ -4592,7 +4589,27 @@ inline const char* nextWKTMember(const char* c) {
 // _____________________________________________________________________________
 inline bool isEmptyWKTMember(const char* c) {
   return util::ascii_letter_strnicmp_lower(c, "empty", 5) == 0 &&
-         strchr(" \n\t\r\"',)", c[5]);
+         strchr(" \n\t\r,)", c[5]);
+}
+
+// _____________________________________________________________________________
+__attribute__((noinline)) inline double parseMeasurement(const char*& c) {
+  double m = 0;
+  for (int i = 0;
+       i < 2 &&
+       (*c == '+' || *c == '-' || *c == '.' || (*c >= '0' && *c <= '9'));
+       i++) {
+    const char* start = c;
+    m = util::atof(c, 10, &c);
+    const char* numEnd = c;
+
+    // skip whitespace
+    while (*c == ' ' || *c == '\n' || *c == '\t' || *c == '\r') c++;
+
+    if (numEnd != start && c == numEnd && *c && *c != ',' && *c != ')')
+      return std::numeric_limits<double>::quiet_NaN();
+  }
+  return m;
 }
 
 // _____________________________________________________________________________
@@ -4601,19 +4618,12 @@ inline std::tuple<double, double, double> parseWKTPoint(const char*& c,
   const char* start;
   const char* numEnd;
 
-  // skip whitespace
-  while (*c <= '\'' && (*c == ' ' || *c == '\n' || *c == '\t' || *c == '\r' ||
-                        *c == '"' || *c == '\''))
-    c++;
-
   start = c;
   double x = util::atof(c, 10, &c);
   numEnd = c;
 
   // skip whitespace
-  while (*c <= '\'' && (*c == ' ' || *c == '\n' || *c == '\t' || *c == '\r' ||
-                        *c == '"' || *c == '\''))
-    c++;
+  while (*c == ' ' || *c == '\n' || *c == '\t' || *c == '\r') c++;
 
   if (strict && numEnd != start && c == numEnd && *c && *c != ',' && *c != ')')
     x = std::numeric_limits<double>::quiet_NaN();
@@ -4627,27 +4637,14 @@ inline std::tuple<double, double, double> parseWKTPoint(const char*& c,
     numEnd = c;
 
     // skip whitespace
-    while (*c <= '\'' && (*c == ' ' || *c == '\n' || *c == '\t' || *c == '\r' ||
-                          *c == '"' || *c == '\''))
-      c++;
+    while (*c == ' ' || *c == '\n' || *c == '\t' || *c == '\r') c++;
 
     if (numEnd != start && c == numEnd && *c && *c != ',' && *c != ')')
       y = std::numeric_limits<double>::quiet_NaN();
 
-    // there might be an optional measurement
-    if (*c == '+' || *c == '-' || *c == '.' || (*c >= '0' && *c <= '9')) {
-      start = c;
-      m = util::atof(c, 10, &c);
-      numEnd = c;
-
-      // skip whitespace
-      while (*c <= '\'' && (*c == ' ' || *c == '\n' || *c == '\t' ||
-                            *c == '\r' || *c == '"' || *c == '\''))
-        c++;
-
-      if (numEnd != start && c == numEnd && *c && *c != ',' && *c != ')')
-        m = std::numeric_limits<double>::quiet_NaN();
-    }
+    // there might be an optional measurement (or a z coordinate)
+    if (*c == '+' || *c == '-' || *c == '.' || (*c >= '0' && *c <= '9'))
+      m = parseMeasurement(c);
   }
 
   return {x, y, m};
@@ -4667,7 +4664,7 @@ Line<T> lineFromWKTProj(const char* c, const char** endr, F projFunc,
         break;
       }
       if (!(*c <= '\'' && (*c == ' ' || *c == '\n' || *c == '\t' ||
-                           *c == '\r' || *c == '"' || *c == '\''))) {
+                           *c == '\r'))) {
         wktParseFail("expected '(' or EMPTY", c);
       }
       c++;
@@ -4961,8 +4958,8 @@ Polygon<T> polygonFromWKTProj(const char* c, const char** endr, F projFunc,
         c = 0;
         break;
       }
-      if (!(*c <= '\'' && (*c == ' ' || *c == '\n' || *c == '\t' ||
-                           *c == '\r' || *c == '"' || *c == '\''))) {
+      if (!(*c <= ' ' &&
+            (*c == ' ' || *c == '\n' || *c == '\t' || *c == '\r'))) {
         wktParseFail("expected '(' or EMPTY", c);
       }
       c++;
@@ -4983,8 +4980,7 @@ Polygon<T> polygonFromWKTProj(const char* c, const char** endr, F projFunc,
   if (strict) {
     // only whitespace allowed before the first ring
     const char* r = c;
-    while (*r <= '\'' && (*r == ' ' || *r == '\n' || *r == '\t' || *r == '\r' ||
-                          *r == '"' || *r == '\''))
+    while (*r <= ' ' && (*r == ' ' || *r == '\n' || *r == '\t' || *r == '\r'))
       r++;
     if (*r != '(') wktParseFail("expected ring", c);
   }
@@ -5099,6 +5095,8 @@ MultiLine<T> multiLineFromWKTProj(const char* c, const char** endr, F projFunc,
   }
   c += 1;
 
+  if (strict && *c == ',') wktParseFail("expected point list or EMPTY", c);
+
   MultiLine<T> ml;
   while (true) {
     const char* member = nextWKTMember(c);
@@ -5171,6 +5169,8 @@ MultiPolygon<T> multiPolygonFromWKTProj(const char* c, const char** endr,
     return {};  // parse error, or EMPTY
   }
   c += 1;
+
+  if (strict && *c == ',') wktParseFail("expected polygon or EMPTY", c);
 
   MultiPolygon<T> mp;
   while (true) {
@@ -5266,11 +5266,13 @@ Collection<T> collectionFromWKTProj(const char* c, const char** endr,
 
   do {
     c++;
-    while (*c <= '\'' && (*c == ' ' || *c == '\n' || *c == '\t' || *c == '\r' ||
-                          *c == '"' || *c == '\''))
+    while (*c <= ' ' && (*c == ' ' || *c == '\n' || *c == '\t' || *c == '\r'))
       c++;  // skip possible whitespace
 
-    auto wktType = getWKTType(c, &c, strict);
+    // quotes are only allowed around the whole WKT
+    auto wktType = strict && (*c == '"' || *c == '\'')
+                       ? NONE
+                       : getWKTType(c, &c, strict);
 
     if (wktType == NONE) {
       if (endr) (*endr) = 0;
