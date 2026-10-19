@@ -1028,12 +1028,24 @@ struct IsProjFunc {
 class WKTParseException : public std::runtime_error {
  public:
   explicit WKTParseException(std::string const& msg)
-      : std::runtime_error(msg) {}
+      : std::runtime_error(std::string("Could not parse WKT: ") + msg) {}
+  WKTParseException(std::string const& msg, const char* found)
+      : std::runtime_error("Could not parse WKT: " + msg + " (found: '" +
+                           (!found ? "<nothing>"
+                            : !*found
+                                ? "<end of input>"
+                                : std::string(found, strnlen(found, 10))) +
+                           "')") {}
 };
 
 [[noreturn]] __attribute__((noinline, cold)) inline void wktParseFail(
     const char* msg) {
   throw WKTParseException(msg);
+}
+
+[[noreturn]] __attribute__((noinline, cold)) inline void wktParseFail(
+    const char* msg, const char* found) {
+  throw WKTParseException(msg, found);
 }
 
 template <typename T, typename F>

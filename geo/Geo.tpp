@@ -4527,7 +4527,7 @@ inline void checkWKTEnd(const char* c) {
                         *c == '"' || *c == '\''))
     c++;
   c = skipWKTDatatype(c);
-  if (*c) wktParseFail("Could not parse WKT, unexpected trailing input");
+  if (*c) wktParseFail("unexpected trailing input", c);
 }
 
 // _____________________________________________________________________________
@@ -4537,7 +4537,7 @@ inline const char* checkWKTMemberEnd(const char* c) {
                         *c == '"' || *c == '\''))
     c++;
   if (*c != ',' && *c != ')')
-    wktParseFail("Could not parse WKT, unexpected input after member");
+    wktParseFail("unexpected input after member", c);
   return c;
 }
 
@@ -4553,7 +4553,7 @@ Line<T> lineFromWKTProj(const char* c, const char** endr, F projFunc,
   endr = (endr != nullptr) ? endr : &replacement;
   CRSType sourceCRS = getCRSType(c, endr);
   if (sourceCRS == UNSUPPORTED)
-    wktParseFail("Could not parse WKT, unsupported CRS");
+    wktParseFail("unsupported CRS");
   auto ret = lineFromWKTProj<T, F>(*endr, endr, projFunc, sourceCRS, strict);
   if (checkEnd) checkWKTEnd(*endr);
   return ret;
@@ -4668,7 +4668,7 @@ Line<T> lineFromWKTProj(const char* c, const char** endr, F projFunc,
       }
       if (!(*c <= '\'' && (*c == ' ' || *c == '\n' || *c == '\t' ||
                            *c == '\r' || *c == '"' || *c == '\''))) {
-        wktParseFail("Could not parse WKT, expected '(' or EMPTY");
+        wktParseFail("expected '(' or EMPTY", c);
       }
       c++;
     }
@@ -4680,7 +4680,7 @@ Line<T> lineFromWKTProj(const char* c, const char** endr, F projFunc,
   if (!c) {
     if (endr) (*endr) = 0;
     if (strict && !isEmptyWKT(start))
-      wktParseFail("Could not parse WKT, expected '(' or EMPTY");
+      wktParseFail("expected '(' or EMPTY", start);
     return {};
   }
   c++;
@@ -4692,14 +4692,15 @@ Line<T> lineFromWKTProj(const char* c, const char** endr, F projFunc,
 
   while (true) {
     double x, y, m;
+    const char* coordStart = c;
     std::tie(x, y, m) = parseWKTPoint(c, strict);
 
     if (std::isnan(x) || std::isnan(y) || (strict && std::isnan(m))) {
       if (strict)
-        wktParseFail("Could not parse WKT, coordinate is not a number");
+        wktParseFail("coordinate is not a number", coordStart);
     } else {
       if (strict && *c != ',' && *c != ')')
-        wktParseFail("Could not parse WKT, expected ',' or ')'");
+        wktParseFail("expected ',' or ')'", c);
 
       // in non strict mode, simply skip NaN values
       line.push_back(projFunc(util::geo::DPoint(x, y), sourceCRS));
@@ -4709,7 +4710,7 @@ Line<T> lineFromWKTProj(const char* c, const char** endr, F projFunc,
 
     if (!*c) {
       if (endr) (*endr) = 0;
-      if (strict) wktParseFail("Could not parse WKT, missing ')'");
+      if (strict) wktParseFail("missing ')'");
       return line;
     }
 
@@ -4720,7 +4721,7 @@ Line<T> lineFromWKTProj(const char* c, const char** endr, F projFunc,
   if (endr) (*endr) = c;
 
   if (strict && !allowSinglePoint && line.size() == 1) {
-    wktParseFail("Could not parse WKT without a full segment");
+    wktParseFail("line/ring without a full segment");
   }
 
   return line;
@@ -4764,7 +4765,7 @@ MultiPoint<T> multiPointFromWKTProj(const char* c, const char** endr,
   endr = (endr != nullptr) ? endr : &replacement;
   CRSType sourceCRS = getCRSType(c, endr);
   if (sourceCRS == UNSUPPORTED)
-    wktParseFail("Could not parse WKT, unsupported CRS");
+    wktParseFail("unsupported CRS");
   auto ret =
       multiPointFromWKTProj<T, F>(*endr, endr, projFunc, sourceCRS, strict);
   if (checkEnd) checkWKTEnd(*endr);
@@ -4789,8 +4790,7 @@ MultiPoint<T> multiPointFromWKTProj(const char* c, const char** endr,
       for (const auto& l : mline) {
         if (l.size() != 1)
           wktParseFail(
-              "Could not parse WKT multipoint, expected a single coordinate "
-              "pair per point");
+              "expected single coordinate pair per point");
         ret.push_back(l[0]);
       }
       return ret;
@@ -4858,7 +4858,7 @@ Point<T> pointFromWKTProj(const char* c, const char** endr, F projFunc,
   endr = (endr != nullptr) ? endr : &replacement;
   CRSType sourceCRS = getCRSType(c, endr);
   if (sourceCRS == UNSUPPORTED)
-    wktParseFail("Could not parse WKT, unsupported CRS");
+    wktParseFail("unsupported CRS");
   auto ret = pointFromWKTProj<T, F>(*endr, endr, projFunc, sourceCRS, strict);
   if (checkEnd) checkWKTEnd(*endr);
   return ret;
@@ -4876,8 +4876,8 @@ Point<T> pointFromWKTProj(const char* c, const char** endr, F projFunc,
     if (strict) {
       if (isEmptyWKT(start))
         wktParseFail(
-            "Could not parse WKT point, empty point not representable");
-      wktParseFail("Could not parse WKT point, expected '('");
+            "empty point not representable");
+      wktParseFail("expected '('");
     }
     return {0, 0};
   }
@@ -4885,11 +4885,12 @@ Point<T> pointFromWKTProj(const char* c, const char** endr, F projFunc,
   c += 1;
 
   double x, y, m;
+  const char* coordStart = c;
   std::tie(x, y, m) = parseWKTPoint(c, strict);
 
   if (std::isnan(x) || std::isnan(y) || (strict && std::isnan(m))) {
     if (strict)
-      wktParseFail("Could not parse WKT point, coordinate is not a number");
+      wktParseFail("coordinate is not a number", coordStart);
 
     // set end ptr if requested
     if (endr) (*endr) = strchr(c, ')');
@@ -4897,7 +4898,7 @@ Point<T> pointFromWKTProj(const char* c, const char** endr, F projFunc,
   }
 
   if (strict && *c != ')')
-    wktParseFail("Could not parse WKT point, missing closing ')'");
+    wktParseFail("missing closing ')'", c);
 
   if (endr) (*endr) = *c == ')' ? c : strchr(c, ')');
 
@@ -4941,7 +4942,7 @@ Polygon<T> polygonFromWKTProj(const char* c, const char** endr, F projFunc,
   endr = (endr != nullptr) ? endr : &replacement;
   CRSType sourceCRS = getCRSType(c, endr);
   if (sourceCRS == UNSUPPORTED)
-    wktParseFail("Could not parse WKT, unsupported CRS");
+    wktParseFail("unsupported CRS");
   auto ret = polygonFromWKTProj<T, F>(*endr, endr, projFunc, sourceCRS, strict);
   if (checkEnd) checkWKTEnd(*endr);
   return ret;
@@ -4962,7 +4963,7 @@ Polygon<T> polygonFromWKTProj(const char* c, const char** endr, F projFunc,
       }
       if (!(*c <= '\'' && (*c == ' ' || *c == '\n' || *c == '\t' ||
                            *c == '\r' || *c == '"' || *c == '\''))) {
-        wktParseFail("Could not parse WKT, expected '(' or EMPTY");
+        wktParseFail("expected '(' or EMPTY", c);
       }
       c++;
     }
@@ -4974,7 +4975,7 @@ Polygon<T> polygonFromWKTProj(const char* c, const char** endr, F projFunc,
   if (!c) {
     if (endr) (*endr) = 0;
     if (strict && !isEmptyWKT(start))
-      wktParseFail("Could not parse WKT polygon, expected '(' or EMPTY");
+      wktParseFail("expected '(' or EMPTY", start);
     return {};  // parse error, or EMPTY
   }
   c += 1;
@@ -4985,7 +4986,7 @@ Polygon<T> polygonFromWKTProj(const char* c, const char** endr, F projFunc,
     while (*r <= '\'' && (*r == ' ' || *r == '\n' || *r == '\t' || *r == '\r' ||
                           *r == '"' || *r == '\''))
       r++;
-    if (*r != '(') wktParseFail("Could not parse WKT polygon, expected ring");
+    if (*r != '(') wktParseFail("expected ring", c);
   }
 
   size_t i = 0;
@@ -4997,7 +4998,7 @@ Polygon<T> polygonFromWKTProj(const char* c, const char** endr, F projFunc,
 
     if (!end) {
       if (endr) (*endr) = 0;
-      if (strict) wktParseFail("Could not parse WKT polygon ring");
+      if (strict) wktParseFail("expected valid ring", c);
       return {};  // parse error
     }
 
@@ -5006,7 +5007,7 @@ Polygon<T> polygonFromWKTProj(const char* c, const char** endr, F projFunc,
     if (strict) {
       const char* sep = checkWKTMemberEnd(end);
       if (*sep == ',' && *nextWKTMember(sep) != '(')
-        wktParseFail("Could not parse WKT polygon, expected ring");
+        wktParseFail("expected ring", nextWKTMember(sep));
     }
 
     if (i == 0)
@@ -5030,8 +5031,8 @@ Polygon<T> polygonFromWKTProj(const char* c, const char** endr, F projFunc,
   }
 
   if (strict) {
-    if (i == 0) wktParseFail("Could not parse WKT polygon");
-    wktParseFail("Could not parse WKT polygon, missing ')'");
+    if (i == 0) wktParseFail("expected valid polygon");
+    wktParseFail("missing ')'");
   }
 
   if (poly.getOuter().empty()) poly.getInners().clear();
@@ -5076,7 +5077,7 @@ MultiLine<T> multiLineFromWKTProj(const char* c, const char** endr, F projFunc,
   endr = (endr != nullptr) ? endr : &replacement;
   CRSType sourceCRS = getCRSType(c, endr);
   if (sourceCRS == UNSUPPORTED)
-    wktParseFail("Could not parse WKT, unsupported CRS");
+    wktParseFail("unsupported CRS");
   auto ret =
       multiLineFromWKTProj<T, F>(*endr, endr, projFunc, sourceCRS, strict);
   if (checkEnd) checkWKTEnd(*endr);
@@ -5093,7 +5094,7 @@ MultiLine<T> multiLineFromWKTProj(const char* c, const char** endr, F projFunc,
   if (!c) {
     if (endr) (*endr) = 0;
     if (strict && !isEmptyWKT(start))
-      wktParseFail("Could not parse WKT, expected '(' or EMPTY");
+      wktParseFail("expected '(' or EMPTY", start);
     return {};  // parse error, or EMPTY
   }
   c += 1;
@@ -5107,8 +5108,7 @@ MultiLine<T> multiLineFromWKTProj(const char* c, const char** endr, F projFunc,
     } else {
       if (strict && *member != '(')
         wktParseFail(
-            "Could not parse WKT, expected point list or "
-            "EMPTY");
+            "expected point list or EMPTY", member);
       c = strchr(c, '(');
       if (!c) break;
       auto line = lineFromWKTProj<T, F>(
@@ -5125,7 +5125,7 @@ MultiLine<T> multiLineFromWKTProj(const char* c, const char** endr, F projFunc,
     if (!nextComma ||
         (nextComma && nextCloseBracket && nextComma > nextCloseBracket)) {
       if (strict && !nextCloseBracket)
-        wktParseFail("Could not parse WKT, missing ')'");
+        wktParseFail("missing ')'");
       if (endr) (*endr) = nextCloseBracket;
       return ml;
     }
@@ -5133,7 +5133,7 @@ MultiLine<T> multiLineFromWKTProj(const char* c, const char** endr, F projFunc,
     c = nextComma;
   }
 
-  if (strict) wktParseFail("Could not parse WKT, expected point list");
+  if (strict) wktParseFail("expected point list");
 
   return ml;
 }
@@ -5150,7 +5150,7 @@ MultiPolygon<T> multiPolygonFromWKTProj(const char* c, const char** endr,
   endr = (endr != nullptr) ? endr : &replacement;
   CRSType sourceCRS = getCRSType(c, endr);
   if (sourceCRS == UNSUPPORTED)
-    wktParseFail("Could not parse WKT, unsupported CRS");
+    wktParseFail("unsupported CRS");
   auto ret =
       multiPolygonFromWKTProj<T, F>(*endr, endr, projFunc, sourceCRS, strict);
   if (checkEnd) checkWKTEnd(*endr);
@@ -5167,7 +5167,7 @@ MultiPolygon<T> multiPolygonFromWKTProj(const char* c, const char** endr,
   if (!c) {
     if (endr) (*endr) = 0;
     if (strict && !isEmptyWKT(start))
-      wktParseFail("Could not parse WKT multipolygon, expected '(' or EMPTY");
+      wktParseFail("expected '(' or EMPTY", start);
     return {};  // parse error, or EMPTY
   }
   c += 1;
@@ -5181,7 +5181,7 @@ MultiPolygon<T> multiPolygonFromWKTProj(const char* c, const char** endr,
     } else {
       if (strict && *member != '(')
         wktParseFail(
-            "Could not parse WKT multipolygon, expected polygon or EMPTY");
+            "expected polygon or EMPTY", member);
       c = strchr(c, '(');
       if (!c) break;
       auto poly = polygonFromWKTProj<T, F>(c, &end, projFunc, sourceCRS,
@@ -5200,7 +5200,7 @@ MultiPolygon<T> multiPolygonFromWKTProj(const char* c, const char** endr,
     if (!nextComma ||
         (nextComma && nextCloseBracket && nextComma > nextCloseBracket)) {
       if (strict && !nextCloseBracket)
-        wktParseFail("Could not parse WKT multipolygon, missing ')'");
+        wktParseFail("missing ')'");
       if (endr) (*endr) = nextCloseBracket;
       return mp;
     }
@@ -5209,7 +5209,7 @@ MultiPolygon<T> multiPolygonFromWKTProj(const char* c, const char** endr,
   }
 
   if (strict)
-    wktParseFail("Could not parse WKT multipolygon, expected polygon");
+    wktParseFail("expected polygon");
 
   return mp;
 }
@@ -5240,7 +5240,7 @@ Collection<T> collectionFromWKTProj(const char* c, const char** endr,
   endr = (endr != nullptr) ? endr : &replacement;
   CRSType sourceCRS = getCRSType(c, endr);
   if (sourceCRS == UNSUPPORTED)
-    wktParseFail("Could not parse WKT, unsupported CRS");
+    wktParseFail("unsupported CRS");
   auto ret = collectionFromWKTProj<T, F>(c, endr, projFunc, sourceCRS, strict);
   if (checkEnd) checkWKTEnd(*endr);
   return ret;
@@ -5259,7 +5259,7 @@ Collection<T> collectionFromWKTProj(const char* c, const char** endr,
     if (endr) (*endr) = 0;
     if (strict && !isEmptyWKT(start))
       wktParseFail(
-          "Could not parse WKT geometry collection, expected '(' or EMPTY");
+          "expected '(' or EMPTY", start);
     return col;
   }
   const char* lastEnd = c;
@@ -5275,8 +5275,7 @@ Collection<T> collectionFromWKTProj(const char* c, const char** endr,
     if (wktType == NONE) {
       if (endr) (*endr) = 0;
       if (strict)
-        wktParseFail(
-            "Could not parse WKT geometry collection, unknown geometry type");
+        wktParseFail("unknown geometry type");
       return {};
     }
 
@@ -5296,7 +5295,7 @@ Collection<T> collectionFromWKTProj(const char* c, const char** endr,
       if (!end) {
         if (endr) (*endr) = 0;
         if (strict)
-          wktParseFail("Could not parse WKT geometry collection member");
+          wktParseFail("expected valid WKT point", c);
         return {};
       }
       lastEnd = end;
@@ -5311,7 +5310,7 @@ Collection<T> collectionFromWKTProj(const char* c, const char** endr,
       if (!end) {
         if (endr) (*endr) = 0;
         if (strict)
-          wktParseFail("Could not parse WKT geometry collection member");
+          wktParseFail("expected valid WKT polygon", c);
         return {};
       }
       lastEnd = end;
@@ -5325,7 +5324,7 @@ Collection<T> collectionFromWKTProj(const char* c, const char** endr,
       if (!end) {
         if (endr) (*endr) = 0;
         if (strict)
-          wktParseFail("Could not parse WKT geometry collection member");
+          wktParseFail("expected valid WKT linestring", c);
         return {};
       }
       lastEnd = end;
@@ -5339,7 +5338,7 @@ Collection<T> collectionFromWKTProj(const char* c, const char** endr,
       if (!end) {
         if (endr) (*endr) = 0;
         if (strict)
-          wktParseFail("Could not parse WKT geometry collection member");
+          wktParseFail("expected valid WKT multipoint", c);
         return {};
       }
       lastEnd = end;
@@ -5353,7 +5352,7 @@ Collection<T> collectionFromWKTProj(const char* c, const char** endr,
       if (!end) {
         if (endr) (*endr) = 0;
         if (strict)
-          wktParseFail("Could not parse WKT geometry collection member");
+          wktParseFail("expected valid WKT multipolygon", c);
         return {};
       }
       lastEnd = end;
@@ -5367,7 +5366,7 @@ Collection<T> collectionFromWKTProj(const char* c, const char** endr,
       if (!end) {
         if (endr) (*endr) = 0;
         if (strict)
-          wktParseFail("Could not parse WKT geometry collection member");
+          wktParseFail("expected valid WKT multilinestring", c);
         return {};
       }
       lastEnd = end;
@@ -5381,7 +5380,7 @@ Collection<T> collectionFromWKTProj(const char* c, const char** endr,
       if (!end) {
         if (endr) (*endr) = 0;
         if (strict)
-          wktParseFail("Could not parse WKT geometry collection member");
+          wktParseFail("expected valid WKT collection", c);
         return {};
       }
       lastEnd = end;
@@ -5398,7 +5397,7 @@ Collection<T> collectionFromWKTProj(const char* c, const char** endr,
   const char* close = strchr(lastEnd + 1, ')');
 
   if (strict && !close)
-    wktParseFail("Could not parse WKT geometry collection, missing ')'");
+    wktParseFail("missing ')'");
 
   if (endr) (*endr) = close;
 
