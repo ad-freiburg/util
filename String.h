@@ -150,22 +150,27 @@ inline int ascii_letter_strnicmp_lower(char const* left, char const* lower,
 }
 
 // _____________________________________________________________________________
-inline std::string formatFloat(double f, int DIGITS) {
+inline void formatFloatTo(std::string& out, double f, int DIGITS) {
   fmt::format_specs specs;
   specs.precision = DIGITS;
   specs.set_type(fmt::presentation_type::fixed);
 
-  fmt::memory_buffer buf;
-  fmt::detail::write<char>(fmt::appender(buf), f, specs, {});
+  size_t start = out.size();
+  fmt::detail::write<char>(std::back_inserter(out), f, specs, {});
 
-  size_t n = buf.size();
-  if (buf[n - 1] == '0' &&
-      std::find(buf.begin(), buf.end(), '.') != buf.end()) {
-    while (buf[n - 1] == '0') n--;
-    if (buf[n - 1] == '.') n--;
+  size_t n = out.size();
+  if (out[n - 1] == '0' && out.find('.', start) != std::string::npos) {
+    while (out[n - 1] == '0') n--;
+    if (out[n - 1] == '.') n--;
+    out.resize(n);
   }
+}
 
-  return std::string(buf.data(), n);
+// _____________________________________________________________________________
+inline std::string formatFloat(double f, int DIGITS) {
+  std::string ret;
+  formatFloatTo(ret, f, DIGITS);
+  return ret;
 }
 
 // _____________________________________________________________________________

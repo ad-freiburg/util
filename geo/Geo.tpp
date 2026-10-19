@@ -490,9 +490,9 @@ std::string getWKT(const Point<T>& p, uint16_t prec) {
   std::string ret;
   ret = "POINT(";
   ret.reserve(6 + prec + 3 + prec + 3 + 1);
-  ret.append(formatFloat(p.getX(), prec));
+  formatFloatTo(ret, p.getX(), prec);
   ret.push_back(' ');
-  ret.append(formatFloat(p.getY(), prec));
+  formatFloatTo(ret, p.getY(), prec);
   ret.push_back(')');
   return ret;
 }
@@ -511,9 +511,9 @@ std::string getWKT(const std::vector<Point<T>>& p, uint16_t prec) {
   ret.reserve(10 + 1 + p.size() * (prec + 3) * 2 + 1);
   for (size_t i = 0; i < p.size(); i++) {
     if (i) ret.push_back(',');
-    ret.append(formatFloat(p[i].getX(), prec));
+    formatFloatTo(ret, p[i].getX(), prec);
     ret.push_back(' ');
-    ret.append(formatFloat(p[i].getY(), prec));
+    formatFloatTo(ret, p[i].getY(), prec);
   }
   ret.push_back(')');
   return ret;
@@ -533,9 +533,9 @@ std::string getWKT(const Line<T>& l, uint16_t prec) {
   ret.reserve(10 + 1 + l.size() * (prec + 3) * 2 + 1);
   for (size_t i = 0; i < l.size(); i++) {
     if (i) ret.push_back(',');
-    ret.append(formatFloat(l[i].getX(), prec));
+    formatFloatTo(ret, l[i].getX(), prec);
     ret.push_back(' ');
-    ret.append(formatFloat(l[i].getY(), prec));
+    formatFloatTo(ret, l[i].getY(), prec);
   }
   ret.push_back(')');
   return ret;
@@ -565,9 +565,9 @@ std::string getWKT(const std::vector<Line<T>>& ls, uint16_t prec) {
     ret.push_back('(');
     for (size_t i = 0; i < ls[j].size(); i++) {
       if (i) ret.push_back(',');
-      ret.append(formatFloat(ls[j][i].getX(), prec));
+      formatFloatTo(ret, ls[j][i].getX(), prec);
       ret.push_back(' ');
-      ret.append(formatFloat(ls[j][i].getY(), prec));
+      formatFloatTo(ret, ls[j][i].getY(), prec);
     }
     ret.push_back(')');
   }
@@ -636,25 +636,25 @@ std::string getWKT(const Box<T>& l, uint16_t prec) {
   std::string ret = "POLYGON((";
   ret.reserve(7 + 2 + 4 * (prec + 3) * 2 + 2);
 
-  ret.append(formatFloat(l.getLowerLeft().getX(), prec));
+  formatFloatTo(ret, l.getLowerLeft().getX(), prec);
   ret.push_back(' ');
-  ret.append(formatFloat(l.getLowerLeft().getY(), prec));
+  formatFloatTo(ret, l.getLowerLeft().getY(), prec);
   ret.push_back(',');
-  ret.append(formatFloat(l.getUpperRight().getX(), prec));
+  formatFloatTo(ret, l.getUpperRight().getX(), prec);
   ret.push_back(' ');
-  ret.append(formatFloat(l.getLowerLeft().getY(), prec));
+  formatFloatTo(ret, l.getLowerLeft().getY(), prec);
   ret.push_back(',');
-  ret.append(formatFloat(l.getUpperRight().getX(), prec));
+  formatFloatTo(ret, l.getUpperRight().getX(), prec);
   ret.push_back(' ');
-  ret.append(formatFloat(l.getUpperRight().getY(), prec));
+  formatFloatTo(ret, l.getUpperRight().getY(), prec);
   ret.push_back(',');
-  ret.append(formatFloat(l.getLowerLeft().getX(), prec));
+  formatFloatTo(ret, l.getLowerLeft().getX(), prec);
   ret.push_back(' ');
-  ret.append(formatFloat(l.getUpperRight().getY(), prec));
+  formatFloatTo(ret, l.getUpperRight().getY(), prec);
   ret.push_back(',');
-  ret.append(formatFloat(l.getLowerLeft().getX(), prec));
+  formatFloatTo(ret, l.getLowerLeft().getX(), prec);
   ret.push_back(' ');
-  ret.append(formatFloat(l.getLowerLeft().getY(), prec));
+  formatFloatTo(ret, l.getLowerLeft().getY(), prec);
   ret.append("))");
   return ret;
 }
@@ -674,16 +674,16 @@ std::string getWKT(const Polygon<T>& p, uint16_t prec) {
 
   for (size_t i = 0; i < p.getOuter().size(); i++) {
     if (i > 0) ret.push_back(',');
-    ret.append(formatFloat(p.getOuter()[i].getX(), prec));
+    formatFloatTo(ret, p.getOuter()[i].getX(), prec);
     ret.push_back(' ');
-    ret.append(formatFloat(p.getOuter()[i].getY(), prec));
+    formatFloatTo(ret, p.getOuter()[i].getY(), prec);
   }
 
   if (p.getOuter().front() != p.getOuter().back()) {
     ret.push_back(',');
-    ret.append(formatFloat(p.getOuter().front().getX(), prec));
+    formatFloatTo(ret, p.getOuter().front().getX(), prec);
     ret.push_back(' ');
-    ret.append(formatFloat(p.getOuter().front().getY(), prec));
+    formatFloatTo(ret, p.getOuter().front().getY(), prec);
   }
   ret.push_back(')');
 
@@ -692,16 +692,16 @@ std::string getWKT(const Polygon<T>& p, uint16_t prec) {
     ret.append(",(");
     for (size_t i = 0; i < inner.size(); i++) {
       if (i > 0) ret.push_back(',');
-      ret.append(formatFloat(inner[i].getX(), prec));
+      formatFloatTo(ret, inner[i].getX(), prec);
       ret.push_back(' ');
-      ret.append(formatFloat(inner[i].getY(), prec));
+      formatFloatTo(ret, inner[i].getY(), prec);
     }
 
     if (inner.front() != inner.back()) {
       ret.push_back(',');
-      ret.append(formatFloat(inner.front().getX(), prec));
+      formatFloatTo(ret, inner.front().getX(), prec);
       ret.push_back(' ');
-      ret.append(formatFloat(inner.front().getY(), prec));
+      formatFloatTo(ret, inner.front().getY(), prec);
     }
     ret.push_back(')');
   }
@@ -734,16 +734,16 @@ std::string getWKT(const std::vector<Polygon<T>>& ls, uint16_t prec) {
     ret.push_back('(');
     for (size_t i = 0; i < ls[j].getOuter().size(); i++) {
       if (i > 0) ret.push_back(',');
-      ret.append(formatFloat(ls[j].getOuter()[i].getX(), prec));
+      formatFloatTo(ret, ls[j].getOuter()[i].getX(), prec);
       ret.push_back(' ');
-      ret.append(formatFloat(ls[j].getOuter()[i].getY(), prec));
+      formatFloatTo(ret, ls[j].getOuter()[i].getY(), prec);
     }
 
     if (ls[j].getOuter().front() != ls[j].getOuter().back()) {
       ret.push_back(',');
-      ret.append(formatFloat(ls[j].getOuter().front().getX(), prec));
+      formatFloatTo(ret, ls[j].getOuter().front().getX(), prec);
       ret.push_back(' ');
-      ret.append(formatFloat(ls[j].getOuter().front().getY(), prec));
+      formatFloatTo(ret, ls[j].getOuter().front().getY(), prec);
     }
     ret.push_back(')');
 
@@ -753,15 +753,15 @@ std::string getWKT(const std::vector<Polygon<T>>& ls, uint16_t prec) {
       ret.push_back('(');
       for (size_t i = 0; i < inner.size(); i++) {
         if (i > 0) ret.push_back(',');
-        ret.append(formatFloat(inner[i].getX(), prec));
+        formatFloatTo(ret, inner[i].getX(), prec);
         ret.push_back(' ');
-        ret.append(formatFloat(inner[i].getY(), prec));
+        formatFloatTo(ret, inner[i].getY(), prec);
       }
       if (inner.front() != inner.back()) {
         ret.push_back(',');
-        ret.append(formatFloat(inner.front().getX(), prec));
+        formatFloatTo(ret, inner.front().getX(), prec);
         ret.push_back(' ');
-        ret.append(formatFloat(inner.front().getY(), prec));
+        formatFloatTo(ret, inner.front().getY(), prec);
       }
       ret.push_back(')');
     }
