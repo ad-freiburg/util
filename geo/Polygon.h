@@ -5,6 +5,7 @@
 #ifndef UTIL_GEO_POLYGON_H_
 #define UTIL_GEO_POLYGON_H_
 
+#include <utility>
 #include <vector>
 
 #include "./Box.h"
@@ -22,9 +23,9 @@ class Polygon {
  public:
   Polygon() {}
 
-  explicit Polygon(const Ring<T>& l) : _outer(l) { fix(); }
-  Polygon(const Ring<T>& l, const std::vector<Ring<T>>& inners)
-      : _outer(l), _inners(inners) {
+  explicit Polygon(Ring<T> l) : _outer(std::move(l)) { fix(); }
+  Polygon(Ring<T> l, std::vector<Ring<T>> inners)
+      : _outer(std::move(l)), _inners(std::move(inners)) {
     fix();
   }
   explicit Polygon(const Box<T>& b)
@@ -224,7 +225,8 @@ class XSortedRing {
       T len = fabs(ring[i - 1].getX() - ring[i].getX());
       if (len > _maxSegLen) _maxSegLen = len;
 
-      _bbox = extendBox(LineSegment<T>{ring[i - 1], ring[i]}, _bbox);
+      if (!haveLastNext) _bbox = extendBox(ring[i - 1], _bbox);
+      _bbox = extendBox(ring[i], _bbox);
 
       double prevAng = 0;
       double nextAng = 0;
@@ -255,7 +257,7 @@ class XSortedRing {
                  (ring[i - 1].getY() * 1.0 - ring[i].getY() * 1.0)});
       }
 
-      size_t next = (i + 1) % ring.size();
+      size_t next = i + 1 < ring.size() ? i + 1 : 0;
 
       while (ring[next].getX() == ring[i].getX() &&
              ring[next].getY() == ring[i].getY() && next != i) {
@@ -265,8 +267,6 @@ class XSortedRing {
       nextAng = nextAngle(ring[i - 1], ring[i], ring[next], &lastNextY);
       lastNextAng = nextAng;
       haveLastNext = true;
-
-      if (len > _maxSegLen) _maxSegLen = len;
 
       if (ring[i - 1].getX() < ring[i].getX()) {
         _ring.push_back({ring[i - 1],
@@ -278,14 +278,14 @@ class XSortedRing {
         _ring.push_back(
             {ring[i], {ring[i - 1], ring[i]}, false, prevAng, nextAng, true});
       } else {
-        _ring.push_back(
-            {ring[i], {ring[i], ring[i - 1]}, true, prevAng, nextAng, false});
         _ring.push_back({ring[i - 1],
                          {ring[i], ring[i - 1]},
                          true,
                          prevAng,
                          nextAng,
                          true});
+        _ring.push_back(
+            {ring[i], {ring[i], ring[i - 1]}, true, prevAng, nextAng, false});
       }
     }
 
@@ -347,14 +347,14 @@ class XSortedRing {
         _ring.push_back(
             {ring[0], {ring[i - 1], ring[0]}, false, prevAng, nextAng, true});
       } else {
-        _ring.push_back(
-            {ring[0], {ring[0], ring[i - 1]}, true, prevAng, nextAng, false});
         _ring.push_back({ring[i - 1],
                          {ring[0], ring[i - 1]},
                          true,
                          prevAng,
                          nextAng,
                          true});
+        _ring.push_back(
+            {ring[0], {ring[0], ring[i - 1]}, true, prevAng, nextAng, false});
       }
     }
 
@@ -423,7 +423,7 @@ class XSortedPolygon {
     if (area > 0) {
       auto outer = ring;
       std::reverse(outer.begin(), outer.end());
-      _outer = XSortedRing<T>(outer);
+      _outer = XSortedRing<T>(outer, area);
     } else {
       _outer = XSortedRing<T>(ring, fabs(area));
     }
@@ -437,10 +437,15 @@ class XSortedPolygon {
     if (area > 0) {
       auto outer = poly.getOuter();
       std::reverse(outer.begin(), outer.end());
-      _outer = XSortedRing<T>(outer);
+      _outer = XSortedRing<T>(outer, area);
     } else {
       _outer = XSortedRing<T>(poly.getOuter(), fabs(area));
     }
+
+    _inners.reserve(poly.getInners().size());
+    _innerAreas.reserve(poly.getInners().size());
+    _innerBoxes.reserve(poly.getInners().size());
+    _boxIdx.reserve(poly.getInners().size());
 
     for (const auto& inner : poly.getInners()) {
       // skip empty polygons
@@ -453,7 +458,7 @@ class XSortedPolygon {
       if (innerArea < 0) {
         auto reversed = inner;
         std::reverse(reversed.begin(), reversed.end());
-        _inners.push_back(XSortedRing<T>(reversed));
+        _inners.push_back(XSortedRing<T>(reversed, -innerArea));
       } else {
         _inners.push_back(XSortedRing<T>(inner, innerArea));
       }

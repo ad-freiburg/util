@@ -98,6 +98,52 @@ int main(int argc, char** argv) {
     TEST(std::isnan(util::atof("-.")));
     TEST(std::isnan(util::atof(")")));
 
+    // exponent notation
+    TEST(util::atof("1e5"), ==, approx(100000));
+    TEST(util::atof("1E5"), ==, approx(100000));
+    TEST(util::atof("1e+5"), ==, approx(100000));
+    TEST(util::atof("2.5e3"), ==, approx(2500));
+    TEST(util::atof("-2.5e3"), ==, approx(-2500));
+    TEST(util::atof("2.5e-3"), ==, approx(0.0025));
+    TEST(util::atof("-2.5E-3"), ==, approx(-0.0025));
+    TEST(util::atof(".5e1"), ==, approx(5));
+    TEST(util::atof("5.e1"), ==, approx(50));
+    TEST(util::atof("1e0"), ==, approx(1));
+    TEST(util::atof("1e-0"), ==, approx(1));
+    TEST(util::atof("7e01"), ==, approx(70));
+    TEST(util::atof("1e400") == std::numeric_limits<double>::infinity());
+    TEST(util::atof("1e-400"), ==, approx(0));
+
+    TEST(util::atof("3e"), ==, approx(3));
+    TEST(util::atof("3e+"), ==, approx(3));
+    TEST(util::atof("3e-"), ==, approx(3));
+    TEST(util::atof("3ex"), ==, approx(3));
+
+    const char* s = "1.5e2 4";
+    const char* end;
+    TEST(util::atof(s, 38, &end), ==, approx(150));
+    TEST(end - s, ==, 5);
+
+    s = "1.5e 4";
+    TEST(util::atof(s, 38, &end), ==, approx(1.5));
+    TEST(end - s, ==, 3);
+
+    s = "1.5e-x";
+    TEST(util::atof(s, 38, &end), ==, approx(1.5));
+    TEST(end - s, ==, 3);
+
+    TEST(std::isnan(util::atof("e5")));
+    TEST(std::isnan(util::atof("-e5")));
+    TEST(std::isnan(util::atof(".e5")));
+
+    TEST(std::isnan(util::atof("NaN")));
+    TEST(std::isnan(util::atof("nan")));
+    TEST(std::isnan(util::atof("NAN")));
+    TEST(std::isnan(util::atof("garbage")));
+
+    //TEST(util::atof("INF") == std::numeric_limits<double>::infinity());
+    //TEST(util::atof("inf") == std::numeric_limits<double>::infinity());
+
     // TODO: more test cases
   }
 

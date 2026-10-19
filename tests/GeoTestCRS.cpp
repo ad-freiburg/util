@@ -91,6 +91,11 @@ void GeoTest::testCRS() {
     TEST(util::geo::getCRSType("<http://www.opengis.net/def/crs/EPSG/0/3857>MLINESTRING(0 0, 1 1)", 0),
         ==, CRSType::WEB_MERCATOR);
 
+    TEST(util::geo::getCRSType("<HTTP://www.opengis.net/def/crs/EPSG/0/3857>LINESTRING(0 0, 1 1)", 0),
+        ==, CRSType::WEB_MERCATOR);
+    TEST(util::geo::getCRSType("<http://www.OPENGIS.net/def/crs/epsg/0/3857>MLINESTRING(0 0, 1 1)", 0),
+        ==, CRSType::WEB_MERCATOR);
+
     TEST(util::geo::getCRSType("MULTIPOINT(0 0, 1 1)", 0),
         ==, CRSType::CRS84);
     TEST(util::geo::getCRSType("MMULTIPOINT(0 0, 1 1)", 0),
@@ -99,6 +104,10 @@ void GeoTest::testCRS() {
     TEST(util::geo::getCRSType("<http://www.opengis.net/def/crs/EPSG/0/28992> LINESTRING(0 0, 1 1)", 0),
         ==, CRSType::UNSUPPORTED);
     TEST(util::geo::getCRSType("<http://www.opengis.net/def/crs/EPSG/0/28992> MLINESTRING(0 0, 1 1)", 0),
+        ==, CRSType::UNSUPPORTED);
+    TEST(util::geo::getCRSType("<http://WWW.opengis.net/def/crs/EPSG/0/28992> LINESTRING(0 0, 1 1)", 0),
+        ==, CRSType::UNSUPPORTED);
+    TEST(util::geo::getCRSType("<http://www.opengis.NET/def/crs/EPSG/0/28992> MLINESTRING(0 0, 1 1)", 0),
         ==, CRSType::UNSUPPORTED);
 
     // Invalid IRI.

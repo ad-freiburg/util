@@ -25,6 +25,7 @@
 #include <stdexcept>
 #include <string>
 #include <vector>
+
 #include "3rdparty/fmt/core.h"
 
 namespace util {
@@ -64,22 +65,111 @@ inline int strncicmp(char const* left, char const* right, size_t n) {
 }
 
 // _____________________________________________________________________________
-inline std::string formatFloat(double f, int DIGITS) {
-  std::string fStr = "{:." + std::to_string(DIGITS) + "f}";
+inline int ascii_strcicmp(char const* left, char const* right) {
+  // case insensitive strncmp for ASCII (avoiding tolower)
+  size_t i = 0;
+  while (true) {
+    unsigned char l = left[i], r = right[i];
+    if (l >= 'A' && l <= 'Z') l += 'a' - 'A';
+    if (r >= 'A' && r <= 'Z') r += 'a' - 'A';
+    if (l != r || !l) return l - r;  // if !l, both strings are at their end
+    i++;
+  }
+}
 
-  fmt::memory_buffer buf;
-  fmt::vformat_to(std::back_inserter(buf), fStr, fmt::make_format_args(f));
-
-  auto ret = fmt::to_string(buf);
-
-  if (ret.back() == '0') {
-    if (ret.find('.') != std::string::npos) {
-      auto p = ret.find_last_not_of('0');
-      if (ret[p] == '.') return ret.substr(0, p);
-      return ret.substr(0, p + 1);
-    }
+// _____________________________________________________________________________
+inline int ascii_strnicmp(char const* left, char const* right, size_t n) {
+  // case insensitive strncmp for ASCII (avoiding tolower)
+  size_t i = 0;
+  while (i < n) {
+    unsigned char l = left[i], r = right[i];
+    if (l >= 'A' && l <= 'Z') l += 'a' - 'A';
+    if (r >= 'A' && r <= 'Z') r += 'a' - 'A';
+    if (l != r || !l) return l - r;  // if !l, both strings are at their end
+    i++;
   }
 
+  return 0;
+}
+
+// _____________________________________________________________________________
+inline int ascii_strnicmp_lower(char const* left, char const* lower, size_t n) {
+  // case insensitive strncmp for ASCII (avoiding tolower), but lower must
+  // already be lowercased!
+  size_t i = 0;
+  while (i < n) {
+    unsigned char l = left[i], r = lower[i];
+    if (l >= 'A' && l <= 'Z') l += 'a' - 'A';
+    if (l != r || !l) return l - r;  // if !l, both strings are at their end
+    i++;
+  }
+
+  return 0;
+}
+
+// _____________________________________________________________________________
+inline int ascii_letter_strcicmp(char const* left, char const* letters) {
+  // case insensitive strncmp for ASCII LETTERS (avoiding tolower)
+  size_t i = 0;
+  while (true) {
+    unsigned char l = left[i] | 0x20, r = letters[i];
+    if (!r) return left[i];  // equal if left also ends here
+    r |= 0x20;
+    if (l != r) return l - r;
+    i++;
+  }
+}
+
+// _____________________________________________________________________________
+inline int ascii_letter_strnicmp(char const* left, char const* letters,
+                                 size_t n) {
+  // case insensitive strncmp for ASCII LETTERS (avoiding tolower)
+  size_t i = 0;
+  while (i < n) {
+    unsigned char l = left[i] | 0x20, r = letters[i] | 0x20;
+    if (l != r) return l - r;
+    i++;
+  }
+
+  return 0;
+}
+
+// _____________________________________________________________________________
+inline int ascii_letter_strnicmp_lower(char const* left, char const* lower,
+                                       size_t n) {
+  // case insensitive strncmp for ASCII LETTERS (avoiding tolower), but lower
+  // must already be lowercased!
+  size_t i = 0;
+  while (i < n) {
+    unsigned char l = left[i] | 0x20, r = lower[i];
+    if (l != r) return l - r;
+    i++;
+  }
+
+  return 0;
+}
+
+// _____________________________________________________________________________
+inline void formatFloatTo(std::string& out, double f, int DIGITS) {
+  fmt::format_specs specs;
+  specs.precision = DIGITS;
+  specs.set_type(fmt::presentation_type::fixed);
+
+  size_t start = out.size();
+  fmt::detail::write<char>(std::back_inserter(out), f, specs, {});
+
+  size_t n = out.size();
+  if (out[n - 1] == '0' && out.find('.', start) != std::string::npos) {
+    while (out[n - 1] == '0') n--;
+    if (out[n - 1] == '.') n--;
+    out.resize(n);
+  }
+}
+
+// _____________________________________________________________________________
+inline std::string formatFloat(double f, int DIGITS) {
+  std::string ret;
+  formatFloatTo(ret, f, DIGITS);
   return ret;
 }
 

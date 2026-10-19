@@ -4,12 +4,13 @@
 
 #include <iostream>
 #include <iomanip>
+#include <exception>
 
 #ifndef UTIL_TEST_H_
 #define UTIL_TEST_H_
 
-#define _TEST3(s, o, e) {auto __ss = s; if (!(__ss o e)) {  std::cerr << "\n" << __FILE__ << ":" << __LINE__ << ": Test failed!\n  Expected " << #s << " " << #o " " << (e) << ", got " << std::fixed << std::setprecision(5) << (__ss) << std::endl;  exit(1);}}
-#define _TEST2(s, e) _TEST3(s, ==, o)
+#define _TEST3(s, o, e) {try {auto __ss = s; if (!(__ss o e)) {  std::cerr << "\n" << __FILE__ << ":" << __LINE__ << ": Test failed!\n  Expected " << #s << " " << #o " " << (e) << ", got " << std::fixed << std::setprecision(5) << (__ss) << std::endl;  exit(1);}} catch (const std::exception& __ex) {  std::cerr << "\n" << __FILE__ << ":" << __LINE__ << ": Test failed!\n  Expected " << #s << " " << #o " " << #e << ", but exception was thrown: " << __ex.what() << std::endl;  exit(1);} catch (...) {  std::cerr << "\n" << __FILE__ << ":" << __LINE__ << ": Test failed!\n  Expected " << #s << " " << #o " " << #e << ", but unknown exception was thrown" << std::endl;  exit(1);}}
+#define _TEST2(s, e) _TEST3(s, ==, e)
 #define _TEST1(s) _TEST3(static_cast<bool>(s), ==, true)
 
 #define _GET_TEST_MACRO(_1,_2,_3,NAME,...) NAME

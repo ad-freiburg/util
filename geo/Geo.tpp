@@ -378,7 +378,7 @@ template <template <typename> class Geometry, typename T>
 std::vector<Geometry<T>> rotate(std::vector<Geometry<T>> multigeo, double deg,
                                 const Point<T> &c) {
   for (size_t i = 0; i < multigeo.size(); i++)
-    multigeo[i] = rotate(multigeo[i], deg, c);
+    multigeo[i] = rotate(std::move(multigeo[i]), deg, c);
   return multigeo;
 }
 
@@ -387,7 +387,7 @@ template <template <typename> class Geometry, typename T>
 std::vector<Geometry<T>> rotateRAD(std::vector<Geometry<T>> multigeo,
                                    double deg, const Point<T> &c) {
   for (size_t i = 0; i < multigeo.size(); i++)
-    multigeo[i] = rotateRAD(multigeo[i], deg, c);
+    multigeo[i] = rotateRAD(std::move(multigeo[i]), deg, c);
   return multigeo;
 }
 
@@ -396,7 +396,7 @@ template <template <typename> class Geometry, typename T>
 std::vector<Geometry<T>> rotate(std::vector<Geometry<T>> multigeo, double deg) {
   auto c = centroid(multigeo);
   for (size_t i = 0; i < multigeo.size(); i++)
-    multigeo[i] = rotate(multigeo[i], deg, c);
+    multigeo[i] = rotate(std::move(multigeo[i]), deg, c);
   return multigeo;
 }
 
@@ -406,7 +406,7 @@ std::vector<Geometry<T>> rotateRAD(std::vector<Geometry<T>> multigeo,
                                    double deg) {
   auto c = centroid(multigeo);
   for (size_t i = 0; i < multigeo.size(); i++)
-    multigeo[i] = rotateRAD(multigeo[i], deg, c);
+    multigeo[i] = rotateRAD(std::move(multigeo[i]), deg, c);
   return multigeo;
 }
 
@@ -436,6 +436,9 @@ template <typename T>
 Polygon<T> move(Polygon<T> geo, double x, double y) {
   for (size_t i = 0; i < geo.getOuter().size(); i++)
     geo.getOuter()[i] = move(geo.getOuter()[i], x, y);
+  for (size_t i = 0; i < geo.getInners().size(); i++)
+    for (size_t j = 0; j < geo.getInners()[i].size(); j++)
+      geo.getInners()[i][j] = move(geo.getInners()[i][j], x, y);
   return geo;
 }
 
@@ -452,7 +455,7 @@ template <template <typename> class Geometry, typename T>
 std::vector<Geometry<T>> move(std::vector<Geometry<T>> multigeo, double x,
                               double y) {
   for (size_t i = 0; i < multigeo.size(); i++)
-    multigeo[i] = move(multigeo[i], x, y);
+    multigeo[i] = move(std::move(multigeo[i]), x, y);
   return multigeo;
 }
 
@@ -571,6 +574,8 @@ template <typename T>
 std::string util::geo::getWKT(const std::vector<Line<T>> &ls, uint16_t prec,
                               CRSType sourceCRS, CRSType targetCRS,
                               bool hideIri) {
+  if (ls.size() == 0) return "MULTILINESTRING EMPTY";
+  bool nonEmpty = false;
   std::string ret;
   const std::string &iri = hideIri ? emptyIri() : getCrsIri(targetCRS);
 
@@ -579,8 +584,12 @@ std::string util::geo::getWKT(const std::vector<Line<T>> &ls, uint16_t prec,
   ret += iri;
   ret += "MULTILINESTRING(";
 
+  bool first = true;
   for (size_t j = 0; j < ls.size(); j++) {
-    if (j) ret.push_back(',');
+    if (ls[j].empty()) continue;
+    nonEmpty = true;
+    if (!first) ret.push_back(',');
+    first = false;
     ret.push_back('(');
     for (size_t i = 0; i < ls[j].size(); i++) {
       if (i) ret.push_back(',');
@@ -588,6 +597,8 @@ std::string util::geo::getWKT(const std::vector<Line<T>> &ls, uint16_t prec,
     }
     ret.push_back(')');
   }
+
+  if (!nonEmpty) return "MULTILINESTRING EMPTY";
 
   ret.push_back(')');
   return ret;
@@ -652,25 +663,25 @@ std::string getWKT(const Box<T> &l, uint16_t prec) {
   std::string ret = "POLYGON((";
   ret.reserve(7 + 2 + 4 * (prec + 3) * 2 + 2);
 
-  ret.append(formatFloat(l.getLowerLeft().getX(), prec));
+  formatFloatTo(ret, l.getLowerLeft().getX(), prec);
   ret.push_back(' ');
-  ret.append(formatFloat(l.getLowerLeft().getY(), prec));
+  formatFloatTo(ret, l.getLowerLeft().getY(), prec);
   ret.push_back(',');
-  ret.append(formatFloat(l.getUpperRight().getX(), prec));
+  formatFloatTo(ret, l.getUpperRight().getX(), prec);
   ret.push_back(' ');
-  ret.append(formatFloat(l.getLowerLeft().getY(), prec));
+  formatFloatTo(ret, l.getLowerLeft().getY(), prec);
   ret.push_back(',');
-  ret.append(formatFloat(l.getUpperRight().getX(), prec));
+  formatFloatTo(ret, l.getUpperRight().getX(), prec);
   ret.push_back(' ');
-  ret.append(formatFloat(l.getUpperRight().getY(), prec));
+  formatFloatTo(ret, l.getUpperRight().getY(), prec);
   ret.push_back(',');
-  ret.append(formatFloat(l.getLowerLeft().getX(), prec));
+  formatFloatTo(ret, l.getLowerLeft().getX(), prec);
   ret.push_back(' ');
-  ret.append(formatFloat(l.getUpperRight().getY(), prec));
+  formatFloatTo(ret, l.getUpperRight().getY(), prec);
   ret.push_back(',');
-  ret.append(formatFloat(l.getLowerLeft().getX(), prec));
+  formatFloatTo(ret, l.getLowerLeft().getX(), prec);
   ret.push_back(' ');
-  ret.append(formatFloat(l.getLowerLeft().getY(), prec));
+  formatFloatTo(ret, l.getLowerLeft().getY(), prec);
   ret.append("))");
   return ret;
 }
@@ -686,8 +697,7 @@ template <typename T>
 std::string util::geo::getWKT(const Polygon<T> &p, uint16_t prec,
                               CRSType sourceCRS, CRSType targetCRS,
                               bool hideIri) {
-  if (p.empty())
-    return hideIri ? "POLYGON()" : getCrsIri(targetCRS) + "POLYGON()";
+  if (p.empty()) return "POLYGON EMPTY";
 
   std::string ret;
   const std::string &iri = hideIri ? emptyIri() : getCrsIri(targetCRS);
@@ -742,6 +752,8 @@ template <typename T>
 std::string util::geo::getWKT(const std::vector<Polygon<T>> &ls, uint16_t prec,
                               CRSType sourceCRS, CRSType targetCRS,
                               bool hideIri) {
+  if (ls.size() == 0) return "MULTIPOLYGON EMPTY";
+  bool nonEmpty = false;
   std::string ret;
   const std::string &iri = hideIri ? emptyIri() : getCrsIri(targetCRS);
   if (ls.size())
@@ -751,8 +763,12 @@ std::string util::geo::getWKT(const std::vector<Polygon<T>> &ls, uint16_t prec,
   ret += iri;
   ret += "MULTIPOLYGON(";
 
+  bool first = true;
   for (size_t j = 0; j < ls.size(); j++) {
-    if (j) ret.push_back(',');
+    if (ls[j].empty()) continue;
+    nonEmpty = true;
+    if (!first) ret.push_back(',');
+    first = false;
     ret.push_back('(');
     ret.push_back('(');
 
@@ -791,6 +807,8 @@ std::string util::geo::getWKT(const std::vector<Polygon<T>> &ls, uint16_t prec,
     ret.push_back(')');
   }
 
+  if (!nonEmpty) return "MULTIPOLYGON EMPTY";
+
   ret.push_back(')');
   return ret;
 }
@@ -808,6 +826,7 @@ template <typename T>
 std::string util::geo::getWKT(const Collection<T> &coll, uint16_t prec,
                               CRSType sourceCRS, CRSType targetCRS,
                               bool hideIri) {
+  if (coll.size() == 0) return "GEOMETRYCOLLECTION EMPTY";
   std::string ret;
   const std::string &iri = hideIri ? emptyIri() : getCrsIri(targetCRS);
   ret += iri;
@@ -1325,9 +1344,9 @@ std::pair<double, bool> withinDist(const Point<T> &p, const XSortedRing<T> &ph,
 
 // _____________________________________________________________________________
 template <typename T, typename PF, typename DF>
-double withinDist(const Point<T> &p, const XSortedPolygon<T> &poly,
-                  double maxDist, PF &&paddingFunc, double maxEuclideanDist,
-                  DF &&distFunc) {
+double withinDist(const Point<T>& p, const XSortedPolygon<T>& poly,
+                  double maxDist, PF&& paddingFunc, double maxEuclideanDist,
+                  DF&& distFunc) {
   if (poly.empty()) return std::numeric_limits<double>::quiet_NaN();
 
   // first do the check in the outer boundary
@@ -3922,8 +3941,8 @@ double dist(const Line<T> &la, const Line<T> &lb) {
 
 // _____________________________________________________________________________
 template <typename T, typename PF, typename DF>
-double withinDist(const Line<T> &la, const Line<T> &lb, double maxDist,
-                  PF &&paddingFunc, double maxEuclideanDist, DF &&distFunc) {
+double withinDist(const Line<T>& la, const Line<T>& lb, double maxDist,
+                  PF&& paddingFunc, double maxEuclideanDist, DF&& distFunc) {
   if (la.empty() || lb.empty()) return std::numeric_limits<double>::quiet_NaN();
 
   if (la.size() * lb.size() > EST_CHECKS_THRESHOLD_XSORTED) {
@@ -4430,8 +4449,8 @@ double dist(const Polygon<T> &poly, const Point<T> &p, DF &&distFunc) {
 
 // _____________________________________________________________________________
 template <typename T, typename PF, typename DF>
-double withinDist(const Point<T> &p, const Polygon<T> &poly, double maxDist,
-                  PF &&paddingFunc, double maxEuclideanDist, DF &&distFunc) {
+double withinDist(const Point<T>& p, const Polygon<T>& poly, double maxDist,
+                  PF&& paddingFunc, double maxEuclideanDist, DF&& distFunc) {
   if (poly.empty()) return std::numeric_limits<double>::quiet_NaN();
   if (poly.size() > EST_CHECKS_THRESHOLD_XSORTED) {
     return withinDist(p, XSortedPolygon<T>(poly), maxDist, paddingFunc,
@@ -4548,106 +4567,215 @@ bool empty(const Collection<T> &g) {
 }
 
 // _____________________________________________________________________________
+inline const char* skipWKTDatatype(const char* c) {
+  if (c[0] != '^' || c[1] != '^' || c[2] != '<') return c;
+  const char* close = strchr(c + 3, '>');
+  if (!close) return c;
+  c = close + 1;
+  while (*c <= '\'' && (*c == ' ' || *c == '\n' || *c == '\t' || *c == '\r' ||
+                        *c == '"' || *c == '\''))
+    c++;
+  return c;
+}
+
+// _____________________________________________________________________________
+inline void checkWKTEnd(const char* c) {
+  if (!c) return;
+  c++;
+  while (*c <= '\'' && (*c == ' ' || *c == '\n' || *c == '\t' || *c == '\r' ||
+                        *c == '"' || *c == '\''))
+    c++;
+  c = skipWKTDatatype(c);
+  if (*c) wktParseFail("unexpected trailing input", c);
+}
+
+// _____________________________________________________________________________
+inline const char* checkWKTMemberEnd(const char* c) {
+  c++;
+  while (*c <= '\'' && (*c == ' ' || *c == '\n' || *c == '\t' || *c == '\r'))
+    c++;
+  if (*c != ',' && *c != ')') wktParseFail("unexpected input after member", c);
+  return c;
+}
+
+// _____________________________________________________________________________
 template <typename T, typename F>
 Line<T> lineFromWKTProj(const char *c, const char **endr, F projFunc,
                         bool strict) {
+  bool checkEnd = strict && !endr;
+
   // If any previous function was called with 'endr = 0' it first needs to be
   // replaced, such that 'getCRSType' can correctly update 'endr'.
   const char *replacement = nullptr;
   endr = (endr != nullptr) ? endr : &replacement;
   CRSType sourceCRS = getCRSType(c, endr);
-  return lineFromWKTProj<T, F>(*endr, endr, projFunc, sourceCRS, strict);
+  if (sourceCRS == UNSUPPORTED) wktParseFail("unsupported CRS");
+  auto ret = lineFromWKTProj<T, F>(*endr, endr, projFunc, sourceCRS, strict);
+  if (checkEnd) checkWKTEnd(*endr);
+  return ret;
 }
 
 // _____________________________________________________________________________
-inline bool isEmptyWKT(const char *c) {
-  const char *ws = " \n\t\r";
-  const char *lastWord = nullptr;
+inline bool isEmptyWKT(const char* c) {
+  const char* lastWord = nullptr;
   while (*c) {
-    while (*c && strchr(ws, *c)) c++;
+    while (*c && strchr(" \n\t\r\"'", *c)) c++;
     if (!*c) break;
+    const char* afterDatatype = skipWKTDatatype(c);
+    if (afterDatatype != c) {
+      if (*afterDatatype) return false;
+      break;
+    }
     lastWord = c;
-    while (*c && !strchr(ws, *c)) c++;
+    while (*c && !strchr(" \n\t\r", *c)) c++;
   }
-  if (!lastWord || util::strncicmp(lastWord, "EMPTY", 5) != 0) return false;
-  return strchr(ws, lastWord[5]);
+  if (!lastWord || util::ascii_letter_strnicmp_lower(lastWord, "empty", 5) != 0)
+    return false;
+  return strchr(" \n\t\r\"'", lastWord[5]);
 }
 
 // _____________________________________________________________________________
 inline const char *nextWKTMember(const char *c) {
   // skip the ',' separating the members of a multi geometry, and whitespace
   if (*c == ',') c++;
-  while (*c && strchr(" \n\t\r", *c)) c++;
+  while (*c <= '\'' && (*c == ' ' || *c == '\n' || *c == '\t' || *c == '\r'))
+    c++;
   return c;
 }
 
 // _____________________________________________________________________________
-inline bool isEmptyWKTMember(const char *c) {
-  return util::strncicmp(c, "EMPTY", 5) == 0 && strchr(" \n\t\r,)", c[5]);
+inline bool isEmptyWKTMember(const char* c) {
+  return util::ascii_letter_strnicmp_lower(c, "empty", 5) == 0 &&
+         strchr(" \n\t\r,)", c[5]);
+}
+
+// _____________________________________________________________________________
+__attribute__((noinline)) inline double parseMeasurement(const char*& c) {
+  double m = 0;
+  for (int i = 0; i < 2 && (*c == '+' || *c == '-' || *c == '.' ||
+                            (*c >= '0' && *c <= '9'));
+       i++) {
+    const char* start = c;
+    m = util::atof(c, 10, &c);
+    const char* numEnd = c;
+
+    // skip whitespace
+    while (*c == ' ' || *c == '\n' || *c == '\t' || *c == '\r') c++;
+
+    if (numEnd != start && c == numEnd && *c && *c != ',' && *c != ')')
+      return std::numeric_limits<double>::quiet_NaN();
+  }
+  return m;
+}
+
+// _____________________________________________________________________________
+inline std::tuple<double, double, double> parseWKTPoint(const char*& c,
+                                                        bool strict) {
+  const char* start;
+  const char* numEnd;
+
+  start = c;
+  double x = util::atof(c, 10, &c);
+  numEnd = c;
+
+  // skip whitespace
+  while (*c == ' ' || *c == '\n' || *c == '\t' || *c == '\r') c++;
+
+  if (strict && numEnd != start && c == numEnd && *c && *c != ',' && *c != ')')
+    x = std::numeric_limits<double>::quiet_NaN();
+
+  start = c;
+  double y = util::atof(c, 10, &c);
+
+  double m = 0;
+
+  if (strict) {
+    numEnd = c;
+
+    // skip whitespace
+    while (*c == ' ' || *c == '\n' || *c == '\t' || *c == '\r') c++;
+
+    if (numEnd != start && c == numEnd && *c && *c != ',' && *c != ')')
+      y = std::numeric_limits<double>::quiet_NaN();
+
+    // there might be an optional measurement (or a z coordinate)
+    if (*c == '+' || *c == '-' || *c == '.' || (*c >= '0' && *c <= '9'))
+      m = parseMeasurement(c);
+  }
+
+  return {x, y, m};
 }
 
 // _____________________________________________________________________________
 template <typename T, typename F>
-Line<T> lineFromWKTProj(const char *c, const char **endr, F projFunc,
-                        CRSType sourceCRS, bool strict) {
-  Line<T> line;
-  const char *start = c;
-  c = strchr(c, '(');
+Line<T> lineFromWKTProj(const char* c, const char** endr, F projFunc,
+                        CRSType sourceCRS, bool strict, bool allowSinglePoint,
+                        bool allowPrefix) {
+  const char* start = c;
+
+  if (strict && !allowPrefix) {
+    while (*c && *c != '(') {
+      if (*c == 'e' || *c == 'E') {
+        c = 0;
+        break;
+      }
+      if (!(*c <= '\'' &&
+            (*c == ' ' || *c == '\n' || *c == '\t' || *c == '\r'))) {
+        wktParseFail("expected '(' or EMPTY", c);
+      }
+      c++;
+    }
+    if (c && !*c) c = 0;
+  } else {
+    c = strchr(c, '(');
+  }
+
   if (!c) {
     if (endr) (*endr) = 0;
     if (strict && !isEmptyWKT(start))
-      throw WKTParseException(
-          "Could not parse WKT linestring, expected '(' or EMPTY");
-    return line;  // parse error, or EMPTY
+      wktParseFail("expected '(' or EMPTY", start);
+    return {};
   }
   c++;
 
-  auto end = strchr(c, ')');
-  if (endr) (*endr) = end;
-  if (!end) {
-    if (endr) (*endr) = 0;
-    if (strict)
-      throw WKTParseException("Could not parse WKT linestring, missing ')'");
-    return line;  // parse error
-  }
+  const char* close = strchr(c, ')');
 
-  line.reserve((end - c) / 20);
+  Line<T> line;
+  if (close) line.reserve((close - c) / 20);
 
   while (true) {
-    const char *p;
-    double x = util::atof(c, 10, &p);
+    double x, y, m;
+    const char* coordStart = c;
+    std::tie(x, y, m) = parseWKTPoint(c, strict);
 
-    if (std::isnan(x))
-      while (p < end && !strchr(" \n\t\r,", *p)) p++;
-
-    if (p >= end || !(*p == ' ' || *p == '\n' || *p == '\t' || *p == '\r')) {
-      if (strict)
-        throw WKTParseException(
-            "Could not parse WKT linestring, expected coordinate pair");
-      return {};  // parse error
-    }
-
-    while (*p == ' ' || *p == '\n' || *p == '\t' || *p == '\r') p++;
-
-    if (strict && (*p == ')' || *p == ','))
-      throw WKTParseException(
-          "Could not parse WKT linestring, expected coordinate pair");
-
-    double y = util::atof(p, 10, &p);
-
-    if (std::isnan(x) || std::isnan(y)) {
-      if (strict)
-        throw WKTParseException(
-            "Could not parse WKT linestring, coordinate is not a number");
+    if (std::isnan(x) || std::isnan(y) || (strict && std::isnan(m))) {
+      if (strict) wktParseFail("coordinate is not a number", coordStart);
     } else {
+      if (strict && *c != ',' && *c != ')')
+        wktParseFail("expected ',' or ')'", c);
+
       // in non strict mode, simply skip NaN values
       line.push_back(projFunc(util::geo::DPoint(x, y), sourceCRS));
     }
 
-    while (p < end && *p != ',') p++;
-    if (p >= end) break;
-    c = p + 1;
+    while (*c && *c != ',' && *c != ')') c++;
+
+    if (!*c) {
+      if (endr) (*endr) = 0;
+      if (strict) wktParseFail("missing ')'");
+      return line;
+    }
+
+    if (*c == ')') break;
+    c++;
   }
+
+  if (endr) (*endr) = c;
+
+  if (strict && !allowSinglePoint && line.size() == 1) {
+    wktParseFail("line/ring without a full segment");
+  }
+
   return line;
 }
 
@@ -4681,12 +4809,18 @@ MultiLine<T> multiLineFromWKT(const char *c, const char **endr, bool strict) {
 template <typename T, typename F>
 MultiPoint<T> multiPointFromWKTProj(const char *c, const char **endr,
                                     F projFunc, bool strict) {
+  bool checkEnd = strict && !endr;
+
   // If any previous function was called with 'endr = 0' it first needs to be
   // replaced, such that 'getCRSType' can correctly update 'endr'.
   const char *replacement = nullptr;
   endr = (endr != nullptr) ? endr : &replacement;
   CRSType sourceCRS = getCRSType(c, endr);
-  return multiPointFromWKTProj<T, F>(*endr, endr, projFunc, sourceCRS, strict);
+  if (sourceCRS == UNSUPPORTED) wktParseFail("unsupported CRS");
+  auto ret =
+      multiPointFromWKTProj<T, F>(*endr, endr, projFunc, sourceCRS, strict);
+  if (checkEnd) checkWKTEnd(*endr);
+  return ret;
 }
 
 // _____________________________________________________________________________
@@ -4701,14 +4835,12 @@ MultiPoint<T> multiPointFromWKTProj(const char *c, const char **endr,
 
     if (first && (*first == '(' || isEmptyWKTMember(first))) {
       // MULTIPOINT((1 1), (2 2)) syntax, members may be EMPTY
-      const auto &mline =
-          multiLineFromWKTProj<T, F>(c, endr, projFunc, sourceCRS, true);
+      const auto& mline = multiLineFromWKTProj<T, F>(c, endr, projFunc,
+                                                     sourceCRS, strict, true);
       MultiPoint<T> ret;
       for (const auto &l : mline) {
         if (l.size() != 1)
-          throw WKTParseException(
-              "Could not parse WKT multipoint, expected a single coordinate "
-              "pair per point");
+          wktParseFail("expected single coordinate pair per point");
         ret.push_back(l[0]);
       }
       return ret;
@@ -4716,11 +4848,12 @@ MultiPoint<T> multiPointFromWKTProj(const char *c, const char **endr,
 
     // MULTIPOINT(1 1, 2 2) syntax, or EMPTY
     return MultiPoint<T>(
-        lineFromWKTProj<T, F>(c, endr, projFunc, sourceCRS, true));
+        lineFromWKTProj<T, F>(c, endr, projFunc, sourceCRS, strict, true));
   }
 
   // try MULTIPOINT((1 1), (2 2)) syntax
-  const auto &mline = multiLineFromWKTProj<T, F>(c, endr, projFunc, sourceCRS);
+  const auto& mline =
+      multiLineFromWKTProj<T, F>(c, endr, projFunc, sourceCRS, strict, true);
 
   MultiPoint<T> ret;
   for (const auto &l : mline) {
@@ -4730,7 +4863,7 @@ MultiPoint<T> multiPointFromWKTProj(const char *c, const char **endr,
   if (ret.size()) return ret;
 
   // try MULTIPOINT(1 1, 2 2) syntax
-  const auto &line = lineFromWKTProj<T, F>(c, endr, projFunc, sourceCRS);
+  auto line = lineFromWKTProj<T, F>(c, endr, projFunc, sourceCRS, strict, true);
   if (line.size() > 0) return MultiPoint<T>(std::move(line));
 
   return ret;
@@ -4766,64 +4899,52 @@ MultiPoint<T> multiPointFromWKTProj(const std::string &wkt, F &&projFunc,
 template <typename T, typename F>
 Point<T> pointFromWKTProj(const char *c, const char **endr, F projFunc,
                           bool strict) {
+  bool checkEnd = strict && !endr;
+
   // If any previous function was called with 'endr = 0' it first needs to be
   // replaced, such that 'getCRSType' can correctly update 'endr'.
   const char *replacement = nullptr;
   endr = (endr != nullptr) ? endr : &replacement;
   CRSType sourceCRS = getCRSType(c, endr);
-  return pointFromWKTProj<T, F>(*endr, endr, projFunc, sourceCRS, strict);
+  if (sourceCRS == UNSUPPORTED) wktParseFail("unsupported CRS");
+  auto ret = pointFromWKTProj<T, F>(*endr, endr, projFunc, sourceCRS, strict);
+  if (checkEnd) checkWKTEnd(*endr);
+  return ret;
 }
 
 // _____________________________________________________________________________
 template <typename T, typename F>
 Point<T> pointFromWKTProj(const char *c, const char **endr, F projFunc,
                           CRSType sourceCRS, bool strict) {
-  const char *start = c;
-  c = strchr(c, '(');
+  const char* start = c;
+  while (*c && *c != '(') c++;
+  if (!*c) c = 0;
   if (!c) {
     if (endr) (*endr) = 0;
     if (strict) {
-      if (isEmptyWKT(start))
-        throw WKTParseException(
-            "Could not parse WKT point, empty point not allowed");
-      throw WKTParseException("Could not parse WKT point, expected '('");
+      if (isEmptyWKT(start)) wktParseFail("empty point not representable");
+      wktParseFail("expected '('");
     }
     return {0, 0};
   }
 
   c += 1;
 
-  const char *end = strchr(c, ')');
-  if (strict && !end)
-    throw WKTParseException("Could not parse WKT point, missing ')'");
+  double x, y, m;
+  const char* coordStart = c;
+  std::tie(x, y, m) = parseWKTPoint(c, strict);
 
-  const char *p;
-  double x = util::atof(c, 10, &p);
+  if (std::isnan(x) || std::isnan(y) || (strict && std::isnan(m))) {
+    if (strict) wktParseFail("coordinate is not a number", coordStart);
 
-  if (std::isnan(x))
-    while (*p && !strchr(" \n\t\r,)", *p)) p++;
-
-  if ((end && p >= end) ||
-      !(*p == ' ' || *p == '\n' || *p == '\t' || *p == '\r')) {
-    if (strict)
-      throw WKTParseException(
-          "Could not parse WKT point, expected coordinate pair");
-    return {0, 0};  // TODO!
+    // set end ptr if requested
+    if (endr) (*endr) = strchr(c, ')');
+    return {0, 0};
   }
 
-  while (*p == ' ' || *p == '\n' || *p == '\t' || *p == '\r') p++;
+  if (strict && *c != ')') wktParseFail("missing closing ')'", c);
 
-  if (strict && (*p == ')' || *p == ','))
-    throw WKTParseException(
-        "Could not parse WKT point, expected coordinate pair");
-
-  double y = util::atof(p, 10, &p);
-
-  if (strict && (std::isnan(x) || std::isnan(y)))
-    throw WKTParseException(
-        "Could not parse WKT point, coordinate is not a number");
-
-  if (endr) (*endr) = strchr(p, ')');
+  if (endr) (*endr) = *c == ')' ? c : strchr(c, ')');
 
   return projFunc(util::geo::DPoint(x, y), sourceCRS);
 }
@@ -4843,13 +4964,13 @@ Point<T> pointFromWKT(const char *c, const char **endr, bool strict) {
 
 // _____________________________________________________________________________
 template <typename T>
-Point<T> pointFromWKT(std::string wkt, bool strict) {
+Point<T> pointFromWKT(const std::string& wkt, bool strict) {
   return pointFromWKT<T>(wkt.c_str(), 0, strict);
 }
 
 // _____________________________________________________________________________
 template <typename T, typename F, typename>
-Point<T> pointFromWKTProj(std::string wkt, F &&projFunc, bool strict) {
+Point<T> pointFromWKTProj(const std::string& wkt, F&& projFunc, bool strict) {
   return pointFromWKTProj<T>(wkt.c_str(), 0, projFunc, strict);
 }
 
@@ -4857,47 +4978,83 @@ Point<T> pointFromWKTProj(std::string wkt, F &&projFunc, bool strict) {
 template <typename T, typename F>
 Polygon<T> polygonFromWKTProj(const char *c, const char **endr, F projFunc,
                               bool strict) {
+  bool checkEnd = strict && !endr;
+
   // If any previous function was called with 'endr = 0' it first needs to be
   // replaced, such that 'getCRSType' can correctly update 'endr'.
   const char *replacement = nullptr;
   endr = (endr != nullptr) ? endr : &replacement;
   CRSType sourceCRS = getCRSType(c, endr);
-  return polygonFromWKTProj<T, F>(*endr, endr, projFunc, sourceCRS, strict);
+  if (sourceCRS == UNSUPPORTED) wktParseFail("unsupported CRS");
+  auto ret = polygonFromWKTProj<T, F>(*endr, endr, projFunc, sourceCRS, strict);
+  if (checkEnd) checkWKTEnd(*endr);
+  return ret;
 }
 
 // _____________________________________________________________________________
 template <typename T, typename F>
-Polygon<T> polygonFromWKTProj(const char *c, const char **endr, F projFunc,
-                              CRSType sourceCRS, bool strict) {
-  const char *start = c;
-  c = strchr(c, '(');
+Polygon<T> polygonFromWKTProj(const char* c, const char** endr, F projFunc,
+                              CRSType sourceCRS, bool strict,
+                              bool allowPrefix) {
+  const char* start = c;
+
+  if (strict && !allowPrefix) {
+    while (*c && *c != '(') {
+      if (*c == 'e' || *c == 'E') {
+        c = 0;
+        break;
+      }
+      if (!(*c <= ' ' &&
+            (*c == ' ' || *c == '\n' || *c == '\t' || *c == '\r'))) {
+        wktParseFail("expected '(' or EMPTY", c);
+      }
+      c++;
+    }
+    if (c && !*c) c = 0;
+  } else {
+    c = strchr(c, '(');
+  }
+
   if (!c) {
     if (endr) (*endr) = 0;
     if (strict && !isEmptyWKT(start))
-      throw WKTParseException(
-          "Could not parse WKT polygon, expected '(' or EMPTY");
+      wktParseFail("expected '(' or EMPTY", start);
     return {};  // parse error, or EMPTY
   }
   c += 1;
 
+  if (strict) {
+    // only whitespace allowed before the first ring
+    const char* r = c;
+    while (*r <= ' ' && (*r == ' ' || *r == '\n' || *r == '\t' || *r == '\r'))
+      r++;
+    if (*r != '(') wktParseFail("expected ring", c);
+  }
+
   size_t i = 0;
   Polygon<T> poly;
   while ((c = strchr(c, '('))) {
-    const char *end = 0;
-    const auto &line =
-        lineFromWKTProj<T, F>(c, &end, projFunc, sourceCRS, strict);
+    const char* end = 0;
+    auto line = lineFromWKTProj<T, F>(c, &end, projFunc, sourceCRS, strict,
+                                      !strict, strict);
 
     if (!end) {
       if (endr) (*endr) = 0;
-      if (strict) throw WKTParseException("Could not parse WKT polygon ring");
+      if (strict) wktParseFail("expected valid ring", c);
       return {};  // parse error
     }
 
     c = end;
 
+    if (strict) {
+      const char* sep = checkWKTMemberEnd(end);
+      if (*sep == ',' && *nextWKTMember(sep) != '(')
+        wktParseFail("expected ring", nextWKTMember(sep));
+    }
+
     if (i == 0)
-      poly.getOuter() = line;
-    else
+      poly.getOuter() = std::move(line);
+    else if (!line.empty())
       poly.getInners().push_back(std::move(line));
     i++;
 
@@ -4907,6 +5064,7 @@ Polygon<T> polygonFromWKTProj(const char *c, const char **endr, F projFunc,
     if ((!cc && q) || (q && cc && q < cc)) {
       // polygon closes at q
       if (endr) (*endr) = q;
+      if (poly.getOuter().empty()) poly.getInners().clear();
       poly.fix();
       return poly;
     }
@@ -4915,10 +5073,11 @@ Polygon<T> polygonFromWKTProj(const char *c, const char **endr, F projFunc,
   }
 
   if (strict) {
-    if (i == 0) throw WKTParseException("Could not parse WKT polygon");
-    throw WKTParseException("Could not parse WKT polygon, missing ')'");
+    if (i == 0) wktParseFail("expected valid polygon");
+    wktParseFail("missing ')'");
   }
 
+  if (poly.getOuter().empty()) poly.getInners().clear();
   poly.fix();
   return poly;
 }
@@ -4938,13 +5097,13 @@ Polygon<T> polygonFromWKT(const char *c, const char **endr, bool strict) {
 
 // _____________________________________________________________________________
 template <typename T>
-Polygon<T> polygonFromWKT(std::string wkt, bool strict) {
+Polygon<T> polygonFromWKT(const std::string& wkt, bool strict) {
   return polygonFromWKT<T>(wkt.c_str(), 0, strict);
 }
 
 // _____________________________________________________________________________
 template <typename T, typename F, typename>
-Polygon<T> polygonFromWKTProj(std::string wkt, F projFunc, bool strict) {
+Polygon<T> polygonFromWKTProj(const std::string& wkt, F projFunc, bool strict) {
   return polygonFromWKTProj<T>(wkt.c_str(), 0, projFunc, strict);
 }
 
@@ -4952,28 +5111,36 @@ Polygon<T> polygonFromWKTProj(std::string wkt, F projFunc, bool strict) {
 template <typename T, typename F>
 MultiLine<T> multiLineFromWKTProj(const char *c, const char **endr, F projFunc,
                                   bool strict) {
+  bool checkEnd = strict && !endr;
+
   // If any previous function was called with 'endr = 0' it first needs to be
   // replaced, such that 'getCRSType' can correctly update 'endr'.
   const char *replacement = nullptr;
   endr = (endr != nullptr) ? endr : &replacement;
   CRSType sourceCRS = getCRSType(c, endr);
-  return multiLineFromWKTProj<T, F>(*endr, endr, projFunc, sourceCRS, strict);
+  if (sourceCRS == UNSUPPORTED) wktParseFail("unsupported CRS");
+  auto ret =
+      multiLineFromWKTProj<T, F>(*endr, endr, projFunc, sourceCRS, strict);
+  if (checkEnd) checkWKTEnd(*endr);
+  return ret;
 }
 
 // _____________________________________________________________________________
 template <typename T, typename F>
-MultiLine<T> multiLineFromWKTProj(const char *c, const char **endr, F projFunc,
-                                  CRSType sourceCRS, bool strict) {
-  const char *start = c;
+MultiLine<T> multiLineFromWKTProj(const char* c, const char** endr, F projFunc,
+                                  CRSType sourceCRS, bool strict,
+                                  bool allowSinglePoint) {
+  const char* start = c;
   c = strchr(c, '(');
   if (!c) {
     if (endr) (*endr) = 0;
     if (strict && !isEmptyWKT(start))
-      throw WKTParseException(
-          "Could not parse WKT multilinestring, expected '(' or EMPTY");
+      wktParseFail("expected '(' or EMPTY", start);
     return {};  // parse error, or EMPTY
   }
   c += 1;
+
+  if (strict && *c == ',') wktParseFail("expected point list or EMPTY", c);
 
   MultiLine<T> ml;
   while (true) {
@@ -4983,25 +5150,23 @@ MultiLine<T> multiLineFromWKTProj(const char *c, const char **endr, F projFunc,
       end = member + 4;  // skip EMPTY member
     } else {
       if (strict && *member != '(')
-        throw WKTParseException(
-            "Could not parse WKT multilinestring, expected linestring or "
-            "EMPTY");
+        wktParseFail("expected point list or EMPTY", member);
       c = strchr(c, '(');
       if (!c) break;
-      const auto &line =
-          lineFromWKTProj<T, F>(c, &end, projFunc, sourceCRS, strict);
+      auto line = lineFromWKTProj<T, F>(c, &end, projFunc, sourceCRS, strict,
+                                        allowSinglePoint, !strict);
       if (!end) break;
       if (line.size() != 0) ml.push_back(std::move(line));
     }
+
+    if (strict) checkWKTMemberEnd(end);
 
     auto nextComma = strchr(end + 1, ',');
     auto nextCloseBracket = strchr(end + 1, ')');
 
     if (!nextComma ||
         (nextComma && nextCloseBracket && nextComma > nextCloseBracket)) {
-      if (strict && !nextCloseBracket)
-        throw WKTParseException(
-            "Could not parse WKT multilinestring, missing ')'");
+      if (strict && !nextCloseBracket) wktParseFail("missing ')'");
       if (endr) (*endr) = nextCloseBracket;
       return ml;
     }
@@ -5009,9 +5174,7 @@ MultiLine<T> multiLineFromWKTProj(const char *c, const char **endr, F projFunc,
     c = nextComma;
   }
 
-  if (strict)
-    throw WKTParseException(
-        "Could not parse WKT multilinestring, expected linestring");
+  if (strict) wktParseFail("expected point list");
 
   return ml;
 }
@@ -5020,13 +5183,18 @@ MultiLine<T> multiLineFromWKTProj(const char *c, const char **endr, F projFunc,
 template <typename T, typename F>
 MultiPolygon<T> multiPolygonFromWKTProj(const char *c, const char **endr,
                                         F projFunc, bool strict) {
+  bool checkEnd = strict && !endr;
+
   // If any previous function was called with 'endr = 0' it first needs to be
   // replaced, such that 'getCRSType' can correctly update 'endr'.
   const char *replacement = nullptr;
   endr = (endr != nullptr) ? endr : &replacement;
   CRSType sourceCRS = getCRSType(c, endr);
-  return multiPolygonFromWKTProj<T, F>(*endr, endr, projFunc, sourceCRS,
-                                       strict);
+  if (sourceCRS == UNSUPPORTED) wktParseFail("unsupported CRS");
+  auto ret =
+      multiPolygonFromWKTProj<T, F>(*endr, endr, projFunc, sourceCRS, strict);
+  if (checkEnd) checkWKTEnd(*endr);
+  return ret;
 }
 
 // _____________________________________________________________________________
@@ -5039,11 +5207,12 @@ MultiPolygon<T> multiPolygonFromWKTProj(const char *c, const char **endr,
   if (!c) {
     if (endr) (*endr) = 0;
     if (strict && !isEmptyWKT(start))
-      throw WKTParseException(
-          "Could not parse WKT multipolygon, expected '(' or EMPTY");
+      wktParseFail("expected '(' or EMPTY", start);
     return {};  // parse error, or EMPTY
   }
   c += 1;
+
+  if (strict && *c == ',') wktParseFail("expected polygon or EMPTY", c);
 
   MultiPolygon<T> mp;
   while (true) {
@@ -5053,26 +5222,25 @@ MultiPolygon<T> multiPolygonFromWKTProj(const char *c, const char **endr,
       end = member + 4;  // skip EMPTY member
     } else {
       if (strict && *member != '(')
-        throw WKTParseException(
-            "Could not parse WKT multipolygon, expected polygon or EMPTY");
+        wktParseFail("expected polygon or EMPTY", member);
       c = strchr(c, '(');
       if (!c) break;
-      const auto &poly =
-          polygonFromWKTProj<T, F>(c, &end, projFunc, sourceCRS, strict);
+      auto poly = polygonFromWKTProj<T, F>(c, &end, projFunc, sourceCRS, strict,
+                                           !strict);
 
       if (!end) break;
 
       if (poly.getOuter().size() > 1) mp.push_back(std::move(poly));
     }
 
+    if (strict) checkWKTMemberEnd(end);
+
     auto nextComma = strchr(end + 1, ',');
     auto nextCloseBracket = strchr(end + 1, ')');
 
     if (!nextComma ||
         (nextComma && nextCloseBracket && nextComma > nextCloseBracket)) {
-      if (strict && !nextCloseBracket)
-        throw WKTParseException(
-            "Could not parse WKT multipolygon, missing ')'");
+      if (strict && !nextCloseBracket) wktParseFail("missing ')'");
       if (endr) (*endr) = nextCloseBracket;
       return mp;
     }
@@ -5080,9 +5248,7 @@ MultiPolygon<T> multiPolygonFromWKTProj(const char *c, const char **endr,
     c = nextComma;
   }
 
-  if (strict)
-    throw WKTParseException(
-        "Could not parse WKT multipolygon, expected polygon");
+  if (strict) wktParseFail("expected polygon");
 
   return mp;
 }
@@ -5103,14 +5269,19 @@ MultiPolygon<T> multiPolygonFromWKT(const char *c, const char **endr,
 
 // _____________________________________________________________________________
 template <typename T, typename F>
-Collection<T> collectionFromWKTProj(const char *c, const char **endr,
-                                    F &&projFunc, bool strict) {
+Collection<T> collectionFromWKTProj(const char* c, const char** endr,
+                                    F&& projFunc, bool strict) {
+  bool checkEnd = strict && !endr;
+
   // If any previous function was called with 'endr = 0' it first needs to be
   // replaced, such that 'getCRSType' can correctly update 'endr'.
   const char *replacement = nullptr;
   endr = (endr != nullptr) ? endr : &replacement;
   CRSType sourceCRS = getCRSType(c, endr);
-  return collectionFromWKTProj<T, F>(c, endr, projFunc, sourceCRS, strict);
+  if (sourceCRS == UNSUPPORTED) wktParseFail("unsupported CRS");
+  auto ret = collectionFromWKTProj<T, F>(c, endr, projFunc, sourceCRS, strict);
+  if (checkEnd) checkWKTEnd(*endr);
+  return ret;
 }
 
 // _____________________________________________________________________________
@@ -5119,140 +5290,145 @@ Collection<T> collectionFromWKTProj(const char *c, const char **endr,
                                     F projFunc, CRSType sourceCRS,
                                     bool strict) {
   Collection<T> col;
-  const char *start = c;
+  col.reserve(4);
+  const char* start = c;
   c = strchr(c, '(');
   if (!c) {
     if (endr) (*endr) = 0;
     if (strict && !isEmptyWKT(start))
-      throw WKTParseException(
-          "Could not parse WKT geometry collection, expected '(' or EMPTY");
+      wktParseFail("expected '(' or EMPTY", start);
     return col;
   }
-  const char *lastEnd = c;
+  const char* lastEnd = c;
+
   do {
     c++;
-    while ((*c == ' ' || *c == '\n' || *c == '\t' || *c == '\r'))
+    while (*c <= ' ' && (*c == ' ' || *c == '\n' || *c == '\t' || *c == '\r'))
       c++;  // skip possible whitespace
 
-    auto wktType = getWKTType(c, &c);
+    // quotes are only allowed around the whole WKT
+    auto wktType =
+        strict && (*c == '"' || *c == '\'') ? NONE : getWKTType(c, &c, strict);
 
     if (wktType == NONE) {
       if (endr) (*endr) = 0;
-      if (strict)
-        throw WKTParseException(
-            "Could not parse WKT geometry collection, unknown geometry type");
+      if (strict) wktParseFail("unknown geometry type");
       return {};
     }
 
-    const char *p = c;
-    while (*p &&
-           (strchr(" \n\t\r", *p) || toupper(*p) == 'Z' || toupper(*p) == 'M'))
+    const char* p = c;
+    while (((*p <= '\'' && (*p == ' ' || *p == '\n' || *p == '\t' ||
+                            *p == '\r' || *p == '"' || *p == '\'')) ||
+            *p == 'Z' || *p == 'z' || *p == 'M' || *p == 'm'))
       p++;
     if (isEmptyWKTMember(p)) {
       lastEnd = p + 4;
-      c = strchr(p + 5, ',');
-      continue;
-    }
-
-    if (wktType == POINT) {
-      const char *end = 0;
-      const auto &point =
+      if (strict) checkWKTMemberEnd(lastEnd);
+    } else if (wktType == POINT) {
+      const char* end = 0;
+      const auto& point =
           pointFromWKTProj<T, F>(c, &end, projFunc, sourceCRS, strict);
 
       if (!end) {
         if (endr) (*endr) = 0;
-        if (strict)
-          throw WKTParseException(
-              "Could not parse WKT geometry collection member");
+        if (strict) wktParseFail("expected valid WKT point", c);
         return {};
       }
       lastEnd = end;
+      if (strict) checkWKTMemberEnd(end);
 
       col.push_back(point);
-      c = const_cast<char *>(strchr(end, ','));
     } else if (wktType == POLYGON) {
-      const char *end = 0;
-      const auto &poly =
-          polygonFromWKTProj<T, F>(c, &end, projFunc, sourceCRS, strict);
+      const char* end = 0;
+      auto poly = polygonFromWKTProj<T, F>(c, &end, projFunc, sourceCRS, strict,
+                                           !strict);
 
       if (!end) {
         if (endr) (*endr) = 0;
-        if (strict)
-          throw WKTParseException(
-              "Could not parse WKT geometry collection member");
+        if (strict) wktParseFail("expected valid WKT polygon", c);
         return {};
       }
       lastEnd = end;
-      if (poly.getOuter().size() > 1) col.push_back(poly);
-      c = const_cast<char *>(strchr(end, ','));
+      if (strict) checkWKTMemberEnd(end);
+      if (poly.getOuter().size() > 1) col.emplace_back(std::move(poly));
     } else if (wktType == LINESTRING) {
-      const char *end = 0;
-      const auto &line =
-          lineFromWKTProj<T, F>(c, &end, projFunc, sourceCRS, strict);
+      const char* end = 0;
+      auto line =
+          lineFromWKTProj<T, F>(c, &end, projFunc, sourceCRS, strict, !strict);
 
       if (!end) {
         if (endr) (*endr) = 0;
-        if (strict)
-          throw WKTParseException(
-              "Could not parse WKT geometry collection member");
+        if (strict) wktParseFail("expected valid WKT linestring", c);
         return {};
       }
       lastEnd = end;
-      if (line.size() > 1) col.push_back(line);
-      c = const_cast<char *>(strchr(end, ','));
+      if (strict) checkWKTMemberEnd(end);
+      if (line.size() > 1) col.emplace_back(std::move(line));
     } else if (wktType == MULTIPOINT) {
-      const char *end = 0;
-      const auto &mp =
+      const char* end = 0;
+      auto mp =
           multiPointFromWKTProj<T, F>(c, &end, projFunc, sourceCRS, strict);
 
       if (!end) {
         if (endr) (*endr) = 0;
-        if (strict)
-          throw WKTParseException(
-              "Could not parse WKT geometry collection member");
+        if (strict) wktParseFail("expected valid WKT multipoint", c);
         return {};
       }
       lastEnd = end;
-      if (mp.size()) col.push_back(mp);
-      c = const_cast<char *>(strchr(end, ','));
+      if (strict) checkWKTMemberEnd(end);
+      if (mp.size()) col.emplace_back(std::move(mp));
     } else if (wktType == MULTIPOLYGON) {
-      const char *end = 0;
-      const auto &mp =
+      const char* end = 0;
+      auto mp =
           multiPolygonFromWKTProj<T, F>(c, &end, projFunc, sourceCRS, strict);
 
       if (!end) {
         if (endr) (*endr) = 0;
-        if (strict)
-          throw WKTParseException(
-              "Could not parse WKT geometry collection member");
+        if (strict) wktParseFail("expected valid WKT multipolygon", c);
         return {};
       }
       lastEnd = end;
-      if (mp.size()) col.push_back(mp);
-      c = const_cast<char *>(strchr(end, ','));
+      if (strict) checkWKTMemberEnd(end);
+      if (mp.size()) col.emplace_back(std::move(mp));
     } else if (wktType == MULTILINESTRING) {
-      const char *end = 0;
-      const auto &ml =
+      const char* end = 0;
+      auto ml =
           multiLineFromWKTProj<T, F>(c, &end, projFunc, sourceCRS, strict);
 
       if (!end) {
         if (endr) (*endr) = 0;
-        if (strict)
-          throw WKTParseException(
-              "Could not parse WKT geometry collection member");
+        if (strict) wktParseFail("expected valid WKT multilinestring", c);
         return {};
       }
       lastEnd = end;
-      if (ml.size()) col.push_back(ml);
-      c = const_cast<char *>(strchr(end, ','));
+      if (strict) checkWKTMemberEnd(end);
+      if (ml.size()) col.emplace_back(std::move(ml));
+    } else if (wktType == COLLECTION) {
+      const char* end = 0;
+      auto nested =
+          collectionFromWKTProj<T, F>(c, &end, projFunc, sourceCRS, strict);
+
+      if (!end) {
+        if (endr) (*endr) = 0;
+        if (strict) wktParseFail("expected valid WKT collection", c);
+        return {};
+      }
+      lastEnd = end;
+      if (strict) checkWKTMemberEnd(end);
+      if (nested.size()) col.emplace_back(std::move(nested));
     }
-  } while (c && *c);
 
-  if (strict && !strchr(lastEnd + 1, ')'))
-    throw WKTParseException(
-        "Could not parse WKT geometry collection, missing ')'");
+    const char* nextComma = strchr(lastEnd + 1, ',');
+    const char* nextClose = strchr(lastEnd + 1, ')');
+    if (!nextComma || (nextClose && nextClose < nextComma)) break;
+    c = nextComma;
+  } while (true);
 
-  if (endr) (*endr) = c ? strchr(c, ')') : nullptr;
+  const char* close = strchr(lastEnd + 1, ')');
+
+  if (strict && !close) wktParseFail("missing ')'");
+
+  if (endr) (*endr) = close;
 
   return col;
 }
@@ -5958,7 +6134,7 @@ Polygon<T> convexHull(const LineSegment<T> &b) {
 template <typename T>
 Polygon<T> convexHull(const RotatedBox<T> &b) {
   auto p = convexHull(b.getBox());
-  p = rotate(p, b.getDegree(), b.getCenter());
+  p = rotate(std::move(p), b.getDegree(), b.getCenter());
   return p;
 }
 
@@ -6100,26 +6276,26 @@ Box<T> extendBox(const Collection<T> &collection, Box<T> b) {
 
 // _____________________________________________________________________________
 template <typename T>
-Point<T> pointAt(const Line<T> l, double at) {
+Point<T> pointAt(const Line<T>& l, double at) {
   return pointAtDist(l, at * len(l));
 }
 
 // _____________________________________________________________________________
 template <typename T>
-Point<T> pointAt(const Line<T> l, double at, size_t *lastI, double *totPos) {
+Point<T> pointAt(const Line<T>& l, double at, size_t* lastI, double* totPos) {
   return pointAtDist(l, at * len(l), lastI, totPos);
 }
 
 // _____________________________________________________________________________
 template <typename T>
-Point<T> pointAtDist(const Line<T> l, double atDist) {
+Point<T> pointAtDist(const Line<T>& l, double atDist) {
   return pointAtDist(l, atDist, nullptr, nullptr);
 }
 
 // _____________________________________________________________________________
 template <typename T>
-Point<T> pointAtDist(const Line<T> l, double atDist, size_t *lastI,
-                     double *totPos) {
+Point<T> pointAtDist(const Line<T>& l, double atDist, size_t* lastI,
+                     double* totPos) {
   if (l.size() == 1) {
     if (lastI) *lastI = 0;
     if (totPos) *totPos = 0;
@@ -6347,9 +6523,9 @@ RotatedBox<T> getFullEnvelope(std::vector<Geometry<T>> pol) {
 
   // rotate in 5 deg steps
   for (int i = 1; i < 360; i += 1) {
-    pol = rotate(pol, 1, center);
+    pol = rotate(std::move(pol), 1, center);
     Polygon<T> hull = convexHull(pol);
-    ml.push_back(hull);
+    ml.push_back(std::move(hull));
     Box<T> e = getBoundingBox(pol);
     if (area(tmpBox) > area(e)) {
       tmpBox = e;
@@ -6364,10 +6540,10 @@ RotatedBox<T> getFullEnvelope(std::vector<Geometry<T>> pol) {
 
 // _____________________________________________________________________________
 template <template <typename> class Geometry, typename T>
-RotatedBox<T> getFullEnvelope(const Geometry<T> pol) {
+RotatedBox<T> getFullEnvelope(const Geometry<T>& pol) {
   std::vector<Geometry<T>> mult;
   mult.push_back(pol);
-  return getFullEnvelope(mult);
+  return getFullEnvelope(std::move(mult));
 }
 
 // _____________________________________________________________________________
@@ -6378,14 +6554,14 @@ RotatedBox<T> getOrientedEnvelopeAvg(MultiLine<T> ml) {
   RotatedBox<T> rbox = getFullEnvelope(ml);
   Point<T> center = centroid(rbox.getBox());
 
-  ml = rotate(ml, -rbox.getDegree() - 45, center);
+  ml = rotate(std::move(ml), -rbox.getDegree() - 45, center);
 
   double bestDeg = -45;
   double score = parallelity(rbox.getBox(), ml);
 
   double i = -45;
   while (i <= 45) {
-    ml = rotate(ml, -.5, center);
+    ml = rotate(std::move(ml), -.5, center);
     double p = parallelity(rbox.getBox(), ml);
     if (parallelity(rbox.getBox(), ml) > score) {
       bestDeg = i;
@@ -6400,10 +6576,10 @@ RotatedBox<T> getOrientedEnvelopeAvg(MultiLine<T> ml) {
   // move the box along 45deg angles from its origin until it fits the ml
   // = until the intersection of its hull and the box is largest
   Polygon<T> p = convexHull(rbox);
-  p = rotate(p, -rbox.getDegree(), rbox.getCenter());
+  p = rotate(std::move(p), -rbox.getDegree(), rbox.getCenter());
 
   Polygon<T> hull = convexHull(orig);
-  hull = rotate(hull, -rbox.getDegree(), rbox.getCenter());
+  hull = rotate(std::move(hull), -rbox.getDegree(), rbox.getCenter());
 
   Box<T> box = getBoundingBox(hull);
   rbox = RotatedBox<T>(box, rbox.getDegree(), rbox.getCenter());
@@ -6695,19 +6871,21 @@ Ring<T> densifyRingY(const Ring<T> &l, double d) {
 
 // _____________________________________________________________________________
 template <typename T>
-Polygon<T> densifyX(const Polygon<T> &p, double d) {
-  Polygon<T> ret = p;
+Polygon<T> densifyX(const Polygon<T>& p, double d) {
+  Polygon<T> ret;
   ret.getOuter() = densifyRingX(p.getOuter(), d);
-  for (auto &inner : ret.getInners()) inner = densifyRingX(inner, d);
+  for (const auto& inner : p.getInners())
+    ret.getInners().push_back(densifyRingX(inner, d));
   return ret;
 }
 
 // _____________________________________________________________________________
 template <typename T>
-Polygon<T> densifyY(const Polygon<T> &p, double d) {
-  Polygon<T> ret = p;
+Polygon<T> densifyY(const Polygon<T>& p, double d) {
+  Polygon<T> ret;
   ret.getOuter() = densifyRingY(p.getOuter(), d);
-  for (auto &inner : ret.getInners()) inner = densifyRingY(inner, d);
+  for (const auto& inner : p.getInners())
+    ret.getInners().push_back(densifyRingY(inner, d));
   return ret;
 }
 
@@ -6935,6 +7113,11 @@ Point<T> projectToCRS(const Point<T> &p, CRSType baseCRS, CRSType goalCRS) {
 }
 
 // _____________________________________________________________________________
+[[noreturn]] __attribute__((noinline, cold)) inline void unsupportedCRSFail() {
+  throw std::runtime_error("Projection to unsupported CRS type.");
+}
+
+// _____________________________________________________________________________
 template <typename T>
 Point<T> projectToCRS84(const Point<T> &p, CRSType baseCRS) {
   switch (baseCRS) {
@@ -6945,8 +7128,7 @@ Point<T> projectToCRS84(const Point<T> &p, CRSType baseCRS) {
     case util::geo::CRSType::WEB_MERCATOR:
       return webMercToLatLng(p);
     default:
-      throw std::runtime_error(
-          "The CRS type of the input Point is not supported (yet).");
+      unsupportedCRSFail();
   }
 }
 
@@ -6961,8 +7143,7 @@ Point<T> projectToWGS84(const Point<T> &p, CRSType baseCRS) {
     case util::geo::CRSType::WEB_MERCATOR:
       return lngLatToLatLng(webMercToLatLng(p));
     default:
-      throw std::runtime_error(
-          "The CRS type of the input Point is not supported (yet).");
+      unsupportedCRSFail();
   }
 }
 
@@ -6977,8 +7158,7 @@ Point<T> projectToWebMerc(const Point<T> &p, CRSType baseCRS) {
     case util::geo::CRSType::WEB_MERCATOR:
       return p;
     default:
-      throw std::runtime_error(
-          "The CRS type of the input Point is not supported (yet).");
+      unsupportedCRSFail();
   }
 }
 
@@ -7267,8 +7447,8 @@ double withinDist(const std::vector<XSortedTuple<T>> &ls1,
 // _____________________________________________________________________________
 template <typename T, typename PF, typename DF>
 std::pair<double, std::pair<bool, bool>> withinDist(
-    const XSortedRing<T> &p1, const XSortedRing<T> &p2, double maxDist,
-    PF &&paddingFunc, double maxEuclideanDist, DF &&distFunc, bool checkP2InP1,
+    const XSortedRing<T>& p1, const XSortedRing<T>& p2, double maxDist,
+    PF&& paddingFunc, double maxEuclideanDist, DF&& distFunc, bool checkP2InP1,
     bool checkP1InP2) {
   if (p1.rawRing().size() == 1) {
     auto a = withinDist(p1.rawRing().front().p, p2, maxDist, paddingFunc,
@@ -7343,9 +7523,9 @@ std::pair<double, bool> withinDist(const XSortedLine<T> &ls1,
 
 // _____________________________________________________________________________
 template <typename T, typename PF, typename DF>
-double withinDist(const XSortedLine<T> &a, const XSortedPolygon<T> &b,
-                  double maxDist, PF &&paddingFunc, double maxEuclideanDist,
-                  DF &&distFunc) {
+double withinDist(const XSortedLine<T>& a, const XSortedPolygon<T>& b,
+                  double maxDist, PF&& paddingFunc, double maxEuclideanDist,
+                  DF&& distFunc) {
   if (a.empty() || b.empty()) return std::numeric_limits<double>::quiet_NaN();
 
   if (util::geo::dist(a.boundingBox(), b.boundingBox()) > maxEuclideanDist)
@@ -7409,9 +7589,9 @@ double withinDist(const XSortedLine<T> &a, const XSortedPolygon<T> &b,
 
 // _____________________________________________________________________________
 template <typename T, typename PF, typename DF>
-double withinDist(const XSortedPolygon<T> &p1, const XSortedPolygon<T> &p2,
-                  double maxDist, PF &&paddingFunc, double maxEuclideanDist,
-                  DF &&distFunc) {
+double withinDist(const XSortedPolygon<T>& p1, const XSortedPolygon<T>& p2,
+                  double maxDist, PF&& paddingFunc, double maxEuclideanDist,
+                  DF&& distFunc) {
   if (p1.empty() || p2.empty()) return std::numeric_limits<double>::quiet_NaN();
 
   if (util::geo::dist(p1.boundingBox(), p2.boundingBox()) > maxEuclideanDist)
