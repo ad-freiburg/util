@@ -486,9 +486,10 @@ RotatedBox<T> shrink(const RotatedBox<T> &b, double d) {
 
 // _____________________________________________________________________________
 template <typename T>
-util::geo::Point<double> util::geo::appendPoint(
-    std::string &ret, const util::geo::Point<T> &point, uint16_t prec,
-    CRSType sourceCRS, CRSType targetCRS) {
+util::geo::Point<double> appendPoint(std::string &ret,
+                                     const util::geo::Point<T> &point,
+                                     uint16_t prec, CRSType sourceCRS,
+                                     CRSType targetCRS) {
   Point<double> projected =
       projectToCRS(point.asDPoint(), sourceCRS, targetCRS);
   ret.append(formatFloat(projected.getX(), prec));
@@ -499,9 +500,8 @@ util::geo::Point<double> util::geo::appendPoint(
 
 // _____________________________________________________________________________
 template <typename T>
-std::string util::geo::getWKT(const Point<T> &p, uint16_t prec,
-                              CRSType sourceCRS, CRSType targetCRS,
-                              bool hideIri) {
+std::string getWKT(const Point<T> &p, uint16_t prec, CRSType sourceCRS,
+                   CRSType targetCRS, bool hideIri) {
   std::string ret;
   const std::string &iri = hideIri ? emptyIri() : getCrsIri(targetCRS);
   ret.reserve(iri.size() + 6 + prec + 3 + prec + 3 + 1);
@@ -514,16 +514,15 @@ std::string util::geo::getWKT(const Point<T> &p, uint16_t prec,
 
 // _____________________________________________________________________________
 template <typename T>
-std::string util::geo::getWKT(const Point<T> &p, CRSType sourceCRS,
-                              CRSType targetCRS, bool hideIri) {
+std::string getWKT(const Point<T> &p, CRSType sourceCRS, CRSType targetCRS,
+                   bool hideIri) {
   return getWKT(p, 6, sourceCRS, targetCRS, hideIri);
 }
 
 // _____________________________________________________________________________
 template <typename T>
-std::string util::geo::getWKT(const std::vector<Point<T>> &p, uint16_t prec,
-                              CRSType sourceCRS, CRSType targetCRS,
-                              bool hideIri) {
+std::string getWKT(const std::vector<Point<T>> &p, uint16_t prec,
+                   CRSType sourceCRS, CRSType targetCRS, bool hideIri) {
   if (p.size() == 0)
     return hideIri ? "MULTIPOINT EMPTY"
                    : getCrsIri(targetCRS) + "MULTIPOINT EMPTY";
@@ -542,16 +541,15 @@ std::string util::geo::getWKT(const std::vector<Point<T>> &p, uint16_t prec,
 
 // _____________________________________________________________________________
 template <typename T>
-std::string util::geo::getWKT(const std::vector<Point<T>> &p, CRSType sourceCRS,
-                              CRSType targetCRS, bool hideIri) {
+std::string getWKT(const std::vector<Point<T>> &p, CRSType sourceCRS,
+                   CRSType targetCRS, bool hideIri) {
   return getWKT(p, 6, sourceCRS, targetCRS, hideIri);
 }
 
 // _____________________________________________________________________________
 template <typename T>
-std::string util::geo::getWKT(const Line<T> &l, uint16_t prec,
-                              CRSType sourceCRS, CRSType targetCRS,
-                              bool hideIri) {
+std::string getWKT(const Line<T> &l, uint16_t prec, CRSType sourceCRS,
+                   CRSType targetCRS, bool hideIri) {
   if (l.empty())
     return hideIri ? "LINESTRING EMPTY"
                    : getCrsIri(targetCRS) + "LINESTRING EMPTY";
@@ -570,16 +568,15 @@ std::string util::geo::getWKT(const Line<T> &l, uint16_t prec,
 
 // _____________________________________________________________________________
 template <typename T>
-std::string util::geo::getWKT(const Line<T> &l, CRSType sourceCRS,
-                              CRSType targetCRS, bool hideIri) {
+std::string getWKT(const Line<T> &l, CRSType sourceCRS, CRSType targetCRS,
+                   bool hideIri) {
   return getWKT(l, 6, sourceCRS, targetCRS, hideIri);
 }
 
 // _____________________________________________________________________________
 template <typename T>
-std::string util::geo::getWKT(const std::vector<Line<T>> &ls, uint16_t prec,
-                              CRSType sourceCRS, CRSType targetCRS,
-                              bool hideIri) {
+std::string getWKT(const std::vector<Line<T>> &ls, uint16_t prec,
+                   CRSType sourceCRS, CRSType targetCRS, bool hideIri) {
   if (ls.size() == 0)
     return hideIri ? "MULTILINESTRING EMPTY"
                    : getCrsIri(targetCRS) + "MULTILINESTRING EMPTY";
@@ -616,8 +613,8 @@ std::string util::geo::getWKT(const std::vector<Line<T>> &ls, uint16_t prec,
 
 // _____________________________________________________________________________
 template <typename T>
-std::string util::geo::getWKT(const std::vector<Line<T>> &ls, CRSType sourceCRS,
-                              CRSType targetCRS, bool hideIri) {
+std::string getWKT(const std::vector<Line<T>> &ls, CRSType sourceCRS,
+                   CRSType targetCRS, bool hideIri) {
   return getWKT(ls, 6, sourceCRS, targetCRS, hideIri);
 }
 
@@ -704,9 +701,8 @@ std::string getWKT(const Box<T> &l) {
 
 // _____________________________________________________________________________
 template <typename T>
-std::string util::geo::getWKT(const Polygon<T> &p, uint16_t prec,
-                              CRSType sourceCRS, CRSType targetCRS,
-                              bool hideIri) {
+std::string getWKT(const Polygon<T> &p, uint16_t prec, CRSType sourceCRS,
+                   CRSType targetCRS, bool hideIri) {
   if (p.empty())
     return hideIri ? "POLYGON EMPTY" : getCrsIri(targetCRS) + "POLYGON EMPTY";
 
@@ -754,16 +750,15 @@ std::string util::geo::getWKT(const Polygon<T> &p, uint16_t prec,
 
 // _____________________________________________________________________________
 template <typename T>
-std::string util::geo::getWKT(const Polygon<T> &p, CRSType sourceCRS,
-                              CRSType targetCRS, bool hideIri) {
+std::string getWKT(const Polygon<T> &p, CRSType sourceCRS, CRSType targetCRS,
+                   bool hideIri) {
   return getWKT(p, 6, sourceCRS, targetCRS, hideIri);
 }
 
 // _____________________________________________________________________________
 template <typename T>
-std::string util::geo::getWKT(const std::vector<Polygon<T>> &ls, uint16_t prec,
-                              CRSType sourceCRS, CRSType targetCRS,
-                              bool hideIri) {
+std::string getWKT(const std::vector<Polygon<T>> &ls, uint16_t prec,
+                   CRSType sourceCRS, CRSType targetCRS, bool hideIri) {
   if (ls.size() == 0)
     return hideIri ? "MULTIPOLYGON EMPTY"
                    : getCrsIri(targetCRS) + "MULTIPOLYGON EMPTY";
@@ -832,17 +827,15 @@ std::string util::geo::getWKT(const std::vector<Polygon<T>> &ls, uint16_t prec,
 
 // _____________________________________________________________________________
 template <typename T>
-std::string util::geo::getWKT(const std::vector<Polygon<T>> &ls,
-                              CRSType sourceCRS, CRSType targetCRS,
-                              bool hideIri) {
+std::string getWKT(const std::vector<Polygon<T>> &ls, CRSType sourceCRS,
+                   CRSType targetCRS, bool hideIri) {
   return getWKT(ls, 6, sourceCRS, targetCRS, hideIri);
 }
 
 // _____________________________________________________________________________
 template <typename T>
-std::string util::geo::getWKT(const Collection<T> &coll, uint16_t prec,
-                              CRSType sourceCRS, CRSType targetCRS,
-                              bool hideIri) {
+std::string getWKT(const Collection<T> &coll, uint16_t prec, CRSType sourceCRS,
+                   CRSType targetCRS, bool hideIri) {
   if (coll.size() == 0)
     return hideIri ? "GEOMETRYCOLLECTION EMPTY"
                    : getCrsIri(targetCRS) + "GEOMETRYCOLLECTION EMPTY";
@@ -882,8 +875,8 @@ std::string util::geo::getWKT(const Collection<T> &coll, uint16_t prec,
 
 // _____________________________________________________________________________
 template <typename T>
-std::string util::geo::getWKT(const Collection<T> &coll, CRSType sourceCRS,
-                              CRSType targetCRS, bool hideIri) {
+std::string getWKT(const Collection<T> &coll, CRSType sourceCRS,
+                   CRSType targetCRS, bool hideIri) {
   return getWKT(coll, 6, sourceCRS, targetCRS, hideIri);
 }
 
