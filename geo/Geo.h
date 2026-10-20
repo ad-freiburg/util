@@ -116,24 +116,24 @@ typedef XSortedMultiPolygon<int64_t> I64XSortedMultiPolygon;
 
 template <typename T>
 struct IntersectorLinePoly {
-  static uint8_t check(const LineSegment<T>& ls1, int16_t prevLs1Ang, bool,
-                       int16_t nextLs1Ang, bool, const LineSegment<T>& ls2,
+  static uint8_t check(const LineSegment<T> &ls1, int16_t prevLs1Ang, bool,
+                       int16_t nextLs1Ang, bool, const LineSegment<T> &ls2,
                        int16_t prevLs2Ang, bool, int16_t nextLs2Ang, bool);
 };
 
 template <typename T>
 struct IntersectorPoly {
-  static uint8_t check(const LineSegment<T>& ls1, int16_t prevLs1Ang, bool,
-                       int16_t nextLs1Ang, bool, const LineSegment<T>& ls2,
+  static uint8_t check(const LineSegment<T> &ls1, int16_t prevLs1Ang, bool,
+                       int16_t nextLs1Ang, bool, const LineSegment<T> &ls2,
                        int16_t, bool, int16_t, bool);
-  static uint8_t checkOneDir(const LineSegment<T>& ls1, int16_t prevLs1Ang,
-                             int16_t nextLs1Ang, const LineSegment<T>& ls2);
+  static uint8_t checkOneDir(const LineSegment<T> &ls1, int16_t prevLs1Ang,
+                             int16_t nextLs1Ang, const LineSegment<T> &ls2);
 };
 
 template <typename T>
 struct IntersectorLine {
-  static uint8_t check(const LineSegment<T>& ls1, int16_t prevLs1Ang, bool,
-                       int16_t nextLs1Ang, bool, const LineSegment<T>& ls2,
+  static uint8_t check(const LineSegment<T> &ls1, int16_t prevLs1Ang, bool,
+                       int16_t nextLs1Ang, bool, const LineSegment<T> &ls2,
                        int16_t prevLs2Ang, bool, int16_t nextLs2Ang, bool);
 };
 
@@ -158,12 +158,48 @@ enum WKTType : uint8_t {
   COLLECTION = 7
 };
 
-enum CRSType : uint8_t {
+enum class CRSType : uint8_t {
   UNSUPPORTED = 0,
   CRS84 = 1,
   WGS84 = 2,
   WEB_MERCATOR = 3,
 };
+
+inline std::ostream &operator<<(std::ostream &os, CRSType crs) {
+  switch (crs) {
+    case CRSType::CRS84:
+      return os << "CRS84";
+    case CRSType::WGS84:
+      return os << "WGS84";
+    case CRSType::WEB_MERCATOR:
+      return os << "WEB_MERCATOR";
+    default:
+      return os << "UNSUPPORTED";
+  }
+};
+
+inline const std::string &emptyIri() {
+  static const std::string empty{""};
+  return empty;
+}
+
+// The IRIs are stored in lowercase because `getCRSType` compares them via
+// `ascii_strnicmp_lower`, which expects its second argument to already be
+// lowercase.
+constexpr const char crs84IriLower[] =
+    "<http://www.opengis.net/def/crs/ogc/1.3/crs84>";
+constexpr size_t crs84IriLen = sizeof(crs84IriLower) - 1;
+constexpr const char wgs84IriLower[] =
+    "<http://www.opengis.net/def/crs/epsg/0/4326>";
+constexpr size_t wgs84IriLen = sizeof(wgs84IriLower) - 1;
+constexpr const char webMercIriLower[] =
+    "<http://www.opengis.net/def/crs/epsg/0/3857>";
+constexpr size_t webMercIriLen = sizeof(webMercIriLower) - 1;
+// These correct IRIs are used for the `getWKT` functions.
+constexpr const char wgs84Iri[] =
+    "<http://www.opengis.net/def/crs/EPSG/0/4326>";
+constexpr const char webMercIri[] =
+    "<http://www.opengis.net/def/crs/EPSG/0/3857>";
 
 inline uint8_t boolArrToInt8(const std::array<bool, 8> arr) {
   uint8_t ret = 0;
@@ -172,70 +208,70 @@ inline uint8_t boolArrToInt8(const std::array<bool, 8> arr) {
 }
 
 template <typename T>
-Box<T> pad(const Box<T>& box, double xPadding, double yPadding);
+Box<T> pad(const Box<T> &box, double xPadding, double yPadding);
 
 template <typename T>
-Box<T> pad(const Box<T>& box, double padding);
+Box<T> pad(const Box<T> &box, double padding);
 
 template <typename T>
-RotatedBox<T> pad(const RotatedBox<T>& box, double padding);
+RotatedBox<T> pad(const RotatedBox<T> &box, double padding);
 
 template <typename T>
 Point<T> centroid(const Point<T> p);
 
 template <typename T>
-Point<T> centroid(const LineSegment<T>& ls);
+Point<T> centroid(const LineSegment<T> &ls);
 
 template <typename T>
-Point<T> centroid(const Line<T>& ls);
+Point<T> centroid(const Line<T> &ls);
 
 template <typename T>
-Point<T> ringCentroid(const Line<T>& ls);
+Point<T> ringCentroid(const Line<T> &ls);
 
 template <typename T>
-Point<T> centroid(const Polygon<T>& o);
+Point<T> centroid(const Polygon<T> &o);
 
 template <typename T>
-Point<T> centroid(const Box<T>& box);
+Point<T> centroid(const Box<T> &box);
 
 template <typename T>
-Point<T> centroid(const std::vector<Point<T>>& multigeo);
+Point<T> centroid(const std::vector<Point<T>> &multigeo);
 
 template <typename T>
-Point<T> centroid(const std::vector<Line<T>>& multigeo);
+Point<T> centroid(const std::vector<Line<T>> &multigeo);
 
 template <typename T>
-Point<T> centroid(const std::vector<LineSegment<T>>& multigeo);
+Point<T> centroid(const std::vector<LineSegment<T>> &multigeo);
 
 template <typename T>
-Point<T> centroid(const std::vector<Polygon<T>>& multigeo);
+Point<T> centroid(const std::vector<Polygon<T>> &multigeo);
 
 template <typename T>
-int8_t dimension(const Collection<T>& col);
+int8_t dimension(const Collection<T> &col);
 
 template <typename T>
-Point<T> centroid(const Collection<T>& col);
+Point<T> centroid(const Collection<T> &col);
 
 template <typename T>
-Point<T> rotate(const Point<T>& p, double);
+Point<T> rotate(const Point<T> &p, double);
 
 template <typename T>
-Point<T> rotateRAD(const Point<T>& p, double);
+Point<T> rotateRAD(const Point<T> &p, double);
 
 template <typename T>
-Point<T> rotateSinCos(Point<T> p, double si, double co, const Point<T>& c);
+Point<T> rotateSinCos(Point<T> p, double si, double co, const Point<T> &c);
 
 template <typename T>
-Point<T> rotateRAD(Point<T> p, double rad, const Point<T>& c);
+Point<T> rotateRAD(Point<T> p, double rad, const Point<T> &c);
 
 template <typename T>
-Point<T> rotate(Point<T> p, double deg, const Point<T>& c);
+Point<T> rotate(Point<T> p, double deg, const Point<T> &c);
 
 template <typename T>
-LineSegment<T> rotate(LineSegment<T> geo, double deg, const Point<T>& c);
+LineSegment<T> rotate(LineSegment<T> geo, double deg, const Point<T> &c);
 
 template <typename T>
-LineSegment<T> rotateRAD(LineSegment<T> geo, double deg, const Point<T>& c);
+LineSegment<T> rotateRAD(LineSegment<T> geo, double deg, const Point<T> &c);
 
 template <typename T>
 LineSegment<T> rotate(LineSegment<T> geo, double deg);
@@ -244,31 +280,31 @@ template <typename T>
 LineSegment<T> rotateRAD(LineSegment<T> geo, double deg);
 
 template <typename T>
-Line<T> rotateSinCos(Line<T> geo, double si, double co, const Point<T>& c);
+Line<T> rotateSinCos(Line<T> geo, double si, double co, const Point<T> &c);
 
 template <typename T>
-Line<T> rotateRAD(Line<T> geo, double deg, const Point<T>& c);
+Line<T> rotateRAD(Line<T> geo, double deg, const Point<T> &c);
 
 template <typename T>
-Line<T> rotate(Line<T> geo, double deg, const Point<T>& c);
+Line<T> rotate(Line<T> geo, double deg, const Point<T> &c);
 
 template <typename T>
 Polygon<T> rotateSinCos(Polygon<T> geo, double si, double co,
-                        const Point<T>& c);
+                        const Point<T> &c);
 
 template <typename T>
-Polygon<T> rotateRAD(Polygon<T> geo, double deg, const Point<T>& c);
+Polygon<T> rotateRAD(Polygon<T> geo, double deg, const Point<T> &c);
 
 template <typename T>
-Polygon<T> rotate(Polygon<T> geo, double deg, const Point<T>& c);
+Polygon<T> rotate(Polygon<T> geo, double deg, const Point<T> &c);
 
 template <template <typename> class Geometry, typename T>
 std::vector<Geometry<T>> rotate(std::vector<Geometry<T>> multigeo, double deg,
-                                const Point<T>& c);
+                                const Point<T> &c);
 
 template <template <typename> class Geometry, typename T>
 std::vector<Geometry<T>> rotateRAD(std::vector<Geometry<T>> multigeo,
-                                   double deg, const Point<T>& c);
+                                   double deg, const Point<T> &c);
 
 template <template <typename> class Geometry, typename T>
 std::vector<Geometry<T>> rotate(std::vector<Geometry<T>> multigeo, double deg);
@@ -278,7 +314,7 @@ std::vector<Geometry<T>> rotateRAD(std::vector<Geometry<T>> multigeo,
                                    double deg);
 
 template <typename T>
-Point<T> move(const Point<T>& geo, double x, double y);
+Point<T> move(const Point<T> &geo, double x, double y);
 
 template <typename T>
 Line<T> move(Line<T> geo, double x, double y);
@@ -300,437 +336,498 @@ template <typename T>
 Box<T> minbox();
 
 template <typename T>
-RotatedBox<T> shrink(const RotatedBox<T>& b, double d);
+RotatedBox<T> shrink(const RotatedBox<T> &b, double d);
 
 inline bool doubleEq(double a, double b) { return fabs(a - b) < EPSILON; }
 
+// This is used by `getWKT` to attach the CRS IRI for a specified CRS.
+const std::string &getCrsIri(CRSType targetCRS);
+
+// This is used by `getWKT` for geometries that contain multiple points. For
+// each point this projects the point to the `targetCRS` and appends the string
+// representation to the `ret` string. Returns the projected point to later
+// reuse it in some cases. To preserve precision, always return the projected
+// point with `double` values.
 template <typename T>
-std::string getWKT(const Point<T>& p, uint16_t prec);
+util::geo::Point<double> appendPoint(std::string &ret,
+                                     const util::geo::Point<T> &point,
+                                     uint16_t prec, CRSType sourceCRS,
+                                     CRSType targetCRS);
+
+// The 'getWKT' functions now attach a given CRS IRI (specified by 'targetCRS').
+// By default or for 'targetCRS == CRS84' no IRI will be attached.
+// The point will also be projected from 'sourceCRS' to the 'targetCRS'.
+// As the collection uses the 'getWKT' function of the subgeometries, the IRIs
+// for these geometries are hidden (via 'hideIri').
+template <typename T>
+std::string getWKT(const Point<T> &p, uint16_t prec,
+                   CRSType sourceCRS = util::geo::CRSType::CRS84,
+                   CRSType targetCRS = util::geo::CRSType::CRS84,
+                   bool hideIri = false);
 
 template <typename T>
-std::string getWKT(const Point<T>& p);
+std::string getWKT(const Point<T> &p,
+                   CRSType sourceCRS = util::geo::CRSType::CRS84,
+                   CRSType targetCRS = util::geo::CRSType::CRS84,
+                   bool hideIri = false);
 
 template <typename T>
-std::string getWKT(const std::vector<Point<T>>& p, uint16_t prec);
+std::string getWKT(const std::vector<Point<T>> &p, uint16_t prec,
+                   CRSType sourceCRS = util::geo::CRSType::CRS84,
+                   CRSType targetCRS = util::geo::CRSType::CRS84,
+                   bool hideIri = false);
 
 template <typename T>
-std::string getWKT(const std::vector<Point<T>>& p);
+std::string getWKT(const std::vector<Point<T>> &p,
+                   CRSType sourceCRS = util::geo::CRSType::CRS84,
+                   CRSType targetCRS = util::geo::CRSType::CRS84,
+                   bool hideIri = false);
 
 template <typename T>
-std::string getWKT(const Line<T>& l, uint16_t prec);
+std::string getWKT(const Line<T> &l, uint16_t prec,
+                   CRSType sourceCRS = util::geo::CRSType::CRS84,
+                   CRSType targetCRS = util::geo::CRSType::CRS84,
+                   bool hideIri = false);
 
 template <typename T>
-std::string getWKT(const Line<T>& l);
+std::string getWKT(const Line<T> &l,
+                   CRSType sourceCRS = util::geo::CRSType::CRS84,
+                   CRSType targetCRS = util::geo::CRSType::CRS84,
+                   bool hideIri = false);
 
 template <typename T>
-std::string getWKT(const std::vector<Line<T>>& ls, uint16_t prec);
+std::string getWKT(const std::vector<Line<T>> &ls, uint16_t prec,
+                   CRSType sourceCRS = util::geo::CRSType::CRS84,
+                   CRSType targetCRS = util::geo::CRSType::CRS84,
+                   bool hideIri = false);
 
 template <typename T>
-std::string getWKT(const std::vector<Line<T>>& ls);
+std::string getWKT(const std::vector<Line<T>> &ls,
+                   CRSType sourceCRS = util::geo::CRSType::CRS84,
+                   CRSType targetCRS = util::geo::CRSType::CRS84,
+                   bool hideIri = false);
 
 template <typename T>
-std::string getWKT(const XSortedPolygon<T>& ls, uint16_t prec);
+std::string getWKT(const XSortedPolygon<T> &ls, uint16_t prec);
 
 template <typename T>
-std::string getWKT(const XSortedPolygon<T>& ls);
+std::string getWKT(const XSortedPolygon<T> &ls);
 
 template <typename T>
-std::string getWKT(const LineSegment<T>& l, uint16_t prec);
+std::string getWKT(const LineSegment<T> &l, uint16_t prec);
 
 template <typename T>
-std::string getWKT(const LineSegment<T>& l);
+std::string getWKT(const LineSegment<T> &l);
 
 template <typename T>
-std::string getWKT(const Box<T>& l, uint16_t prec);
+std::string getWKT(const Box<T> &l, uint16_t prec);
 
 template <typename T>
-std::string getWKT(const Box<T>& l);
+std::string getWKT(const Box<T> &l);
 
 template <typename T>
-std::string getWKT(const Polygon<T>& p, uint16_t prec);
+std::string getWKT(const Polygon<T> &p, uint16_t prec,
+                   CRSType sourceCRS = util::geo::CRSType::CRS84,
+                   CRSType targetCRS = util::geo::CRSType::CRS84,
+                   bool hideIri = false);
 
 template <typename T>
-std::string getWKT(const Polygon<T>& p);
+std::string getWKT(const Polygon<T> &p,
+                   CRSType sourceCRS = util::geo::CRSType::CRS84,
+                   CRSType targetCRS = util::geo::CRSType::CRS84,
+                   bool hideIri = false);
 
 template <typename T>
-std::string getWKT(const std::vector<Polygon<T>>& ls, uint16_t prec);
+std::string getWKT(const std::vector<Polygon<T>> &ls, uint16_t prec,
+                   CRSType sourceCRS = util::geo::CRSType::CRS84,
+                   CRSType targetCRS = util::geo::CRSType::CRS84,
+                   bool hideIri = false);
 
 template <typename T>
-std::string getWKT(const std::vector<Polygon<T>>& ls);
+std::string getWKT(const std::vector<Polygon<T>> &ls,
+                   CRSType sourceCRS = util::geo::CRSType::CRS84,
+                   CRSType targetCRS = util::geo::CRSType::CRS84,
+                   bool hideIri = false);
 
 template <typename T>
-std::string getWKT(const Collection<T>& coll, uint16_t prec);
+std::string getWKT(const Collection<T> &coll, uint16_t prec,
+                   CRSType sourceCRS = util::geo::CRSType::CRS84,
+                   CRSType targetCRS = util::geo::CRSType::CRS84,
+                   bool hideIri = false);
 
 template <typename T>
-std::string getWKT(const Collection<T>& coll);
+std::string getWKT(const Collection<T> &coll,
+                   CRSType sourceCRS = util::geo::CRSType::CRS84,
+                   CRSType targetCRS = util::geo::CRSType::CRS84,
+                   bool hideIri = false);
 
 template <typename T>
-bool contains(const Point<T>& p, const Box<T>& box);
+bool contains(const Point<T> &p, const Box<T> &box);
 
 template <typename T>
-bool contains(const Line<T>& l, const Box<T>& box);
+bool contains(const Line<T> &l, const Box<T> &box);
 
 template <typename T>
-bool contains(const LineSegment<T>& l, const Box<T>& box);
+bool contains(const LineSegment<T> &l, const Box<T> &box);
 
 template <typename T>
-bool contains(const Box<T>& b, const Box<T>& box);
+bool contains(const Box<T> &b, const Box<T> &box);
 
 template <typename T>
-bool contains(const Point<T>& p, const LineSegment<T>& ls);
+bool contains(const Point<T> &p, const LineSegment<T> &ls);
 
 template <typename T>
-bool contains(const LineSegment<T>& a, const LineSegment<T>& b);
+bool contains(const LineSegment<T> &a, const LineSegment<T> &b);
 
 template <typename T>
-bool contains(const Point<T>& p, const Line<T>& l);
+bool contains(const Point<T> &p, const Line<T> &l);
 
 template <typename T>
-bool ringContains(const Point<T>& p, const Ring<T>& ph);
+bool ringContains(const Point<T> &p, const Ring<T> &ph);
 
 template <typename T>
-int8_t polyContCheck(const Point<T>& a, Point<T> b, Point<T> c);
+int8_t polyContCheck(const Point<T> &a, Point<T> b, Point<T> c);
 
 template <typename T>
-bool contains(const Point<T>& p, const Polygon<T>& poly);
+bool contains(const Point<T> &p, const Polygon<T> &poly);
 
 template <typename T, typename PF, typename DF>
-std::pair<double, bool> withinDist(const Point<T>& p, const XSortedRing<T>& ph,
-                                   double maxDist, PF&& paddingFunc,
-                                   double maxEuclideanDist, DF&& distFunc);
+std::pair<double, bool> withinDist(const Point<T> &p, const XSortedRing<T> &ph,
+                                   double maxDist, PF &&paddingFunc,
+                                   double maxEuclideanDist, DF &&distFunc);
 
 template <typename T, typename PF, typename DF>
-double withinDist(const Point<T>& p, const XSortedPolygon<T>& poly,
-                  double maxDist, PF&& paddingFunc, double maxEuclideanDist,
-                  DF&& distFunc);
+double withinDist(const Point<T> &p, const XSortedPolygon<T> &poly,
+                  double maxDist, PF &&paddingFunc, double maxEuclideanDist,
+                  DF &&distFunc);
 
 template <typename T>
-std::pair<bool, bool> ringContains(const Point<T>& p, const XSortedRing<T>& ph,
+std::pair<bool, bool> ringContains(const Point<T> &p, const XSortedRing<T> &ph,
                                    size_t i);
 
 template <typename T, typename PF, typename DF>
-double withinDist(const Point<T>& p, const XSortedLine<T>& line, double maxDist,
-                  PF&& paddingFunc, double maxEuclideanDist, DF&& distFunc);
+double withinDist(const Point<T> &p, const XSortedLine<T> &line, double maxDist,
+                  PF &&paddingFunc, double maxEuclideanDist, DF &&distFunc);
 
 template <typename T>
-double withinDist(const Point<T>& p, const XSortedLine<T>& line,
+double withinDist(const Point<T> &p, const XSortedLine<T> &line,
                   double maxDist);
 
 template <typename T>
-std::tuple<bool, bool> intersectsContains(const Point<T>& p,
-                                          const XSortedLine<T>& line, size_t i);
+std::tuple<bool, bool> intersectsContains(const Point<T> &p,
+                                          const XSortedLine<T> &line, size_t i);
 
 template <typename T>
-std::tuple<bool, bool> intersectsContains(const Point<T>& p,
-                                          const XSortedLine<T>& line);
+std::tuple<bool, bool> intersectsContains(const Point<T> &p,
+                                          const XSortedLine<T> &line);
 
 template <typename T>
-DE9IMatrix DE9IM(const Point<T>& p, const XSortedLine<T>& line, size_t i);
+DE9IMatrix DE9IM(const Point<T> &p, const XSortedLine<T> &line, size_t i);
 
 template <typename T>
-DE9IMatrix DE9IM(const Point<T>& p, const XSortedLine<T>& line);
+DE9IMatrix DE9IM(const Point<T> &p, const XSortedLine<T> &line);
 
 template <typename T>
-DE9IMatrix DE9IM(const XSortedLine<T>& line, size_t i, const Point<T>& p);
+DE9IMatrix DE9IM(const XSortedLine<T> &line, size_t i, const Point<T> &p);
 
 template <typename T>
-DE9IMatrix DE9IM(const XSortedLine<T>& line, const Point<T>& p);
+DE9IMatrix DE9IM(const XSortedLine<T> &line, const Point<T> &p);
 
 template <typename T>
-std::pair<bool, bool> containsCovers(const Point<T>& p,
-                                     const XSortedPolygon<T>& poly, size_t i);
+std::pair<bool, bool> containsCovers(const Point<T> &p,
+                                     const XSortedPolygon<T> &poly, size_t i);
 
 template <typename T>
-std::pair<bool, bool> containsCovers(const Point<T>& p,
-                                     const XSortedPolygon<T>& poly);
+std::pair<bool, bool> containsCovers(const Point<T> &p,
+                                     const XSortedPolygon<T> &poly);
 
 template <typename T>
-DE9IMatrix DE9IM(const Point<T>& p, const XSortedPolygon<T>& poly, size_t i);
+DE9IMatrix DE9IM(const Point<T> &p, const XSortedPolygon<T> &poly, size_t i);
 
 template <typename T>
-DE9IMatrix DE9IM(const Point<T>& p, const XSortedPolygon<T>& poly);
+DE9IMatrix DE9IM(const Point<T> &p, const XSortedPolygon<T> &poly);
 
 template <typename T>
-DE9IMatrix DE9IM(const XSortedPolygon<T>& poly, size_t i, const Point<T>& p);
+DE9IMatrix DE9IM(const XSortedPolygon<T> &poly, size_t i, const Point<T> &p);
 
 template <typename T>
-DE9IMatrix DE9IM(const XSortedPolygon<T>& poly, const Point<T>& p);
+DE9IMatrix DE9IM(const XSortedPolygon<T> &poly, const Point<T> &p);
 
 template <typename T>
-bool ringContains(const Ring<T>& a, const Ring<T>& b);
+bool ringContains(const Ring<T> &a, const Ring<T> &b);
 
 template <typename T>
-bool ringIntersects(const Polygon<T>& polyC, const Ring<T>& h);
+bool ringIntersects(const Polygon<T> &polyC, const Ring<T> &h);
 
 template <typename T>
-bool ringContains(const Polygon<T>& polyC, const Ring<T>& poly);
+bool ringContains(const Polygon<T> &polyC, const Ring<T> &poly);
 
 template <typename T>
-bool contains(const Polygon<T>& polyC, const Polygon<T>& poly);
+bool contains(const Polygon<T> &polyC, const Polygon<T> &poly);
 
 template <typename T>
-bool intersects(const Polygon<T>& polyA, const Polygon<T>& polyB);
+bool intersects(const Polygon<T> &polyA, const Polygon<T> &polyB);
 
 template <typename T>
-bool ringContains(const LineSegment<T>& ls, const Ring<T>& ph);
+bool ringContains(const LineSegment<T> &ls, const Ring<T> &ph);
 
 template <typename T>
-bool contains(const LineSegment<T>& ls, const Polygon<T>& p);
+bool contains(const LineSegment<T> &ls, const Polygon<T> &p);
 
 template <typename T>
-bool contains(const Line<T>& l, const Polygon<T>& poly);
+bool contains(const Line<T> &l, const Polygon<T> &poly);
 
 template <typename T>
-bool contains(const Line<T>& l, const Line<T>& other);
+bool contains(const Line<T> &l, const Line<T> &other);
 
 template <typename T>
-bool contains(const Box<T>& b, const Polygon<T>& poly);
+bool contains(const Box<T> &b, const Polygon<T> &poly);
 
 template <typename T>
-bool contains(const Polygon<T>& poly, const Box<T>& b);
+bool contains(const Polygon<T> &poly, const Box<T> &b);
 
 template <typename T>
-bool contains(const Polygon<T>& poly, const Line<T>& l);
+bool contains(const Polygon<T> &poly, const Line<T> &l);
 
 template <template <typename> class GeometryA,
           template <typename> class GeometryB, typename T>
-bool contains(const std::vector<GeometryA<T>>& multigeo,
-              const GeometryB<T>& geo);
+bool contains(const std::vector<GeometryA<T>> &multigeo,
+              const GeometryB<T> &geo);
 
 template <typename T>
-bool intersectsNaive(const std::vector<XSortedTuple<T>>& ls1,
-                     const std::vector<XSortedTuple<T>>& ls2);
+bool intersectsNaive(const std::vector<XSortedTuple<T>> &ls1,
+                     const std::vector<XSortedTuple<T>> &ls2);
 
 template <typename T, template <typename> class C>
-uint8_t intersectsHelper(const std::vector<XSortedTuple<T>>& ls1,
-                         const std::vector<XSortedTuple<T>>& ls2, T maxSegLenA,
-                         T maxSegLenB, const Box<T>& boxA, const Box<T>& boxB,
-                         size_t* firstRelIn1, size_t* firstRelIn2);
+uint8_t intersectsHelper(const std::vector<XSortedTuple<T>> &ls1,
+                         const std::vector<XSortedTuple<T>> &ls2, T maxSegLenA,
+                         T maxSegLenB, const Box<T> &boxA, const Box<T> &boxB,
+                         size_t *firstRelIn1, size_t *firstRelIn2);
 
 template <typename T>
 std::tuple<bool, bool, bool, bool, bool, bool, bool, bool> intersectsPoly(
-    const std::vector<XSortedTuple<T>>& ls1,
-    const std::vector<XSortedTuple<T>>& ls2, T maxSegLenA, T maxSegLenB,
-    const Box<T>& boxA, const Box<T>& boxB, size_t* firstRelIn1,
-    size_t* firstRelIn2);
+    const std::vector<XSortedTuple<T>> &ls1,
+    const std::vector<XSortedTuple<T>> &ls2, T maxSegLenA, T maxSegLenB,
+    const Box<T> &boxA, const Box<T> &boxB, size_t *firstRelIn1,
+    size_t *firstRelIn2);
 
 template <typename T>
 std::tuple<bool, bool, bool, bool, bool> intersectsLinePoly(
-    const std::vector<XSortedTuple<T>>& ls1,
-    const std::vector<XSortedTuple<T>>& ls2, T maxSegLenA, T maxSegLenB,
-    const Box<T>& boxA, const Box<T>& boxB, size_t* firstRelIn1,
-    size_t* firstRelIn2);
+    const std::vector<XSortedTuple<T>> &ls1,
+    const std::vector<XSortedTuple<T>> &ls2, T maxSegLenA, T maxSegLenB,
+    const Box<T> &boxA, const Box<T> &boxB, size_t *firstRelIn1,
+    size_t *firstRelIn2);
 
 template <typename T>
-DE9IMatrix DE9IM(const util::geo::XSortedLine<T>& a,
-                 const util::geo::XSortedLine<T>& b, size_t* firstRelIn1,
-                 size_t* firstRelIn2);
+DE9IMatrix DE9IM(const util::geo::XSortedLine<T> &a,
+                 const util::geo::XSortedLine<T> &b, size_t *firstRelIn1,
+                 size_t *firstRelIn2);
 
 template <typename T>
-DE9IMatrix DE9IM(const util::geo::XSortedLine<T>& a,
-                 const util::geo::XSortedLine<T>& b);
+DE9IMatrix DE9IM(const util::geo::XSortedLine<T> &a,
+                 const util::geo::XSortedLine<T> &b);
 
 template <typename T>
 std::tuple<bool, bool, bool, bool, bool> intersectsLinePoly(
-    const XSortedRing<T>& ls1, const XSortedRing<T>& ls2, T maxSegLenA,
-    T maxSegLenB, size_t* firstRelIn1, size_t* firstRelIn2);
+    const XSortedRing<T> &ls1, const XSortedRing<T> &ls2, T maxSegLenA,
+    T maxSegLenB, size_t *firstRelIn1, size_t *firstRelIn2);
 
 template <typename T>
 std::tuple<bool, bool, bool, bool, bool, bool, bool, bool> intersectsPoly(
-    const XSortedRing<T>& ls1, const XSortedRing<T>& ls2, T maxSegLenA,
-    T maxSegLenB, size_t* firstRelIn1, size_t* firstRelIn2);
+    const XSortedRing<T> &ls1, const XSortedRing<T> &ls2, T maxSegLenA,
+    T maxSegLenB, size_t *firstRelIn1, size_t *firstRelIn2);
 
 template <typename T>
-bool intersects(const LineSegment<T>& ls1, const LineSegment<T>& ls2);
+bool intersects(const LineSegment<T> &ls1, const LineSegment<T> &ls2);
 
 template <typename T>
-bool intersects(const Point<T>& a, const Point<T>& b, const Point<T>& c,
-                const Point<T>& d);
+bool intersects(const Point<T> &a, const Point<T> &b, const Point<T> &c,
+                const Point<T> &d);
 
 template <typename T>
-bool intersects(const Line<T>& ls1, const Line<T>& ls2);
+bool intersects(const Line<T> &ls1, const Line<T> &ls2);
 
 template <typename T>
-bool intersects(const Line<T>& l, const Point<T>& p);
+bool intersects(const Line<T> &l, const Point<T> &p);
 
 template <typename T>
-bool intersects(const Point<T>& p, const Line<T>& l);
+bool intersects(const Point<T> &p, const Line<T> &l);
 
 template <typename T>
-bool intersects(const Polygon<T>& l, const Point<T>& p);
+bool intersects(const Polygon<T> &l, const Point<T> &p);
 
 template <typename T>
-bool intersects(const Point<T>& p, const Polygon<T>& l);
+bool intersects(const Point<T> &p, const Polygon<T> &l);
 
 template <typename T>
-bool intersects(const Box<T>& b1, const Box<T>& b2);
+bool intersects(const Box<T> &b1, const Box<T> &b2);
 
 template <typename T>
-bool intersects(const Box<T>& b, const Polygon<T>& poly);
+bool intersects(const Box<T> &b, const Polygon<T> &poly);
 
 template <typename T>
-bool intersects(const Polygon<T>& poly, const Box<T>& b);
+bool intersects(const Polygon<T> &poly, const Box<T> &b);
 
 template <typename T>
-bool intersects(const LineSegment<T>& ls, const Box<T>& b);
+bool intersects(const LineSegment<T> &ls, const Box<T> &b);
 
 template <typename T>
-bool ringIntersects(const LineSegment<T>& ls, const Ring<T>& ph);
+bool ringIntersects(const LineSegment<T> &ls, const Ring<T> &ph);
 
 template <typename T>
-bool intersects(const LineSegment<T>& ls, const Polygon<T>& p);
+bool intersects(const LineSegment<T> &ls, const Polygon<T> &p);
 
 template <typename T>
-bool intersects(const Polygon<T>& p, const LineSegment<T>& ls);
+bool intersects(const Polygon<T> &p, const LineSegment<T> &ls);
 
 template <typename T>
-bool intersects(const Box<T>& b, const LineSegment<T>& ls);
+bool intersects(const Box<T> &b, const LineSegment<T> &ls);
 
 template <typename T>
-bool intersects(const Line<T>& l, const Box<T>& b);
+bool intersects(const Line<T> &l, const Box<T> &b);
 
 template <typename T>
-bool intersects(const Box<T>& b, const Line<T>& l);
+bool intersects(const Box<T> &b, const Line<T> &l);
 
 template <typename T>
-bool intersects(const Point<T>& p, const Box<T>& b);
+bool intersects(const Point<T> &p, const Box<T> &b);
 
 template <typename T>
-bool intersects(const Box<T>& b, const Point<T>& p);
+bool intersects(const Box<T> &b, const Point<T> &p);
 
 template <template <typename> class GeometryA,
           template <typename> class GeometryB, typename T>
-bool intersects(const std::vector<GeometryA<T>>& multigeom,
-                const GeometryB<T>& b);
+bool intersects(const std::vector<GeometryA<T>> &multigeom,
+                const GeometryB<T> &b);
 
 template <template <typename> class GeometryA,
           template <typename> class GeometryB, typename T>
-bool intersects(const GeometryB<T>& b,
-                const std::vector<GeometryA<T>>& multigeom);
+bool intersects(const GeometryB<T> &b,
+                const std::vector<GeometryA<T>> &multigeom);
 
 template <template <typename> class GeometryA,
           template <typename> class GeometryB, typename T>
-bool intersects(const std::vector<GeometryA<T>>& multigeomA,
-                const std::vector<GeometryA<T>>& multigeomB);
+bool intersects(const std::vector<GeometryA<T>> &multigeomA,
+                const std::vector<GeometryA<T>> &multigeomB);
 
 template <typename T>
 std::tuple<bool, bool, bool, bool, bool, bool> intersectsContainsInner(
-    const util::geo::XSortedLine<T>& a, const util::geo::XSortedRing<T>& b);
+    const util::geo::XSortedLine<T> &a, const util::geo::XSortedRing<T> &b);
 
 template <typename T>
 std::tuple<bool, bool, bool, bool, bool, bool, bool> intersectsContainsInner(
-    const util::geo::XSortedRing<T>& a, const util::geo::XSortedRing<T>& b);
+    const util::geo::XSortedRing<T> &a, const util::geo::XSortedRing<T> &b);
 
 template <typename T>
-DE9IMatrix DE9IM(const util::geo::XSortedLine<T>& a,
-                 const util::geo::XSortedPolygon<T>& b, size_t* firstRel1,
-                 size_t* firstRel2);
+DE9IMatrix DE9IM(const util::geo::XSortedLine<T> &a,
+                 const util::geo::XSortedPolygon<T> &b, size_t *firstRel1,
+                 size_t *firstRel2);
 
 template <typename T>
-DE9IMatrix DE9IM(const util::geo::XSortedPolygon<T>& a,
-                 const util::geo::XSortedLine<T>& b, size_t* firstRel1,
-                 size_t* firstRel2);
+DE9IMatrix DE9IM(const util::geo::XSortedPolygon<T> &a,
+                 const util::geo::XSortedLine<T> &b, size_t *firstRel1,
+                 size_t *firstRel2);
 
 template <typename T>
-DE9IMatrix DE9IM(const util::geo::XSortedLine<T>& a,
-                 const util::geo::XSortedPolygon<T>& b);
+DE9IMatrix DE9IM(const util::geo::XSortedLine<T> &a,
+                 const util::geo::XSortedPolygon<T> &b);
 
 template <typename T>
-DE9IMatrix DE9IM(const util::geo::XSortedLine<T>& a,
-                 const util::geo::XSortedPolygon<T>& b);
+DE9IMatrix DE9IM(const util::geo::XSortedLine<T> &a,
+                 const util::geo::XSortedPolygon<T> &b);
 
 template <typename T>
-DE9IMatrix DE9IM(const util::geo::XSortedPolygon<T>& a,
-                 const util::geo::XSortedLine<T>& b);
+DE9IMatrix DE9IM(const util::geo::XSortedPolygon<T> &a,
+                 const util::geo::XSortedLine<T> &b);
 
 template <typename T>
-DE9IMatrix DE9IM(const util::geo::XSortedPolygon<T>& a,
-                 const util::geo::XSortedLine<T>& b);
-
-template <typename T>
-std::tuple<bool, bool, bool, bool, bool> intersectsContainsCovers(
-    const util::geo::XSortedPolygon<T>& a,
-    const util::geo::XSortedPolygon<T>& b, size_t* firstRel1,
-    size_t* firstRel2);
+DE9IMatrix DE9IM(const util::geo::XSortedPolygon<T> &a,
+                 const util::geo::XSortedLine<T> &b);
 
 template <typename T>
 std::tuple<bool, bool, bool, bool, bool> intersectsContainsCovers(
-    const util::geo::XSortedPolygon<T>& a,
-    const util::geo::XSortedPolygon<T>& b);
+    const util::geo::XSortedPolygon<T> &a,
+    const util::geo::XSortedPolygon<T> &b, size_t *firstRel1,
+    size_t *firstRel2);
 
 template <typename T>
 std::tuple<bool, bool, bool, bool, bool> intersectsContainsCovers(
-    const util::geo::XSortedPolygon<T>& a,
-    const util::geo::XSortedPolygon<T>& b);
+    const util::geo::XSortedPolygon<T> &a,
+    const util::geo::XSortedPolygon<T> &b);
 
 template <typename T>
-DE9IMatrix DE9IM(const util::geo::XSortedPolygon<T>& a,
-                 const util::geo::XSortedPolygon<T>& b, size_t* firstRel1,
-                 size_t* firstRel2);
+std::tuple<bool, bool, bool, bool, bool> intersectsContainsCovers(
+    const util::geo::XSortedPolygon<T> &a,
+    const util::geo::XSortedPolygon<T> &b);
 
 template <typename T>
-DE9IMatrix DE9IM(const util::geo::Point<T>& a, const util::geo::Point<T>& b);
+DE9IMatrix DE9IM(const util::geo::XSortedPolygon<T> &a,
+                 const util::geo::XSortedPolygon<T> &b, size_t *firstRel1,
+                 size_t *firstRel2);
 
 template <typename T>
-DE9IMatrix DE9IM(const util::geo::XSortedPolygon<T>& a,
-                 const util::geo::XSortedPolygon<T>& b);
+DE9IMatrix DE9IM(const util::geo::Point<T> &a, const util::geo::Point<T> &b);
 
 template <typename T>
-DE9IMatrix DE9IM(const util::geo::XSortedPolygon<T>& a,
-                 const util::geo::XSortedPolygon<T>& b);
+DE9IMatrix DE9IM(const util::geo::XSortedPolygon<T> &a,
+                 const util::geo::XSortedPolygon<T> &b);
+
+template <typename T>
+DE9IMatrix DE9IM(const util::geo::XSortedPolygon<T> &a,
+                 const util::geo::XSortedPolygon<T> &b);
 
 template <typename T>
 std::tuple<bool, bool, bool, bool, bool> intersectsCovers(
-    const util::geo::XSortedLine<T>& a, const util::geo::XSortedLine<T>& b,
-    size_t* firstRelIn1, size_t* firstRelIn2);
+    const util::geo::XSortedLine<T> &a, const util::geo::XSortedLine<T> &b,
+    size_t *firstRelIn1, size_t *firstRelIn2);
 
 template <typename T>
 std::tuple<bool, bool, bool, bool, bool> intersectsCovers(
-    const util::geo::XSortedLine<T>& a, const util::geo::XSortedLine<T>& b);
+    const util::geo::XSortedLine<T> &a, const util::geo::XSortedLine<T> &b);
 
 template <typename T>
 std::tuple<bool, bool, bool, bool, bool> intersectsContainsCovers(
-    const util::geo::XSortedLine<T>& a, const util::geo::XSortedPolygon<T>& b,
-    size_t* firstRel1, size_t* firstRel2);
+    const util::geo::XSortedLine<T> &a, const util::geo::XSortedPolygon<T> &b,
+    size_t *firstRel1, size_t *firstRel2);
 
 template <typename T>
 std::tuple<bool, bool, bool, bool, bool> intersectsContainsCovers(
-    const util::geo::XSortedLine<T>& a, const util::geo::XSortedPolygon<T>& b);
+    const util::geo::XSortedLine<T> &a, const util::geo::XSortedPolygon<T> &b);
 
 template <typename T>
 std::tuple<bool, bool, bool, bool, bool> intersectsContainsCovers(
-    const util::geo::XSortedLine<T>& a, const util::geo::XSortedPolygon<T>& b);
+    const util::geo::XSortedLine<T> &a, const util::geo::XSortedPolygon<T> &b);
 
 template <typename T>
 Point<T> intersection(T p1x, T p1y, T q1x, T q1y, T p2x, T p2y, T q2x, T q2y);
 
 template <typename T>
-Point<T> intersection(const Point<T>& p1, const Point<T>& q1,
-                      const Point<T>& p2, const Point<T>& q2);
+Point<T> intersection(const Point<T> &p1, const Point<T> &q1,
+                      const Point<T> &p2, const Point<T> &q2);
 
 template <typename T>
-Point<T> intersection(const LineSegment<T>& s1, const LineSegment<T>& s2);
+Point<T> intersection(const LineSegment<T> &s1, const LineSegment<T> &s2);
 
 template <typename T>
-std::vector<Point<T>> intersection(const Line<T>& l1, const Line<T>& l2);
+std::vector<Point<T>> intersection(const Line<T> &l1, const Line<T> &l2);
 
 template <typename T>
-Box<T> intersection(const Box<T>& b1, const Box<T>& b2);
+Box<T> intersection(const Box<T> &b1, const Box<T> &b2);
 
 template <typename T>
 bool lineIntersects(T p1x, T p1y, T q1x, T q1y, T p2x, T p2y, T q2x, T q2y);
 
 template <typename T>
-bool lineIntersects(const Point<T>& p1, const Point<T>& q1, const Point<T>& p2,
-                    const Point<T>& q2);
+bool lineIntersects(const Point<T> &p1, const Point<T> &q1, const Point<T> &p2,
+                    const Point<T> &q2);
 
 inline double angBetween(double p1x, double p1y) { return atan2(p1x, p1y); }
 
 template <typename T>
-double angBetween(const Point<T>& p1);
+double angBetween(const Point<T> &p1);
 
 template <typename T>
-double angBetween(const Point<T>& p1, const MultiPoint<T>& points);
+double angBetween(const Point<T> &p1, const MultiPoint<T> &points);
 
 inline double dist(double x1, double y1, double x2, double y2) {
   return sqrt((x2 - x1) * (x2 - x1) + (y2 - y1) * (y2 - y1));
@@ -740,22 +837,22 @@ inline double distSquared(double x1, double y1, double x2, double y2) {
 }
 
 template <typename T, typename DF>
-double dist(const LineSegment<T>& ls, const Point<T>& p, DF&& distFunc);
+double dist(const LineSegment<T> &ls, const Point<T> &p, DF &&distFunc);
 
 template <typename T>
-double dist(const Point<T>& p1, const Point<T>& p2) {
+double dist(const Point<T> &p1, const Point<T> &p2) {
   return dist(p1.getX(), p1.getY(), p2.getX(), p2.getY());
 }
 
 // standard dist function
 template <typename T>
-double euclideanDistFunc(const Point<T>& a, const Point<T>& b, double) {
+double euclideanDistFunc(const Point<T> &a, const Point<T> &b, double) {
   return util::geo::dist(a, b);
 }
 
 // x-distance between boxes
 template <typename T>
-inline double distX(const Box<T>& a, const Box<T>& b) {
+inline double distX(const Box<T> &a, const Box<T> &b) {
   return std::max(
       0.0, std::max(1.0 * b.getLowerLeft().getX() - a.getUpperRight().getX(),
                     1.0 * a.getLowerLeft().getX() - b.getUpperRight().getX()));
@@ -763,7 +860,7 @@ inline double distX(const Box<T>& a, const Box<T>& b) {
 
 // y-distance between boxes
 template <typename T>
-inline double distY(const Box<T>& a, const Box<T>& b) {
+inline double distY(const Box<T> &a, const Box<T> &b) {
   return std::max(
       0.0, std::max(1.0 * b.getLowerLeft().getY() - a.getUpperRight().getY(),
                     1.0 * a.getLowerLeft().getY() - b.getUpperRight().getY()));
@@ -776,10 +873,10 @@ struct Padding {
 
 template <typename T>
 struct DistFunc {
-  double (*f)(const Point<T>&, const Point<T>&, double);
+  double (*f)(const Point<T> &, const Point<T> &, double);
   bool isEuclidean;
 
-  double operator()(const Point<T>& a, const Point<T>& b, double maxD) const {
+  double operator()(const Point<T> &a, const Point<T> &b, double maxD) const {
     return f(a, b, maxD);
   }
 };
@@ -788,18 +885,18 @@ struct DistFunc {
 // member is missing, this method wont compile and the overload below will be
 // used, which returns automatically false
 template <typename DF>
-auto _isEuclidean(const DF& df, int)
+auto _isEuclidean(const DF &df, int)
     -> decltype(static_cast<bool>(df.isEuclidean)) {
   return df.isEuclidean;
 }
 
 template <typename DF>
-bool _isEuclidean(const DF&, long) {
+bool _isEuclidean(const DF &, long) {
   return false;
 }
 
 template <typename DF>
-bool isEuclidean(const DF& df) {
+bool isEuclidean(const DF &df) {
   return _isEuclidean(df, 0);
 }
 
@@ -810,130 +907,130 @@ DistFunc<T> defaultDistFunc() {
 }
 
 template <typename T>
-Padding splitPadding(double padding, const Box<T>& boxA, const Box<T>& boxB);
+Padding splitPadding(double padding, const Box<T> &boxA, const Box<T> &boxB);
 
 // standard max euclidean dist function
 template <typename T>
-std::function<double(double, double, const Box<T>&, const Box<T>&)>
+std::function<double(double, double, const Box<T> &, const Box<T> &)>
 defaultPaddingFunc() {
-  return [](double d, double, const Box<T>&, const Box<T>&) -> double {
+  return [](double d, double, const Box<T> &, const Box<T> &) -> double {
     return d;
   };
 }
 
 template <typename T>
-double dist(const AnyGeometry<T>& any1, const AnyGeometry<T>& any2);
+double dist(const AnyGeometry<T> &any1, const AnyGeometry<T> &any2);
 
 template <template <typename> class GeometryB, typename T>
-double dist(const AnyGeometry<T>& any1, const GeometryB<T>& geomB);
+double dist(const AnyGeometry<T> &any1, const GeometryB<T> &geomB);
 
 template <template <typename> class GeometryB, typename T>
-double dist(const GeometryB<T>& geomB, const AnyGeometry<T>& any2) {
+double dist(const GeometryB<T> &geomB, const AnyGeometry<T> &any2) {
   return dist(geomB, any2, defaultDistFunc<T>());
 }
 
 template <typename T>
-inline double distSquared(const Box<T>& a, const Box<T>& b) {
+inline double distSquared(const Box<T> &a, const Box<T> &b) {
   double dx = distX(a, b);
   double dy = distY(a, b);
   return dx * dx + dy * dy;
 }
 
 template <typename T>
-double dist(const Box<T>& a, const Box<T>& b) {
+double dist(const Box<T> &a, const Box<T> &b) {
   return sqrt(distSquared(a, b));
 }
 
 template <typename T>
-double dist(const LineSegment<T>& ls, const Point<T>& p) {
+double dist(const LineSegment<T> &ls, const Point<T> &p) {
   return dist(ls, p, defaultDistFunc<T>());
 }
 
 template <typename T, typename DF>
-double dist(const Point<T>& p, const LineSegment<T>& ls, DF&& distFunc);
+double dist(const Point<T> &p, const LineSegment<T> &ls, DF &&distFunc);
 
 template <typename T>
-double dist(const Point<T>& p, const LineSegment<T>& ls) {
+double dist(const Point<T> &p, const LineSegment<T> &ls) {
   return distToSegment(ls, p);
 }
 
 template <typename T, typename DF>
-double dist(const LineSegment<T>& ls1, const LineSegment<T>& ls2,
-            DF&& distFunc);
+double dist(const LineSegment<T> &ls1, const LineSegment<T> &ls2,
+            DF &&distFunc);
 
 template <typename T>
-double dist(const LineSegment<T>& ls1, const LineSegment<T>& ls2);
+double dist(const LineSegment<T> &ls1, const LineSegment<T> &ls2);
 
 template <typename T, typename DF>
-double dist(const Point<T>& p, const Line<T>& l, DF&& distFunc);
+double dist(const Point<T> &p, const Line<T> &l, DF &&distFunc);
 
 template <typename T>
-double dist(const Point<T>& p, const Line<T>& l);
+double dist(const Point<T> &p, const Line<T> &l);
 
 template <typename T, typename DF>
-double dist(const Line<T>& l, const Point<T>& p, DF&& distFunc);
+double dist(const Line<T> &l, const Point<T> &p, DF &&distFunc);
 
 template <typename T>
-double dist(const Line<T>& l, const Point<T>& p) {
+double dist(const Line<T> &l, const Point<T> &p) {
   return dist(p, l);
 }
 
 template <typename T, typename DF>
-double dist(const LineSegment<T>& ls, const Line<T>& l, DF&& distFunc);
+double dist(const LineSegment<T> &ls, const Line<T> &l, DF &&distFunc);
 
 template <typename T>
-double dist(const LineSegment<T>& ls, const Line<T>& l);
+double dist(const LineSegment<T> &ls, const Line<T> &l);
 
 template <typename T, typename DF>
-double dist(const Line<T>& l, const LineSegment<T>& ls, DF&& distFunc);
+double dist(const Line<T> &l, const LineSegment<T> &ls, DF &&distFunc);
 
 template <typename T>
-double dist(const Line<T>& l, const LineSegment<T>& ls) {
+double dist(const Line<T> &l, const LineSegment<T> &ls) {
   return dist(ls, l);
 }
 
 template <typename T, typename DF>
-double dist(const Line<T>& la, const Line<T>& lb, DF&& distFunc);
+double dist(const Line<T> &la, const Line<T> &lb, DF &&distFunc);
 
 template <typename T>
-double dist(const Line<T>& la, const Line<T>& lb);
+double dist(const Line<T> &la, const Line<T> &lb);
 
 template <template <typename> class GeometryA,
           template <typename> class GeometryB, typename T, typename DF>
-double dist(const std::vector<GeometryA<T>>& multigeom, const GeometryB<T>& b,
-            DF&& distFunc);
+double dist(const std::vector<GeometryA<T>> &multigeom, const GeometryB<T> &b,
+            DF &&distFunc);
 
 template <template <typename> class GeometryA,
           template <typename> class GeometryB, typename T>
-double dist(const std::vector<GeometryA<T>>& multigeom, const GeometryB<T>& b) {
+double dist(const std::vector<GeometryA<T>> &multigeom, const GeometryB<T> &b) {
   return dist(multigeom, b, defaultPaddingFunc<T>(), defaultDistFunc<T>());
 }
 
 template <template <typename> class GeometryA,
           template <typename> class GeometryB, typename T, typename DF>
-double dist(const GeometryB<T>& b, const std::vector<GeometryA<T>>& multigeom,
-            DF&& distFunc);
+double dist(const GeometryB<T> &b, const std::vector<GeometryA<T>> &multigeom,
+            DF &&distFunc);
 
 template <template <typename> class GeometryA,
           template <typename> class GeometryB, typename T>
-double dist(const GeometryB<T>& b, const std::vector<GeometryA<T>>& multigeom) {
+double dist(const GeometryB<T> &b, const std::vector<GeometryA<T>> &multigeom) {
   return dist(multigeom, b);
 }
 
 template <template <typename> class GeometryA,
           template <typename> class GeometryB, typename T, typename DF>
-double dist(const GeometryB<T>& b, const std::vector<GeometryA<T>>& multigeom,
-            DF&& distFunc);
+double dist(const GeometryB<T> &b, const std::vector<GeometryA<T>> &multigeom,
+            DF &&distFunc);
 
 template <template <typename> class GeometryA,
           template <typename> class GeometryB, typename T, typename DF>
-double dist(const std::vector<GeometryA<T>>& multigeomA,
-            const std::vector<GeometryB<T>>& multigeomB, DF&& distFunc);
+double dist(const std::vector<GeometryA<T>> &multigeomA,
+            const std::vector<GeometryB<T>> &multigeomB, DF &&distFunc);
 
 template <template <typename> class GeometryA,
           template <typename> class GeometryB, typename T>
-double dist(const std::vector<GeometryA<T>>& multigeomA,
-            const std::vector<GeometryB<T>>& multigeomB) {
+double dist(const std::vector<GeometryA<T>> &multigeomA,
+            const std::vector<GeometryB<T>> &multigeomB) {
   return dist(multigeomA, multigeomB, defaultPaddingFunc<T>(),
               defaultDistFunc<T>());
 }
@@ -952,66 +1049,66 @@ inline double innerProd(double x1, double y1, double x2, double y2, double x3,
 }
 
 template <typename T>
-double innerProd(const Point<T>& a, const Point<T>& b, const Point<T>& c);
+double innerProd(const Point<T> &a, const Point<T> &b, const Point<T> &c);
 
 inline double crossProd(double x1, double y1, double x2, double y2) {
   return x1 * y2 - x2 * y1;
 }
 
 template <typename T>
-double crossProd(const Point<T>& a, const Point<T>& b);
+double crossProd(const Point<T> &a, const Point<T> &b);
 
 template <typename T>
-double crossProd(const Point<T>& p, const LineSegment<T>& ls);
+double crossProd(const Point<T> &p, const LineSegment<T> &ls);
 
 template <typename T>
-double dist(const Polygon<T>& poly1, const Polygon<T>& poly2);
+double dist(const Polygon<T> &poly1, const Polygon<T> &poly2);
 
 template <typename T>
-double dist(const Line<T>& l, const Polygon<T>& poly);
+double dist(const Line<T> &l, const Polygon<T> &poly);
 
 template <typename T>
-double dist(const Polygon<T>& poly, const Line<T>& l) {
+double dist(const Polygon<T> &poly, const Line<T> &l) {
   return dist(l, poly);
 }
 
 template <typename T>
-double dist(const Point<T>& p, const Polygon<T>& poly);
+double dist(const Point<T> &p, const Polygon<T> &poly);
 
 template <typename T>
-double dist(const Polygon<T>& poly, const Point<T>& p) {
+double dist(const Polygon<T> &poly, const Point<T> &p) {
   return dist(p, poly);
 }
 
 template <typename T>
-size_t numPoints(const Point<T>&);
+size_t numPoints(const Point<T> &);
 
 template <typename T>
-size_t numPoints(const Line<T>& l);
+size_t numPoints(const Line<T> &l);
 
 template <typename T>
-size_t numPoints(const Polygon<T>& p);
+size_t numPoints(const Polygon<T> &p);
 
 template <template <typename> class Geometry, typename T>
-size_t numPoints(const std::vector<Geometry<T>>& pol);
+size_t numPoints(const std::vector<Geometry<T>> &pol);
 
 template <typename T>
-size_t numPoints(const Collection<T>& collection);
+size_t numPoints(const Collection<T> &collection);
 
 template <typename T>
-bool empty(const Point<T>&);
+bool empty(const Point<T> &);
 
 template <typename T>
-bool empty(const Polygon<T>& g);
+bool empty(const Polygon<T> &g);
 
 template <typename T>
-bool empty(const Line<T>& g);
+bool empty(const Line<T> &g);
 
 template <template <typename> class Geometry, typename T>
-size_t empty(const std::vector<Geometry<T>>& pol);
+size_t empty(const std::vector<Geometry<T>> &pol);
 
 template <typename T>
-bool empty(const Collection<T>& g);
+bool empty(const Collection<T> &g);
 
 // True if F is a projection function. Used to disable the std::string
 // overloads of the *FromWKTProj functions for calls like
@@ -1049,7 +1146,7 @@ class WKTParseException : public std::runtime_error {
 }
 
 template <typename T, typename F>
-Line<T> lineFromWKTProj(const char* c, const char** endr, F projFunc,
+Line<T> lineFromWKTProj(const char *c, const char **endr, F projFunc,
                         bool strict = false);
 
 // Overload used internally by other geometry parsers (e.g.
@@ -1061,49 +1158,49 @@ Line<T> lineFromWKTProj(const char* c, const char** endr, F projFunc,
                         bool allowSinglePoint = false, bool allowPrefx = true);
 
 template <typename T>
-Line<T> lineFromWKT(const char* c, const char** endr, bool strict = false);
+Line<T> lineFromWKT(const char *c, const char **endr, bool strict = false);
 
 template <typename T>
-MultiLine<T> multiLineFromWKT(const char* c, const char** endr,
+MultiLine<T> multiLineFromWKT(const char *c, const char **endr,
                               bool strict = false);
 
 template <typename T, typename F>
-MultiPoint<T> multiPointFromWKTProj(const char* c, const char** endr,
+MultiPoint<T> multiPointFromWKTProj(const char *c, const char **endr,
                                     F projFunc, bool strict = false);
 
 // Overload used internally by other geometry parsers (e.g.
 // 'multiPointFromWKT'), which detect their 'CRSType' and pass it down to this
 // function. Otherwise the CRS IRI would be lost.
 template <typename T, typename F>
-MultiPoint<T> multiPointFromWKTProj(const char* c, const char** endr,
+MultiPoint<T> multiPointFromWKTProj(const char *c, const char **endr,
                                     F projFunc, CRSType sourceCRS,
                                     bool strict = false);
 
 template <typename T>
-MultiPoint<T> multiPointFromWKT(const char* c, const char** endr,
+MultiPoint<T> multiPointFromWKT(const char *c, const char **endr,
                                 bool strict = false);
 
 template <typename T>
-MultiPoint<T> multiPointFromWKT(const std::string& wkt, bool strict = false);
+MultiPoint<T> multiPointFromWKT(const std::string &wkt, bool strict = false);
 
 template <typename T, typename F,
           typename = typename std::enable_if<IsProjFunc<F>::value>::type>
-MultiPoint<T> multiPointFromWKTProj(const std::string& wkt, F&& projFunc,
+MultiPoint<T> multiPointFromWKTProj(const std::string &wkt, F &&projFunc,
                                     bool strict = false);
 
 template <typename T, typename F>
-Point<T> pointFromWKTProj(const char* c, const char** endr, F projFunc,
+Point<T> pointFromWKTProj(const char *c, const char **endr, F projFunc,
                           bool strict = false);
 
 // Overload used internally by other geometry parsers (e.g.
 // 'collectionFromWKTProj'), which detect their 'CRSType' and pass it down to
 // this function. Otherwise the CRS IRI would be lost.
 template <typename T, typename F>
-Point<T> pointFromWKTProj(const char* c, const char** endr, F projFunc,
+Point<T> pointFromWKTProj(const char *c, const char **endr, F projFunc,
                           CRSType sourceCRS, bool strict = false);
 
 template <typename T>
-Point<T> pointFromWKT(const char* c, const char** endr, bool strict = false);
+Point<T> pointFromWKT(const char *c, const char **endr, bool strict = false);
 
 template <typename T>
 Point<T> pointFromWKT(const std::string& wkt, bool strict = false);
@@ -1114,7 +1211,7 @@ Point<T> pointFromWKTProj(const std::string& wkt, F&& projFunc,
                           bool strict = false);
 
 template <typename T, typename F>
-Polygon<T> polygonFromWKTProj(const char* c, const char** endr, F projFunc,
+Polygon<T> polygonFromWKTProj(const char *c, const char **endr, F projFunc,
                               bool strict = false);
 
 // Overload used internally by other geometry parsers (e.g.
@@ -1126,7 +1223,7 @@ Polygon<T> polygonFromWKTProj(const char* c, const char** endr, F projFunc,
                               bool allowPrefix = true);
 
 template <typename T>
-Polygon<T> polygonFromWKT(const char* c, const char** endr,
+Polygon<T> polygonFromWKT(const char *c, const char **endr,
                           bool strict = false);
 
 template <typename T>
@@ -1138,7 +1235,7 @@ Polygon<T> polygonFromWKTProj(const std::string& wkt, F projFunc,
                               bool strict = false);
 
 template <typename T, typename F>
-MultiLine<T> multiLineFromWKTProj(const char* c, const char** endr, F projFunc,
+MultiLine<T> multiLineFromWKTProj(const char *c, const char **endr, F projFunc,
                                   bool strict = false);
 
 // Overload used internally by other geometry parsers (e.g.
@@ -1150,150 +1247,150 @@ MultiLine<T> multiLineFromWKTProj(const char* c, const char** endr, F projFunc,
                                   bool allowSinglePoint = false);
 
 template <typename T, typename F>
-MultiPolygon<T> multiPolygonFromWKTProj(const char* c, const char** endr,
+MultiPolygon<T> multiPolygonFromWKTProj(const char *c, const char **endr,
                                         F projFunc, bool strict = false);
 
 // Overload used internally by other geometry parsers (e.g.
 // 'collectionFromWKTProj'), which detect their 'CRSType' and pass it down to
 // this function. Otherwise the CRS IRI would be lost.
 template <typename T, typename F>
-MultiPolygon<T> multiPolygonFromWKTProj(const char* c, const char** endr,
+MultiPolygon<T> multiPolygonFromWKTProj(const char *c, const char **endr,
                                         F projFunc, CRSType sourceCRS,
                                         bool strict = false);
 
 template <typename T>
-MultiPolygon<T> multiPolygonFromWKT(const char* c, const char** endr,
+MultiPolygon<T> multiPolygonFromWKT(const char *c, const char **endr,
                                     bool strict = false);
 
 WKTType getWKTType(const char* c, const char** endr, bool strict = false);
 
-WKTType getWKTType(const char* c);
+WKTType getWKTType(const char *c);
 
-WKTType getWKTType(const std::string& str);
+WKTType getWKTType(const std::string &str);
 
-CRSType getCRSType(const char* c, const char** endr);
+CRSType getCRSType(const char *c, const char **endr);
 
-CRSType getCRSType(const char* c);
+CRSType getCRSType(const char *c);
 
-CRSType getCRSType(const std::string& str);
+CRSType getCRSType(const std::string &str);
 
 template <typename T, typename F>
-Collection<T> collectionFromWKTProj(const char* c, const char** endr,
-                                    F&& projFunc, bool strict = false);
+Collection<T> collectionFromWKTProj(const char *c, const char **endr,
+                                    F &&projFunc, bool strict = false);
 
 // Overload used internally by other geometry parsers (e.g.
 // 'collectionFromWKT'), which detect their 'CRSType' and pass it down to this
 // function. Otherwise the CRS IRI would be lost.
 template <typename T, typename F>
-Collection<T> collectionFromWKTProj(const char* c, const char** endr,
+Collection<T> collectionFromWKTProj(const char *c, const char **endr,
                                     F projFunc, CRSType sourceCRS,
                                     bool strict = false);
 
 template <typename T>
-Collection<T> collectionFromWKT(const char* c, const char** endr,
+Collection<T> collectionFromWKT(const char *c, const char **endr,
                                 bool strict = false);
 
 template <typename T>
-Line<T> lineFromWKT(const std::string& wkt, bool strict = false);
+Line<T> lineFromWKT(const std::string &wkt, bool strict = false);
 
 template <typename T, typename F,
           typename = typename std::enable_if<IsProjFunc<F>::value>::type>
-Line<T> lineFromWKTProj(const std::string& wkt, F&& projFunc,
+Line<T> lineFromWKTProj(const std::string &wkt, F &&projFunc,
                         bool strict = false);
 
 template <typename T>
-MultiLine<T> multiLineFromWKT(const std::string& wkt, bool strict = false);
+MultiLine<T> multiLineFromWKT(const std::string &wkt, bool strict = false);
 
 template <typename T, typename F,
           typename = typename std::enable_if<IsProjFunc<F>::value>::type>
-MultiLine<T> multiLineFromWKTProj(const std::string& wkt, F&& projFunc,
+MultiLine<T> multiLineFromWKTProj(const std::string &wkt, F &&projFunc,
                                   bool strict = false);
 
 template <typename T>
-MultiPolygon<T> multiPolygonFromWKT(const std::string& wkt,
+MultiPolygon<T> multiPolygonFromWKT(const std::string &wkt,
                                     bool strict = false);
 
 template <typename T, typename F,
           typename = typename std::enable_if<IsProjFunc<F>::value>::type>
-MultiPolygon<T> multiPolygonFromWKTProj(const std::string& wkt, F&& projFunc,
+MultiPolygon<T> multiPolygonFromWKTProj(const std::string &wkt, F &&projFunc,
                                         bool strict = false);
 
 template <typename T>
-Collection<T> collectionFromWKT(const std::string& wkt, bool strict = false);
+Collection<T> collectionFromWKT(const std::string &wkt, bool strict = false);
 
 template <typename T, typename F,
           typename = typename std::enable_if<IsProjFunc<F>::value>::type>
-Collection<T> collectionFromWKTProj(const std::string& wkt, F&& projFunc,
+Collection<T> collectionFromWKTProj(const std::string &wkt, F &&projFunc,
                                     bool strict = false);
 
 template <typename T>
-double len(const Point<T>&);
+double len(const Point<T> &);
 
 template <typename T>
-double len(const Line<T>& g);
+double len(const Line<T> &g);
 
 template <typename T>
-double len(const Polygon<T>& g);
+double len(const Polygon<T> &g);
 
 template <typename T>
-double len(const std::vector<XSortedTuple<T>>& g);
+double len(const std::vector<XSortedTuple<T>> &g);
 
 template <typename T>
-double len(const XSortedLine<T>& g);
+double len(const XSortedLine<T> &g);
 
 template <typename T>
-double len(const LineSegment<T>& g);
+double len(const LineSegment<T> &g);
 
 template <template <typename> class Geometry, typename T>
-size_t len(const std::vector<Geometry<T>>& pol);
+size_t len(const std::vector<Geometry<T>> &pol);
 
 template <typename T>
-double len(const Collection<T>& collection);
+double len(const Collection<T> &collection);
 
 template <typename T>
-bool shorterThan(const Line<T>& g, double d);
+bool shorterThan(const Line<T> &g, double d);
 
 template <typename T>
-bool longerThan(const Line<T>& g, double d);
+bool longerThan(const Line<T> &g, double d);
 
 template <typename T>
-bool longerThan(const Line<T>& a, const Line<T>& b, double d);
+bool longerThan(const Line<T> &a, const Line<T> &b, double d);
 
 template <typename T>
-Point<T> simplify(const Point<T>& g, double);
+Point<T> simplify(const Point<T> &g, double);
 
 template <typename T>
-LineSegment<T> simplify(const LineSegment<T>& g, double);
+LineSegment<T> simplify(const LineSegment<T> &g, double);
 
 template <typename T>
-Box<T> simplify(const Box<T>& g, double);
+Box<T> simplify(const Box<T> &g, double);
 
 template <typename T>
-RotatedBox<T> simplify(const RotatedBox<T>& g, double);
+RotatedBox<T> simplify(const RotatedBox<T> &g, double);
 
 template <typename T>
 Line<T> simplify(Line<T> g, double d);
 
 template <typename T>
-Polygon<T> simplify(const Polygon<T>& g, double d);
+Polygon<T> simplify(const Polygon<T> &g, double d);
 
 template <template <typename> class Geometry, typename T>
-std::vector<Geometry<T>> simplify(const std::vector<Geometry<T>>& pol,
+std::vector<Geometry<T>> simplify(const std::vector<Geometry<T>> &pol,
                                   double d);
 
 template <typename T>
-Collection<T> simplify(const Collection<T>& collection, double d);
+Collection<T> simplify(const Collection<T> &collection, double d);
 
 template <typename T, typename DF>
-double distToSegment(T lax, T lay, T lbx, T lby, T px, T py, DF&& distFunc);
+double distToSegment(T lax, T lay, T lbx, T lby, T px, T py, DF &&distFunc);
 
 template <typename T, typename DF>
-double distToSegment(const Point<T>& la, const Point<T>& lb, const Point<T>& p,
-                     DF&& distFunc);
+double distToSegment(const Point<T> &la, const Point<T> &lb, const Point<T> &p,
+                     DF &&distFunc);
 
 template <typename T, typename DF>
-double distToSegment(const LineSegment<T>& ls, const Point<T>& p,
-                     DF&& distFunc);
+double distToSegment(const LineSegment<T> &ls, const Point<T> &p,
+                     DF &&distFunc);
 
 inline double distToSegment(double lax, double lay, double lbx, double lby,
                             double px, double py) {
@@ -1326,149 +1423,149 @@ inline double distToSegmentSquared(double lax, double lay, double lbx,
 }
 
 template <typename T>
-double distToSegment(const Point<T>& la, const Point<T>& lb, const Point<T>& p);
+double distToSegment(const Point<T> &la, const Point<T> &lb, const Point<T> &p);
 
 template <typename T>
-double distToSegment(const LineSegment<T>& ls, const Point<T>& p);
+double distToSegment(const LineSegment<T> &ls, const Point<T> &p);
 
 template <typename T>
-Point<T> projectOn(const Point<T>& a, const Point<T>& b, const Point<T>& c);
+Point<T> projectOn(const Point<T> &a, const Point<T> &b, const Point<T> &c);
 
 template <typename T>
-double parallelity(const Box<T>& box, const Line<T>& line);
+double parallelity(const Box<T> &box, const Line<T> &line);
 
 template <typename T>
-double parallelity(const Box<T>& box, const MultiLine<T>& multiline);
+double parallelity(const Box<T> &box, const MultiLine<T> &multiline);
 
 template <template <typename> class Geometry, typename T>
-RotatedBox<T> getOrientedEnvelope(const std::vector<Geometry<T>>& pol);
+RotatedBox<T> getOrientedEnvelope(const std::vector<Geometry<T>> &pol);
 
 template <template <typename> class Geometry, typename T>
-RotatedBox<T> getOrientedEnvelope(const Geometry<T>& pol);
+RotatedBox<T> getOrientedEnvelope(const Geometry<T> &pol);
 
 template <typename T>
-RotatedBox<T> getOrientedEnvelope(const Collection<T>& collection);
+RotatedBox<T> getOrientedEnvelope(const Collection<T> &collection);
 
 template <template <typename> class Geometry, typename T>
-RotatedBox<T> getOrientedEnvelope(const std::vector<Geometry<T>>& pol,
+RotatedBox<T> getOrientedEnvelope(const std::vector<Geometry<T>> &pol,
                                   double step);
 
 template <template <typename> class Geometry, typename T>
-RotatedBox<T> getOrientedEnvelope(const Geometry<T>& pol, double step);
+RotatedBox<T> getOrientedEnvelope(const Geometry<T> &pol, double step);
 
 template <typename T>
-RotatedBox<T> getOrientedEnvelope(const Collection<T>& collection, double step);
+RotatedBox<T> getOrientedEnvelope(const Collection<T> &collection, double step);
 
 template <typename T>
-Polygon<T> buffer(const Line<T>& line, double d, size_t points);
+Polygon<T> buffer(const Line<T> &line, double d, size_t points);
 
 template <typename T>
-Polygon<T> buffer(const Polygon<T>& pol, double d, size_t points);
+Polygon<T> buffer(const Polygon<T> &pol, double d, size_t points);
 
 template <typename T>
-Box<T> getBoundingBox(const Point<T>& p);
+Box<T> getBoundingBox(const Point<T> &p);
 
 template <typename T>
-Box<T> getBoundingBox(const Line<T>& l);
+Box<T> getBoundingBox(const Line<T> &l);
 
 template <typename T>
-Box<T> getBoundingBox(const XSortedLine<T>& l) {
+Box<T> getBoundingBox(const XSortedLine<T> &l) {
   return l.boundingBox();
 }
 
 template <typename T>
-Box<T> getBoundingBox(const Polygon<T>& pol);
+Box<T> getBoundingBox(const Polygon<T> &pol);
 
 template <typename T>
-Box<T> getBoundingBox(const XSortedPolygon<T>& p) {
+Box<T> getBoundingBox(const XSortedPolygon<T> &p) {
   return p.boundingBox();
 }
 
 template <typename T>
-Box<T> getBoundingBox(const XSortedRing<T>& r) {
+Box<T> getBoundingBox(const XSortedRing<T> &r) {
   return r.boundingBox();
 }
 
 template <typename T>
-Box<T> getBoundingBox(const LineSegment<T>& ls);
+Box<T> getBoundingBox(const LineSegment<T> &ls);
 
 template <typename T>
-Box<T> getBoundingBox(const Box<T>& b);
+Box<T> getBoundingBox(const Box<T> &b);
 
 template <template <typename> class Geometry, typename T>
-Box<T> getBoundingBox(const std::vector<Geometry<T>>& multigeo);
+Box<T> getBoundingBox(const std::vector<Geometry<T>> &multigeo);
 
 template <typename T>
-Box<T> getBoundingBox(const Collection<T>& coll);
+Box<T> getBoundingBox(const Collection<T> &coll);
 
 template <typename T>
-Box<T> getBoundingBox(const XSortedCollection<T>& coll) {
+Box<T> getBoundingBox(const XSortedCollection<T> &coll) {
   return coll.boundingBox();
 }
 
 template <typename T>
-Box<T> getBoundingRect(const Box<T>& b);
+Box<T> getBoundingRect(const Box<T> &b);
 
 template <template <typename> class Geometry, typename T>
 Box<T> getBoundingRect(const Geometry<T> geom);
 
 template <typename T>
-double getEnclosingRadius(const Point<T>& p, const Point<T>& pp);
+double getEnclosingRadius(const Point<T> &p, const Point<T> &pp);
 
 template <typename T>
-double getEnclosingRadius(const Point<T>& p, const Line<T>& l);
+double getEnclosingRadius(const Point<T> &p, const Line<T> &l);
 
 template <typename T>
-double getEnclosingRadius(const Point<T>& p, const Polygon<T>& pg);
+double getEnclosingRadius(const Point<T> &p, const Polygon<T> &pg);
 
 template <template <typename> class Geometry, typename T>
-double getEnclosingRadius(const Point<T>& p,
-                          const std::vector<Geometry<T>>& multigeom);
+double getEnclosingRadius(const Point<T> &p,
+                          const std::vector<Geometry<T>> &multigeom);
 
 template <typename T>
-Polygon<T> convexHull(const Point<T>& p);
+Polygon<T> convexHull(const Point<T> &p);
 
 template <typename T>
-Polygon<T> convexHull(const Box<T>& b);
+Polygon<T> convexHull(const Box<T> &b);
 
 template <typename T>
-Polygon<T> convexHull(const LineSegment<T>& b);
+Polygon<T> convexHull(const LineSegment<T> &b);
 
 template <typename T>
-Polygon<T> convexHull(const RotatedBox<T>& b);
+Polygon<T> convexHull(const RotatedBox<T> &b);
 
 template <typename T>
-size_t convexHullImpl(const MultiPoint<T>& a, size_t p1, size_t p2, Line<T>* h);
+size_t convexHullImpl(const MultiPoint<T> &a, size_t p1, size_t p2, Line<T> *h);
 
 template <typename T>
-Polygon<T> convexHull(const MultiPoint<T>& l);
+Polygon<T> convexHull(const MultiPoint<T> &l);
 
 template <typename T>
-Polygon<T> convexHull(const Polygon<T>& p);
+Polygon<T> convexHull(const Polygon<T> &p);
 
 template <typename T>
-Polygon<T> convexHull(const MultiPolygon<T>& ps);
+Polygon<T> convexHull(const MultiPolygon<T> &ps);
 
 template <typename T>
-Polygon<T> convexHull(const MultiLine<T>& ls);
+Polygon<T> convexHull(const MultiLine<T> &ls);
 
 template <typename T>
-Polygon<T> convexHull(const Collection<T>& collection);
+Polygon<T> convexHull(const Collection<T> &collection);
 
 template <typename T>
-Box<T> extendBox(const Line<T>& l, Box<T> b);
+Box<T> extendBox(const Line<T> &l, Box<T> b);
 
 template <typename T>
-Box<T> extendBox(const LineSegment<T>& ls, Box<T> b);
+Box<T> extendBox(const LineSegment<T> &ls, Box<T> b);
 
 template <typename T>
-Box<T> extendBox(const Polygon<T>& ls, Box<T> b);
+Box<T> extendBox(const Polygon<T> &ls, Box<T> b);
 
 template <template <typename> class Geometry, typename T>
-Box<T> extendBox(const std::vector<Geometry<T>>& multigeom, Box<T> b);
+Box<T> extendBox(const std::vector<Geometry<T>> &multigeom, Box<T> b);
 
 template <typename T>
-Box<T> extendBox(const Collection<T>& collection, Box<T> b);
+Box<T> extendBox(const Collection<T> &collection, Box<T> b);
 
 template <typename T>
 Point<T> pointAt(const Line<T>& l, double at);
@@ -1484,45 +1581,45 @@ Point<T> pointAtDist(const Line<T>& l, double atDist, size_t* lastI,
                      double* totPos);
 
 template <typename T>
-Point<T> interpolate(const Point<T>& a, const Point<T>& b, double d);
+Point<T> interpolate(const Point<T> &a, const Point<T> &b, double d);
 
 template <typename T>
-Line<T> orthoLineAtDist(const Line<T>& l, double d, double length);
+Line<T> orthoLineAtDist(const Line<T> &l, double d, double length);
 
 template <typename T>
-Line<T> segment(const Line<T>& line, double a, double b);
+Line<T> segment(const Line<T> &line, double a, double b);
 
 template <typename T>
-Line<T> segment(const Line<T>& line, const Point<T>& start, size_t startI,
-                const Point<T>& end, size_t endI);
+Line<T> segment(const Line<T> &line, const Point<T> &start, size_t startI,
+                const Point<T> &end, size_t endI);
 
 template <typename T>
-Line<T> average(const std::vector<const Line<T>*>& lines);
+Line<T> average(const std::vector<const Line<T> *> &lines);
 
 template <typename T>
-Line<T> average(const std::vector<const Line<T>*>& lines,
-                const std::vector<double>& weights);
+Line<T> average(const std::vector<const Line<T> *> &lines,
+                const std::vector<double> &weights);
 
 template <typename T>
-double area(const Point<T>&);
+double area(const Point<T> &);
 
 template <typename T>
-double area(const LineSegment<T>&);
+double area(const LineSegment<T> &);
 
 template <typename T>
-double area(const Line<T>&);
+double area(const Line<T> &);
 
 template <typename T>
-double area(const Box<T>& b);
+double area(const Box<T> &b);
 
 template <typename T>
-double area(const Collection<T>& col);
+double area(const Collection<T> &col);
 
 template <template <typename> class Geometry, typename T>
-double area(const std::vector<Geometry<T>>& gs);
+double area(const std::vector<Geometry<T>> &gs);
 
 template <typename T>
-double commonArea(const Box<T>& ba, const Box<T>& bb);
+double commonArea(const Box<T> &ba, const Box<T> &bb);
 
 template <template <typename> class Geometry, typename T>
 RotatedBox<T> getFullEnvelope(std::vector<Geometry<T>> pol);
@@ -1537,57 +1634,57 @@ template <typename T>
 double haversine(T lat1, T lon1, T lat2, T lon2);
 
 template <typename T>
-double haversine(const Point<T>& a, const Point<T>& b);
+double haversine(const Point<T> &a, const Point<T> &b);
 
 template <typename T>
 double haversineWebMerc(T x1, T y1, T x2, T y2);
 
 template <typename T>
-double haversineWebMerc(const Point<T>& a, const Point<T>& b);
+double haversineWebMerc(const Point<T> &a, const Point<T> &b);
 
 template <typename T>
-Line<T> densify(const Line<T>& l, double d);
+Line<T> densify(const Line<T> &l, double d);
 
 template <typename T>
-Line<T> densifyX(const Line<T>& l, double maxLen);
+Line<T> densifyX(const Line<T> &l, double maxLen);
 
 template <typename T>
-Line<T> densifyY(const Line<T>& l, double maxLen);
+Line<T> densifyY(const Line<T> &l, double maxLen);
 
 template <typename T>
-Ring<T> densifyRingX(const Ring<T>& r, double maxLen);
+Ring<T> densifyRingX(const Ring<T> &r, double maxLen);
 
 template <typename T>
-Ring<T> densifyRingY(const Ring<T>& r, double maxLen);
+Ring<T> densifyRingY(const Ring<T> &r, double maxLen);
 
 template <typename T>
-Polygon<T> densifyX(const Polygon<T>& p, double maxLen);
+Polygon<T> densifyX(const Polygon<T> &p, double maxLen);
 
 template <typename T>
-Polygon<T> densifyY(const Polygon<T>& p, double maxLen);
+Polygon<T> densifyY(const Polygon<T> &p, double maxLen);
 
 template <typename T>
-Line<T> sparseify(const Line<T>& l, double mind);
+Line<T> sparseify(const Line<T> &l, double mind);
 
 template <typename T>
-double frechetDistC(size_t i, size_t j, const Line<T>& p, const Line<T>& q,
-                    std::vector<float>& ca);
+double frechetDistC(size_t i, size_t j, const Line<T> &p, const Line<T> &q,
+                    std::vector<float> &ca);
 
 template <typename T>
-double frechetDist(const Line<T>& a, const Line<T>& b, double d);
+double frechetDist(const Line<T> &a, const Line<T> &b, double d);
 
 template <typename T>
-double accFrechetDistC(const Line<T>& a, const Line<T>& b, double d);
+double accFrechetDistC(const Line<T> &a, const Line<T> &b, double d);
 
 template <typename T>
-double frechetDistCHav(size_t i, size_t j, const Line<T>& p, const Line<T>& q,
-                       std::vector<float>& ca);
+double frechetDistCHav(size_t i, size_t j, const Line<T> &p, const Line<T> &q,
+                       std::vector<float> &ca);
 
 template <typename T>
-double frechetDistHav(const Line<T>& a, const Line<T>& b, double d);
+double frechetDistHav(const Line<T> &a, const Line<T> &b, double d);
 
 template <typename T>
-double accFrechetDistCHav(const Line<T>& a, const Line<T>& b, double d);
+double accFrechetDistCHav(const Line<T> &a, const Line<T> &b, double d);
 
 template <typename T>
 Point<T> latLngToWebMerc(double lat, double lng);
@@ -1611,161 +1708,161 @@ template <typename T>
 Point<T> latLngToLngLat(Point<T> latLng);
 
 template <typename T>
-Point<T> projectToCRS(const Point<T>& p, CRSType baseCrs, CRSType goalCrs);
+Point<T> projectToCRS(const Point<T> &p, CRSType baseCrs, CRSType goalCrs);
 
 template <typename T>
-Point<T> projectToCRS84(const Point<T>& p, CRSType baseCrs);
+Point<T> projectToCRS84(const Point<T> &p, CRSType baseCrs);
 
 template <typename T>
-Point<T> projectToWGS84(const Point<T>& p, CRSType baseCrs);
+Point<T> projectToWGS84(const Point<T> &p, CRSType baseCrs);
 
 template <typename T>
-Point<T> projectToWebMerc(const Point<T>& p, CRSType baseCrs);
+Point<T> projectToWebMerc(const Point<T> &p, CRSType baseCrs);
 
 template <typename T>
-double webMercLen(const Line<T>& g);
+double webMercLen(const Line<T> &g);
 
 template <typename T>
-double latLngLen(const Line<T>& g);
+double latLngLen(const Line<T> &g);
 
 template <typename G>
-double webMercDistFactor(const G& a);
+double webMercDistFactor(const G &a);
 
 template <typename G>
-double latLngDistFactor(const G& a);
+double latLngDistFactor(const G &a);
 
 template <typename T, typename PF, typename DF>
-double withinDist(const std::vector<XSortedTuple<T>>& ls1,
-                  const std::vector<XSortedTuple<T>>& ls2, T maxSegLenA,
-                  T maxSegLenB, const Box<T>& boxA, const Box<T>& boxB,
-                  double maxDist, PF&& paddingFunc, double maxEuclideanDist,
-                  DF&& distFunc);
+double withinDist(const std::vector<XSortedTuple<T>> &ls1,
+                  const std::vector<XSortedTuple<T>> &ls2, T maxSegLenA,
+                  T maxSegLenB, const Box<T> &boxA, const Box<T> &boxB,
+                  double maxDist, PF &&paddingFunc, double maxEuclideanDist,
+                  DF &&distFunc);
 
 template <typename T, typename PF, typename DF>
 std::pair<double, std::pair<bool, bool>> withinDist(
-    const XSortedRing<T>& p1, const XSortedRing<T>& p2, double maxDist,
-    PF&& paddingFunc, double maxEuclideanDist, DF&& distFunc,
+    const XSortedRing<T> &p1, const XSortedRing<T> &p2, double maxDist,
+    PF &&paddingFunc, double maxEuclideanDist, DF &&distFunc,
     bool checkP2InP1 = true, bool checkP1InP2 = true);
 
 template <typename T, typename PF, typename DF>
-std::pair<double, bool> withinDist(const XSortedLine<T>& ls1,
-                                   const XSortedRing<T>& p2, double maxDist,
-                                   PF&& paddingFunc, double maxEuclideanDist,
-                                   DF&& distFunc, bool checkContained = true);
+std::pair<double, bool> withinDist(const XSortedLine<T> &ls1,
+                                   const XSortedRing<T> &p2, double maxDist,
+                                   PF &&paddingFunc, double maxEuclideanDist,
+                                   DF &&distFunc, bool checkContained = true);
 
 template <typename T, typename PF, typename DF>
-double withinDist(const XSortedLine<T>& a, const XSortedPolygon<T>& b,
-                  double maxDist, PF&& paddingFunc, double maxEuclideanDist,
-                  DF&& distFunc);
+double withinDist(const XSortedLine<T> &a, const XSortedPolygon<T> &b,
+                  double maxDist, PF &&paddingFunc, double maxEuclideanDist,
+                  DF &&distFunc);
 
 template <typename T, typename PF, typename DF>
-double withinDist(const XSortedPolygon<T>& a, const XSortedLine<T>& b,
-                  double maxDist, PF&& paddingFunc, double maxEuclideanDist,
-                  DF&& distFunc) {
+double withinDist(const XSortedPolygon<T> &a, const XSortedLine<T> &b,
+                  double maxDist, PF &&paddingFunc, double maxEuclideanDist,
+                  DF &&distFunc) {
   return withinDist(b, a, maxDist, paddingFunc, maxEuclideanDist, distFunc);
 }
 
 template <typename T, typename PF, typename DF>
-double withinDist(const XSortedPolygon<T>& p1, const XSortedPolygon<T>& p2,
-                  double maxDist, PF&& paddingFunc, double maxEuclideanDist,
-                  DF&& distFunc);
+double withinDist(const XSortedPolygon<T> &p1, const XSortedPolygon<T> &p2,
+                  double maxDist, PF &&paddingFunc, double maxEuclideanDist,
+                  DF &&distFunc);
 
 template <typename T>
-double withinDist(const XSortedPolygon<T>& p1, const XSortedPolygon<T>& p2,
+double withinDist(const XSortedPolygon<T> &p1, const XSortedPolygon<T> &p2,
                   double maxDist);
 
 template <typename T, typename PF, typename DF>
-double withinDist(const XSortedLine<T>& ls1, const XSortedLine<T>& ls2,
-                  double maxDist, PF&& paddingFunc, double maxEuclideanDist,
-                  DF&& distFunc);
+double withinDist(const XSortedLine<T> &ls1, const XSortedLine<T> &ls2,
+                  double maxDist, PF &&paddingFunc, double maxEuclideanDist,
+                  DF &&distFunc);
 
 template <typename T>
-double withinDist(const XSortedLine<T>& ls1, const XSortedLine<T>& ls2,
+double withinDist(const XSortedLine<T> &ls1, const XSortedLine<T> &ls2,
                   double maxDist);
 
 template <typename T>
-double withinDist(const XSortedPolygon<T>& ls1, const XSortedLine<T>& ls2,
+double withinDist(const XSortedPolygon<T> &ls1, const XSortedLine<T> &ls2,
                   double maxDist);
 
 template <typename T>
-double withinDist(const XSortedLine<T>& ls1, const XSortedPolygon<T>& ls2,
+double withinDist(const XSortedLine<T> &ls1, const XSortedPolygon<T> &ls2,
                   double maxDist);
 
 template <typename T>
-double withinDist(const XSortedPolygon<T>& poly, const Point<T>& p,
+double withinDist(const XSortedPolygon<T> &poly, const Point<T> &p,
                   double maxDist);
 
 template <typename T>
-double withinDist(const Point<T>& p, const XSortedPolygon<T>& poly,
+double withinDist(const Point<T> &p, const XSortedPolygon<T> &poly,
                   double maxDist);
 
 template <typename T>
-double withinDist(const XSortedLine<T>& line, const Point<T>& p,
+double withinDist(const XSortedLine<T> &line, const Point<T> &p,
                   double maxDist);
 
 template <typename T, typename PF, typename DF>
-double withinDist(const XSortedCollection<T>& a, const XSortedCollection<T>& b,
-                  double maxDist, PF&& paddingFunc, double maxEuclideanDist,
-                  DF&& distFunc);
+double withinDist(const XSortedCollection<T> &a, const XSortedCollection<T> &b,
+                  double maxDist, PF &&paddingFunc, double maxEuclideanDist,
+                  DF &&distFunc);
 
 template <typename T, typename PF, typename DF,
           template <typename> class XSORTED>
-double withinDist(const XSortedCollection<T>& a, const XSORTED<T>& b,
-                  double maxDist, PF&& paddingFunc, double maxEuclideanDist,
-                  DF&& distFunc);
+double withinDist(const XSortedCollection<T> &a, const XSORTED<T> &b,
+                  double maxDist, PF &&paddingFunc, double maxEuclideanDist,
+                  DF &&distFunc);
 
 template <typename T, typename PF, typename DF,
           template <typename> class XSORTED>
-double withinDist(const XSORTED<T>& b, const XSortedCollection<T>& a,
-                  double maxDist, PF&& paddingFunc, double maxEuclideanDist,
-                  DF&& distFunc) {
+double withinDist(const XSORTED<T> &b, const XSortedCollection<T> &a,
+                  double maxDist, PF &&paddingFunc, double maxEuclideanDist,
+                  DF &&distFunc) {
   return withinDist(a, b, maxDist, paddingFunc, maxEuclideanDist, distFunc);
 }
 
 template <typename T>
-double withinDist(const XSortedPolygon<T>& a, const XSortedPolygon<T>& b,
+double withinDist(const XSortedPolygon<T> &a, const XSortedPolygon<T> &b,
                   double maxDist) {
   return withinDist(a, b, maxDist, defaultPaddingFunc<T>(), maxDist,
                     defaultDistFunc<T>());
 }
 
 template <typename T>
-double withinDist(const XSortedPolygon<T>& a, const XSortedLine<T>& b,
+double withinDist(const XSortedPolygon<T> &a, const XSortedLine<T> &b,
                   double maxDist) {
   return withinDist(a, b, maxDist, defaultPaddingFunc<T>(), maxDist,
                     defaultDistFunc<T>());
 }
 
 template <typename T>
-double withinDist(const XSortedPolygon<T>& a, const XSortedCollection<T>& b,
+double withinDist(const XSortedPolygon<T> &a, const XSortedCollection<T> &b,
                   double maxDist) {
   return withinDist(a, b, maxDist, defaultPaddingFunc<T>(), maxDist,
                     defaultDistFunc<T>());
 }
 
 template <typename T>
-double withinDist(const XSortedPolygon<T>& a, const Point<T>& b,
+double withinDist(const XSortedPolygon<T> &a, const Point<T> &b,
                   double maxDist) {
   return withinDist(a, b, maxDist, defaultPaddingFunc<T>(), maxDist,
                     defaultDistFunc<T>());
 }
 
 template <typename T>
-double withinDist(const XSortedLine<T>& a, const XSortedLine<T>& b,
+double withinDist(const XSortedLine<T> &a, const XSortedLine<T> &b,
                   double maxDist) {
   return withinDist(a, b, maxDist, defaultPaddingFunc<T>(), maxDist,
                     defaultDistFunc<T>());
 }
 
 template <typename T>
-double withinDist(const XSortedLine<T>& a, const XSortedPolygon<T>& b,
+double withinDist(const XSortedLine<T> &a, const XSortedPolygon<T> &b,
                   double maxDist) {
   return withinDist(a, b, maxDist, defaultPaddingFunc<T>(), maxDist,
                     defaultDistFunc<T>());
 }
 
 template <typename T>
-double withinDist(const XSortedLine<T>& a, const XSortedCollection<T>& b,
+double withinDist(const XSortedLine<T> &a, const XSortedCollection<T> &b,
                   double maxDist) {
   return withinDist(a, b, maxDist, defaultPaddingFunc<T>(), maxDist,
                     defaultDistFunc<T>());
@@ -1778,70 +1875,70 @@ double withinDist(const XSortedLine<T>& a, const Point<T>& b, double maxDist) {
 }
 
 template <typename T>
-double withinDist(const XSortedCollection<T>& a, const XSortedCollection<T>& b,
+double withinDist(const XSortedCollection<T> &a, const XSortedCollection<T> &b,
                   double maxDist) {
   return withinDist(a, b, maxDist, defaultPaddingFunc<T>(), maxDist,
                     defaultDistFunc<T>());
 }
 
 template <typename T, template <typename> class Geometry>
-double withinDist(const Collection<T>& a, const std::vector<Geometry<T>>& b,
+double withinDist(const Collection<T> &a, const std::vector<Geometry<T>> &b,
                   double maxDist) {
   return withinDist(a, b, maxDist, defaultPaddingFunc<T>(), maxDist,
                     defaultDistFunc<T>());
 }
 
 template <typename T, template <typename> class Geometry>
-double withinDist(const Collection<T>& a, const Geometry<T>& b,
+double withinDist(const Collection<T> &a, const Geometry<T> &b,
                   double maxDist) {
   return withinDist(a, b, maxDist, defaultPaddingFunc<T>(), maxDist,
                     defaultDistFunc<T>());
 }
 
 template <typename T, template <typename> class Geometry>
-double withinDist(const Geometry<T>& b, const Collection<T>& a,
+double withinDist(const Geometry<T> &b, const Collection<T> &a,
                   double maxDist) {
   return withinDist(a, b, maxDist, defaultPaddingFunc<T>(), maxDist,
                     defaultDistFunc<T>());
 }
 
 template <typename T, template <typename> class Geometry>
-double withinDist(const std::vector<Geometry<T>>& b, const Collection<T>& a,
+double withinDist(const std::vector<Geometry<T>> &b, const Collection<T> &a,
                   double maxDist) {
   return withinDist(a, b, maxDist, defaultPaddingFunc<T>(), maxDist,
                     defaultDistFunc<T>());
 }
 
 template <typename T>
-double withinDist(const Collection<T>& a, const Collection<T>& b,
+double withinDist(const Collection<T> &a, const Collection<T> &b,
                   double maxDist) {
   return withinDist(a, b, maxDist, defaultPaddingFunc<T>(), maxDist,
                     defaultDistFunc<T>());
 }
 
 template <typename T>
-double withinDist(const XSortedCollection<T>& a, const XSortedLine<T>& b,
+double withinDist(const XSortedCollection<T> &a, const XSortedLine<T> &b,
                   double maxDist) {
   return withinDist(a, b, maxDist, defaultPaddingFunc<T>(), maxDist,
                     defaultDistFunc<T>());
 }
 
 template <typename T>
-double withinDist(const XSortedCollection<T>& a, const XSortedPolygon<T>& b,
+double withinDist(const XSortedCollection<T> &a, const XSortedPolygon<T> &b,
                   double maxDist) {
   return withinDist(a, b, maxDist, defaultPaddingFunc<T>(), maxDist,
                     defaultDistFunc<T>());
 }
 
 template <typename T>
-double withinDist(const XSortedCollection<T>& a, const Point<T>& b,
+double withinDist(const XSortedCollection<T> &a, const Point<T> &b,
                   double maxDist) {
   return withinDist(a, b, maxDist, defaultPaddingFunc<T>(), maxDist,
                     defaultDistFunc<T>());
 }
 
 template <typename T>
-double withinDist(const Point<T>& a, const XSortedCollection<T>& b,
+double withinDist(const Point<T> &a, const XSortedCollection<T> &b,
                   double maxDist) {
   return withinDist(a, b, maxDist, defaultPaddingFunc<T>(), maxDist,
                     defaultDistFunc<T>());
@@ -1854,15 +1951,15 @@ double withinDist(const Point<T>& a, const XSortedLine<T>& b, double maxDist) {
 }
 
 template <typename T>
-double withinDist(const Point<T>& a, const XSortedPolygon<T>& b,
+double withinDist(const Point<T> &a, const XSortedPolygon<T> &b,
                   double maxDist) {
   return withinDist(a, b, maxDist, defaultPaddingFunc<T>(), maxDist,
                     defaultDistFunc<T>());
 }
 
 template <typename T, typename PF, typename DF>
-double withinDist(const Polygon<T>& poly, const Point<T>& p, double maxDist,
-                  PF&& paddingFunc, double maxEuclideanDist, DF&& distFunc) {
+double withinDist(const Polygon<T> &poly, const Point<T> &p, double maxDist,
+                  PF &&paddingFunc, double maxEuclideanDist, DF &&distFunc) {
   return withinDist(p, poly, maxDist, paddingFunc, maxEuclideanDist, distFunc);
 }
 
@@ -1873,43 +1970,43 @@ double withinDist(const Point<T>& a, const Polygon<T>& b, double maxDist) {
 }
 
 template <typename T>
-double withinDist(const Polygon<T>& b, const Point<T>& a, double maxDist) {
+double withinDist(const Polygon<T> &b, const Point<T> &a, double maxDist) {
   return withinDist(a, b, maxDist);
 }
 
 template <template <typename> class GeometryA,
           template <typename> class GeometryB, typename T, typename DF,
           typename PF>
-double withinDist(const std::vector<GeometryA<T>>& multi,
-                  const GeometryB<T>& geom, double maxDist, PF&& paddingFunc,
-                  double maxEuclideanDist, DF&& distFunc);
+double withinDist(const std::vector<GeometryA<T>> &multi,
+                  const GeometryB<T> &geom, double maxDist, PF &&paddingFunc,
+                  double maxEuclideanDist, DF &&distFunc);
 
 // CAREFUL: these overloads are required, otherwise a multigeometry/line call
 // would match the multigeometry/multigeometry case, as line is a descendant of
 // std::vector<Point>, and the line would be treated as a multipoint
 template <template <typename> class GeometryA,
           template <typename> class GeometryB, typename T>
-double withinDist(const std::vector<GeometryA<T>>& multi,
-                  const GeometryB<T>& geom, double maxDist) {
+double withinDist(const std::vector<GeometryA<T>> &multi,
+                  const GeometryB<T> &geom, double maxDist) {
   return withinDist(
       multi, geom, maxDist, defaultPaddingFunc<T>(), maxDist,
-      std::function<double(const Point<T>&, const Point<T>&, double)>(
+      std::function<double(const Point<T> &, const Point<T> &, double)>(
           euclideanDistFunc<T>));
 }
 
 template <template <typename> class GeometryA,
           template <typename> class GeometryB, typename T>
-double withinDist(const GeometryB<T>& geom,
-                  const std::vector<GeometryA<T>>& multi, double maxDist) {
+double withinDist(const GeometryB<T> &geom,
+                  const std::vector<GeometryA<T>> &multi, double maxDist) {
   return withinDist(multi, geom, maxDist);
 }
 
 template <template <typename> class GeometryA,
           template <typename> class GeometryB, typename T, typename DF,
           typename PF>
-double withinDist(const std::vector<GeometryA<T>>& multi1,
-                  const std::vector<GeometryB<T>>& multi2, double maxDist,
-                  PF&& paddingFunc, double maxEuclideanDist, DF&& distFunc);
+double withinDist(const std::vector<GeometryA<T>> &multi1,
+                  const std::vector<GeometryB<T>> &multi2, double maxDist,
+                  PF &&paddingFunc, double maxEuclideanDist, DF &&distFunc);
 
 template <template <typename> class GeometryA,
           template <typename> class GeometryB, typename T>
@@ -1920,8 +2017,8 @@ double withinDist(const std::vector<GeometryA<T>>& a,
 }
 
 template <typename T, typename PF, typename DF>
-double withinDist(const Point<T>& p1, const Point<T>& p2, double maxDist,
-                  PF&& paddingFunc, double maxEuclideanDist, DF&& distFunc);
+double withinDist(const Point<T> &p1, const Point<T> &p2, double maxDist,
+                  PF &&paddingFunc, double maxEuclideanDist, DF &&distFunc);
 
 template <typename T>
 double withinDist(const Point<T>& p1, const Point<T>& p2, double maxDist) {
@@ -1930,16 +2027,16 @@ double withinDist(const Point<T>& p1, const Point<T>& p2, double maxDist) {
 }
 
 template <typename T, typename PF, typename DF>
-double withinDist(const Line<T>& line, const Point<T>& p, double maxDist,
-                  PF&& paddingFunc, double maxEuclideanDist, DF&& distFunc) {
+double withinDist(const Line<T> &line, const Point<T> &p, double maxDist,
+                  PF &&paddingFunc, double maxEuclideanDist, DF &&distFunc) {
   return withinDist(p, line, maxDist, paddingFunc, maxEuclideanDist, distFunc);
 }
 
 template <typename T>
-double withinDist(const Point<T>& a, const Line<T>& b, double maxDist);
+double withinDist(const Point<T> &a, const Line<T> &b, double maxDist);
 
 template <typename T>
-double withinDist(const Line<T>& b, const Point<T>& a, double maxDist) {
+double withinDist(const Line<T> &b, const Point<T> &a, double maxDist) {
   return withinDist(a, b, maxDist);
 }
 
@@ -1947,19 +2044,19 @@ double withinDist(const Line<T>& b, const Point<T>& a, double maxDist) {
 // would match the multigeometry/line case, as line is a descendant of
 // std::vector<Point>
 template <typename T, typename PF, typename DF>
-double withinDist(const Line<T>& la, const Line<T>& lb, double maxDist,
-                  PF&& paddingFunc, double maxEuclideanDist, DF&& distFunc);
+double withinDist(const Line<T> &la, const Line<T> &lb, double maxDist,
+                  PF &&paddingFunc, double maxEuclideanDist, DF &&distFunc);
 template <typename T>
-double withinDist(const Line<T>& la, const Line<T>& lb, double maxDist) {
+double withinDist(const Line<T> &la, const Line<T> &lb, double maxDist) {
   return withinDist(
       la, lb, maxDist, defaultPaddingFunc<T>(), maxDist,
-      std::function<double(const Point<T>&, const Point<T>&, double)>(
+      std::function<double(const Point<T> &, const Point<T> &, double)>(
           euclideanDistFunc<T>));
 }
 
 template <typename T, typename PF, typename DF>
-double withinDist(const Line<T>& l, const Polygon<T>& poly, double maxDist,
-                  PF&& paddingFunc, double maxEuclideanDist, DF&& distFunc) {
+double withinDist(const Line<T> &l, const Polygon<T> &poly, double maxDist,
+                  PF &&paddingFunc, double maxEuclideanDist, DF &&distFunc) {
   return withinDist(poly, l, maxDist, paddingFunc, maxEuclideanDist, distFunc);
 }
 
@@ -1976,43 +2073,43 @@ double withinDist(const Polygon<T>& a, const Polygon<T>& b, double maxD) {
 }
 
 template <typename T>
-double withinDist(const Polygon<T>& b, const Line<T>& a, double maxDist) {
+double withinDist(const Polygon<T> &b, const Line<T> &a, double maxDist) {
   return withinDist(a, b, maxDist);
 }
 
 template <typename GeomA, typename GeomB>
-double dist(const GeomA& a, const GeomB& b) {
+double dist(const GeomA &a, const GeomB &b) {
   return withinDist(a, b, std::numeric_limits<double>::infinity());
 }
 
 template <typename GeomA, typename GeomB, typename DF, typename PF>
-double dist(const GeomA& a, const GeomB& b, PF&& paddingFunc, DF&& distFunc) {
+double dist(const GeomA &a, const GeomB &b, PF &&paddingFunc, DF &&distFunc) {
   return withinDist(a, b, std::numeric_limits<double>::infinity(), paddingFunc,
                     std::numeric_limits<double>::infinity(), distFunc);
 }
 
 template <typename T>
-std::pair<double, double> getMinMaxLocalScaleFactors(const Box<T>& boxA,
-                                                     const Box<T>& boxB,
+std::pair<double, double> getMinMaxLocalScaleFactors(const Box<T> &boxA,
+                                                     const Box<T> &boxB,
                                                      double distanceUpperBound);
 
 template <typename T>
 std::pair<double, double> getMinMaxLocalScaleFactorsWebMerc(
-    const Box<T>& boxA, const Box<T>& boxB, double distanceUpperBound);
+    const Box<T> &boxA, const Box<T> &boxB, double distanceUpperBound);
 
 template <typename T>
-double webMercMaxEuclideanDist(const Box<T>& boxA, const Box<T>& boxB,
+double webMercMaxEuclideanDist(const Box<T> &boxA, const Box<T> &boxB,
                                double maxD);
 
 template <typename T>
 double webMercMeterDistLocalSearchPadding(double euclideanDistanceUpperBound,
                                           double distanceUpperBound,
-                                          const util::geo::Box<T>& boxA,
-                                          const util::geo::Box<T>& boxB);
+                                          const util::geo::Box<T> &boxA,
+                                          const util::geo::Box<T> &boxB);
 
 template <typename T>
-double webMercWithinMeterDist(const XSortedCollection<T>& a,
-                              const XSortedCollection<T>& b, double maxD) {
+double webMercWithinMeterDist(const XSortedCollection<T> &a,
+                              const XSortedCollection<T> &b, double maxD) {
   double maxEuclideanDist = webMercMaxEuclideanDist(
       util::geo::getBoundingBox(a), util::geo::getBoundingBox(b), maxD);
   return withinDist(a, b, maxD, &webMercMeterDistLocalSearchPadding<T>,
@@ -2032,7 +2129,7 @@ double webMercWithinMeterDist(const XSortedCollection<T>& a,
 template <template <typename> class GeomA, template <typename> class GeomB,
           typename T,
           typename std::enable_if<std::is_arithmetic<T>::value, int>::type = 0>
-double webMercWithinMeterDist(const GeomA<T>& a, const GeomB<T>& b,
+double webMercWithinMeterDist(const GeomA<T> &a, const GeomB<T> &b,
                               double maxD) {
   double maxEuclideanDist = webMercMaxEuclideanDist(
       util::geo::getBoundingBox(a), util::geo::getBoundingBox(b), maxD);
@@ -2045,51 +2142,51 @@ double webMercWithinMeterDist(const GeomA<T>& a, const GeomB<T>& b,
 
 template <template <typename> class GeomA, template <typename> class GeomB,
           typename T>
-double webMercWithinMeterDist(const std::vector<GeomA<T>>& a, const GeomB<T>& b,
+double webMercWithinMeterDist(const std::vector<GeomA<T>> &a, const GeomB<T> &b,
                               double maxD);
 
 template <template <typename> class GeomA, template <typename> class GeomB,
           typename T>
-double webMercWithinMeterDist(const GeomA<T>& a, const std::vector<GeomB<T>>& b,
+double webMercWithinMeterDist(const GeomA<T> &a, const std::vector<GeomB<T>> &b,
                               double maxD) {
   return webMercWithinMeterDist(b, a, maxD);
 }
 
 template <template <typename> class GeomA, template <typename> class GeomB,
           typename T>
-double webMercWithinMeterDist(const std::vector<GeomA<T>>& a,
-                              const std::vector<GeomB<T>>& b, double maxD);
+double webMercWithinMeterDist(const std::vector<GeomA<T>> &a,
+                              const std::vector<GeomB<T>> &b, double maxD);
 
 template <typename GeomA, typename GeomB>
-double webMercMeterDist(const GeomA& a, const GeomB& b) {
+double webMercMeterDist(const GeomA &a, const GeomB &b) {
   return webMercWithinMeterDist(a, b, std::numeric_limits<double>::infinity());
 }
 
 template <typename T>
-std::vector<Point<T>> fill(const Polygon<T>& p, double d, const Box<T>& bounds);
+std::vector<Point<T>> fill(const Polygon<T> &p, double d, const Box<T> &bounds);
 
 template <typename T>
-std::vector<Point<T>> fill(const Point<T>&, double, const Box<T>&) {
+std::vector<Point<T>> fill(const Point<T> &, double, const Box<T> &) {
   return {};
 }
 
 template <typename T>
-std::vector<Point<T>> fill(const Line<T>&, double, const Box<T>&) {
+std::vector<Point<T>> fill(const Line<T> &, double, const Box<T> &) {
   // TODO: strictly speaking a line has an interior
   return {};
 }
 
 template <typename T>
-std::vector<Point<T>> fill(const Box<T>& b, double d, const Box<T>& bounds) {
+std::vector<Point<T>> fill(const Box<T> &b, double d, const Box<T> &bounds) {
   return fill(convexHull(b), d, bounds);
 }
 
 template <template <typename> class Geom, typename T>
-std::vector<Point<T>> fill(const std::vector<Geom<T>>& multi, double d,
-                           const Box<T>& bounds) {
+std::vector<Point<T>> fill(const std::vector<Geom<T>> &multi, double d,
+                           const Box<T> &bounds) {
   std::vector<Point<T>> ret;
-  for (const auto& geom : multi) {
-    const auto& points = fill(geom, d, bounds);
+  for (const auto &geom : multi) {
+    const auto &points = fill(geom, d, bounds);
     ret.insert(ret.end(), points.begin(), points.end());
   }
 
@@ -2097,12 +2194,12 @@ std::vector<Point<T>> fill(const std::vector<Geom<T>>& multi, double d,
 }
 
 template <template <typename> class Geom, typename T>
-std::vector<Point<T>> fill(const Geom<T>& p, double d) {
+std::vector<Point<T>> fill(const Geom<T> &p, double d) {
   return fill(p, d, getBoundingBox(p));
 }
 
 template <template <typename> class Geom, typename T>
-std::vector<Point<T>> fill(const std::vector<Geom<T>>& p, double d) {
+std::vector<Point<T>> fill(const std::vector<Geom<T>> &p, double d) {
   return fill(p, d, getBoundingBox(p));
 }
 
