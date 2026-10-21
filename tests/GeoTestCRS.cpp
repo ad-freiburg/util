@@ -829,6 +829,13 @@ void GeoTest::testCRS() {
         "LINESTRING(779236.435553 5942074.072431,890555.926346 6106854.834885),POLYGON((779236.435553 5942074.072431,"
         "890555.926346 5942074.072431,890555.926346 6106854.834885,779236.435553 6106854.834885,"
         "779236.435553 5942074.072431)))");
+
+    // BOX 
+    Box<double> box {util::geo::DPoint{1, 2}, util::geo::DPoint{3, 4}};
+    TEST(getWKT(box, util::geo::CRSType::CRS84, util::geo::CRSType::CRS84), ==, "POLYGON((1 2,3 2,3 4,1 4,1 2))");
+    TEST(getWKT(box, util::geo::CRSType::CRS84, util::geo::CRSType::WGS84), ==, "<http://www.opengis.net/def/crs/EPSG/0/4326> POLYGON((2 1,2 3,4 3,4 1,2 1))");
+    TEST(getWKT(box, util::geo::CRSType::CRS84, util::geo::CRSType::WEB_MERCATOR), ==,
+        "<http://www.opengis.net/def/crs/EPSG/0/3857> POLYGON((111319.490793 222684.208506,333958.47238 222684.208506,333958.47238 445640.109656,111319.490793 445640.109656,111319.490793 222684.208506))");
   }
   {
     // Test correct handling of `Point<int>` as input.

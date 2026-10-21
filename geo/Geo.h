@@ -420,10 +420,16 @@ template <typename T>
 std::string getWKT(const LineSegment<T> &l);
 
 template <typename T>
-std::string getWKT(const Box<T> &l, uint16_t prec);
+std::string getWKT(const Box<T> &l, uint16_t prec,
+                   CRSType sourceCRS = util::geo::CRSType::CRS84,
+                   CRSType targetCRS = util::geo::CRSType::CRS84,
+                   bool hideIri = false);
 
 template <typename T>
-std::string getWKT(const Box<T> &l);
+std::string getWKT(const Box<T> &l,
+                   CRSType sourceCRS = util::geo::CRSType::CRS84,
+                   CRSType targetCRS = util::geo::CRSType::CRS84,
+                   bool hideIri = false);
 
 template <typename T>
 std::string getWKT(const Polygon<T> &p, uint16_t prec,
