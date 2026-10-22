@@ -328,10 +328,10 @@ void GeoTest::testWktParsePoint() {
          ==, "POINT(1 2)");
     TEST(getWKT(pointFromWKT<double>(
              std::string("POINT(1 \"2)"), false)),
-         ==, "POINT(0 0)");
+         ==, "POINT EMPTY");
     TEST(getWKT(pointFromWKT<double>(
              std::string("POINT(\" 1 2 \")"), false)),
-         ==, "POINT(0 0)");
+         ==, "POINT EMPTY");
     TEST(getWKTType("\"POINT(1 2)\"", 0, true), ==,
          WKTType::POINT);
     TEST(getWKTType("'LINESTRING EMPTY'", 0, true), ==,
