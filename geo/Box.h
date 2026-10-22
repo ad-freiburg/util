@@ -96,6 +96,7 @@ class RotatedBox {
 // _____________________________________________________________________________
 template <typename T>
 inline Box<T> extendBox(const Point<T>& p, Box<T> b) {
+  if (p.empty()) return b;
   if (p.getX() < b.getLowerLeft().getX()) b.getLowerLeft().setX(p.getX());
   if (p.getY() < b.getLowerLeft().getY()) b.getLowerLeft().setY(p.getY());
 

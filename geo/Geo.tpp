@@ -206,7 +206,7 @@ template <typename T>
 int8_t dimension(const Collection<T>& col) {
   int8_t dim = 0;
   for (const auto& g : col) {
-    if (g.getType() == 0 && dim < 1) dim = 1;
+    if (g.getType() == 0 && dim < 1 && !g.getPoint().empty()) dim = 1;
     if (g.getType() == 1 && dim < 2) dim = 2;
     if (g.getType() == 2 && dim < 3) dim = 3;
     if (g.getType() == 3 && dim < 2) dim = 2;
@@ -226,9 +226,11 @@ Point<T> centroid(const Collection<T>& col) {
   int8_t dim = dimension(col);
   double sum = 0, x = 0, y = 0;
 
-  if (dim == 0) return Point<T>{0, 0};  // undefined behavior
+  if (dim == 0) return {};  // only empty members, centroid is empty
 
   for (const auto& g : col) {
+    if (g.getType() == 0 && g.getPoint().empty()) continue;
+    if (g.getType() == 5 && dimension(g.getCollection()) == 0) continue;
     double w = 1;
     if (dim == 1) {
       if (g.getType() == 6) w = g.getMultiPoint().size();
@@ -4520,7 +4522,7 @@ double withinDist(const Point<T>& p1, const Point<T>& p2, double, PF&&, double,
 // _____________________________________________________________________________
 template <typename T>
 size_t numPoints(const Point<T>& p) {
-  return p.empty();
+  return p.empty() ? 0 : 1;
 }
 
 // _____________________________________________________________________________
@@ -4556,6 +4558,7 @@ size_t numPoints(const Collection<T>& collection) {
     if (g.getType() == 3) ret += numPoints(g.getMultiLine());
     if (g.getType() == 4) ret += numPoints(g.getMultiPolygon());
     if (g.getType() == 5) ret += numPoints(g.getCollection());
+    if (g.getType() == 6) ret += numPoints(g.getMultiPoint());
   }
   return ret;
 }
@@ -6044,7 +6047,7 @@ Polygon<T> buffer(const Polygon<T>& pol, double d, size_t points) {
 // _____________________________________________________________________________
 template <typename T>
 Box<T> getBoundingBox(const Point<T>& p) {
-  return Box<T>(p, p);
+  return p.empty() ? Box<T>() : Box<T>(p, p);
 }
 
 // _____________________________________________________________________________
@@ -6147,6 +6150,7 @@ double getEnclosingRadius(const Point<T>& p,
 // _____________________________________________________________________________
 template <typename T>
 Polygon<T> convexHull(const Point<T>& p) {
+  if (p.empty()) return {};
   return Polygon<T>({p});
 }
 
@@ -7156,8 +7160,10 @@ Point<T> projectToCRS84(const Point<T>& p, CRSType baseCRS) {
     case util::geo::CRSType::CRS84:
       return p;
     case util::geo::CRSType::WGS84:
+      if (p.empty()) return p;
       return latLngToLngLat(p);
     case util::geo::CRSType::WEB_MERCATOR:
+      if (p.empty()) return p;
       return webMercToLatLng(p);
     default:
       unsupportedCRSFail();
@@ -7169,10 +7175,12 @@ template <typename T>
 Point<T> projectToWGS84(const Point<T>& p, CRSType baseCRS) {
   switch (baseCRS) {
     case util::geo::CRSType::CRS84:
+      if (p.empty()) return p;
       return lngLatToLatLng(p);
     case util::geo::CRSType::WGS84:
       return p;
     case util::geo::CRSType::WEB_MERCATOR:
+      if (p.empty()) return p;
       return lngLatToLatLng(webMercToLatLng(p));
     default:
       unsupportedCRSFail();
@@ -7184,8 +7192,10 @@ template <typename T>
 Point<T> projectToWebMerc(const Point<T>& p, CRSType baseCRS) {
   switch (baseCRS) {
     case util::geo::CRSType::CRS84:
+      if (p.empty()) return p;
       return latLngToWebMerc(p);
     case util::geo::CRSType::WGS84:
+      if (p.empty()) return p;
       return latLngToWebMerc(latLngToLngLat(p));
     case util::geo::CRSType::WEB_MERCATOR:
       return p;

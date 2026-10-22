@@ -686,4 +686,49 @@ void GeoTest::testGeometryBasics() {
     TEST(geo::getWKT(geo::segment(DLine{{0, 0}, {0, 1}, {0, 2}}, 0.5, 1)), ==,
          "LINESTRING(0 1,0 2)");
   }
+
+  // ___________________________________________________________________________
+  {
+    // various tests on empty points
+    geo::Point<double> e;
+    geo::Point<double> p(1, 2);
+    geo::Point<int32_t> ei;
+
+    TEST(geo::empty(e));
+    TEST(!geo::empty(p));
+    TEST(geo::empty(ei));
+
+    TEST(geo::numPoints(e), ==, 0);
+    TEST(geo::numPoints(p), ==, 1);
+    TEST(geo::numPoints(ei), ==, 0);
+
+    TEST(geo::getBoundingBox(e) == geo::Box<double>());
+    TEST(geo::getBoundingBox(ei) == geo::Box<int32_t>());
+    TEST(geo::getBoundingBox(p) == geo::Box<double>(p, p));
+
+    TEST(geo::convexHull(e).getOuter().empty());
+    TEST(geo::convexHull(ei).getOuter().empty());
+
+    geo::Box<double> b(geo::Point<double>(1, 1), geo::Point<double>(3, 3));
+    TEST(geo::extendBox(e, b) == b);
+    TEST(geo::extendBox(e, geo::Box<double>()) == geo::Box<double>());
+    TEST(geo::extendBox(ei, geo::Box<int32_t>()) == geo::Box<int32_t>());
+    TEST(geo::extendBox(p, b) ==
+         geo::Box<double>(geo::Point<double>(1, 1), geo::Point<double>(3, 3)));
+    TEST(geo::extendBox(geo::Point<double>(5, 0), b) ==
+         geo::Box<double>(geo::Point<double>(1, 0), geo::Point<double>(5, 3)));
+
+    geo::Collection<double> coll;
+    coll.push_back(e);
+    coll.push_back(geo::MultiPoint<double>{{1, 1}, {2, 3}});
+    coll.push_back(p);
+    coll.push_back(geo::Collection<double>{e});
+    TEST(geo::numPoints(coll), ==, 3);
+    TEST(geo::getBoundingBox(coll) ==
+         geo::Box<double>(geo::Point<double>(1, 1), geo::Point<double>(2, 3)));
+
+    geo::Collection<double> onlyEmpty{e};
+    TEST(geo::numPoints(onlyEmpty), ==, 0);
+    TEST(geo::getBoundingBox(onlyEmpty) == geo::Box<double>());
+  }
 }

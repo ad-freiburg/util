@@ -368,6 +368,29 @@ void GeoTest::testWktSerialize() {
     coll6.push_back(util::geo::MultiPoint<double>{});
     coll6.push_back(util::geo::Line<double>{{3, 2}, {1, 1}});
     TEST(util::geo::getWKT(util::geo::centroid(coll6)), ==, "POINT(2 1.5)");
+
+    util::geo::Collection<double> coll7;
+    coll7.push_back(util::geo::Point<double>());
+    coll7.push_back(util::geo::Point<double>{3, 2});
+    coll7.push_back(util::geo::Collection<double>{util::geo::Point<double>()});
+    TEST(util::geo::dimension(coll7), ==, 1);
+    TEST(util::geo::getWKT(util::geo::centroid(coll7)), ==, "POINT(3 2)");
+
+    util::geo::Collection<double> coll8;
+    coll8.push_back(util::geo::Point<double>());
+    TEST(util::geo::dimension(coll8), ==, 0);
+    TEST(util::geo::centroid(coll8).empty());
+
+    for (auto from : {util::geo::CRSType::CRS84, util::geo::CRSType::WGS84,
+                      util::geo::CRSType::WEB_MERCATOR}) {
+      for (auto to : {util::geo::CRSType::CRS84, util::geo::CRSType::WGS84,
+                      util::geo::CRSType::WEB_MERCATOR}) {
+        TEST(util::geo::projectToCRS(util::geo::Point<double>(), from, to)
+                 .empty());
+        TEST(util::geo::projectToCRS(util::geo::Point<int32_t>(), from, to)
+                 .empty());
+      }
+    }
   }
 
   // centroids
