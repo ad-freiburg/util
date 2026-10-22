@@ -4562,7 +4562,7 @@ size_t numPoints(const Collection<T>& collection) {
 
 // _____________________________________________________________________________
 template <typename T>
-bool empty(const Point<T>&) {
+bool empty(const Point<T>& p) {
   return p.empty();
 }
 
