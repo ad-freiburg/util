@@ -109,8 +109,18 @@ void GeoTest::testWktParsePoint() {
              false)),
          ==, "POINT(1 2)");
 
+    TEST(util::geo::pointFromWKT<double>("POINT EMPTY", true).empty());
+    TEST(util::geo::pointFromWKT<double>("POINT EMPTY", false).empty());
+    TEST(util::geo::pointFromWKT<double>("point z empty", true).empty());
+    TEST(util::geo::pointFromWKT<int32_t>("POINT EMPTY", true).empty());
+    TEST(getWKT(util::geo::pointFromWKT<double>("POINT EMPTY", true)), ==,
+         "POINT EMPTY");
+    TEST(util::geo::pointFromWKT<double>("POINT(a b)", false).empty());
+    TEST(util::geo::pointFromWKT<double>("", false).empty());
+    TEST(!util::geo::pointFromWKT<double>("POINT(0 0)", true).empty());
+
     TEST_THROWS(util::geo::WKTParseException,
-                util::geo::pointFromWKT<double>("POINT EMPTY", true));
+                util::geo::pointFromWKT<double>("POINT EMPTY GARBAGE", true));
 
     TEST_THROWS(util::geo::WKTParseException,
                 util::geo::pointFromWKT<double>("", true));
@@ -154,7 +164,7 @@ void GeoTest::testWktParsePoint() {
                     "POINT(5)", 0, util::geo::projectToCRS84<double>, true));
     TEST(getWKT(util::geo::pointFromWKTProj<double>(
              std::string("POINT(5)"), util::geo::projectToCRS84<double>)),
-         ==, "POINT(0 0)");
+         ==, "POINT EMPTY");
   }
 
   {

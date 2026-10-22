@@ -356,6 +356,18 @@ void GeoTest::testWktSerialize() {
     TEST(util::geo::getWKT(util::geo::centroid(coll2)), ==, "POINT(3 2)");
     TEST(util::geo::getWKT(util::geo::centroid(coll3)), ==, "POINT(2 1.5)");
     TEST(util::geo::getWKT(util::geo::centroid(coll4)), ==, "POINT(4 3)");
+
+    util::geo::Collection<double> coll5;
+    coll5.push_back(util::geo::MultiPoint<double>{{1, 1}, {3, 1}});
+    coll5.push_back(util::geo::Point<double>{5, 4});
+    TEST(util::geo::dimension(coll5), ==, 1);
+    TEST(util::geo::getWKT(util::geo::centroid(coll5)), ==, "POINT(3 2)");
+
+    util::geo::Collection<double> coll6;
+    coll6.push_back(util::geo::MultiPoint<double>{{10, 10}, {20, 20}});
+    coll6.push_back(util::geo::MultiPoint<double>{});
+    coll6.push_back(util::geo::Line<double>{{3, 2}, {1, 1}});
+    TEST(util::geo::getWKT(util::geo::centroid(coll6)), ==, "POINT(2 1.5)");
   }
 
   // centroids

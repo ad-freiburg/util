@@ -211,6 +211,7 @@ int8_t dimension(const Collection<T> &col) {
     if (g.getType() == 2 && dim < 3) dim = 3;
     if (g.getType() == 3 && dim < 2) dim = 2;
     if (g.getType() == 4 && dim < 3) dim = 3;
+    if (g.getType() == 6 && dim < 1 && !g.getMultiPoint().empty()) dim = 1;
     if (g.getType() == 5) {
       int8_t ldim = dimension(g.getCollection());
       if (dim < ldim) dim = ldim;
@@ -229,6 +230,9 @@ Point<T> centroid(const Collection<T> &col) {
 
   for (const auto &g : col) {
     double w = 1;
+    if (dim == 1) {
+      if (g.getType() == 6) w = g.getMultiPoint().size();
+    }
     if (dim == 2) {
       if (g.getType() == 0) w = len(g.getPoint());
       if (g.getType() == 1) w = len(g.getLine());
@@ -236,6 +240,7 @@ Point<T> centroid(const Collection<T> &col) {
       if (g.getType() == 3) w = len(g.getMultiLine());
       if (g.getType() == 4) w = len(g.getMultiPolygon());
       if (g.getType() == 5) w = len(g.getCollection());
+      if (g.getType() == 6) w = len(g.getMultiPoint());
     }
     if (dim == 3) {
       if (g.getType() == 0) w = area(g.getPoint());
@@ -244,6 +249,7 @@ Point<T> centroid(const Collection<T> &col) {
       if (g.getType() == 3) w = area(g.getMultiLine());
       if (g.getType() == 4) w = area(g.getMultiPolygon());
       if (g.getType() == 5) w = area(g.getCollection());
+      if (g.getType() == 6) w = area(g.getMultiPoint());
     }
 
     sum += w;
@@ -254,6 +260,8 @@ Point<T> centroid(const Collection<T> &col) {
     if (g.getType() == 3) cen = centroid(g.getMultiLine());
     if (g.getType() == 4) cen = centroid(g.getMultiPolygon());
     if (g.getType() == 5) cen = centroid(g.getCollection());
+    if (g.getType() == 6 && !g.getMultiPoint().empty())
+      cen = centroid(g.getMultiPoint());
 
     x += cen.getX() * w;
     y += cen.getY() * w;
@@ -502,6 +510,8 @@ util::geo::Point<double> appendPoint(std::string &ret,
 template <typename T>
 std::string getWKT(const Point<T> &p, uint16_t prec, CRSType sourceCRS,
                    CRSType targetCRS, bool hideIri) {
+  if (p.empty())
+    return hideIri ? "POINT EMPTY" : getCrsIri(targetCRS) + "POINT EMPTY";
   std::string ret;
   const std::string &iri = hideIri ? emptyIri() : getCrsIri(targetCRS);
   ret.reserve(iri.size() + 6 + prec + 3 + prec + 3 + 1);
@@ -4937,11 +4947,9 @@ Point<T> pointFromWKTProj(const char *c, const char **endr, F projFunc,
   if (!*c) c = 0;
   if (!c) {
     if (endr) (*endr) = 0;
-    if (strict) {
-      if (isEmptyWKT(start)) wktParseFail("empty point not representable");
-      wktParseFail("expected '('");
-    }
-    return {0, 0};
+    if (strict && !isEmptyWKT(start))
+      wktParseFail("expected '(' or EMPTY", start);
+    return {};
   }
 
   c += 1;
@@ -4955,7 +4963,7 @@ Point<T> pointFromWKTProj(const char *c, const char **endr, F projFunc,
 
     // set end ptr if requested
     if (endr) (*endr) = strchr(c, ')');
-    return {0, 0};
+    return {};
   }
 
   if (strict && *c != ')') wktParseFail("missing closing ')'", c);
