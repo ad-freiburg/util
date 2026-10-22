@@ -666,37 +666,38 @@ std::string getWKT(const LineSegment<T> &l) {
 
 // _____________________________________________________________________________
 template <typename T>
-std::string getWKT(const Box<T> &l, uint16_t prec) {
-  std::string ret = "POLYGON((";
-  ret.reserve(7 + 2 + 4 * (prec + 3) * 2 + 2);
+std::string getWKT(const Box<T> &l, uint16_t prec, CRSType sourceCRS,
+                   CRSType targetCRS, bool hideIri) {
+  std::string ret;
+  const std::string &iri = hideIri ? emptyIri() : getCrsIri(targetCRS);
+  ret.reserve(7 + 2 + 4 * (2 * prec + 11) + 2);
+  ret += iri;
+  ret += "POLYGON((";
 
-  formatFloatTo(ret, l.getLowerLeft().getX(), prec);
-  ret.push_back(' ');
-  formatFloatTo(ret, l.getLowerLeft().getY(), prec);
+  appendPoint(ret, l.getLowerLeft(), prec, sourceCRS, targetCRS);
   ret.push_back(',');
-  formatFloatTo(ret, l.getUpperRight().getX(), prec);
-  ret.push_back(' ');
-  formatFloatTo(ret, l.getLowerLeft().getY(), prec);
+  appendPoint(ret,
+              util::geo::Point<double>{l.getUpperRight().getX(),
+                                       l.getLowerLeft().getY()},
+              prec, sourceCRS, targetCRS);
   ret.push_back(',');
-  formatFloatTo(ret, l.getUpperRight().getX(), prec);
-  ret.push_back(' ');
-  formatFloatTo(ret, l.getUpperRight().getY(), prec);
+  appendPoint(ret, l.getUpperRight(), prec, sourceCRS, targetCRS);
   ret.push_back(',');
-  formatFloatTo(ret, l.getLowerLeft().getX(), prec);
-  ret.push_back(' ');
-  formatFloatTo(ret, l.getUpperRight().getY(), prec);
+  appendPoint(ret,
+              util::geo::Point<double>{l.getLowerLeft().getX(),
+                                       l.getUpperRight().getY()},
+              prec, sourceCRS, targetCRS);
   ret.push_back(',');
-  formatFloatTo(ret, l.getLowerLeft().getX(), prec);
-  ret.push_back(' ');
-  formatFloatTo(ret, l.getLowerLeft().getY(), prec);
+  appendPoint(ret, l.getLowerLeft(), prec, sourceCRS, targetCRS);
   ret.append("))");
   return ret;
 }
 
 // _____________________________________________________________________________
 template <typename T>
-std::string getWKT(const Box<T> &l) {
-  return getWKT(l, 6);
+std::string getWKT(const Box<T> &l, CRSType sourceCRS, CRSType targetCRS,
+                   bool hideIri) {
+  return getWKT(l, 6, sourceCRS, targetCRS, hideIri);
 }
 
 // _____________________________________________________________________________
