@@ -113,6 +113,11 @@ void GeoTest::testWktParsePoint() {
     TEST(util::geo::pointFromWKT<double>("POINT EMPTY", false).empty());
     TEST(util::geo::pointFromWKT<double>("point z empty", true).empty());
     TEST(util::geo::pointFromWKT<int32_t>("POINT EMPTY", true).empty());
+    TEST(util::geo::pointFromWKT<uint32_t>("POINT EMPTY", true).empty());
+    TEST(util::geo::pointFromWKT<int16_t>("POINT EMPTY", true).empty());
+    TEST(util::geo::pointFromWKT<uint16_t>("POINT EMPTY", true).empty());
+    TEST(util::geo::pointFromWKT<int8_t>("POINT EMPTY", true).empty());
+    TEST(util::geo::pointFromWKT<uint8_t>("POINT EMPTY", true).empty());
     TEST(getWKT(util::geo::pointFromWKT<double>("POINT EMPTY", true)), ==,
          "POINT EMPTY");
     TEST(util::geo::pointFromWKT<double>("POINT(a b)", false).empty());
