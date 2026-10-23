@@ -15,6 +15,7 @@
 #include <limits>
 #include <map>
 #include <sstream>
+#include <type_traits>
 #include <vector>
 #ifdef PBUTIL_ZLIB_FOUND
 #include <zlib.h>
@@ -500,6 +501,29 @@ template <typename T>
 inline T boundedAdd(const T a, const T b) {
   return a > std::numeric_limits<T>::max() - b ? std::numeric_limits<T>::max()
                                                : a + b;
+}
+
+// _____________________________________________________________________________
+inline float boundedAbsDiff(const float a, const float b) {
+  return fabs(a - b);
+}
+
+// _____________________________________________________________________________
+inline double boundedAbsDiff(const double a, const double b) {
+  return fabs(a - b);
+}
+
+// _____________________________________________________________________________
+template <typename T>
+inline T boundedAbsDiff(const T a, const T b) {
+  // for integer types (float and double are caught above), we convert to
+  // an unsigned version of the type to have enough room left to the diff, then
+  // convert back, this avoids floating point artihmetic
+  typedef typename std::make_unsigned<T>::type U;
+  const U d = a > b ? U(a) - U(b) : U(b) - U(a);
+  return d > static_cast<U>(std::numeric_limits<T>::max())
+             ? std::numeric_limits<T>::max()
+             : static_cast<T>(d);
 }
 
 // _____________________________________________________________________________

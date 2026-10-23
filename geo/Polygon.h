@@ -11,6 +11,7 @@
 #include "./Box.h"
 #include "./Line.h"
 #include "./Point.h"
+#include "util/Misc.h"
 
 namespace util {
 namespace geo {
@@ -153,7 +154,8 @@ class XSortedRing {
  public:
   XSortedRing() {}
   XSortedRing(const Box<T>& box) : _ring(8), _bbox(box) {
-    _maxSegLen = box.getUpperRight().getX() - box.getLowerLeft().getX();
+    _maxSegLen =
+        boundedAbsDiff(box.getUpperRight().getX(), box.getLowerLeft().getX());
     _area = util::geo::area(box);
 
     _ring[0] = {box.getLowerLeft(),
@@ -222,7 +224,7 @@ class XSortedRing {
       if (ring[i - 1].getX() == ring[i].getX() &&
           ring[i - 1].getY() == ring[i].getY())
         continue;
-      T len = fabs(ring[i - 1].getX() - ring[i].getX());
+      T len = boundedAbsDiff(ring[i - 1].getX(), ring[i].getX());
       if (len > _maxSegLen) _maxSegLen = len;
 
       if (!haveLastNext) _bbox = extendBox(ring[i - 1], _bbox);
@@ -292,7 +294,7 @@ class XSortedRing {
     if (ring.size() > 1 && !(ring[ring.size() - 1].getX() == ring[0].getX() &&
                              ring[ring.size() - 1].getY() == ring[0].getY())) {
       size_t i = ring.size();
-      T len = fabs(ring[i - 1].getX() - ring[0].getX());
+      T len = boundedAbsDiff(ring[i - 1].getX(), ring[0].getX());
       if (len > _maxSegLen) _maxSegLen = len;
 
       double prevAng;
@@ -405,7 +407,7 @@ class XSortedRing {
 
  private:
   std::vector<XSortedTuple<T>> _ring;
-  T _maxSegLen = -1;
+  T _maxSegLen = 0;
   Box<T> _bbox;
   double _area = 0;
 };
@@ -468,10 +470,9 @@ class XSortedPolygon {
       _innerBoxes.push_back(box);
       _innerAreas.push_back(_inners.back().area());
       _boxIdx.push_back({box.getLowerLeft().getX(), _innerAreas.size() - 1});
-      if (box.getUpperRight().getX() - box.getLowerLeft().getX() >
-          _innerMaxSegLen)
-        _innerMaxSegLen =
-            box.getUpperRight().getX() - box.getLowerLeft().getX();
+      T width =
+          boundedAbsDiff(box.getUpperRight().getX(), box.getLowerLeft().getX());
+      if (width > _innerMaxSegLen) _innerMaxSegLen = width;
     }
 
     std::sort(_boxIdx.begin(), _boxIdx.end());
@@ -529,9 +530,9 @@ class XSortedPolygon {
     size_t i = 0;
 
     if (getInnerMaxSegLen() < std::numeric_limits<T>::max()) {
-      i = std::lower_bound(
-              getInnerBoxIdx().begin(), getInnerBoxIdx().end(),
-              std::pair<T, size_t>{p.getX() - getInnerMaxSegLen(), 0}) -
+      i = std::lower_bound(getInnerBoxIdx().begin(), getInnerBoxIdx().end(),
+                           std::pair<T, size_t>{
+                               boundedSub(p.getX(), getInnerMaxSegLen()), 0}) -
           getInnerBoxIdx().begin();
     }
     return i;

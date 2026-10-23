@@ -747,4 +747,126 @@ void GeoTest::testGeometryBasics() {
     TEST(geo::numPoints(onlyEmpty), ==, 0);
     TEST(geo::getBoundingBox(onlyEmpty) == geo::Box<double>());
   }
+
+  // ___________________________________________________________________________
+  {
+    // point / line intersection
+    geo::Line<double> l{{0, 0}, {2, 2}, {4, 0}};
+    TEST(geo::intersects(l, geo::Point<double>(1, 1)));
+    TEST(geo::intersects(geo::Point<double>(1, 1), l));
+    TEST(geo::intersects(l, geo::Point<double>(4, 0)));
+    TEST(geo::intersects(geo::Point<double>(3, 1), l));
+    TEST(!geo::intersects(l, geo::Point<double>(1, 0)));
+    TEST(!geo::intersects(geo::Point<double>(1, 0), l));
+    TEST(!geo::intersects(l, geo::Point<double>()));
+    TEST(!geo::intersects(geo::Point<double>(), l));
+    TEST(!geo::intersects(geo::Line<double>{}, geo::Point<double>(1, 1)));
+
+    geo::Line<int32_t> li{{0, 0}, {2, 2}, {4, 0}};
+    TEST(geo::intersects(li, geo::Point<int32_t>(1, 1)));
+    TEST(!geo::intersects(geo::Point<int32_t>(1, 0), li));
+    TEST(!geo::intersects(geo::Point<int32_t>(), li));
+  }
+
+  // ___________________________________________________________________________
+  {
+    int32_t lo = std::numeric_limits<int32_t>::lowest();
+    int32_t hi = std::numeric_limits<int32_t>::max();
+
+    geo::Line<int32_t> l{{lo, 0}, {hi, 0}};
+    TEST(geo::XSortedLine<int32_t>(l).getMaxSegLen(), ==, hi);
+    TEST(geo::XSortedLine<int32_t>(geo::LineSegment<int32_t>({lo, 0}, {hi, 0}))
+             .getMaxSegLen(),
+         ==, hi);
+    TEST(geo::XSortedLine<int32_t>(geo::Line<int32_t>{{0, 0}, {5, 1}, {3, 2}})
+             .getMaxSegLen(),
+         ==, 5);
+
+    geo::Polygon<int32_t> world(
+        geo::Line<int32_t>{{lo, lo}, {hi, lo}, {hi, hi}, {lo, hi}, {lo, lo}});
+    geo::XSortedPolygon<int32_t> worldX(world);
+    TEST(worldX.getOuter().getMaxSegLen(), ==, hi);
+
+    // unclosed ring - closing segment covers full range
+    geo::Polygon<int32_t> open(geo::Line<int32_t>{{hi, 0}, {0, 1}, {lo, 0}});
+    TEST(geo::XSortedPolygon<int32_t>(open).getOuter().getMaxSegLen(), ==, hi);
+
+    geo::Polygon<int32_t> holed(
+        geo::Line<int32_t>{{lo, lo}, {hi, lo}, {hi, hi}, {lo, hi}, {lo, lo}},
+        {geo::Line<int32_t>{{lo + 1, -1},
+                            {hi - 1, -1},
+                            {hi - 1, 1},
+                            {lo + 1, 1},
+                            {lo + 1, -1}}});
+    TEST(geo::XSortedPolygon<int32_t>(holed).getInnerMaxSegLen(), ==, hi);
+
+    geo::Box<int32_t> worldBox(geo::Point<int32_t>(lo, lo),
+                               geo::Point<int32_t>(hi, hi));
+    TEST(geo::XSortedRing<int32_t>(worldBox).getMaxSegLen(), ==, hi);
+
+    int32_t w = 2000000000;
+    geo::Polygon<int32_t> wide(
+        geo::Line<int32_t>{{-w, -w}, {w, -w}, {w, w}, {-w, w}, {-w, -w}},
+        {geo::Line<int32_t>{
+            {-w + 1, -1}, {w - 1, -1}, {w - 1, 1}, {-w + 1, 1}, {-w + 1, -1}}});
+    geo::XSortedPolygon<int32_t> wideX(wide);
+    TEST(wideX.getOuter().getMaxSegLen(), ==, hi);
+    TEST(wideX.getInnerMaxSegLen(), ==, hi);
+    TEST(geo::containsCovers(geo::Point<int32_t>(5, 5), wideX).first);
+    TEST(geo::containsCovers(geo::Point<int32_t>(-w + 5, 5), wideX).first);
+    TEST(!geo::containsCovers(geo::Point<int32_t>(0, 0), wideX).second);
+    TEST(!geo::containsCovers(geo::Point<int32_t>(5, -w - 5), wideX).second);
+  }
+
+  // ___________________________________________________________________________
+  {
+    // test behavior at the T boundary
+
+    auto poly = geo::polygonFromWKT<int32_t>(
+        "POLYGON((0 0, 1000000000 0, 1000000000 1000000000, 0 1000000000, 0 0),"
+        "(100000000 100000000, 200000000 100000000, 200000000 200000000,"
+        "100000000 200000000, 100000000 100000000))");
+    auto inside = geo::polygonFromWKT<int32_t>(
+        "POLYGON((10 10, 50 10, 50 50, 10 50, 10 10))");
+    auto inHole = geo::polygonFromWKT<int32_t>(
+        "POLYGON((100000010 100000010, 100000050 100000010,"
+        "100000050 100000050, 100000010 100000050, 100000010 100000010))");
+    auto line = geo::lineFromWKT<int32_t>(
+        "LINESTRING(5 500000000, 300000000 500000000)");
+    auto lineHole = geo::lineFromWKT<int32_t>(
+        "LINESTRING(5 150000000, 300000000 150000000)");
+
+    // x-translate the geoms by lowest(), note that all x coordinates above are
+    // positive, so this will work
+    double lo = std::numeric_limits<int32_t>::lowest();
+    auto polyE = geo::move(poly, lo, 0);
+    auto insideE = geo::move(inside, lo, 0);
+    auto inHoleE = geo::move(inHole, lo, 0);
+    auto lineE = geo::move(line, lo, 0);
+    auto lineHoleE = geo::move(lineHole, lo, 0);
+
+    TEST(polyE.getOuter()[0].getX(), ==, std::numeric_limits<int32_t>::lowest());
+
+    geo::XSortedPolygon<int32_t> polyX(poly), polyEX(polyE);
+    geo::XSortedPolygon<int32_t> insideX(inside), insideEX(insideE);
+    geo::XSortedPolygon<int32_t> inHoleX(inHole), inHoleEX(inHoleE);
+    geo::XSortedLine<int32_t> lineX(line), lineEX(lineE);
+    geo::XSortedLine<int32_t> lineHoleX(lineHole), lineHoleEX(lineHoleE);
+
+    // attributes must match even after translate!
+    TEST(geo::DE9IM(lineX, polyX), ==, "1FF0FF212");
+    TEST(geo::DE9IM(lineEX, polyEX), ==, "1FF0FF212");
+
+    TEST(geo::DE9IM(lineHoleX, polyX), ==, "1010FF212");
+    TEST(geo::DE9IM(lineHoleEX, polyEX), ==, "1010FF212");
+
+    TEST(geo::DE9IM(insideX, polyX), ==, "2FF1FF212");
+    TEST(geo::DE9IM(insideEX, polyEX), ==, "2FF1FF212");
+
+    TEST(geo::DE9IM(inHoleX, polyX), ==, "FF2FF1212");
+    TEST(geo::DE9IM(inHoleEX, polyEX), ==, "FF2FF1212");
+
+    TEST(geo::DE9IM(polyX, inHoleX), ==, "FF2FF1212");
+    TEST(geo::DE9IM(polyEX, inHoleEX), ==, "FF2FF1212");
+  }
 }

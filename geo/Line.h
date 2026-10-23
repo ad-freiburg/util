@@ -12,6 +12,7 @@
 #include <vector>
 
 #include "./Point.h"
+#include "util/Misc.h"
 
 namespace util {
 namespace geo {
@@ -337,7 +338,7 @@ class XSortedLine {
       if (line[i - 1].getX() == line[i].getX() &&
           line[i - 1].getY() == line[i].getY())
         continue;
-      T len = fabs(line[i - 1].getX() - line[i].getX());
+      T len = boundedAbsDiff(line[i - 1].getX(), line[i].getX());
       if (len > _maxSegLen) _maxSegLen = len;
 
       double prevAng = 0;
@@ -446,7 +447,7 @@ class XSortedLine {
                   2 * M_PI,   true,
                   true,       true};
     }
-    _maxSegLen = fabs(line.first.getX() - line.second.getX());
+    _maxSegLen = boundedAbsDiff(line.first.getX(), line.second.getX());
     _first = line.first;
     _last = line.second;
     _bbox = getBoundingBox(line);
@@ -484,7 +485,7 @@ class XSortedLine {
   std::vector<XSortedTuple<T>> _line;
   Point<T> _first;
   Point<T> _last;
-  T _maxSegLen = -1;
+  T _maxSegLen = 0;
   Box<T> _bbox;
   double _len = 0;
 };

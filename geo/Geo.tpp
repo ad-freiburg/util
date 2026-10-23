@@ -985,8 +985,8 @@ int8_t polyContCheck(const Point<T>& a, Point<T> b, Point<T> c) {
               (c.getY() <= a.getY() && a.getY() <= b.getY())));
   }
 
-  if (fabs(a.getY() - b.getY()) < EPSILON &&
-      fabs(a.getX() - b.getX()) < EPSILON)
+  if (fabs(1.0 * a.getY() - 1.0 * b.getY()) < EPSILON &&
+      fabs(1.0 * a.getX() - 1.0 * b.getX()) < EPSILON)
     return 0;
 
   if (b.getX() > c.getX()) {
@@ -1942,20 +1942,20 @@ uint8_t intersectsHelper(const std::vector<XSortedTuple<T>>& ls1,
 
   // skip irrelevant parts in ls1
   if (maxSegLenA < std::numeric_limits<T>::max() &&
-      ls1[i].p.getX() < ls2[j].p.getX() - maxSegLenA) {
+      ls1[i].p.getX() < boundedSub(ls2[j].p.getX(), maxSegLenA)) {
     i = std::lower_bound(
             ls1.begin() + i, ls1.end(),
-            XSortedTuple<T>{{static_cast<T>(ls2[j].p.getX() - maxSegLenA), 0},
+            XSortedTuple<T>{{boundedSub(ls2[j].p.getX(), maxSegLenA), 0},
                             false}) -
         ls1.begin();
   }
 
   // skip irrelevant parts in ls2
   if (maxSegLenB < std::numeric_limits<T>::max() &&
-      ls2[j].p.getX() < ls1[i].p.getX() - maxSegLenB) {
+      ls2[j].p.getX() < boundedSub(ls1[i].p.getX(), maxSegLenB)) {
     j = std::lower_bound(
             ls2.begin() + j, ls2.end(),
-            XSortedTuple<T>{{static_cast<T>(ls1[i].p.getX() - maxSegLenB), 0},
+            XSortedTuple<T>{{boundedSub(ls1[i].p.getX(), maxSegLenB), 0},
                             false}) -
         ls2.begin();
   }
@@ -2782,7 +2782,7 @@ bool intersects(const Line<T>& ls1, const Line<T>& ls2) {
 // _____________________________________________________________________________
 template <typename T>
 bool intersects(const Line<T>& l, const Point<T>& p) {
-  return contains(l, p);
+  return contains(p, l);
 }
 
 // _____________________________________________________________________________
