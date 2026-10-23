@@ -149,4 +149,16 @@ void GeoTest::testPolygonFill() {
 
     TEST(fillPoints.size(), ==, 20);
   }
+
+  {
+    auto a = polygonFromWKT<double>(
+        "POLYGON((0 0.2, 10 0.2, 10 0.8, 0 0.8, 0 0.2))");
+    TEST(!fill(a, 0.1).empty());
+  }
+  {
+    auto a = polygonFromWKT<int>("POLYGON((0 0, 4 0, 4 4, 0 4, 0 0))");
+    auto points = fill(a, 0.5);
+    std::sort(points.begin(), points.end());
+    TEST(std::unique(points.begin(), points.end()) == points.end());
+  }
 }

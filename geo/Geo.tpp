@@ -6789,8 +6789,7 @@ double haversine(T lat1, T lon1, T lat2, T lon2) {
 // _____________________________________________________________________________
 template <typename T>
 double haversine(const Point<T>& a, const Point<T>& b) {
-  if (a.empty() || b.empty())
-    return std::numeric_limits<double>::quiet_NaN();
+  if (a.empty() || b.empty()) return std::numeric_limits<double>::quiet_NaN();
 
   return haversine(a.getY(), a.getX(), b.getY(), b.getX());
 }
@@ -6818,8 +6817,7 @@ double haversineWebMerc(T x1, T y1, T x2, T y2) {
 // _____________________________________________________________________________
 template <typename T>
 double haversineWebMerc(const Point<T>& a, const Point<T>& b) {
-  if (a.empty() || b.empty())
-    return std::numeric_limits<double>::quiet_NaN();
+  if (a.empty() || b.empty()) return std::numeric_limits<double>::quiet_NaN();
 
   return haversineWebMerc(a.getX(), a.getY(), b.getX(), b.getY());
 }
@@ -8098,6 +8096,12 @@ Padding splitPadding(double padding, const Box<T>& boxA, const Box<T>& boxB) {
 template <typename T>
 std::vector<Point<T>> fill(const Polygon<T>& p, double d,
                            const Box<T>& bounds) {
+  // ensure that we dont produce duplicate points if T is int
+  if (d < 1 && T(d) == T()) d = 1;
+
+  // would loop forever with d == 0...
+  if (d == 0) d = EPSILON;
+
   std::vector<Point<T>> ret;
 
   // y bounds
@@ -8121,8 +8125,8 @@ std::vector<Point<T>> fill(const Polygon<T>& p, double d,
 
       // for each segment [from, to]...
       while (to < ring->size()) {
-        int yFr = (*ring)[from].getY();
-        int yTo = (*ring)[to].getY();
+        double yFr = (*ring)[from].getY();
+        double yTo = (*ring)[to].getY();
 
         // .. check if we intersect the y-scanline, this is asymmetric (we
         // intersect if yFr touches y (then yTo > y and yFr !> y) but not if
@@ -8156,7 +8160,10 @@ std::vector<Point<T>> fill(const Polygon<T>& p, double d,
       T xTo =
           std::min(static_cast<T>(xs[k + 1]), bounds.getUpperRight().getX());
 
-      for (T x = xFr; x <= xTo; x += d) ret.push_back({x, y});
+      for (double x = xFr; x <= xTo; x += d) {
+        auto fp = Point<T>(x, y);
+        if (ret.empty() || ret.back() != fp) ret.push_back(fp);
+      }
     }
   }
 
