@@ -3710,21 +3710,49 @@ double angBetween(const Point<T>& p1, const MultiPoint<T>& points) {
 }
 
 // _____________________________________________________________________________
-template <typename T, typename DF>
-double dist(const AnyGeometry<T>& any1, const AnyGeometry<T>& any2) {
-  if (any1.getType() == 0) return dist(any1.getPoint(), any2);
-  if (any1.getType() == 1) return dist(any1.getLine(), any2);
-  if (any1.getType() == 2) return dist(any1.getPolygon(), any2);
-  if (any1.getType() == 3) return dist(any1.getMultiLine(), any2);
-  if (any1.getType() == 4) return dist(any1.getMultiPolygon(), any2);
-  if (any1.getType() == 5) return dist(any1.getCollection(), any2);
-  if (any1.getType() == 6) return dist(any1.getMultiPoint(), any2);
+template <typename T, typename G>
+double _distToAny(const G& geom, const AnyGeometry<T>& any) {
+  if (any.getType() == 0) return dist(geom, any.getPoint());
+  if (any.getType() == 1) return dist(geom, any.getLine());
+  if (any.getType() == 2) return dist(geom, any.getPolygon());
+  if (any.getType() == 3) return dist(geom, any.getMultiLine());
+  if (any.getType() == 4) return dist(geom, any.getMultiPolygon());
+  if (any.getType() == 5) return dist(geom, any.getCollection());
+  if (any.getType() == 6) return dist(geom, any.getMultiPoint());
 
   return std::numeric_limits<double>::infinity();
 }
 
 // _____________________________________________________________________________
-template <template <typename> class GeometryB, typename T, typename DF>
+template <typename T, typename G, typename DF>
+double _distToAny(const G& geom, const AnyGeometry<T>& any, DF&& distFunc) {
+  if (any.getType() == 0) return dist(geom, any.getPoint(), distFunc);
+  if (any.getType() == 1) return dist(geom, any.getLine(), distFunc);
+  if (any.getType() == 2) return dist(geom, any.getPolygon(), distFunc);
+  if (any.getType() == 3) return dist(geom, any.getMultiLine(), distFunc);
+  if (any.getType() == 4) return dist(geom, any.getMultiPolygon(), distFunc);
+  if (any.getType() == 5) return dist(geom, any.getCollection(), distFunc);
+  if (any.getType() == 6) return dist(geom, any.getMultiPoint(), distFunc);
+
+  return std::numeric_limits<double>::infinity();
+}
+
+// _____________________________________________________________________________
+template <typename T>
+double dist(const AnyGeometry<T>& any1, const AnyGeometry<T>& any2) {
+  if (any1.getType() == 0) return _distToAny(any1.getPoint(), any2);
+  if (any1.getType() == 1) return _distToAny(any1.getLine(), any2);
+  if (any1.getType() == 2) return _distToAny(any1.getPolygon(), any2);
+  if (any1.getType() == 3) return _distToAny(any1.getMultiLine(), any2);
+  if (any1.getType() == 4) return _distToAny(any1.getMultiPolygon(), any2);
+  if (any1.getType() == 5) return _distToAny(any1.getCollection(), any2);
+  if (any1.getType() == 6) return _distToAny(any1.getMultiPoint(), any2);
+
+  return std::numeric_limits<double>::infinity();
+}
+
+// _____________________________________________________________________________
+template <template <typename> class GeometryB, typename T>
 double dist(const AnyGeometry<T>& any, const GeometryB<T>& geomB) {
   if (any.getType() == 0) return dist(any.getPoint(), geomB);
   if (any.getType() == 1) return dist(any.getLine(), geomB);
@@ -3741,13 +3769,17 @@ double dist(const AnyGeometry<T>& any, const GeometryB<T>& geomB) {
 template <typename T, typename DF>
 double dist(const AnyGeometry<T>& any1, const AnyGeometry<T>& any2,
             DF&& distFunc) {
-  if (any1.getType() == 0) return dist(any1.getPoint(), any2, distFunc);
-  if (any1.getType() == 1) return dist(any1.getLine(), any2, distFunc);
-  if (any1.getType() == 2) return dist(any1.getPolygon(), any2, distFunc);
-  if (any1.getType() == 3) return dist(any1.getMultiLine(), any2, distFunc);
-  if (any1.getType() == 4) return dist(any1.getMultiPolygon(), any2, distFunc);
-  if (any1.getType() == 5) return dist(any1.getCollection(), any2, distFunc);
-  if (any1.getType() == 6) return dist(any1.getMultiPoint(), any2, distFunc);
+  if (any1.getType() == 0) return _distToAny(any1.getPoint(), any2, distFunc);
+  if (any1.getType() == 1) return _distToAny(any1.getLine(), any2, distFunc);
+  if (any1.getType() == 2) return _distToAny(any1.getPolygon(), any2, distFunc);
+  if (any1.getType() == 3)
+    return _distToAny(any1.getMultiLine(), any2, distFunc);
+  if (any1.getType() == 4)
+    return _distToAny(any1.getMultiPolygon(), any2, distFunc);
+  if (any1.getType() == 5)
+    return _distToAny(any1.getCollection(), any2, distFunc);
+  if (any1.getType() == 6)
+    return _distToAny(any1.getMultiPoint(), any2, distFunc);
 
   return std::numeric_limits<double>::infinity();
 }

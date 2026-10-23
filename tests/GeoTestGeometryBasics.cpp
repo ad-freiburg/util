@@ -1065,4 +1065,36 @@ void GeoTest::testGeometryBasics() {
     TEST(geo::convexHull(geo::Box<double>()).getOuter().empty());
     TEST(geo::empty(geo::getBoundingRect(geo::Box<double>())));
   }
+
+  // ___________________________________________________________________________
+  {
+    auto sq = geo::Polygon<double>(
+        geo::Line<double>{{-1, 0}, {1, 0}, {1, 1}, {-1, 1}});
+    std::vector<geo::AnyGeometry<double>> geoms{
+        geo::Point<double>(0, 1),
+        geo::Line<double>{{-1, 1}, {1, 1}},
+        sq,
+        geo::MultiLine<double>{geo::Line<double>{{-1, 1}, {1, 1}}},
+        geo::MultiPolygon<double>{sq},
+        geo::Collection<double>{geo::Point<double>(0, 1)},
+        geo::MultiPoint<double>{{0, 1}, {9, 9}}};
+
+    geo::Point<double> q(0, 5);
+    geo::AnyGeometry<double> anyQ(q);
+    geo::AnyGeometry<double> anyQMulti(geo::MultiPoint<double>{q});
+
+    for (const auto& g : geoms) {
+      TEST(geo::dist(g, anyQ), ==, approx(4));
+      TEST(geo::dist(anyQ, g), ==, approx(4));
+      TEST(geo::dist(g, anyQMulti), ==, approx(4));
+      TEST(geo::dist(anyQMulti, g), ==, approx(4));
+      TEST(geo::dist(g, q), ==, approx(4));
+      TEST(geo::dist(q, g), ==, approx(4));
+      TEST(geo::dist(g, anyQ, geo::defaultDistFunc<double>()), ==, approx(4));
+      TEST(geo::dist(g, q, geo::defaultDistFunc<double>()), ==, approx(4));
+    }
+
+    TEST(std::isnan(
+        geo::dist(geo::AnyGeometry<double>(geo::Point<double>()), anyQ)));
+  }
 }
