@@ -923,6 +923,9 @@ void GeoTest::testGeometryBasics() {
     geo::Line<int32_t> l2{{0, 1}, {3, 5}, {3, 11}};
 
     TEST(geo::len(l), ==, approx(11));
+    TEST(geo::len(geo::Polygon<int32_t>(
+             geo::Line<int32_t>{{0, 0}, {4, 0}, {4, 3}, {0, 0}})),
+         ==, approx(12));
     TEST(geo::shorterThan(l, 12));
     TEST(geo::longerThan(l, 10));
     TEST(geo::longerThan(l, l, 21));
@@ -936,5 +939,25 @@ void GeoTest::testGeometryBasics() {
     geo::Collection<float> collf{geo::Point<float>(1, 1),
                                  geo::Point<float>(2, 4)};
     TEST(geo::getWKT(geo::centroid(collf)), ==, "POINT(1.5 2.5)");
+  }
+
+  // ___________________________________________________________________________
+  {
+    TEST(geo::len(geo::polygonFromWKT<double>("POLYGON((0 0, 4 0, 4 3, 0 0))")),
+         ==, approx(12));
+    TEST(geo::len(geo::Polygon<double>(
+             geo::Line<double>{{0, 0}, {4, 0}, {4, 3}})),
+         ==, approx(12));
+
+    TEST(geo::len(geo::polygonFromWKT<double>(
+             "POLYGON((0 0, 10 0, 10 10, 0 10, 0 0), (2 2, 4 2, 4 4, 2 4, 2 2))")),
+         ==, approx(48));
+
+    geo::Polygon<double> closed;
+    closed.getOuter() = {{0, 0}, {4, 0}, {4, 3}, {0, 0}};
+    TEST(geo::len(closed), ==, approx(12));
+
+    TEST(geo::len(geo::Polygon<double>()), ==, approx(0));
+    TEST(geo::len(geo::polygonFromWKT<double>("POLYGON EMPTY")), ==, approx(0));
   }
 }

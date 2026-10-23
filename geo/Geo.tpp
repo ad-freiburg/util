@@ -5566,15 +5566,17 @@ double len(const Line<T>& g) {
 // _____________________________________________________________________________
 template <typename T>
 double len(const Polygon<T>& g) {
-  double ret = 0;
-  for (size_t i = 1; i < g.getOuter().size(); i++)
-    ret +=
-        dist(1.0 * g.getOuter()[i - 1].getX(), 1.0 * g.getOuter()[i - 1].getY(),
-             1.0 * g.getOuter()[i].getX(), 1.0 * g.getOuter()[i].getY());
+  const auto& o = g.getOuter();
+  double ret = len(o);
+  // closing segment
+  if (o.size() > 1)
+    ret += dist(1.0 * o.back().getX(), 1.0 * o.back().getY(),
+                1.0 * o.front().getX(), 1.0 * o.front().getY());
   for (const auto& inner : g.getInners()) {
-    for (size_t i = 1; i < inner.size(); i++)
-      ret += dist(1.0 * inner[i - 1].getX(), 1.0 * inner[i - 1].getY(),
-                  1.0 * inner[i].getX(), 1.0 * inner[i].getY());
+    ret += len(inner);
+    if (inner.size() > 1)
+      ret += dist(1.0 * inner.back().getX(), 1.0 * inner.back().getY(),
+                  1.0 * inner.front().getX(), 1.0 * inner.front().getY());
   }
   return ret;
 }
