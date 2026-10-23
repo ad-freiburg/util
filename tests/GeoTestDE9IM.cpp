@@ -72,6 +72,45 @@ static void testDE9IMEmpty() {
   TEST(geo::DE9IM(emptyPolyX, emptyOuterX), ==, "FFFFFFFF2");
   TEST(geo::DE9IM(emptyLineX, emptyOuterX), ==, "FFFFFFFF2");
   TEST(geo::DE9IM(emptyOuterX, emptyLineX), ==, "FFFFFFFF2");
+
+  // empty point
+  auto emptyPoint = pointFromWKT<double>("POINT EMPTY");
+  TEST(emptyPoint.empty());
+
+  TEST(geo::DE9IM(emptyPoint, emptyPoint), ==, "FFFFFFFF2");
+  TEST(geo::DE9IM(emptyPoint, point), ==, "FFFFFF0F2");
+  TEST(geo::DE9IM(point, emptyPoint), ==, "FF0FFFFF2");
+  TEST(geo::DE9IM(emptyPoint, lineX), ==, "FFFFFF102");
+  TEST(geo::DE9IM(lineX, emptyPoint), ==, "FF1FF0FF2");
+  TEST(geo::DE9IM(emptyPoint, polyX), ==, "FFFFFF212");
+  TEST(geo::DE9IM(polyX, emptyPoint), ==, "FF2FF1FF2");
+  TEST(geo::DE9IM(emptyPoint, polyWithInnerX), ==, "FFFFFF212");
+  TEST(geo::DE9IM(polyWithInnerX, emptyPoint), ==, "FF2FF1FF2");
+  TEST(geo::DE9IM(emptyPoint, emptyLineX), ==, "FFFFFFFF2");
+  TEST(geo::DE9IM(emptyLineX, emptyPoint), ==, "FFFFFFFF2");
+  TEST(geo::DE9IM(emptyPoint, emptyPolyX), ==, "FFFFFFFF2");
+  TEST(geo::DE9IM(emptyPolyX, emptyPoint), ==, "FFFFFFFF2");
+  TEST(geo::DE9IM(emptyPoint, emptyOuterX), ==, "FFFFFFFF2");
+  TEST(geo::DE9IM(emptyOuterX, emptyPoint), ==, "FFFFFFFF2");
+
+  TEST(emptyPoint == Point<double>());
+  TEST(!geo::DE9IM(emptyPoint, emptyPoint).equals());
+  TEST(!geo::DE9IM(emptyPoint, emptyPoint).intersects());
+  TEST(geo::DE9IM(emptyPoint, emptyPoint).disjoint());
+
+  // narrower integer coordinates
+  Point<int32_t> emptyPointI;
+  Point<int32_t> pointI(4, 4);
+  XSortedLine<int32_t> lineXI(Line<int32_t>{{10, 4}, {12, 4}});
+  XSortedPolygon<int32_t> polyXI(Polygon<int32_t>(
+      Line<int32_t>{{0, 0}, {10, 0}, {10, 10}, {0, 10}, {0, 0}}));
+  TEST(geo::DE9IM(emptyPointI, emptyPointI), ==, "FFFFFFFF2");
+  TEST(geo::DE9IM(emptyPointI, pointI), ==, "FFFFFF0F2");
+  TEST(geo::DE9IM(pointI, emptyPointI), ==, "FF0FFFFF2");
+  TEST(geo::DE9IM(emptyPointI, lineXI), ==, "FFFFFF102");
+  TEST(geo::DE9IM(lineXI, emptyPointI), ==, "FF1FF0FF2");
+  TEST(geo::DE9IM(emptyPointI, polyXI), ==, "FFFFFF212");
+  TEST(geo::DE9IM(polyXI, emptyPointI), ==, "FF2FF1FF2");
 }
 
 // _____________________________________________________________________________

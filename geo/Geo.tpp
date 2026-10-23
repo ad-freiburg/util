@@ -1609,6 +1609,7 @@ std::tuple<bool, bool> intersectsContains(const Point<T>& p,
 // _____________________________________________________________________________
 template <typename T>
 DE9IMatrix DE9IM(const Point<T>& p, const XSortedLine<T>& line, size_t i) {
+  if (p.empty()) return line.empty() ? MFFFFFFFF2 : MFFFFFF102;
   if (line.empty()) return MFF0FFFFF2;
   auto res = intersectsContains(p, line, i);
   if (std::get<1>(res)) return M0FFFFF102;
@@ -1625,6 +1626,7 @@ DE9IMatrix DE9IM(const Point<T>& p, const XSortedLine<T>& line) {
 // _____________________________________________________________________________
 template <typename T>
 DE9IMatrix DE9IM(const XSortedLine<T>& line, size_t i, const Point<T>& p) {
+  if (p.empty()) return line.empty() ? MFFFFFFFF2 : MFF1FF0FF2;
   if (line.empty()) return MFFFFFF0F2;
   auto res = intersectsContains(p, line, i);
   if (std::get<1>(res)) return M0F1FF0FF2;
@@ -1684,6 +1686,7 @@ std::pair<bool, bool> containsCovers(const Point<T>& p,
 // _____________________________________________________________________________
 template <typename T>
 DE9IMatrix DE9IM(const Point<T>& p, const XSortedPolygon<T>& poly, size_t i) {
+  if (p.empty()) return poly.empty() ? MFFFFFFFF2 : MFFFFFF212;
   if (poly.empty()) return MFF0FFFFF2;
   auto res = containsCovers(p, poly, i);
   if (std::get<0>(res)) return M0FFFFF212;
@@ -1700,6 +1703,7 @@ DE9IMatrix DE9IM(const Point<T>& p, const XSortedPolygon<T>& poly) {
 // _____________________________________________________________________________
 template <typename T>
 DE9IMatrix DE9IM(const XSortedPolygon<T>& poly, size_t i, const Point<T>& p) {
+  if (p.empty()) return poly.empty() ? MFFFFFFFF2 : MFF2FF1FF2;
   if (poly.empty()) return MFFFFFF0F2;
   auto res = containsCovers(p, poly, i);
   if (std::get<0>(res)) return M0F2FF1FF2;
@@ -3486,6 +3490,8 @@ DE9IMatrix DE9IM(const util::geo::XSortedPolygon<T>& a,
 // _____________________________________________________________________________
 template <typename T>
 DE9IMatrix DE9IM(const util::geo::Point<T>& a, const util::geo::Point<T>& b) {
+  if (a.empty()) return b.empty() ? MFFFFFFFF2 : MFFFFFF0F2;
+  if (b.empty()) return MFF0FFFFF2;
   if (a == b) return M0FFFFFFF2;
   return MFF0FFF0F2;
 }
