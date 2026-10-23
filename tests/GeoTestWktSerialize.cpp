@@ -343,6 +343,7 @@ void GeoTest::testWktSerialize() {
     coll4.push_back(util::geo::Point<double>{3, 2});
     coll4.push_back(util::geo::Point<double>{5, 4});
 
+    TEST(util::geo::getWKT(util::geo::Box<double>()), ==, "POLYGON EMPTY");
     TEST(util::geo::getWKT(util::geo::getBoundingBox(coll)), ==,
          "POLYGON((1 1,3 1,3 2,1 2,1 1))");
     TEST(util::geo::getWKT(util::geo::convexHull(coll)), ==,
@@ -356,6 +357,41 @@ void GeoTest::testWktSerialize() {
     TEST(util::geo::getWKT(util::geo::centroid(coll2)), ==, "POINT(3 2)");
     TEST(util::geo::getWKT(util::geo::centroid(coll3)), ==, "POINT(2 1.5)");
     TEST(util::geo::getWKT(util::geo::centroid(coll4)), ==, "POINT(4 3)");
+
+    util::geo::Collection<double> coll5;
+    coll5.push_back(util::geo::MultiPoint<double>{{1, 1}, {3, 1}});
+    coll5.push_back(util::geo::Point<double>{5, 4});
+    TEST(util::geo::dimension(coll5), ==, 1);
+    TEST(util::geo::getWKT(util::geo::centroid(coll5)), ==, "POINT(3 2)");
+
+    util::geo::Collection<double> coll6;
+    coll6.push_back(util::geo::MultiPoint<double>{{10, 10}, {20, 20}});
+    coll6.push_back(util::geo::MultiPoint<double>{});
+    coll6.push_back(util::geo::Line<double>{{3, 2}, {1, 1}});
+    TEST(util::geo::getWKT(util::geo::centroid(coll6)), ==, "POINT(2 1.5)");
+
+    util::geo::Collection<double> coll7;
+    coll7.push_back(util::geo::Point<double>());
+    coll7.push_back(util::geo::Point<double>{3, 2});
+    coll7.push_back(util::geo::Collection<double>{util::geo::Point<double>()});
+    TEST(util::geo::dimension(coll7), ==, 1);
+    TEST(util::geo::getWKT(util::geo::centroid(coll7)), ==, "POINT(3 2)");
+
+    util::geo::Collection<double> coll8;
+    coll8.push_back(util::geo::Point<double>());
+    TEST(util::geo::dimension(coll8), ==, 0);
+    TEST(util::geo::centroid(coll8).empty());
+
+    for (auto from : {util::geo::CRSType::CRS84, util::geo::CRSType::WGS84,
+                      util::geo::CRSType::WEB_MERCATOR}) {
+      for (auto to : {util::geo::CRSType::CRS84, util::geo::CRSType::WGS84,
+                      util::geo::CRSType::WEB_MERCATOR}) {
+        TEST(util::geo::projectToCRS(util::geo::Point<double>(), from, to)
+                 .empty());
+        TEST(util::geo::projectToCRS(util::geo::Point<int32_t>(), from, to)
+                 .empty());
+      }
+    }
   }
 
   // centroids

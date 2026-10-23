@@ -5,6 +5,7 @@
 #ifndef UTIL_GEO_POINT_H_
 #define UTIL_GEO_POINT_H_
 
+#include <limits>
 #include <vector>
 
 namespace util {
@@ -13,7 +14,9 @@ namespace geo {
 template <typename T>
 class Point {
  public:
-  Point() : _x(0), _y(0) {}
+  Point()
+      : _x(std::numeric_limits<T>::lowest()),
+        _y(std::numeric_limits<T>::max()) {}
   Point(T x, T y) : _x(x), _y(y) {}
   const T& getX() const { return _x; }
   const T& getY() const { return _y; }
@@ -44,6 +47,11 @@ class Point {
     return {static_cast<double>(_x), static_cast<double>(_y)};
   }
 
+  bool empty() const {
+    return _x == std::numeric_limits<T>::lowest() &&
+           _y == std::numeric_limits<T>::max();
+  }
+
  private:
   T _x, _y;
 };
@@ -56,7 +64,6 @@ std::ostream& operator<<(std::ostream& o, const Point<T>& p) {
   o << "(" << p.getX() << "," << p.getY() << ")";
   return o;
 }
-
 
 }  // namespace geo
 }  // namespace util

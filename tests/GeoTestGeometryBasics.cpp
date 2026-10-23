@@ -686,4 +686,415 @@ void GeoTest::testGeometryBasics() {
     TEST(geo::getWKT(geo::segment(DLine{{0, 0}, {0, 1}, {0, 2}}, 0.5, 1)), ==,
          "LINESTRING(0 1,0 2)");
   }
+
+  // ___________________________________________________________________________
+  {
+    // various tests on empty points
+    geo::Point<double> e;
+    geo::Point<double> p(1, 2);
+    geo::Point<int32_t> ei;
+
+    TEST(geo::empty(e));
+    TEST(!geo::empty(p));
+    TEST(geo::empty(ei));
+
+    TEST(geo::numPoints(e), ==, 0);
+    TEST(geo::numPoints(p), ==, 1);
+    TEST(geo::numPoints(ei), ==, 0);
+
+    TEST(geo::getBoundingBox(e) == geo::Box<double>());
+    TEST(geo::getBoundingBox(ei) == geo::Box<int32_t>());
+    TEST(geo::getBoundingBox(p) == geo::Box<double>(p, p));
+
+    TEST(geo::convexHull(e).getOuter().empty());
+    TEST(geo::convexHull(ei).getOuter().empty());
+
+    geo::Box<double> b(geo::Point<double>(1, 1), geo::Point<double>(3, 3));
+    TEST(geo::extendBox(e, b) == b);
+    TEST(geo::extendBox(e, geo::Box<double>()) == geo::Box<double>());
+    TEST(geo::extendBox(ei, geo::Box<int32_t>()) == geo::Box<int32_t>());
+    TEST(geo::extendBox(p, b) ==
+         geo::Box<double>(geo::Point<double>(1, 1), geo::Point<double>(3, 3)));
+    TEST(geo::extendBox(geo::Point<double>(5, 0), b) ==
+         geo::Box<double>(geo::Point<double>(1, 0), geo::Point<double>(5, 3)));
+
+    geo::Collection<double> coll;
+    coll.push_back(e);
+    coll.push_back(geo::MultiPoint<double>{{1, 1}, {2, 3}});
+    coll.push_back(p);
+    coll.push_back(geo::Collection<double>{e});
+    TEST(geo::numPoints(coll), ==, 3);
+    TEST(geo::getBoundingBox(coll) ==
+         geo::Box<double>(geo::Point<double>(1, 1), geo::Point<double>(2, 3)));
+
+    geo::Collection<double> mpColl;
+    mpColl.push_back(geo::MultiPoint<double>{{0, 0}, {4, 0}, {4, 4}, {2, 1}});
+    mpColl.push_back(geo::MultiPoint<double>{});
+    mpColl.push_back(geo::Point<double>(0, 4));
+    TEST(geo::getWKT(geo::convexHull(mpColl)), ==,
+         "POLYGON((4 0,4 4,0 4,0 0,4 0))");
+    TEST(geo::getWKT(geo::convexHull(geo::getOrientedEnvelope(mpColl))), ==,
+         "POLYGON((4 0,4 4,0 4,0 0,4 0))");
+    auto simplified = geo::simplify(mpColl, 0.1);
+    TEST(simplified.size(), ==, 3);
+    TEST(simplified[0].getType(), ==, 6);
+    TEST(simplified[0].getMultiPoint().size(), ==, 4);
+
+    TEST(geo::convexHull(geo::MultiPoint<double>{}).getOuter().empty());
+    TEST(geo::convexHull(geo::MultiPoint<int32_t>{}).getOuter().empty());
+
+    geo::Collection<double> onlyEmpty{e};
+    TEST(geo::numPoints(onlyEmpty), ==, 0);
+    TEST(geo::getBoundingBox(onlyEmpty) == geo::Box<double>());
+  }
+
+  // ___________________________________________________________________________
+  {
+    // point / line intersection
+    geo::Line<double> l{{0, 0}, {2, 2}, {4, 0}};
+    TEST(geo::intersects(l, geo::Point<double>(1, 1)));
+    TEST(geo::intersects(geo::Point<double>(1, 1), l));
+    TEST(geo::intersects(l, geo::Point<double>(4, 0)));
+    TEST(geo::intersects(geo::Point<double>(3, 1), l));
+    TEST(!geo::intersects(l, geo::Point<double>(1, 0)));
+    TEST(!geo::intersects(geo::Point<double>(1, 0), l));
+    TEST(!geo::intersects(l, geo::Point<double>()));
+    TEST(!geo::intersects(geo::Point<double>(), l));
+    TEST(!geo::intersects(geo::Line<double>{}, geo::Point<double>(1, 1)));
+
+    geo::Line<int32_t> li{{0, 0}, {2, 2}, {4, 0}};
+    TEST(geo::intersects(li, geo::Point<int32_t>(1, 1)));
+    TEST(!geo::intersects(geo::Point<int32_t>(1, 0), li));
+    TEST(!geo::intersects(geo::Point<int32_t>(), li));
+  }
+
+  // ___________________________________________________________________________
+  {
+    int32_t lo = std::numeric_limits<int32_t>::lowest();
+    int32_t hi = std::numeric_limits<int32_t>::max();
+
+    geo::Line<int32_t> l{{lo, 0}, {hi, 0}};
+    TEST(geo::XSortedLine<int32_t>(l).getMaxSegLen(), ==, hi);
+    TEST(geo::XSortedLine<int32_t>(geo::LineSegment<int32_t>({lo, 0}, {hi, 0}))
+             .getMaxSegLen(),
+         ==, hi);
+    TEST(geo::XSortedLine<int32_t>(geo::Line<int32_t>{{0, 0}, {5, 1}, {3, 2}})
+             .getMaxSegLen(),
+         ==, 5);
+
+    geo::Polygon<int32_t> world(
+        geo::Line<int32_t>{{lo, lo}, {hi, lo}, {hi, hi}, {lo, hi}, {lo, lo}});
+    geo::XSortedPolygon<int32_t> worldX(world);
+    TEST(worldX.getOuter().getMaxSegLen(), ==, hi);
+
+    // unclosed ring - closing segment covers full range
+    geo::Polygon<int32_t> open(geo::Line<int32_t>{{hi, 0}, {0, 1}, {lo, 0}});
+    TEST(geo::XSortedPolygon<int32_t>(open).getOuter().getMaxSegLen(), ==, hi);
+
+    geo::Polygon<int32_t> holed(
+        geo::Line<int32_t>{{lo, lo}, {hi, lo}, {hi, hi}, {lo, hi}, {lo, lo}},
+        {geo::Line<int32_t>{{lo + 1, -1},
+                            {hi - 1, -1},
+                            {hi - 1, 1},
+                            {lo + 1, 1},
+                            {lo + 1, -1}}});
+    TEST(geo::XSortedPolygon<int32_t>(holed).getInnerMaxSegLen(), ==, hi);
+
+    geo::Box<int32_t> worldBox(geo::Point<int32_t>(lo, lo),
+                               geo::Point<int32_t>(hi, hi));
+    TEST(geo::XSortedRing<int32_t>(worldBox).getMaxSegLen(), ==, hi);
+
+    int32_t w = 2000000000;
+    geo::Polygon<int32_t> wide(
+        geo::Line<int32_t>{{-w, -w}, {w, -w}, {w, w}, {-w, w}, {-w, -w}},
+        {geo::Line<int32_t>{
+            {-w + 1, -1}, {w - 1, -1}, {w - 1, 1}, {-w + 1, 1}, {-w + 1, -1}}});
+    geo::XSortedPolygon<int32_t> wideX(wide);
+    TEST(wideX.getOuter().getMaxSegLen(), ==, hi);
+    TEST(wideX.getInnerMaxSegLen(), ==, hi);
+    TEST(geo::containsCovers(geo::Point<int32_t>(5, 5), wideX).first);
+    TEST(geo::containsCovers(geo::Point<int32_t>(-w + 5, 5), wideX).first);
+    TEST(!geo::containsCovers(geo::Point<int32_t>(0, 0), wideX).second);
+    TEST(!geo::containsCovers(geo::Point<int32_t>(5, -w - 5), wideX).second);
+  }
+
+  // ___________________________________________________________________________
+  {
+    // test behavior at the T boundary
+
+    auto poly = geo::polygonFromWKT<int32_t>(
+        "POLYGON((0 0, 1000000000 0, 1000000000 1000000000, 0 1000000000, 0 0),"
+        "(100000000 100000000, 200000000 100000000, 200000000 200000000,"
+        "100000000 200000000, 100000000 100000000))");
+    auto inside = geo::polygonFromWKT<int32_t>(
+        "POLYGON((10 10, 50 10, 50 50, 10 50, 10 10))");
+    auto inHole = geo::polygonFromWKT<int32_t>(
+        "POLYGON((100000010 100000010, 100000050 100000010,"
+        "100000050 100000050, 100000010 100000050, 100000010 100000010))");
+    auto line = geo::lineFromWKT<int32_t>(
+        "LINESTRING(5 500000000, 300000000 500000000)");
+    auto lineHole = geo::lineFromWKT<int32_t>(
+        "LINESTRING(5 150000000, 300000000 150000000)");
+
+    // x-translate the geoms by lowest(), note that all x coordinates above are
+    // positive, so this will work
+    double lo = std::numeric_limits<int32_t>::lowest();
+    auto polyE = geo::move(poly, lo, 0);
+    auto insideE = geo::move(inside, lo, 0);
+    auto inHoleE = geo::move(inHole, lo, 0);
+    auto lineE = geo::move(line, lo, 0);
+    auto lineHoleE = geo::move(lineHole, lo, 0);
+
+    TEST(polyE.getOuter()[0].getX(), ==, std::numeric_limits<int32_t>::lowest());
+
+    geo::XSortedPolygon<int32_t> polyX(poly), polyEX(polyE);
+    geo::XSortedPolygon<int32_t> insideX(inside), insideEX(insideE);
+    geo::XSortedPolygon<int32_t> inHoleX(inHole), inHoleEX(inHoleE);
+    geo::XSortedLine<int32_t> lineX(line), lineEX(lineE);
+    geo::XSortedLine<int32_t> lineHoleX(lineHole), lineHoleEX(lineHoleE);
+
+    // attributes must match even after translate!
+    TEST(geo::DE9IM(lineX, polyX), ==, "1FF0FF212");
+    TEST(geo::DE9IM(lineEX, polyEX), ==, "1FF0FF212");
+
+    TEST(geo::DE9IM(lineHoleX, polyX), ==, "1010FF212");
+    TEST(geo::DE9IM(lineHoleEX, polyEX), ==, "1010FF212");
+
+    TEST(geo::DE9IM(insideX, polyX), ==, "2FF1FF212");
+    TEST(geo::DE9IM(insideEX, polyEX), ==, "2FF1FF212");
+
+    TEST(geo::DE9IM(inHoleX, polyX), ==, "FF2FF1212");
+    TEST(geo::DE9IM(inHoleEX, polyEX), ==, "FF2FF1212");
+
+    TEST(geo::DE9IM(polyX, inHoleX), ==, "FF2FF1212");
+    TEST(geo::DE9IM(polyEX, inHoleEX), ==, "FF2FF1212");
+  }
+
+  // ___________________________________________________________________________
+  {
+    geo::Point<double> e;
+    geo::Point<double> p(1, 1);
+    geo::LineSegment<double> ls({0, 0}, {10, 0});
+
+    TEST(std::isnan(geo::dist(e, e)));
+    TEST(std::isnan(geo::dist(e, p)));
+    TEST(std::isnan(geo::dist(p, e)));
+    TEST(std::isnan(geo::dist(e, p, geo::defaultDistFunc<double>())));
+    TEST(std::isnan(geo::withinDist(e, p, 100.0)));
+    TEST(std::isnan(geo::dist(e, ls)));
+    TEST(std::isnan(geo::dist(ls, e)));
+    TEST(std::isnan(geo::dist(e, ls, geo::defaultDistFunc<double>())));
+    TEST(std::isnan(geo::getEnclosingRadius(e, p)));
+    TEST(std::isnan(geo::getEnclosingRadius(p, e)));
+    TEST(std::isnan(geo::webMercMeterDist(e, p)));
+
+    geo::MultiPoint<double> mp{e, {3, 0}};
+    geo::MultiPoint<double> mpRev{{3, 0}, e};
+    TEST(geo::dist(mp, geo::Point<double>(3, 1)), ==, approx(1));
+    TEST(geo::dist(mpRev, geo::Point<double>(3, 1)), ==, approx(1));
+    TEST(geo::dist(geo::Point<double>(3, 1), mp), ==, approx(1));
+    TEST(geo::withinDist(mp, geo::Point<double>(3, 1), 100.0), ==, approx(1));
+    TEST(geo::withinDist(mpRev, geo::Point<double>(3, 1), 100.0), ==,
+         approx(1));
+    TEST(std::isnan(
+        geo::dist(geo::MultiPoint<double>{e}, geo::Point<double>(3, 1))));
+
+    TEST(geo::dist(p, geo::Point<double>(4, 5)), ==, approx(5));
+    TEST(geo::dist(geo::Point<double>(5, 1), ls), ==, approx(1));
+    TEST(geo::len(geo::Line<double>{{0, 0}, {2, 0}, {2, 3}}), ==, approx(5));
+
+    geo::Point<int32_t> ei;
+    geo::Point<int32_t> pi(1, 1);
+    geo::LineSegment<int32_t> lsi({0, 0}, {10, 0});
+    TEST(std::isnan(geo::dist(ei, pi)));
+    TEST(std::isnan(geo::dist(pi, ei)));
+    TEST(std::isnan(geo::withinDist(ei, pi, 5000000000.0)));
+    TEST(std::isnan(geo::dist(ei, lsi)));
+    TEST(std::isnan(geo::dist(lsi, ei)));
+    TEST(std::isnan(geo::getEnclosingRadius(ei, pi)));
+    TEST(geo::dist(geo::MultiPoint<int32_t>{ei, {3, 0}},
+                   geo::Point<int32_t>(3, 1)),
+         ==, approx(1));
+  }
+
+  // ___________________________________________________________________________
+  {
+    geo::Line<int32_t> l{{0, 0}, {3, 4}, {3, 10}};
+    geo::Line<int32_t> l2{{0, 1}, {3, 5}, {3, 11}};
+
+    TEST(geo::len(l), ==, approx(11));
+    TEST(geo::len(geo::Polygon<int32_t>(
+             geo::Line<int32_t>{{0, 0}, {4, 0}, {4, 3}, {0, 0}})),
+         ==, approx(12));
+    TEST(geo::shorterThan(l, 12));
+    TEST(geo::longerThan(l, 10));
+    TEST(geo::longerThan(l, l, 21));
+    TEST(geo::frechetDist(l, l2, 1), ==, approx(1));
+    TEST(geo::densify(l, 2).size(), ==, 7);
+
+    geo::Collection<int32_t> coll{geo::Point<int32_t>(1, 1),
+                                  geo::Point<int32_t>(3, 5)};
+    TEST(geo::getWKT(geo::centroid(coll)), ==, "POINT(2 3)");
+
+    geo::Collection<float> collf{geo::Point<float>(1, 1),
+                                 geo::Point<float>(2, 4)};
+    TEST(geo::getWKT(geo::centroid(collf)), ==, "POINT(1.5 2.5)");
+  }
+
+  // ___________________________________________________________________________
+  {
+    TEST(geo::len(geo::polygonFromWKT<double>("POLYGON((0 0, 4 0, 4 3, 0 0))")),
+         ==, approx(12));
+    TEST(geo::len(geo::Polygon<double>(
+             geo::Line<double>{{0, 0}, {4, 0}, {4, 3}})),
+         ==, approx(12));
+
+    TEST(geo::len(geo::polygonFromWKT<double>(
+             "POLYGON((0 0, 10 0, 10 10, 0 10, 0 0), (2 2, 4 2, 4 4, 2 4, 2 2))")),
+         ==, approx(48));
+
+    geo::Polygon<double> closed;
+    closed.getOuter() = {{0, 0}, {4, 0}, {4, 3}, {0, 0}};
+    TEST(geo::len(closed), ==, approx(12));
+
+    TEST(geo::len(geo::Polygon<double>()), ==, approx(0));
+    TEST(geo::len(geo::polygonFromWKT<double>("POLYGON EMPTY")), ==, approx(0));
+  }
+
+  // ___________________________________________________________________________
+  {
+    TEST(geo::empty(geo::getOrientedEnvelope(geo::Line<double>{})));
+    TEST(geo::empty(geo::getOrientedEnvelope(geo::Polygon<double>{})));
+    TEST(geo::empty(geo::getOrientedEnvelope(geo::MultiPoint<double>{})));
+    TEST(geo::empty(geo::getOrientedEnvelope(geo::MultiLine<double>{})));
+    TEST(geo::empty(geo::getOrientedEnvelope(geo::MultiPolygon<double>{})));
+    TEST(geo::empty(geo::getOrientedEnvelope(geo::Collection<double>{})));
+
+    TEST(geo::empty(geo::getOrientedEnvelope(
+        geo::MultiPoint<double>{geo::Point<double>()})));
+    TEST(geo::empty(geo::getOrientedEnvelope(
+        geo::Collection<double>{geo::Point<double>()})));
+    TEST(geo::empty(
+        geo::getOrientedEnvelope(geo::MultiLine<double>{geo::Line<double>{}})));
+
+    TEST(geo::empty(geo::getOrientedEnvelope(geo::Line<double>{}, 10.0)));
+    TEST(geo::empty(geo::getOrientedEnvelope(geo::MultiLine<double>{}, 10.0)));
+    TEST(geo::empty(geo::getOrientedEnvelope(geo::Polygon<double>{},
+                                             std::vector<double>{0.5})));
+
+    auto env = geo::getOrientedEnvelope(
+        geo::lineFromWKT<double>("LINESTRING(0 0, 4 4)"));
+    TEST(!geo::empty(env));
+    TEST(geo::area(env.getBox()), ==, approx(0));
+    TEST(geo::getWKT(env.getCenter()), ==, "POINT(2 2)");
+  }
+
+  // ___________________________________________________________________________
+  {
+    geo::Point<double> e;
+    geo::MultiPoint<double> mp{e, {2, 2}, {4, 2}};
+    geo::MultiPoint<double> mpOnly{e};
+    geo::MultiPoint<double> square{e, {0, 0}, {4, 0}, {4, 4}, {0, 4}};
+    auto poly =
+        geo::polygonFromWKT<double>("POLYGON((0 0, 10 0, 10 10, 0 10, 0 0))");
+
+    TEST(geo::getWKT(geo::centroid(mp)), ==, "POINT(3 2)");
+    TEST(geo::centroid(mpOnly).empty());
+    TEST(geo::centroid(geo::MultiPoint<double>{}).empty());
+
+    TEST(geo::getWKT(mp), ==, "MULTIPOINT(2 2,4 2)");
+    TEST(geo::getWKT(geo::MultiPoint<double>{{2, 2}, e, {4, 2}}), ==,
+         "MULTIPOINT(2 2,4 2)");
+    TEST(geo::getWKT(mpOnly), ==, "MULTIPOINT EMPTY");
+
+    TEST(geo::getWKT(geo::convexHull(square)), ==,
+         "POLYGON((4 0,4 4,0 4,0 0,4 0))");
+    TEST(geo::convexHull(mpOnly).getOuter().empty());
+    TEST(geo::getWKT(geo::convexHull(geo::MultiPoint<double>{e, {1, 1}})), ==,
+         "POLYGON((1 1))");
+
+    TEST(geo::getWKT(geo::convexHull(geo::getOrientedEnvelope(square))), ==,
+         "POLYGON((4 0,4 4,0 4,0 0,4 0))");
+    TEST(geo::getFullEnvelope(square).getBox() ==
+         geo::getFullEnvelope(
+             geo::MultiPoint<double>{{0, 0}, {4, 0}, {4, 4}, {0, 4}})
+             .getBox());
+
+    TEST(geo::contains(geo::MultiPoint<double>{e, {5, 5}}, poly));
+    TEST(!geo::contains(geo::MultiPoint<double>{e, {50, 5}}, poly));
+    TEST(!geo::contains(mpOnly, poly));
+    TEST(!geo::contains(geo::MultiPoint<double>{}, poly));
+
+    geo::Point<double> p(1, 1);
+    TEST(geo::angBetween(p, mp), ==,
+         approx(geo::angBetween(p, geo::MultiPoint<double>{{2, 2}, {4, 2}})));
+    TEST(std::isnan(geo::angBetween(p, mpOnly)));
+
+    TEST(geo::rotate(e, 45, geo::Point<double>(5, 5)).empty());
+    TEST(geo::getWKT(geo::rotate(mp, 180, geo::Point<double>(3, 2))), ==,
+         "MULTIPOINT(4 2,2 2)");
+  }
+
+  // ___________________________________________________________________________
+  {
+    TEST(std::isnan(geo::getEnclosingRadius(
+        geo::Point<double>(), geo::Line<double>{{0, 0}, {1, 0}})));
+    TEST(std::isnan(geo::angBetween(geo::Point<double>(),
+                                    geo::MultiPoint<double>{{1, 1}})));
+  }
+
+  // ___________________________________________________________________________
+  {
+    TEST(geo::centroid(geo::Point<double>()).empty());
+    TEST(geo::centroid(geo::LineSegment<double>()).empty());
+    TEST(geo::centroid(geo::Line<double>()).empty());
+    TEST(geo::centroid(geo::Polygon<double>()).empty());
+    TEST(geo::centroid(geo::Box<double>()).empty());
+    TEST(geo::centroid(geo::MultiPoint<double>()).empty());
+    TEST(geo::centroid(geo::MultiLine<double>()).empty());
+    TEST(geo::centroid(geo::MultiPolygon<double>()).empty());
+    TEST(geo::centroid(geo::Collection<double>()).empty());
+  }
+
+  // ___________________________________________________________________________
+  {
+    geo::Point<double> e;
+    TEST(geo::empty(geo::Collection<double>{e, geo::Line<double>{}}));
+    TEST(geo::getWKT(geo::Collection<double>{e, geo::Point<double>(1, 1)}), ==,
+         "GEOMETRYCOLLECTION(POINT(1 1))");
+    TEST(geo::convexHull(geo::Box<double>()).getOuter().empty());
+    TEST(geo::empty(geo::getBoundingRect(geo::Box<double>())));
+  }
+
+  // ___________________________________________________________________________
+  {
+    auto sq = geo::Polygon<double>(
+        geo::Line<double>{{-1, 0}, {1, 0}, {1, 1}, {-1, 1}});
+    std::vector<geo::AnyGeometry<double>> geoms{
+        geo::Point<double>(0, 1),
+        geo::Line<double>{{-1, 1}, {1, 1}},
+        sq,
+        geo::MultiLine<double>{geo::Line<double>{{-1, 1}, {1, 1}}},
+        geo::MultiPolygon<double>{sq},
+        geo::Collection<double>{geo::Point<double>(0, 1)},
+        geo::MultiPoint<double>{{0, 1}, {9, 9}}};
+
+    geo::Point<double> q(0, 5);
+    geo::AnyGeometry<double> anyQ(q);
+    geo::AnyGeometry<double> anyQMulti(geo::MultiPoint<double>{q});
+
+    for (const auto& g : geoms) {
+      TEST(geo::dist(g, anyQ), ==, approx(4));
+      TEST(geo::dist(anyQ, g), ==, approx(4));
+      TEST(geo::dist(g, anyQMulti), ==, approx(4));
+      TEST(geo::dist(anyQMulti, g), ==, approx(4));
+      TEST(geo::dist(g, q), ==, approx(4));
+      TEST(geo::dist(q, g), ==, approx(4));
+      TEST(geo::dist(g, anyQ, geo::defaultDistFunc<double>()), ==, approx(4));
+      TEST(geo::dist(g, q, geo::defaultDistFunc<double>()), ==, approx(4));
+    }
+
+    TEST(std::isnan(
+        geo::dist(geo::AnyGeometry<double>(geo::Point<double>()), anyQ)));
+  }
 }
