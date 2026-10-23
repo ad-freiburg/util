@@ -869,4 +869,51 @@ void GeoTest::testGeometryBasics() {
     TEST(geo::DE9IM(polyX, inHoleX), ==, "FF2FF1212");
     TEST(geo::DE9IM(polyEX, inHoleEX), ==, "FF2FF1212");
   }
+
+  // ___________________________________________________________________________
+  {
+    geo::Point<double> e;
+    geo::Point<double> p(1, 1);
+    geo::LineSegment<double> ls({0, 0}, {10, 0});
+
+    TEST(std::isnan(geo::dist(e, e)));
+    TEST(std::isnan(geo::dist(e, p)));
+    TEST(std::isnan(geo::dist(p, e)));
+    TEST(std::isnan(geo::dist(e, p, geo::defaultDistFunc<double>())));
+    TEST(std::isnan(geo::withinDist(e, p, 100.0)));
+    TEST(std::isnan(geo::dist(e, ls)));
+    TEST(std::isnan(geo::dist(ls, e)));
+    TEST(std::isnan(geo::dist(e, ls, geo::defaultDistFunc<double>())));
+    TEST(std::isnan(geo::getEnclosingRadius(e, p)));
+    TEST(std::isnan(geo::getEnclosingRadius(p, e)));
+    TEST(std::isnan(geo::webMercMeterDist(e, p)));
+
+    geo::MultiPoint<double> mp{e, {3, 0}};
+    geo::MultiPoint<double> mpRev{{3, 0}, e};
+    TEST(geo::dist(mp, geo::Point<double>(3, 1)), ==, approx(1));
+    TEST(geo::dist(mpRev, geo::Point<double>(3, 1)), ==, approx(1));
+    TEST(geo::dist(geo::Point<double>(3, 1), mp), ==, approx(1));
+    TEST(geo::withinDist(mp, geo::Point<double>(3, 1), 100.0), ==, approx(1));
+    TEST(geo::withinDist(mpRev, geo::Point<double>(3, 1), 100.0), ==,
+         approx(1));
+    TEST(std::isnan(
+        geo::dist(geo::MultiPoint<double>{e}, geo::Point<double>(3, 1))));
+
+    TEST(geo::dist(p, geo::Point<double>(4, 5)), ==, approx(5));
+    TEST(geo::dist(geo::Point<double>(5, 1), ls), ==, approx(1));
+    TEST(geo::len(geo::Line<double>{{0, 0}, {2, 0}, {2, 3}}), ==, approx(5));
+
+    geo::Point<int32_t> ei;
+    geo::Point<int32_t> pi(1, 1);
+    geo::LineSegment<int32_t> lsi({0, 0}, {10, 0});
+    TEST(std::isnan(geo::dist(ei, pi)));
+    TEST(std::isnan(geo::dist(pi, ei)));
+    TEST(std::isnan(geo::withinDist(ei, pi, 5000000000.0)));
+    TEST(std::isnan(geo::dist(ei, lsi)));
+    TEST(std::isnan(geo::dist(lsi, ei)));
+    TEST(std::isnan(geo::getEnclosingRadius(ei, pi)));
+    TEST(geo::dist(geo::MultiPoint<int32_t>{ei, {3, 0}},
+                   geo::Point<int32_t>(3, 1)),
+         ==, approx(1));
+  }
 }

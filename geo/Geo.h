@@ -847,13 +847,14 @@ double dist(const LineSegment<T> &ls, const Point<T> &p, DF &&distFunc);
 
 template <typename T>
 double dist(const Point<T> &p1, const Point<T> &p2) {
+  if (p1.empty() || p2.empty()) return std::numeric_limits<double>::quiet_NaN();
   return dist(p1.getX(), p1.getY(), p2.getX(), p2.getY());
 }
 
-// standard dist function
+// standard dist function, input poinst must be non-empty
 template <typename T>
 double euclideanDistFunc(const Point<T> &a, const Point<T> &b, double) {
-  return util::geo::dist(a, b);
+  return util::geo::dist(a.getX(), a.getY(), b.getX(), b.getY());
 }
 
 // x-distance between boxes
@@ -957,6 +958,7 @@ double dist(const Point<T> &p, const LineSegment<T> &ls, DF &&distFunc);
 
 template <typename T>
 double dist(const Point<T> &p, const LineSegment<T> &ls) {
+  if (p.empty()) return std::numeric_limits<double>::quiet_NaN();
   return distToSegment(ls, p);
 }
 

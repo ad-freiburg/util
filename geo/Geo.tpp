@@ -3739,6 +3739,7 @@ double dist(const GeometryB<T>& geomB, const AnyGeometry<T>& any,
 // _____________________________________________________________________________
 template <typename T, typename DF>
 double dist(const LineSegment<T>& ls, const Point<T>& p, DF&& distFunc) {
+  if (p.empty()) return std::numeric_limits<double>::quiet_NaN();
   return distToSegment(ls, p, distFunc);
 }
 
@@ -4521,6 +4522,7 @@ double withinDist(const Point<T>& p, const Polygon<T>& poly, double maxDist,
 // _____________________________________________________________________________
 template <typename T, typename DF>
 double dist(const Point<T>& p1, const Point<T>& p2, DF&& distFunc) {
+  if (p1.empty() || p2.empty()) return std::numeric_limits<double>::quiet_NaN();
   return distFunc(p1, p2, std::numeric_limits<T>::max());
 }
 
@@ -4528,6 +4530,7 @@ double dist(const Point<T>& p1, const Point<T>& p2, DF&& distFunc) {
 template <typename T, typename PF, typename DF>
 double withinDist(const Point<T>& p1, const Point<T>& p2, double, PF&&, double,
                   DF&& distFunc) {
+  if (p1.empty() || p2.empty()) return std::numeric_limits<double>::quiet_NaN();
   return distFunc(p1, p2, std::numeric_limits<T>::max());
 }
 
@@ -5554,7 +5557,8 @@ double len(const Point<T>&) {
 template <typename T>
 double len(const Line<T>& g) {
   double ret = 0;
-  for (size_t i = 1; i < g.size(); i++) ret += dist(g[i - 1], g[i]);
+  for (size_t i = 1; i < g.size(); i++)
+    ret += dist(g[i - 1].getX(), g[i - 1].getY(), g[i].getX(), g[i].getY());
   return ret;
 }
 
@@ -5563,10 +5567,12 @@ template <typename T>
 double len(const Polygon<T>& g) {
   double ret = 0;
   for (size_t i = 1; i < g.getOuter().size(); i++)
-    ret += dist(g.getOuter()[i - 1], g.getOuter()[i]);
+    ret += dist(g.getOuter()[i - 1].getX(), g.getOuter()[i - 1].getY(),
+                g.getOuter()[i].getX(), g.getOuter()[i].getY());
   for (const auto& inner : g.getInners()) {
     for (size_t i = 1; i < inner.size(); i++)
-      ret += dist(inner[i - 1], inner[i]);
+      ret += dist(inner[i - 1].getX(), inner[i - 1].getY(), inner[i].getX(),
+                  inner[i].getY());
   }
   return ret;
 }
@@ -5619,7 +5625,7 @@ template <typename T>
 bool shorterThan(const Line<T>& g, double d) {
   double ret = 0;
   for (size_t i = 1; i < g.size(); i++) {
-    ret += dist(g[i - 1], g[i]);
+    ret += dist(g[i - 1].getX(), g[i - 1].getY(), g[i].getX(), g[i].getY());
     if (ret >= d) return false;
   }
   return true;
@@ -5630,7 +5636,7 @@ template <typename T>
 bool longerThan(const Line<T>& g, double d) {
   double ret = 0;
   for (size_t i = 1; i < g.size(); i++) {
-    ret += dist(g[i - 1], g[i]);
+    ret += dist(g[i - 1].getX(), g[i - 1].getY(), g[i].getX(), g[i].getY());
     if (ret > d) return true;
   }
   return false;
@@ -5641,11 +5647,11 @@ template <typename T>
 bool longerThan(const Line<T>& a, const Line<T>& b, double d) {
   double ret = 0;
   for (size_t i = 1; i < a.size(); i++) {
-    ret += dist(a[i - 1], a[i]);
+    ret += dist(a[i - 1].getX(), a[i - 1].getY(), a[i].getX(), a[i].getY());
     if (ret > d) return true;
   }
   for (size_t i = 1; i < b.size(); i++) {
-    ret += dist(b[i - 1], b[i]);
+    ret += dist(b[i - 1].getX(), b[i - 1].getY(), b[i].getX(), b[i].getY());
     if (ret > d) return true;
   }
   return false;
@@ -6723,7 +6729,8 @@ Line<T> densify(const Line<T>& l, double d, const Box<T>& b) {
   size_t exp = 0;
   for (size_t i = 1; i < l.size(); i++) {
     if (!b.isNull() && !contains(LineSegment<T>{l[i - 1], l[i]}, b)) continue;
-    exp += 1 + dist(l[i - 1], l[i]) / d;
+    exp += 1 +
+           dist(l[i - 1].getX(), l[i - 1].getY(), l[i].getX(), l[i].getY()) / d;
   }
 
   // shortcut
@@ -6734,7 +6741,8 @@ Line<T> densify(const Line<T>& l, double d, const Box<T>& b) {
   ret.push_back(l.front());
 
   for (size_t i = 1; i < l.size(); i++) {
-    double segd = dist(l[i - 1], l[i]);
+    double segd =
+        dist(l[i - 1].getX(), l[i - 1].getY(), l[i].getX(), l[i].getY());
     double dx = (l[i].getX() - l[i - 1].getX()) / segd;
     double dy = (l[i].getY() - l[i - 1].getY()) / segd;
     double curd = d;
@@ -6959,19 +6967,22 @@ double frechetDistC(size_t i, size_t j, const Line<T>& p, const Line<T>& q,
   if (ca[i * q.size() + j] > -1)
     return ca[i * q.size() + j];
   else if (i == 0 && j == 0)
-    ca[i * q.size() + j] = dist(p[0], q[0]);
+    ca[i * q.size() + j] =
+        dist(p[0].getX(), p[0].getY(), q[0].getX(), q[0].getY());
   else if (i > 0 && j == 0)
     ca[i * q.size() + j] =
-        std::max(frechetDistC(i - 1, 0, p, q, ca), dist(p[i], q[0]));
+        std::max(frechetDistC(i - 1, 0, p, q, ca),
+                 dist(p[i].getX(), p[i].getY(), q[0].getX(), q[0].getY()));
   else if (i == 0 && j > 0)
     ca[i * q.size() + j] =
-        std::max(frechetDistC(0, j - 1, p, q, ca), dist(p[0], q[j]));
+        std::max(frechetDistC(0, j - 1, p, q, ca),
+                 dist(p[0].getX(), p[0].getY(), q[j].getX(), q[j].getY()));
   else if (i > 0 && j > 0)
     ca[i * q.size() + j] =
         std::max(std::min(std::min(frechetDistC(i - 1, j, p, q, ca),
                                    frechetDistC(i - 1, j - 1, p, q, ca)),
                           frechetDistC(i, j - 1, p, q, ca)),
-                 dist(p[i], q[j]));
+                 dist(p[i].getX(), p[i].getY(), q[j].getX(), q[j].getY()));
   else
     ca[i * q.size() + j] = std::numeric_limits<float>::infinity();
 
@@ -7012,7 +7023,9 @@ double accFrechetDistC(const Line<T>& a, const Line<T>& b, double d) {
 
   for (size_t i = 1; i < p.size(); i++) {
     for (size_t j = 1; j < q.size(); j++) {
-      float d = util::geo::dist(p[i], q[j]) * util::geo::dist(p[i], p[i - 1]);
+      float d =
+          dist(p[i].getX(), p[i].getY(), q[j].getX(), q[j].getY()) *
+          dist(p[i].getX(), p[i].getY(), p[i - 1].getX(), p[i - 1].getY());
       ca[i * q.size() + j] =
           d + std::min(ca[(i - 1) * q.size() + j],
                        std::min(ca[i * q.size() + (j - 1)],
