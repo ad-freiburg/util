@@ -916,4 +916,25 @@ void GeoTest::testGeometryBasics() {
                    geo::Point<int32_t>(3, 1)),
          ==, approx(1));
   }
+
+  // ___________________________________________________________________________
+  {
+    geo::Line<int32_t> l{{0, 0}, {3, 4}, {3, 10}};
+    geo::Line<int32_t> l2{{0, 1}, {3, 5}, {3, 11}};
+
+    TEST(geo::len(l), ==, approx(11));
+    TEST(geo::shorterThan(l, 12));
+    TEST(geo::longerThan(l, 10));
+    TEST(geo::longerThan(l, l, 21));
+    TEST(geo::frechetDist(l, l2, 1), ==, approx(1));
+    TEST(geo::densify(l, 2).size(), ==, 7);
+
+    geo::Collection<int32_t> coll{geo::Point<int32_t>(1, 1),
+                                  geo::Point<int32_t>(3, 5)};
+    TEST(geo::getWKT(geo::centroid(coll)), ==, "POINT(2 3)");
+
+    geo::Collection<float> collf{geo::Point<float>(1, 1),
+                                 geo::Point<float>(2, 4)};
+    TEST(geo::getWKT(geo::centroid(collf)), ==, "POINT(1.5 2.5)");
+  }
 }

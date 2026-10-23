@@ -269,7 +269,7 @@ Point<T> centroid(const Collection<T>& col) {
     y += cen.getY() * w;
   }
 
-  return Point<T>{x / sum, y / sum};
+  return Point<T>(x / sum, y / sum);
 }
 
 // _____________________________________________________________________________
@@ -5558,7 +5558,8 @@ template <typename T>
 double len(const Line<T>& g) {
   double ret = 0;
   for (size_t i = 1; i < g.size(); i++)
-    ret += dist(g[i - 1].getX(), g[i - 1].getY(), g[i].getX(), g[i].getY());
+    ret += dist(1.0 * g[i - 1].getX(), 1.0 * g[i - 1].getY(), 1.0 * g[i].getX(),
+                1.0 * g[i].getY());
   return ret;
 }
 
@@ -5567,12 +5568,13 @@ template <typename T>
 double len(const Polygon<T>& g) {
   double ret = 0;
   for (size_t i = 1; i < g.getOuter().size(); i++)
-    ret += dist(g.getOuter()[i - 1].getX(), g.getOuter()[i - 1].getY(),
-                g.getOuter()[i].getX(), g.getOuter()[i].getY());
+    ret +=
+        dist(1.0 * g.getOuter()[i - 1].getX(), 1.0 * g.getOuter()[i - 1].getY(),
+             1.0 * g.getOuter()[i].getX(), 1.0 * g.getOuter()[i].getY());
   for (const auto& inner : g.getInners()) {
     for (size_t i = 1; i < inner.size(); i++)
-      ret += dist(inner[i - 1].getX(), inner[i - 1].getY(), inner[i].getX(),
-                  inner[i].getY());
+      ret += dist(1.0 * inner[i - 1].getX(), 1.0 * inner[i - 1].getY(),
+                  1.0 * inner[i].getX(), 1.0 * inner[i].getY());
   }
   return ret;
 }
@@ -5625,7 +5627,8 @@ template <typename T>
 bool shorterThan(const Line<T>& g, double d) {
   double ret = 0;
   for (size_t i = 1; i < g.size(); i++) {
-    ret += dist(g[i - 1].getX(), g[i - 1].getY(), g[i].getX(), g[i].getY());
+    ret += dist(1.0 * g[i - 1].getX(), 1.0 * g[i - 1].getY(), 1.0 * g[i].getX(),
+                1.0 * g[i].getY());
     if (ret >= d) return false;
   }
   return true;
@@ -5636,7 +5639,8 @@ template <typename T>
 bool longerThan(const Line<T>& g, double d) {
   double ret = 0;
   for (size_t i = 1; i < g.size(); i++) {
-    ret += dist(g[i - 1].getX(), g[i - 1].getY(), g[i].getX(), g[i].getY());
+    ret += dist(1.0 * g[i - 1].getX(), 1.0 * g[i - 1].getY(), 1.0 * g[i].getX(),
+                1.0 * g[i].getY());
     if (ret > d) return true;
   }
   return false;
@@ -5647,11 +5651,13 @@ template <typename T>
 bool longerThan(const Line<T>& a, const Line<T>& b, double d) {
   double ret = 0;
   for (size_t i = 1; i < a.size(); i++) {
-    ret += dist(a[i - 1].getX(), a[i - 1].getY(), a[i].getX(), a[i].getY());
+    ret += dist(1.0 * a[i - 1].getX(), 1.0 * a[i - 1].getY(), 1.0 * a[i].getX(),
+                1.0 * a[i].getY());
     if (ret > d) return true;
   }
   for (size_t i = 1; i < b.size(); i++) {
-    ret += dist(b[i - 1].getX(), b[i - 1].getY(), b[i].getX(), b[i].getY());
+    ret += dist(1.0 * b[i - 1].getX(), 1.0 * b[i - 1].getY(), 1.0 * b[i].getX(),
+                1.0 * b[i].getY());
     if (ret > d) return true;
   }
   return false;
@@ -6729,8 +6735,9 @@ Line<T> densify(const Line<T>& l, double d, const Box<T>& b) {
   size_t exp = 0;
   for (size_t i = 1; i < l.size(); i++) {
     if (!b.isNull() && !contains(LineSegment<T>{l[i - 1], l[i]}, b)) continue;
-    exp += 1 +
-           dist(l[i - 1].getX(), l[i - 1].getY(), l[i].getX(), l[i].getY()) / d;
+    exp += 1 + dist(1.0 * l[i - 1].getX(), 1.0 * l[i - 1].getY(),
+                    1.0 * l[i].getX(), 1.0 * l[i].getY()) /
+                   d;
   }
 
   // shortcut
@@ -6741,8 +6748,8 @@ Line<T> densify(const Line<T>& l, double d, const Box<T>& b) {
   ret.push_back(l.front());
 
   for (size_t i = 1; i < l.size(); i++) {
-    double segd =
-        dist(l[i - 1].getX(), l[i - 1].getY(), l[i].getX(), l[i].getY());
+    double segd = dist(1.0 * l[i - 1].getX(), 1.0 * l[i - 1].getY(),
+                       1.0 * l[i].getX(), 1.0 * l[i].getY());
     double dx = (l[i].getX() - l[i - 1].getX()) / segd;
     double dy = (l[i].getY() - l[i - 1].getY()) / segd;
     double curd = d;
@@ -6967,22 +6974,23 @@ double frechetDistC(size_t i, size_t j, const Line<T>& p, const Line<T>& q,
   if (ca[i * q.size() + j] > -1)
     return ca[i * q.size() + j];
   else if (i == 0 && j == 0)
-    ca[i * q.size() + j] =
-        dist(p[0].getX(), p[0].getY(), q[0].getX(), q[0].getY());
+    ca[i * q.size() + j] = dist(1.0 * p[0].getX(), 1.0 * p[0].getY(),
+                                1.0 * q[0].getX(), 1.0 * q[0].getY());
   else if (i > 0 && j == 0)
-    ca[i * q.size() + j] =
-        std::max(frechetDistC(i - 1, 0, p, q, ca),
-                 dist(p[i].getX(), p[i].getY(), q[0].getX(), q[0].getY()));
+    ca[i * q.size() + j] = std::max(frechetDistC(i - 1, 0, p, q, ca),
+                                    dist(1.0 * p[i].getX(), 1.0 * p[i].getY(),
+                                         1.0 * q[0].getX(), 1.0 * q[0].getY()));
   else if (i == 0 && j > 0)
-    ca[i * q.size() + j] =
-        std::max(frechetDistC(0, j - 1, p, q, ca),
-                 dist(p[0].getX(), p[0].getY(), q[j].getX(), q[j].getY()));
+    ca[i * q.size() + j] = std::max(frechetDistC(0, j - 1, p, q, ca),
+                                    dist(1.0 * p[0].getX(), 1.0 * p[0].getY(),
+                                         1.0 * q[j].getX(), 1.0 * q[j].getY()));
   else if (i > 0 && j > 0)
     ca[i * q.size() + j] =
         std::max(std::min(std::min(frechetDistC(i - 1, j, p, q, ca),
                                    frechetDistC(i - 1, j - 1, p, q, ca)),
                           frechetDistC(i, j - 1, p, q, ca)),
-                 dist(p[i].getX(), p[i].getY(), q[j].getX(), q[j].getY()));
+                 dist(1.0 * p[i].getX(), 1.0 * p[i].getY(), 1.0 * q[j].getX(),
+                      1.0 * q[j].getY()));
   else
     ca[i * q.size() + j] = std::numeric_limits<float>::infinity();
 
@@ -7023,9 +7031,10 @@ double accFrechetDistC(const Line<T>& a, const Line<T>& b, double d) {
 
   for (size_t i = 1; i < p.size(); i++) {
     for (size_t j = 1; j < q.size(); j++) {
-      float d =
-          dist(p[i].getX(), p[i].getY(), q[j].getX(), q[j].getY()) *
-          dist(p[i].getX(), p[i].getY(), p[i - 1].getX(), p[i - 1].getY());
+      float d = dist(1.0 * p[i].getX(), 1.0 * p[i].getY(), 1.0 * q[j].getX(),
+                     1.0 * q[j].getY()) *
+                dist(1.0 * p[i].getX(), 1.0 * p[i].getY(),
+                     1.0 * p[i - 1].getX(), 1.0 * p[i - 1].getY());
       ca[i * q.size() + j] =
           d + std::min(ca[(i - 1) * q.size() + j],
                        std::min(ca[i * q.size() + (j - 1)],
