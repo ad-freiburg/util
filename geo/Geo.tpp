@@ -877,7 +877,7 @@ std::string getWKT(const std::vector<Polygon<T>>& ls, CRSType sourceCRS,
 template <typename T>
 std::string getWKT(const Collection<T>& coll, uint16_t prec, CRSType sourceCRS,
                    CRSType targetCRS, bool hideIri) {
-  if (coll.size() == 0)
+  if (empty(coll))
     return hideIri ? "GEOMETRYCOLLECTION EMPTY"
                    : getCrsIri(targetCRS) + "GEOMETRYCOLLECTION EMPTY";
   std::string ret;
@@ -888,6 +888,7 @@ std::string getWKT(const Collection<T>& coll, uint16_t prec, CRSType sourceCRS,
   std::string delim = "";
 
   for (const auto& g : coll) {
+    if (empty(g)) continue;
     ret += delim;
     delim = ",";
     if (g.getType() == 0)
@@ -4645,7 +4646,23 @@ size_t empty(const std::vector<Geometry<T>>& pol) {
 // _____________________________________________________________________________
 template <typename T>
 bool empty(const Collection<T>& g) {
-  return g.empty();
+  for (const auto& m : g) {
+    if (!empty(m)) return false;
+  }
+  return true;
+}
+
+// _____________________________________________________________________________
+template <typename T>
+bool empty(const AnyGeometry<T>& g) {
+  if (g.getType() == 0) return empty(g.getPoint());
+  if (g.getType() == 1) return empty(g.getLine());
+  if (g.getType() == 2) return empty(g.getPolygon());
+  if (g.getType() == 3) return empty(g.getMultiLine());
+  if (g.getType() == 4) return empty(g.getMultiPolygon());
+  if (g.getType() == 5) return empty(g.getCollection());
+  if (g.getType() == 6) return empty(g.getMultiPoint());
+  return true;
 }
 
 // _____________________________________________________________________________
@@ -6241,6 +6258,7 @@ Polygon<T> convexHull(const Point<T>& p) {
 // _____________________________________________________________________________
 template <typename T>
 Polygon<T> convexHull(const Box<T>& b) {
+  if (b.empty()) return {};
   return Polygon<T>(b);
 }
 

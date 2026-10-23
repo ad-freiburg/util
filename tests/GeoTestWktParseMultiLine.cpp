@@ -256,7 +256,7 @@ void GeoTest::testWktParseMultiLine() {
 
     Collection<double> col;
     col.push_back(oneEmpty);
-    TEST(getWKT(col), ==, "GEOMETRYCOLLECTION(MULTILINESTRING EMPTY)");
+    TEST(getWKT(col), ==, "GEOMETRYCOLLECTION EMPTY");
     TEST(getWKT(collectionFromWKT<double>(getWKT(col), true)), ==,
          "GEOMETRYCOLLECTION EMPTY");
   }

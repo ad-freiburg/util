@@ -1120,6 +1120,9 @@ size_t empty(const std::vector<Geometry<T>> &pol);
 template <typename T>
 bool empty(const Collection<T> &g);
 
+template <typename T>
+bool empty(const AnyGeometry<T> &g);
+
 // True if F is a projection function. Used to disable the std::string
 // overloads of the *FromWKTProj functions for calls like
 // lineFromWKTProj<T>(c, 0, projFunc)

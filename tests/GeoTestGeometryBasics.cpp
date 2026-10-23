@@ -1055,4 +1055,14 @@ void GeoTest::testGeometryBasics() {
     TEST(geo::centroid(geo::MultiPolygon<double>()).empty());
     TEST(geo::centroid(geo::Collection<double>()).empty());
   }
+
+  // ___________________________________________________________________________
+  {
+    geo::Point<double> e;
+    TEST(geo::empty(geo::Collection<double>{e, geo::Line<double>{}}));
+    TEST(geo::getWKT(geo::Collection<double>{e, geo::Point<double>(1, 1)}), ==,
+         "GEOMETRYCOLLECTION(POINT(1 1))");
+    TEST(geo::convexHull(geo::Box<double>()).getOuter().empty());
+    TEST(geo::empty(geo::getBoundingRect(geo::Box<double>())));
+  }
 }
