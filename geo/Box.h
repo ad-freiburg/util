@@ -34,6 +34,7 @@ class Box {
   void setUpperRight(const Point<T>& ur) { _ur = ur; }
 
   bool isNull() const { return _ll.getX() > _ur.getX(); }
+  bool empty() const { return isNull(); }
 
   bool operator==(const Box<T>& b) const {
     return getLowerLeft() == b.getLowerLeft() &&
@@ -86,6 +87,8 @@ class RotatedBox {
   Point<T>& getCenter() { return _center; }
 
   void setDegree(double deg) { _deg = deg; }
+
+  bool empty() const { return _box.empty(); }
 
  private:
   Box<T> _box;

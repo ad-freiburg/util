@@ -960,4 +960,32 @@ void GeoTest::testGeometryBasics() {
     TEST(geo::len(geo::Polygon<double>()), ==, approx(0));
     TEST(geo::len(geo::polygonFromWKT<double>("POLYGON EMPTY")), ==, approx(0));
   }
+
+  // ___________________________________________________________________________
+  {
+    TEST(geo::empty(geo::getOrientedEnvelope(geo::Line<double>{})));
+    TEST(geo::empty(geo::getOrientedEnvelope(geo::Polygon<double>{})));
+    TEST(geo::empty(geo::getOrientedEnvelope(geo::MultiPoint<double>{})));
+    TEST(geo::empty(geo::getOrientedEnvelope(geo::MultiLine<double>{})));
+    TEST(geo::empty(geo::getOrientedEnvelope(geo::MultiPolygon<double>{})));
+    TEST(geo::empty(geo::getOrientedEnvelope(geo::Collection<double>{})));
+
+    TEST(geo::empty(geo::getOrientedEnvelope(
+        geo::MultiPoint<double>{geo::Point<double>()})));
+    TEST(geo::empty(geo::getOrientedEnvelope(
+        geo::Collection<double>{geo::Point<double>()})));
+    TEST(geo::empty(
+        geo::getOrientedEnvelope(geo::MultiLine<double>{geo::Line<double>{}})));
+
+    TEST(geo::empty(geo::getOrientedEnvelope(geo::Line<double>{}, 10.0)));
+    TEST(geo::empty(geo::getOrientedEnvelope(geo::MultiLine<double>{}, 10.0)));
+    TEST(geo::empty(geo::getOrientedEnvelope(geo::Polygon<double>{},
+                                             std::vector<double>{0.5})));
+
+    auto env = geo::getOrientedEnvelope(
+        geo::lineFromWKT<double>("LINESTRING(0 0, 4 4)"));
+    TEST(!geo::empty(env));
+    TEST(geo::area(env.getBox()), ==, approx(0));
+    TEST(geo::getWKT(env.getCenter()), ==, "POINT(2 2)");
+  }
 }

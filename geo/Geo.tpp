@@ -4612,6 +4612,18 @@ bool empty(const Collection<T>& g) {
 }
 
 // _____________________________________________________________________________
+template <typename T>
+bool empty(const Box<T>& g) {
+  return g.empty();
+}
+
+// _____________________________________________________________________________
+template <typename T>
+bool empty(const RotatedBox<T>& g) {
+  return g.empty();
+}
+
+// _____________________________________________________________________________
 inline const char* skipWKTDatatype(const char* c) {
   if (c[0] != '^' || c[1] != '^' || c[2] != '<') return c;
   const char* close = strchr(c + 3, '>');
@@ -5947,6 +5959,7 @@ double parallelity(const Box<T>& box, const MultiLine<T>& multiline) {
 template <template <typename> class Geometry, typename T>
 RotatedBox<T> getOrientedEnvelope(const std::vector<Geometry<T>>& pol,
                                   const std::vector<double>& angles) {
+  if (empty(pol)) return {};
   const Point<T> center = centroid(pol);
   Box<T> tmpBox = getBoundingBox(pol);
   double tmpArea = area(tmpBox);
@@ -5986,6 +5999,7 @@ RotatedBox<T> getOrientedEnvelope(const std::vector<Geometry<T>>& pol,
 template <template <typename> class Geometry, typename T>
 RotatedBox<T> getOrientedEnvelope(const std::vector<Geometry<T>>& pol) {
   Line<T> hull = convexHull(pol).getOuter();
+  if (hull.empty()) return {};
   std::vector<double> angles;
 
   angles.reserve(hull.size());
