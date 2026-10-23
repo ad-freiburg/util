@@ -423,6 +423,7 @@ std::vector<Geometry<T>> rotateRAD(std::vector<Geometry<T>> multigeo,
 // _____________________________________________________________________________
 template <typename T>
 Point<T> move(const Point<T>& geo, double x, double y) {
+  if (geo.empty()) return geo;
   return Point<T>(geo.getX() + x, geo.getY() + y);
 }
 
@@ -896,6 +897,7 @@ std::string getWKT(const Collection<T>& coll, CRSType sourceCRS,
 // _____________________________________________________________________________
 template <typename T>
 bool contains(const Point<T>& p, const Box<T>& box) {
+  if (p.empty()) return false;
   // check if point lies in box
   return p.getX() > box.getLowerLeft().getX() - EPSILON &&
          p.getX() < box.getUpperRight().getX() + EPSILON &&
@@ -929,6 +931,7 @@ bool contains(const Box<T>& b, const Box<T>& box) {
 // _____________________________________________________________________________
 template <typename T>
 bool contains(const Point<T>& p, const LineSegment<T>& ls) {
+  if (p.empty()) return false;
   // check if point p lies in (on) line segment ls
   return fabs(crossProd(p, ls)) < EPSILON && contains(p, getBoundingBox(ls));
 }
@@ -943,6 +946,7 @@ bool contains(const LineSegment<T>& a, const LineSegment<T>& b) {
 // _____________________________________________________________________________
 template <typename T>
 bool contains(const Point<T>& p, const Line<T>& l) {
+  if (p.empty()) return false;
   // check if point p lies in line l
   for (size_t i = 1; i < l.size(); i++) {
     if (contains(p, LineSegment<T>(l[i - 1], l[i]))) return true;
@@ -1568,6 +1572,7 @@ template <typename T>
 std::tuple<bool, bool> intersectsContains(const Point<T>& p,
                                           const XSortedLine<T>& line,
                                           size_t i) {
+  if (p.empty() || line.empty()) return {0, 0};
   // check if point p lies on line
   // returns {intersects, contains}
 
@@ -6648,6 +6653,9 @@ double haversine(T lat1, T lon1, T lat2, T lon2) {
 // _____________________________________________________________________________
 template <typename T>
 double haversine(const Point<T>& a, const Point<T>& b) {
+  if (a.empty() || b.empty())
+    return std::numeric_limits<double>::quiet_NaN();
+
   return haversine(a.getY(), a.getX(), b.getY(), b.getX());
 }
 
@@ -6674,6 +6682,9 @@ double haversineWebMerc(T x1, T y1, T x2, T y2) {
 // _____________________________________________________________________________
 template <typename T>
 double haversineWebMerc(const Point<T>& a, const Point<T>& b) {
+  if (a.empty() || b.empty())
+    return std::numeric_limits<double>::quiet_NaN();
+
   return haversineWebMerc(a.getX(), a.getY(), b.getX(), b.getY());
 }
 
