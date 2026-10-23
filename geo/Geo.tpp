@@ -681,6 +681,9 @@ std::string getWKT(const LineSegment<T>& l) {
 template <typename T>
 std::string getWKT(const Box<T>& l, uint16_t prec, CRSType sourceCRS,
                    CRSType targetCRS, bool hideIri) {
+  if (l.empty())
+    return hideIri ? "POLYGON EMPTY" : getCrsIri(targetCRS) + "POLYGON EMPTY";
+
   std::string ret;
   const std::string& iri = hideIri ? emptyIri() : getCrsIri(targetCRS);
   ret.reserve(7 + 2 + 4 * (2 * prec + 11) + 2);

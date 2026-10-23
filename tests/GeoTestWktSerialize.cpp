@@ -343,6 +343,7 @@ void GeoTest::testWktSerialize() {
     coll4.push_back(util::geo::Point<double>{3, 2});
     coll4.push_back(util::geo::Point<double>{5, 4});
 
+    TEST(util::geo::getWKT(util::geo::Box<double>()), ==, "POLYGON EMPTY");
     TEST(util::geo::getWKT(util::geo::getBoundingBox(coll)), ==,
          "POLYGON((1 1,3 1,3 2,1 2,1 1))");
     TEST(util::geo::getWKT(util::geo::convexHull(coll)), ==,
