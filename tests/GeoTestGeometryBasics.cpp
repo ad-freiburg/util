@@ -727,6 +727,22 @@ void GeoTest::testGeometryBasics() {
     TEST(geo::getBoundingBox(coll) ==
          geo::Box<double>(geo::Point<double>(1, 1), geo::Point<double>(2, 3)));
 
+    geo::Collection<double> mpColl;
+    mpColl.push_back(geo::MultiPoint<double>{{0, 0}, {4, 0}, {4, 4}, {2, 1}});
+    mpColl.push_back(geo::MultiPoint<double>{});
+    mpColl.push_back(geo::Point<double>(0, 4));
+    TEST(geo::getWKT(geo::convexHull(mpColl)), ==,
+         "POLYGON((4 0,4 4,0 4,0 0,4 0))");
+    TEST(geo::getWKT(geo::convexHull(geo::getOrientedEnvelope(mpColl))), ==,
+         "POLYGON((4 0,4 4,0 4,0 0,4 0))");
+    auto simplified = geo::simplify(mpColl, 0.1);
+    TEST(simplified.size(), ==, 3);
+    TEST(simplified[0].getType(), ==, 6);
+    TEST(simplified[0].getMultiPoint().size(), ==, 4);
+
+    TEST(geo::convexHull(geo::MultiPoint<double>{}).getOuter().empty());
+    TEST(geo::convexHull(geo::MultiPoint<int32_t>{}).getOuter().empty());
+
     geo::Collection<double> onlyEmpty{e};
     TEST(geo::numPoints(onlyEmpty), ==, 0);
     TEST(geo::getBoundingBox(onlyEmpty) == geo::Box<double>());

@@ -5752,6 +5752,8 @@ Collection<T> simplify(const Collection<T>& collection, double d) {
       ret.push_back(std::move(simplify(g.getMultiPolygon(), d)));
     if (g.getType() == 5)
       ret.push_back(std::move(simplify(g.getCollection(), d)));
+    if (g.getType() == 6)
+      ret.push_back(std::move(simplify(g.getMultiPoint(), d)));
   }
 
   return ret;
@@ -6016,6 +6018,7 @@ RotatedBox<T> getOrientedEnvelope(const Collection<T>& collection) {
     if (g.getType() == 3) p.push_back(convexHull(g.getMultiLine()));
     if (g.getType() == 4) p.push_back(convexHull(g.getMultiPolygon()));
     if (g.getType() == 5) p.push_back(convexHull(g.getCollection()));
+    if (g.getType() == 6) p.push_back(convexHull(g.getMultiPoint()));
   }
   return getOrientedEnvelope(p);
 }
@@ -6205,6 +6208,7 @@ size_t convexHullImpl(const MultiPoint<T>& a, size_t p1, size_t p2,
 // _____________________________________________________________________________
 template <typename T>
 Polygon<T> convexHull(const MultiPoint<T>& l) {
+  if (l.empty()) return {};
   if (l.size() == 2) return convexHull(LineSegment<T>(l[0], l[1]));
   if (l.size() == 1) return convexHull(l[0]);
 
@@ -6263,6 +6267,7 @@ Polygon<T> convexHull(const Collection<T>& collection) {
     if (g.getType() == 3) p.push_back(convexHull(g.getMultiLine()));
     if (g.getType() == 4) p.push_back(convexHull(g.getMultiPolygon()));
     if (g.getType() == 5) p.push_back(convexHull(g.getCollection()));
+    if (g.getType() == 6) p.push_back(convexHull(g.getMultiPoint()));
   }
 
   return convexHull(p);
@@ -6306,6 +6311,7 @@ Box<T> extendBox(const Collection<T>& collection, Box<T> b) {
     if (g.getType() == 3) b = extendBox(g.getMultiLine(), b);
     if (g.getType() == 4) b = extendBox(g.getMultiPolygon(), b);
     if (g.getType() == 5) b = extendBox(g.getCollection(), b);
+    if (g.getType() == 6) b = extendBox(g.getMultiPoint(), b);
   }
   return b;
 }
