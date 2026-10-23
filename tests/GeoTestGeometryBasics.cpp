@@ -988,4 +988,71 @@ void GeoTest::testGeometryBasics() {
     TEST(geo::area(env.getBox()), ==, approx(0));
     TEST(geo::getWKT(env.getCenter()), ==, "POINT(2 2)");
   }
+
+  // ___________________________________________________________________________
+  {
+    geo::Point<double> e;
+    geo::MultiPoint<double> mp{e, {2, 2}, {4, 2}};
+    geo::MultiPoint<double> mpOnly{e};
+    geo::MultiPoint<double> square{e, {0, 0}, {4, 0}, {4, 4}, {0, 4}};
+    auto poly =
+        geo::polygonFromWKT<double>("POLYGON((0 0, 10 0, 10 10, 0 10, 0 0))");
+
+    TEST(geo::getWKT(geo::centroid(mp)), ==, "POINT(3 2)");
+    TEST(geo::centroid(mpOnly).empty());
+    TEST(geo::centroid(geo::MultiPoint<double>{}).empty());
+
+    TEST(geo::getWKT(mp), ==, "MULTIPOINT(2 2,4 2)");
+    TEST(geo::getWKT(geo::MultiPoint<double>{{2, 2}, e, {4, 2}}), ==,
+         "MULTIPOINT(2 2,4 2)");
+    TEST(geo::getWKT(mpOnly), ==, "MULTIPOINT EMPTY");
+
+    TEST(geo::getWKT(geo::convexHull(square)), ==,
+         "POLYGON((4 0,4 4,0 4,0 0,4 0))");
+    TEST(geo::convexHull(mpOnly).getOuter().empty());
+    TEST(geo::getWKT(geo::convexHull(geo::MultiPoint<double>{e, {1, 1}})), ==,
+         "POLYGON((1 1))");
+
+    TEST(geo::getWKT(geo::convexHull(geo::getOrientedEnvelope(square))), ==,
+         "POLYGON((4 0,4 4,0 4,0 0,4 0))");
+    TEST(geo::getFullEnvelope(square).getBox() ==
+         geo::getFullEnvelope(
+             geo::MultiPoint<double>{{0, 0}, {4, 0}, {4, 4}, {0, 4}})
+             .getBox());
+
+    TEST(geo::contains(geo::MultiPoint<double>{e, {5, 5}}, poly));
+    TEST(!geo::contains(geo::MultiPoint<double>{e, {50, 5}}, poly));
+    TEST(!geo::contains(mpOnly, poly));
+    TEST(!geo::contains(geo::MultiPoint<double>{}, poly));
+
+    geo::Point<double> p(1, 1);
+    TEST(geo::angBetween(p, mp), ==,
+         approx(geo::angBetween(p, geo::MultiPoint<double>{{2, 2}, {4, 2}})));
+    TEST(std::isnan(geo::angBetween(p, mpOnly)));
+
+    TEST(geo::rotate(e, 45, geo::Point<double>(5, 5)).empty());
+    TEST(geo::getWKT(geo::rotate(mp, 180, geo::Point<double>(3, 2))), ==,
+         "MULTIPOINT(4 2,2 2)");
+  }
+
+  // ___________________________________________________________________________
+  {
+    TEST(std::isnan(geo::getEnclosingRadius(
+        geo::Point<double>(), geo::Line<double>{{0, 0}, {1, 0}})));
+    TEST(std::isnan(geo::angBetween(geo::Point<double>(),
+                                    geo::MultiPoint<double>{{1, 1}})));
+  }
+
+  // ___________________________________________________________________________
+  {
+    TEST(geo::centroid(geo::Point<double>()).empty());
+    TEST(geo::centroid(geo::LineSegment<double>()).empty());
+    TEST(geo::centroid(geo::Line<double>()).empty());
+    TEST(geo::centroid(geo::Polygon<double>()).empty());
+    TEST(geo::centroid(geo::Box<double>()).empty());
+    TEST(geo::centroid(geo::MultiPoint<double>()).empty());
+    TEST(geo::centroid(geo::MultiLine<double>()).empty());
+    TEST(geo::centroid(geo::MultiPolygon<double>()).empty());
+    TEST(geo::centroid(geo::Collection<double>()).empty());
+  }
 }

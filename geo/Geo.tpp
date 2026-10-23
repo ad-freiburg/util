@@ -38,6 +38,7 @@ Point<T> centroid(const Point<T> p) {
 // _____________________________________________________________________________
 template <typename T>
 Point<T> centroid(const LineSegment<T>& ls) {
+  if (ls.first.empty() || ls.second.empty()) return {};
   return Point<T>((1.0 * ls.first.getX() + ls.second.getX()) / T(2),
                   (1.0 * ls.first.getY() + ls.second.getY()) / T(2));
 }
@@ -45,7 +46,7 @@ Point<T> centroid(const LineSegment<T>& ls) {
 // _____________________________________________________________________________
 template <typename T>
 Point<T> centroid(const Line<T>& ls) {
-  if (ls.size() == 0) return {0, 0};  // undefined behavior
+  if (ls.size() == 0) return {};
   if (ls.size() == 1) return ls[0];
 
   double x = 0, y = 0, sum = 0;
@@ -64,7 +65,7 @@ Point<T> centroid(const Line<T>& ls) {
 // _____________________________________________________________________________
 template <typename T>
 Point<T> ringCentroid(const Line<T>& ls) {
-  if (ls.size() == 0) return {0, 0};  // undefined behavior
+  if (ls.size() == 0) return {};
   if (ls.size() == 1) return ls[0];
 
   double xOff = ls[0].getX();
@@ -90,7 +91,7 @@ Point<T> ringCentroid(const Line<T>& ls) {
 // _____________________________________________________________________________
 template <typename T>
 Point<T> centroid(const Polygon<T>& o) {
-  if (o.empty()) return {0, 0};  // undefined behavior
+  if (o.empty()) return {};
   double sumA = 0, x = 0, y = 0;
 
   double outerArea = ringArea(o.getOuter());
@@ -121,20 +122,24 @@ Point<T> centroid(const Polygon<T>& o) {
 // _____________________________________________________________________________
 template <typename T>
 Point<T> centroid(const Box<T>& box) {
+  if (box.empty()) return {};
   return centroid(LineSegment<T>(box.getLowerLeft(), box.getUpperRight()));
 }
 
 // _____________________________________________________________________________
 template <typename T>
 Point<T> centroid(const std::vector<Point<T>>& multigeo) {
+  if (multigeo.empty()) return {};
   double sumA = 0, x = 0, y = 0;
 
   for (const auto& g : multigeo) {
-    Point<T> c = centroid(g);
+    if (g.empty()) continue;
     sumA += 1;
-    x += c.getX();
-    y += c.getY();
+    x += g.getX();
+    y += g.getY();
   }
+
+  if (sumA == 0) return {};
 
   return Point<T>(x / sumA, y / sumA);
 }
@@ -142,15 +147,19 @@ Point<T> centroid(const std::vector<Point<T>>& multigeo) {
 // _____________________________________________________________________________
 template <typename T>
 Point<T> centroid(const std::vector<Line<T>>& multigeo) {
+  if (multigeo.empty()) return {};
   double sumA = 0, x = 0, y = 0;
 
   for (const auto& g : multigeo) {
+    if (g.empty()) continue;
     double w = len(g);
     Point<T> c = centroid(g);
     sumA += w;
     x += c.getX() * w;
     y += c.getY() * w;
   }
+
+  if (sumA == 0) return {};
 
   return Point<T>(x / sumA, y / sumA);
 }
@@ -158,6 +167,7 @@ Point<T> centroid(const std::vector<Line<T>>& multigeo) {
 // _____________________________________________________________________________
 template <typename T>
 Point<T> centroid(const std::vector<LineSegment<T>>& multigeo) {
+  if (multigeo.empty()) return {};
   double sumA = 0, x = 0, y = 0;
 
   for (const auto& g : multigeo) {
@@ -168,12 +178,16 @@ Point<T> centroid(const std::vector<LineSegment<T>>& multigeo) {
     y += c.getY() * w;
   }
 
+  if (sumA == 0) return {};
+
   return Point<T>(x / sumA, y / sumA);
 }
 
 // _____________________________________________________________________________
 template <typename T>
 Point<T> centroid(const std::vector<Polygon<T>>& multigeo) {
+  if (multigeo.empty()) return {};
+
   double sumA = 0, x = 0, y = 0;
 
   if (area(multigeo) > 0) {
@@ -223,6 +237,8 @@ int8_t dimension(const Collection<T>& col) {
 // _____________________________________________________________________________
 template <typename T>
 Point<T> centroid(const Collection<T>& col) {
+  if (col.empty()) return {};
+
   int8_t dim = dimension(col);
   double sum = 0, x = 0, y = 0;
 
@@ -269,6 +285,8 @@ Point<T> centroid(const Collection<T>& col) {
     y += cen.getY() * w;
   }
 
+  if (sum == 0) return {};
+
   return Point<T>(x / sum, y / sum);
 }
 
@@ -287,6 +305,9 @@ Point<T> rotateRAD(const Point<T>& p, double) {
 // _____________________________________________________________________________
 template <typename T>
 Point<T> rotateSinCos(Point<T> p, double si, double co, const Point<T>& c) {
+  if (p.empty()) return p;
+  if (c.empty()) return p;
+
   p = p - c;
 
   return Point<T>(p.getX() * co - p.getY() * si,
@@ -536,7 +557,7 @@ std::string getWKT(const Point<T>& p, CRSType sourceCRS, CRSType targetCRS,
 template <typename T>
 std::string getWKT(const std::vector<Point<T>>& p, uint16_t prec,
                    CRSType sourceCRS, CRSType targetCRS, bool hideIri) {
-  if (p.size() == 0)
+  if (empty(p))
     return hideIri ? "MULTIPOINT EMPTY"
                    : getCrsIri(targetCRS) + "MULTIPOINT EMPTY";
   std::string ret;
@@ -544,9 +565,12 @@ std::string getWKT(const std::vector<Point<T>>& p, uint16_t prec,
   ret.reserve(iri.size() + 10 + 1 + p.size() * (2 * prec + 11) + 1);
   ret += iri;
   ret += "MULTIPOINT(";
-  for (size_t i = 0; i < p.size(); i++) {
-    if (i) ret.push_back(',');
-    appendPoint(ret, p[i], prec, sourceCRS, targetCRS);
+  bool first = true;
+  for (const auto& point : p) {
+    if (point.empty()) continue;
+    if (!first) ret.push_back(',');
+    first = false;
+    appendPoint(ret, point, prec, sourceCRS, targetCRS);
   }
   ret.push_back(')');
   return ret;
@@ -1899,9 +1923,14 @@ template <template <typename> class GeometryA,
           template <typename> class GeometryB, typename T>
 bool contains(const std::vector<GeometryA<T>>& multigeo,
               const GeometryB<T>& geo) {
-  for (const auto& g : multigeo)
+  // empty members are ignored, an empty multi geometry is never contained
+  bool nonEmptyFound = false;
+  for (const auto& g : multigeo) {
+    if (empty(g)) continue;
     if (!contains(g, geo)) return false;
-  return true;
+    nonEmptyFound = true;
+  }
+  return nonEmptyFound;
 }
 
 // _____________________________________________________________________________
@@ -3658,20 +3687,25 @@ bool lineIntersects(const Point<T>& p1, const Point<T>& q1, const Point<T>& p2,
 // _____________________________________________________________________________
 template <typename T>
 double angBetween(const Point<T>& p1) {
+  if (p1.empty()) return std::numeric_limits<double>::quiet_NaN();
   return atan2(p1.getX(), p1.getY());
 }
 
 // _____________________________________________________________________________
 template <typename T>
 double angBetween(const Point<T>& p1, const MultiPoint<T>& points) {
+  if (p1.empty()) return std::numeric_limits<double>::quiet_NaN();
   double sinSum = 0;
   double cosSum = 0;
+  size_t n = 0;
   for (auto q1 : points) {
+    if (q1.empty()) continue;
     double a = angBetween(p1.getX(), p1.getY(), q1.getX(), q1.getY());
     sinSum += sin(a);
     cosSum += cos(a);
+    n++;
   }
-  return atan2(sinSum / points.size(), cosSum / points.size());
+  return atan2(sinSum / n, cosSum / n);
 }
 
 // _____________________________________________________________________________
@@ -6168,6 +6202,7 @@ double getEnclosingRadius(const Point<T>& p, const Point<T>& pp) {
 // _____________________________________________________________________________
 template <typename T>
 double getEnclosingRadius(const Point<T>& p, const Line<T>& l) {
+  if (p.empty() || empty(l)) return std::numeric_limits<double>::quiet_NaN();
   double ret = 0;
   for (const auto& pp : l)
     if (getEnclosingRadius(p, pp) > ret) ret = getEnclosingRadius(p, pp);
@@ -6177,6 +6212,7 @@ double getEnclosingRadius(const Point<T>& p, const Line<T>& l) {
 // _____________________________________________________________________________
 template <typename T>
 double getEnclosingRadius(const Point<T>& p, const Polygon<T>& pg) {
+  if (p.empty() || empty(pg)) return std::numeric_limits<double>::quiet_NaN();
   double ret = 0;
   for (const auto& pp : pg.getOuter())
     if (getEnclosingRadius(p, pp) > ret) ret = getEnclosingRadius(p, pp);
@@ -6187,6 +6223,8 @@ double getEnclosingRadius(const Point<T>& p, const Polygon<T>& pg) {
 template <template <typename> class Geometry, typename T>
 double getEnclosingRadius(const Point<T>& p,
                           const std::vector<Geometry<T>>& multigeom) {
+  if (p.empty() || empty(multigeom))
+    return std::numeric_limits<double>::quiet_NaN();
   double ret = 0;
   for (const auto& pp : multigeom)
     if (getEnclosingRadius(p, pp) > ret) ret = getEnclosingRadius(p, pp);
@@ -6252,6 +6290,16 @@ size_t convexHullImpl(const MultiPoint<T>& a, size_t p1, size_t p2,
 template <typename T>
 Polygon<T> convexHull(const MultiPoint<T>& l) {
   if (l.empty()) return {};
+
+  for (const auto& p : l) {
+    if (!p.empty()) continue;
+    MultiPoint<T> nonEmpty;
+    nonEmpty.reserve(l.size());
+    for (const auto& q : l)
+      if (!q.empty()) nonEmpty.push_back(q);
+    return convexHull(nonEmpty);
+  }
+
   if (l.size() == 2) return convexHull(LineSegment<T>(l[0], l[1]));
   if (l.size() == 1) return convexHull(l[0]);
 
@@ -6417,8 +6465,8 @@ Point<T> pointAtDist(const Line<T>& l, double atDist, size_t* lastI,
 // _____________________________________________________________________________
 template <typename T>
 Point<T> interpolate(const Point<T>& a, const Point<T>& b, double d) {
-  double n1 = b.getX() - a.getX();
-  double n2 = b.getY() - a.getY();
+  double n1 = 1.0 * b.getX() - 1.0 * a.getX();
+  double n2 = 1.0 * b.getY() - 1.0 * a.getY();
   return Point<T>(1.0 * a.getX() + (n1 * d), 1.0 * a.getY() + (n2 * d));
 }
 
