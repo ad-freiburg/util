@@ -957,6 +957,7 @@ bool contains(const Point<T>& p, const Line<T>& l) {
 // _____________________________________________________________________________
 template <typename T>
 bool ringContains(const Point<T>& p, const Ring<T>& ph) {
+  if (p.empty()) return false;
   // check if point p lies in polygon hull
 
   // see https://de.wikipedia.org/wiki/Punkt-in-Polygon-Test_nach_Jordan

@@ -120,6 +120,7 @@ void XSortedCollection<T>::add(const MultiPoint<T>& mp) {
 // _____________________________________________________________________________
 template <typename T>
 void XSortedCollection<T>::add(const Point<T>& p) {
+  if (p.empty()) return;
   _points.push_back(p);
   _bbox = util::geo::extendBox(p, _bbox);
   _sweepEvents.push_back({p.getX(), _points.size() - 1, p.getY(), p.getY(),
