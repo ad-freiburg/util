@@ -1103,6 +1103,31 @@ int main(int argc, char** argv) {
 
   TEST(boundedAdd(120.0, 120), ==, approx(240));
   TEST(boundedAdd(120.0, 10), ==, approx(130));
+
+  TEST(boundedAbsDiff(int32_t(3), int32_t(10)), ==, 7);
+  TEST(boundedAbsDiff(int32_t(10), int32_t(3)), ==, 7);
+  TEST(boundedAbsDiff(int32_t(-5), int32_t(5)), ==, 10);
+  TEST(boundedAbsDiff(int32_t(7), int32_t(7)), ==, 0);
+  TEST(boundedAbsDiff(std::numeric_limits<int32_t>::max(), std::numeric_limits<int32_t>::lowest()),
+       ==, std::numeric_limits<int32_t>::max());
+  TEST(boundedAbsDiff(std::numeric_limits<int32_t>::lowest(), std::numeric_limits<int32_t>::max()),
+       ==, std::numeric_limits<int32_t>::max());
+  TEST(boundedAbsDiff(std::numeric_limits<int32_t>::lowest(), int32_t(0)), ==, std::numeric_limits<int32_t>::max());
+  TEST(boundedAbsDiff(std::numeric_limits<int32_t>::lowest(), int32_t(-1)), ==,
+       std::numeric_limits<int32_t>::max());
+  TEST(boundedAbsDiff(std::numeric_limits<int32_t>::max(), int32_t(0)), ==, std::numeric_limits<int32_t>::max());
+  TEST(boundedAbsDiff(std::numeric_limits<int32_t>::max(), int32_t(-1)), ==, std::numeric_limits<int32_t>::max());
+
+  TEST(boundedAbsDiff(std::numeric_limits<int64_t>::max(), std::numeric_limits<int64_t>::lowest()),
+       ==, std::numeric_limits<int64_t>::max());
+  TEST(boundedAbsDiff(std::numeric_limits<int64_t>::max() - 1, int64_t(-1)), ==,
+       std::numeric_limits<int64_t>::max());
+
+  TEST(boundedAbsDiff(uint8_t(3), uint8_t(250)), ==, 247);
+  TEST(boundedAbsDiff(uint32_t(250), uint32_t(3)), ==, 247);
+
+  TEST(boundedAbsDiff(3.5, -1.0), ==, approx(4.5));
+  TEST(boundedAbsDiff(3.5f, -1.0f), ==, approx(4.5));
 }
 
 

@@ -109,8 +109,23 @@ void GeoTest::testWktParsePoint() {
              false)),
          ==, "POINT(1 2)");
 
+    TEST(util::geo::pointFromWKT<double>("POINT EMPTY", true).empty());
+    TEST(util::geo::pointFromWKT<double>("POINT EMPTY", false).empty());
+    TEST(util::geo::pointFromWKT<double>("point z empty", true).empty());
+    TEST(util::geo::pointFromWKT<int32_t>("POINT EMPTY", true).empty());
+    TEST(util::geo::pointFromWKT<uint32_t>("POINT EMPTY", true).empty());
+    TEST(util::geo::pointFromWKT<int16_t>("POINT EMPTY", true).empty());
+    TEST(util::geo::pointFromWKT<uint16_t>("POINT EMPTY", true).empty());
+    TEST(util::geo::pointFromWKT<int8_t>("POINT EMPTY", true).empty());
+    TEST(util::geo::pointFromWKT<uint8_t>("POINT EMPTY", true).empty());
+    TEST(getWKT(util::geo::pointFromWKT<double>("POINT EMPTY", true)), ==,
+         "POINT EMPTY");
+    TEST(util::geo::pointFromWKT<double>("POINT(a b)", false).empty());
+    TEST(util::geo::pointFromWKT<double>("", false).empty());
+    TEST(!util::geo::pointFromWKT<double>("POINT(0 0)", true).empty());
+
     TEST_THROWS(util::geo::WKTParseException,
-                util::geo::pointFromWKT<double>("POINT EMPTY", true));
+                util::geo::pointFromWKT<double>("POINT EMPTY GARBAGE", true));
 
     TEST_THROWS(util::geo::WKTParseException,
                 util::geo::pointFromWKT<double>("", true));
@@ -154,7 +169,7 @@ void GeoTest::testWktParsePoint() {
                     "POINT(5)", 0, util::geo::projectToCRS84<double>, true));
     TEST(getWKT(util::geo::pointFromWKTProj<double>(
              std::string("POINT(5)"), util::geo::projectToCRS84<double>)),
-         ==, "POINT(0 0)");
+         ==, "POINT EMPTY");
   }
 
   {
@@ -318,10 +333,10 @@ void GeoTest::testWktParsePoint() {
          ==, "POINT(1 2)");
     TEST(getWKT(pointFromWKT<double>(
              std::string("POINT(1 \"2)"), false)),
-         ==, "POINT(0 0)");
+         ==, "POINT EMPTY");
     TEST(getWKT(pointFromWKT<double>(
              std::string("POINT(\" 1 2 \")"), false)),
-         ==, "POINT(0 0)");
+         ==, "POINT EMPTY");
     TEST(getWKTType("\"POINT(1 2)\"", 0, true), ==,
          WKTType::POINT);
     TEST(getWKTType("'LINESTRING EMPTY'", 0, true), ==,
@@ -345,5 +360,45 @@ void GeoTest::testWktParsePoint() {
     TEST(getWKT(collectionFromWKT<double>(
              std::string("GEOMETRYCOLLECTION(POINT(1 2),MULTIPOINT \"EMPTY)"), false)),
          ==, "GEOMETRYCOLLECTION(POINT(1 2))");
+  }
+
+  {
+    TEST(pointFromWKT<int>("POINT(1e10 1)").empty());
+    TEST(pointFromWKT<int>("POINT(1 -1e10)").empty());
+    TEST(pointFromWKT<uint8_t>("POINT(256 1)").empty());
+    TEST(pointFromWKT<uint8_t>("POINT(-1 1)").empty());
+
+    TEST(getWKT(pointFromWKT<int8_t>("POINT(-128 0)", true)), ==, "POINT(-128 0)");
+    TEST(getWKT(pointFromWKT<int8_t>("POINT(-127 127)", true)), ==, "POINT(-127 127)");
+    TEST(getWKT(pointFromWKT<int8_t>("POINT(-128 126)", true)), ==, "POINT(-128 126)");
+    TEST(getWKT(pointFromWKT<int8_t>("POINT(-128 127)")), ==, "POINT EMPTY");
+
+    TEST(getWKT(pointFromWKT<uint8_t>("POINT(0 0)", true)), ==, "POINT(0 0)");
+    TEST(getWKT(pointFromWKT<uint8_t>("POINT(1 255)", true)), ==, "POINT(1 255)");
+    TEST(getWKT(pointFromWKT<uint8_t>("POINT(0 254)", true)), ==, "POINT(0 254)");
+    TEST(getWKT(pointFromWKT<uint8_t>("POINT(0 255)")), ==, "POINT EMPTY");
+
+    TEST_THROWS(WKTParseException, pointFromWKT<int8_t>("POINT(-129 0)", true));
+    TEST_THROWS(WKTParseException, pointFromWKT<int8_t>("POINT(-1 128)", true));
+    TEST_THROWS(WKTParseException, pointFromWKT<int8_t>("POINT(-128 127)", true));
+
+    TEST(pointFromWKT<float>("POINT(1e300 1)").empty());
+    TEST(pointFromWKT<double>("POINT(1e400 1)").empty());
+    TEST(pointFromWKT<double>("POINT(-1e400 1e400)").empty());
+    TEST(getWKT(pointFromWKT<uint8_t>("POINT(255 0)")), ==, "POINT(255 0)");
+    TEST(getWKT(pointFromWKT<uint8_t>("POINT(254 0)")), ==, "POINT(254 0)");
+    TEST(getWKT(pointFromWKT<uint8_t>("POINT(0 255)")), ==, "POINT EMPTY");
+
+    TEST_THROWS(WKTParseException, pointFromWKT<uint8_t>("POINT(0 255)", true));
+
+    TEST_THROWS(WKTParseException, pointFromWKT<int>("POINT(-2147483648 2147483647)", true));
+    TEST(pointFromWKT<int>("POINT(-2147483648 2147483647)").empty());
+
+    TEST_THROWS(WKTParseException, pointFromWKT<int>("POINT(1e10 1)", true));
+    TEST_THROWS(WKTParseException, pointFromWKT<uint8_t>("POINT(-1 1)", true));
+    TEST_THROWS(WKTParseException,
+                pointFromWKT<double>("POINT(1e400 1)", true));
+    TEST_THROWS(WKTParseException,
+                pointFromWKT<int>("POINT(-2147483648 2147483647)", true));
   }
 }
