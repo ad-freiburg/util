@@ -611,6 +611,23 @@ static void testDistCollections() {
                              XSortedCollection<double>(col2), 20),
        ==, approx(.23));
 
+  // a line whose vertices are far away but whose segment passes close by must
+  // not be reduced to its vertices
+  auto lineAbove = lineFromWKT<double>("LINESTRING(-10 11, 20 11)");
+  TEST(util::geo::withinDist(XSortedCollection<double>(poly),
+                             XSortedCollection<double>(lineAbove), 20),
+       ==, approx(1));
+  TEST(util::geo::withinDist(XSortedCollection<double>(poly),
+                             XSortedCollection<double>(
+                                 MultiLine<double>{lineAbove, lineAbove}),
+                             20),
+       ==, approx(1));
+  TEST(util::geo::withinDist(XSortedCollection<double>(poly),
+                             XSortedCollection<double>(
+                                 Collection<double>{lineAbove}),
+                             20),
+       ==, approx(1));
+
   Collection<double> col3, col4;
   col3.push_back(polyWithInner);
   col4.push_back(line2);
@@ -888,9 +905,7 @@ static void testDistOther() {
            XSortedCollection<double>(collAM), XSortedCollection<double>(collBM),
            std::numeric_limits<double>::infinity()),
        ==,
-       approx(haversineWebMerc(
-           latLngToWebMerc(Point<double>{0.004151, 0.009815}),
-           latLngToWebMerc(Point<double>{0.004281, 0.008896}))));
+       approx(util::geo::webMercMeterDist(collAM, collBM)));
 
   // Regression test for webMercMeterDist
   auto webMercLineA = lineFromWKT<double>("LINESTRING(0 0, 10 0)");

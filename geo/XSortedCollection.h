@@ -83,6 +83,9 @@ class XSortedCollection {
 
   void add(const MultiLine<T>& ml);
   void add(const XSortedLine<T>& l);
+  // `Line<T>` derives from `std::vector<Point<T>>`, so without this overload it
+  // would bind to `add(const MultiPoint<T>&)` and lose its segments.
+  void add(const Line<T>& l) { add(XSortedLine<T>(l)); }
 
   void add(const MultiPoint<T>& mp);
   void add(const Point<T>& mp);
