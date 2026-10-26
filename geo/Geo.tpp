@@ -4894,11 +4894,16 @@ Line<T> lineFromWKTProj(const char* c, const char** endr, F projFunc,
 
     if (std::isnan(x) || std::isnan(y) || (strict && std::isnan(m))) {
       if (strict) wktParseFail("coordinate is not a number", coordStart);
+
+      // in non strict mode, simply skip NaN values
+    } else if (!Point<T>::representable(x, y)) {
+      if (strict) wktParseFail("coordinate out of range", coordStart);
+
+      // in non strict mode, simply skip values not representable
     } else {
       if (strict && *c != ',' && *c != ')')
         wktParseFail("expected ',' or ')'", c);
 
-      // in non strict mode, simply skip NaN values
       line.push_back(projFunc(util::geo::DPoint(x, y), sourceCRS));
     }
 
@@ -5080,6 +5085,14 @@ Point<T> pointFromWKTProj(const char* c, const char** endr, F projFunc,
 
   if (std::isnan(x) || std::isnan(y) || (strict && std::isnan(m))) {
     if (strict) wktParseFail("coordinate is not a number", coordStart);
+
+    // set end ptr if requested
+    if (endr) (*endr) = strchr(c, ')');
+    return {};
+  }
+
+  if (!Point<T>::representable(x, y)) {
+    if (strict) wktParseFail("coordinate out of range", coordStart);
 
     // set end ptr if requested
     if (endr) (*endr) = strchr(c, ')');

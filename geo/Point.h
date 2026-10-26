@@ -52,6 +52,25 @@ class Point {
            _y == std::numeric_limits<T>::max();
   }
 
+  inline static bool representable(double x, double y) {
+    const double lo = static_cast<double>(std::numeric_limits<T>::lowest());
+
+    if (std::numeric_limits<T>::is_integer) {
+      // ensure that the limit will not be rounded to sth that is
+      // not representable as an int (notabtly max of int64)
+      const double hi =
+          static_cast<double>(std::numeric_limits<T>::max() / 2 + 1) * 2.0;
+      if (!(x >= lo && x < hi && y >= lo && y < hi)) return false;
+    } else {
+      const double hi = static_cast<double>(std::numeric_limits<T>::max());
+      if (!(x >= lo && x <= hi && y >= lo && y <= hi)) return false;
+    }
+
+    // value pair which is used to mark EMPTY are also not representable
+    return !(static_cast<T>(x) == std::numeric_limits<T>::lowest() &&
+             static_cast<T>(y) == std::numeric_limits<T>::max());
+  }
+
  private:
   T _x, _y;
 };

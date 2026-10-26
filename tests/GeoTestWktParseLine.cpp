@@ -504,4 +504,36 @@ void GeoTest::testWktParseLine() {
     TEST(getWKTType("LINESTRINGZ EMPTY", 0, true), ==, WKTType::LINESTRING);
     TEST(getWKTType("LINESTRING\"EMPTY\"", 0, true), ==, WKTType::NONE);
   }
+
+  {
+    TEST(getWKT(lineFromWKT<int>("LINESTRING(1 1, 1e10 2, 3 3)")), ==,
+         "LINESTRING(1 1,3 3)");
+    TEST(getWKT(lineFromWKT<uint8_t>("LINESTRING(1 1, 2 -1, 256 3, 4 4)")), ==,
+         "LINESTRING(1 1,4 4)");
+    TEST(getWKT(lineFromWKT<int>(
+             "LINESTRING(1 1, -2147483648 2147483647, 3 3)")),
+         ==, "LINESTRING(1 1,3 3)");
+    TEST(getWKT(lineFromWKT<double>("LINESTRING(1 1, 1e400 2, 3 3)")), ==,
+         "LINESTRING(1 1,3 3)");
+
+
+    TEST(lineFromWKT<int>("LINESTRING(1e10 1, 1e11 2)").empty());
+    TEST_THROWS(WKTParseException, lineFromWKT<int>("LINESTRING(1e10 1, 1e11 2)",true));
+
+    // invalid coord simply skipped
+    TEST(lineFromWKT<int>("LINESTRING(1 1, 1e10 2, 3 3)").size(), ==, 2);
+    TEST(getWKT(lineFromWKT<int>("LINESTRING(1 1, 1e10 2, 3 3)")), ==, "LINESTRING(1 1,3 3)");
+    TEST_THROWS(WKTParseException,
+                lineFromWKT<int>("LINESTRING(1 1, 1e10 2, 3 3)", true));
+
+    TEST(lineFromWKT<double>("LINESTRING(1 1, 1e400 2, 3 3)").size(), ==, 2);
+    TEST_THROWS(WKTParseException,
+                lineFromWKT<double>("LINESTRING(1 1, 1e400 2, 3 3)", true));
+
+    TEST(lineFromWKT<int>(
+                    "LINESTRING(1 1, -2147483648 2147483647, 3 3)").size(), ==, 2);
+    TEST_THROWS(WKTParseException,
+                lineFromWKT<int>(
+                    "LINESTRING(1 1, -2147483648 2147483647, 3 3)", true));
+  }
 }
