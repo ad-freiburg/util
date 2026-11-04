@@ -1053,8 +1053,9 @@ void _withinDistCheck(const XSortedCollection<T>& a, util::geo::BoxVal<T> ab,
                       const XSortedCollection<T>& b, util::geo::BoxVal<T> bb,
                       double& minDist, PF&& paddingFunc,
                       double& maxEuclideanDist, DF&& distFunc) {
-  if (util::geo::dist(a.boundingBox(ab.type, ab.id),
-                      b.boundingBox(bb.type, bb.id)) > maxEuclideanDist)
+  if (distExceeds(util::geo::dist(a.boundingBox(ab.type, ab.id),
+                                  b.boundingBox(bb.type, bb.id)),
+                  maxEuclideanDist))
     return;
 
   // padding function which keeps track of the upper euclidean distance bound
@@ -1153,7 +1154,7 @@ double withinDist(const XSortedCollection<T>& a, const XSortedCollection<T>& b,
   const auto& boxA = a.boundingBox();
   const auto& boxB = b.boundingBox();
 
-  if (util::geo::dist(boxA, boxB) > maxEuclideanDist) {
+  if (distExceeds(util::geo::dist(boxA, boxB), maxEuclideanDist)) {
     return std::numeric_limits<double>::max();
   }
 
@@ -1375,7 +1376,9 @@ std::pair<double, bool> withinDist(const Point<T>& p, const XSortedRing<T>& ph,
                               p.getY(),
                           1.0 * p.getY() -
                               std::max(seg.first.getY(), seg.second.getY()))));
-    if (boxDist > padding && boxDist > euclideanDistUpperBound) continue;
+    if (distExceeds(boxDist, padding) &&
+        distExceeds(boxDist, euclideanDistUpperBound))
+      continue;
 
     double euclideanDist = dist(seg, p);
     if (euclideanDist <= padding) {
@@ -3907,7 +3910,9 @@ double dist(const LineSegment<T>& ls1, const LineSegment<T>& ls2,
   euclideanDist = sqrt(minSq);
 
   // skip costly computation entirely
-  if (euclideanDist > padding) return std::numeric_limits<double>::max();
+  if (distExceeds(euclideanDist, padding)) {
+    return std::numeric_limits<double>::max();
+  }
 
   // for euclidean distance functions, we already have the dist
   if (isEuclidean(distFunc)) return euclideanDist;
@@ -7422,7 +7427,7 @@ double withinDist(const std::vector<XSortedTuple<T>>& ls1,
   if (ls1.empty() || ls2.empty())
     return std::numeric_limits<double>::quiet_NaN();
 
-  if (util::geo::dist(boxA, boxB) > maxEuclideanDist) {
+  if (distExceeds(util::geo::dist(boxA, boxB), maxEuclideanDist)) {
     return std::numeric_limits<double>::max();
   }
 
@@ -7443,7 +7448,7 @@ double withinDist(const std::vector<XSortedTuple<T>>& ls1,
   double minDist = std::get<0>(probeDists);
   double euclideanDistUpperBound = std::get<1>(probeDists);
 
-  if (util::geo::dist(boxA, boxB) > euclideanDistUpperBound) {
+  if (distExceeds(util::geo::dist(boxA, boxB), euclideanDistUpperBound)) {
     return std::numeric_limits<double>::max();
   }
 
@@ -7539,7 +7544,7 @@ double withinDist(const std::vector<XSortedTuple<T>>& ls1,
 
       const auto& box = getBoundingBox(ls1seg);
 
-      if (distSquared(box, boxB) > padding * padding) {
+      if (distSquaredExceeds(distSquared(box, boxB), padding)) {
         i++;
         continue;
       }
@@ -7594,7 +7599,7 @@ double withinDist(const std::vector<XSortedTuple<T>>& ls1,
 
       const auto& box = getBoundingBox(ls2seg);
 
-      if (distSquared(box, boxA) > padding * padding) {
+      if (distSquaredExceeds(distSquared(box, boxA), padding)) {
         j++;
         continue;
       }
@@ -7744,7 +7749,8 @@ double withinDist(const XSortedLine<T>& a, const XSortedPolygon<T>& b,
                   DF&& distFunc) {
   if (a.empty() || b.empty()) return std::numeric_limits<double>::quiet_NaN();
 
-  if (util::geo::dist(a.boundingBox(), b.boundingBox()) > maxEuclideanDist)
+  if (distExceeds(util::geo::dist(a.boundingBox(), b.boundingBox()),
+                  maxEuclideanDist))
     return nextafter(maxDist, std::numeric_limits<double>::infinity());
 
   if (b.getInners().size() == 0 &&
@@ -7810,7 +7816,8 @@ double withinDist(const XSortedPolygon<T>& p1, const XSortedPolygon<T>& p2,
                   DF&& distFunc) {
   if (p1.empty() || p2.empty()) return std::numeric_limits<double>::quiet_NaN();
 
-  if (util::geo::dist(p1.boundingBox(), p2.boundingBox()) > maxEuclideanDist)
+  if (distExceeds(util::geo::dist(p1.boundingBox(), p2.boundingBox()),
+                  maxEuclideanDist))
     return nextafter(maxDist, std::numeric_limits<double>::infinity());
 
   if (p1.getInners().size() == 0 &&
@@ -7984,7 +7991,8 @@ std::tuple<double, double, bool> probeDistanceUpperBound(
       break;
     }
     const auto& ls1seg = ls1[i].seg();
-    if (distSquared(getBoundingBox(ls1seg), boxB) > eucSquared) {
+    if (distSquaredExceeds(distSquared(getBoundingBox(ls1seg), boxB),
+                           euclideanUpperBound)) {
       pruned = true;
       continue;
     }
@@ -8054,7 +8062,8 @@ inline bool processActives(util::geo::IntervalIdx<T, LineSegment<T>>& actives,
   for (const auto& seg : segs) {
     if (minDistUpdated) {
       // clear activesB along the way
-      if (distSquared(getBoundingBox(seg.v), thisBox) > padding * padding) {
+      if (distSquaredExceeds(distSquared(getBoundingBox(seg.v), thisBox),
+                             padding)) {
         actives.erase({seg.l, seg.r}, seg.v);
         continue;
       }

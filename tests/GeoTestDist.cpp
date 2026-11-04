@@ -1070,6 +1070,27 @@ static void testDistLimitedPrecision() {
 }
 
 // _____________________________________________________________________________
+static void testDistBoxCornerTie() {
+  Line<double> a{{1804.1501496720716, 18850047.318564914},
+                 {5421.298865660945, 18828552.499192871},
+                 {2196.1961428503673, 18859022.73295635}};
+  Line<double> b{{53074.471109753271, 18815440.589474395},
+                 {53220.802839798031, 18807245.231563006}};
+
+  const double inf = std::numeric_limits<double>::infinity();
+
+  TEST(util::geo::webMercWithinMeterDist(XSortedCollection<double>(a),
+                                         XSortedCollection<double>(b), inf),
+       ==, approx(5154.3254107914236));
+  TEST(util::geo::webMercWithinMeterDist(XSortedLine<double>(a),
+                                         XSortedLine<double>(b), inf),
+       ==, approx(5154.3254107914236));
+  TEST(util::geo::withinDist(XSortedLine<double>(a), XSortedLine<double>(b),
+                             inf),
+       ==, approx(util::geo::dist(a[1], b[0])));
+}
+
+// _____________________________________________________________________________
 static void testDistSyntheticWebMerc() {
   double EXACT_TOL = 0.000000001;
   double SWEEP_TOL = 0.0002;
@@ -1676,6 +1697,7 @@ void GeoTest::testDist() {
   testDistCollections();
   testDistOther();
   testDistLimitedPrecision();
+  testDistBoxCornerTie();
   testDistSyntheticWebMerc();
   testDistToSegmentExtreme();
 }

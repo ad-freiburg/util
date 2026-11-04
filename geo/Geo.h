@@ -147,6 +147,14 @@ const static double M_PER_DEG = 111319.4;
 const static double EQUATORIAL_RAD = 6378137.0;
 const static double MIN_METERS_PER_LAT_RAD = 6356752.314245;
 
+inline bool distExceeds(double d, double bound) {
+  return d > bound * (1.0 + EPSILON);
+}
+
+inline bool distSquaredExceeds(double dSq, double bound) {
+  return dSq > bound * bound * (1.0 + 2.0 * EPSILON);
+}
+
 enum WKTType : uint8_t {
   NONE = 0,
   POINT = 1,
