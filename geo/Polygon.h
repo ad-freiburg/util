@@ -158,21 +158,21 @@ class XSortedRing {
         boundedAbsDiff(box.getUpperRight().getX(), box.getLowerLeft().getX());
     _area = util::geo::area(box);
 
-    _ring[0] = {box.getLowerLeft(),
-                {box.getLowerLeft(), box.getUpperLeft()},
+    _ring[0] = {box.getUpperLeft(),
+                {box.getUpperLeft(), box.getUpperRight()},
                 true,
                 M_PI / 2,
                 -M_PI / 2,
                 false};
     _ring[1] = {box.getLowerLeft(),
-                {box.getLowerLeft(), box.getLowerRight()},
-                false,
+                {box.getLowerLeft(), box.getUpperLeft()},
+                true,
                 M_PI / 2,
                 -M_PI / 2,
                 false};
-    _ring[2] = {box.getUpperLeft(),
-                {box.getUpperLeft(), box.getUpperRight()},
-                true,
+    _ring[2] = {box.getLowerLeft(),
+                {box.getLowerLeft(), box.getLowerRight()},
+                false,
                 M_PI / 2,
                 -M_PI / 2,
                 false};
@@ -182,16 +182,15 @@ class XSortedRing {
                 M_PI / 2,
                 -M_PI / 2,
                 true};
-
-    _ring[4] = {box.getLowerRight(),
-                {box.getLowerRight(), box.getUpperRight()},
-                false,
+    _ring[4] = {box.getUpperRight(),
+                {box.getUpperRight(), box.getLowerRight()},
+                true,
                 M_PI / 2,
                 -M_PI / 2,
                 false};
     _ring[5] = {box.getLowerRight(),
-                {box.getLowerLeft(), box.getLowerRight()},
-                false,
+                {box.getUpperRight(), box.getLowerRight()},
+                true,
                 M_PI / 2,
                 -M_PI / 2,
                 true};
@@ -201,8 +200,8 @@ class XSortedRing {
                 M_PI / 2,
                 -M_PI / 2,
                 true};
-    _ring[7] = {box.getUpperRight(),
-                {box.getLowerRight(), box.getUpperRight()},
+    _ring[7] = {box.getLowerRight(),
+                {box.getLowerLeft(), box.getLowerRight()},
                 false,
                 M_PI / 2,
                 -M_PI / 2,
