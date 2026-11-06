@@ -9,6 +9,7 @@
 #include <stdio.h>
 #include <unistd.h>
 
+#include <algorithm>
 #include <cmath>
 #include <cstdio>
 #include <cstdlib>
@@ -422,15 +423,20 @@ void util::processSortQueue(util::JobQueue<SortJob>* jobs, int file,
 
 // _____________________________________________________________________________
 ssize_t util::externalSort(int file, int newFile, size_t size, size_t numobjs,
-                           size_t numThreads,
+                           size_t numThreads, size_t maxMem,
                            int (*cmpf)(const void*, const void*)) {
   // sort a file via an external sort. Sorting is parallel (with numThreads
   // parallel threads), merging of the sorted parts is sequential
 
   size_t fsize = size * numobjs;
 
-  // cap buffer size at input size, but ensure nonempty buffer
-  size_t bufferSize = std::min(numobjs + 1, SORT_BUFFER_S) * size;
+  size_t maxMemBufferObjs = std::max<size_t>(
+      1, maxMem / (std::max<size_t>(1, numThreads) + 1) / size);
+
+  // cap buffer size at input size and at the memory limit, but ensure nonempty
+  // buffer
+  size_t bufferSize =
+      std::min(std::min(numobjs + 1, SORT_BUFFER_S), maxMemBufferObjs) * size;
 
   size_t parts = fsize / bufferSize + 1;
   size_t partsBufSize = ((bufferSize / size) / parts + 1) * size;
@@ -476,6 +482,12 @@ ssize_t util::externalSort(int file, int newFile, size_t size, size_t numobjs,
   }
 
   for (auto& th : thrds) th.join();
+
+  // we only need bufs[0] from here, already free the others
+  for (size_t j = 1; j < numThreads; j++) {
+    delete[] bufs[j];
+    bufs[j] = 0;
+  }
 
   // init priority queue, push all parts to it
   for (size_t j = 0; j < parts; j++) {

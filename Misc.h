@@ -484,7 +484,8 @@ void processSortQueue(util::JobQueue<SortJob>* jobs, int file, size_t objSize,
                       int (*cmpf)(const void*, const void*));
 
 ssize_t externalSort(int file, int newFile, size_t size, size_t numobjs,
-                     size_t numThreads, int (*cmpf)(const void*, const void*));
+                     size_t numThreads, size_t maxMem,
+                     int (*cmpf)(const void*, const void*));
 
 // _____________________________________________________________________________
 class approx {
