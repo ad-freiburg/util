@@ -10,6 +10,7 @@
 #include <unistd.h>
 
 #include <algorithm>
+#include <cerrno>
 #include <cmath>
 #include <cstdio>
 #include <cstdlib>
@@ -440,6 +441,26 @@ ssize_t util::externalSort(int file, int newFile, size_t size, size_t numobjs,
 
   size_t parts = fsize / bufferSize + 1;
   size_t partsBufSize = ((bufferSize / size) / parts + 1) * size;
+
+  if (parts == 1) {
+    // shortcut if the ENTIRE file firts into the first buffer, avoids the
+    // copying below.
+    if (fsize == 0) return 1;
+    unsigned char* buf = new unsigned char[fsize];
+
+    ssize_t n = preadAll(file, buf, fsize, 0);
+    if (n < 0 || static_cast<size_t>(n) != fsize) {
+      delete[] buf;
+      return -1;
+    }
+
+    qsort(buf, numobjs, size, cmpf);
+
+    ssize_t r = writeAll(newFile, buf, fsize);
+    delete[] buf;
+    if (r < 0) return -1;
+    return 1;
+  }
 
   // cap number of threads at number of parts, but ensure at least 1 thread
   numThreads = std::max<size_t>(1, std::min(numThreads, parts));
