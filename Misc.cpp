@@ -504,6 +504,11 @@ ssize_t util::externalSort(int file, int newFile, size_t size, size_t numobjs,
 
   for (auto& th : thrds) th.join();
 
+  size_t sortedSize = 0;
+  for (size_t j = 0; j < parts; j++) sortedSize += partsize[j];
+  // if the parts did not sum up to the correct size, sth went wrong
+  ssize_t ret = sortedSize == fsize ? 1 : -1;
+
   // we only need bufs[0] from here, already free the others
   for (size_t j = 1; j < numThreads; j++) {
     delete[] bufs[j];
@@ -516,7 +521,7 @@ ssize_t util::externalSort(int file, int newFile, size_t size, size_t numobjs,
     pq.push({&partbufs[j][partpos[j] % partsBufSize], j});
   }
 
-  for (size_t i = 0; i < fsize; i += size) {
+  for (size_t i = 0; ret == 1 && i < fsize; i += size) {
     auto top = pq.top();
     pq.pop();
 
@@ -530,7 +535,10 @@ ssize_t util::externalSort(int file, int newFile, size_t size, size_t numobjs,
     if ((i % bufferSize) + size == bufferSize || i + size == fsize) {
       // write to output file
       ssize_t r = writeAll(newFile, bufs[0], i % bufferSize + size);
-      if (r < 0) return -1;
+      if (r < 0) {
+        ret = -1;
+        break;
+      }
     }
 
     // increment the position in the current smallest part by 1
@@ -543,7 +551,10 @@ ssize_t util::externalSort(int file, int newFile, size_t size, size_t numobjs,
     if (partpos[smallestP] % partsBufSize == 0) {
       lseek(file, bufferSize * smallestP + partpos[smallestP], SEEK_SET);
       ssize_t r = readAll(file, partbufs[smallestP], partsBufSize);
-      if (r < 0) return -1;
+      if (r < 0) {
+        ret = -1;
+        break;
+      }
     }
 
     // re-add part with new smallest element to PQ
@@ -563,7 +574,7 @@ ssize_t util::externalSort(int file, int newFile, size_t size, size_t numobjs,
   delete[] partpos;
   delete[] partsize;
 
-  return 1;
+  return ret;
 }
 
 // _____________________________________________________________________________
