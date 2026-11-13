@@ -119,11 +119,9 @@ struct XSortedTuple {
     } else if (seg.second == p) {
       other = seg.first;
     }
-    outAngle = (nextAngle / M_PI) * 32766;
-    inAngle = (prevAngle / M_PI) * 32766;
 
-    if (nextAngle > M_PI) outAngle = 32767;
-    if (prevAngle > M_PI) inAngle = 32767;
+    outAngle = nextAngle > M_PI ? 32767 : (nextAngle / M_PI) * 32766;
+    inAngle = prevAngle > M_PI ? 32767 : (prevAngle / M_PI) * 32766;
 
     if (firstIsBoundary) vals += 16;
     if (secondIsBoundary) vals += 32;
