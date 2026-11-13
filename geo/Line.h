@@ -9,6 +9,7 @@
 
 #include <algorithm>
 #include <cstdint>
+#include <type_traits>
 #include <vector>
 
 #include "./Point.h"
@@ -90,9 +91,13 @@ struct XSortedTuple {
   // reading from disk
   Point<T> p;
   Point<T> other;
-  int16_t outAngle;
-  int16_t inAngle;
-  uint8_t vals;
+  int16_t outAngle = 0;
+  int16_t inAngle = 0;
+  uint8_t vals = 0;
+
+  // explicit padding, so that XSortedTuple<int32_t> contains no compiler
+  // padding
+  uint8_t _pad[3] = {0, 0, 0};
 
   XSortedTuple() {}
   XSortedTuple(const Point<T>& p, bool out) : p(p), vals(0) {
@@ -189,6 +194,29 @@ struct XSortedTuple {
 
   bool out() const { return vals & 1; }
 };
+
+#define UTIL_GEO_XSORTEDTUPLE_NO_PADDING(T)                   \
+  static_assert(sizeof(XSortedTuple<T>) == 4 * sizeof(T) + 8, \
+                "XSortedTuple<" #T "> must not contain padding!");
+UTIL_GEO_XSORTEDTUPLE_NO_PADDING(int8_t)
+UTIL_GEO_XSORTEDTUPLE_NO_PADDING(int16_t)
+UTIL_GEO_XSORTEDTUPLE_NO_PADDING(int32_t)
+UTIL_GEO_XSORTEDTUPLE_NO_PADDING(int64_t)
+UTIL_GEO_XSORTEDTUPLE_NO_PADDING(float)
+UTIL_GEO_XSORTEDTUPLE_NO_PADDING(double)
+#undef UTIL_GEO_XSORTEDTUPLE_NO_PADDING
+
+#if __cplusplus >= 201703L
+// for integer types: no padding bits at all 
+#define UTIL_GEO_XSORTEDTUPLE_UNIQUE_REPR(T)                               \
+  static_assert(std::has_unique_object_representations<XSortedTuple<T>>::value, \
+                "XSortedTuple<" #T "> must not contain padding");
+UTIL_GEO_XSORTEDTUPLE_UNIQUE_REPR(int8_t)
+UTIL_GEO_XSORTEDTUPLE_UNIQUE_REPR(int16_t)
+UTIL_GEO_XSORTEDTUPLE_UNIQUE_REPR(int32_t)
+UTIL_GEO_XSORTEDTUPLE_UNIQUE_REPR(int64_t)
+#undef UTIL_GEO_XSORTEDTUPLE_UNIQUE_REPR
+#endif
 
 template <typename T>
 bool operator==(const XSortedTuple<T>& a, const XSortedTuple<T>& b) {
