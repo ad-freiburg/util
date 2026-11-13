@@ -28,9 +28,13 @@ ssize_t util::preadAll(int file, unsigned char* buf, size_t count,
   ssize_t r;
   ssize_t rem = count;
 
-  while ((r = pread(file, buf + (count - rem), rem, offset))) {
-    if (errno == EINTR) continue;
-    if (r < 0) return -1;
+  while (rem > 0) {
+    r = pread(file, buf + (count - rem), rem, offset);
+    if (r < 0) {
+      if (errno == EINTR) continue;
+      return -1;
+    }
+    if (r == 0) break;  // EOF
     rem -= r;
     offset += r;
   }
@@ -75,9 +79,13 @@ ssize_t util::readAll(int file, unsigned char* buf, size_t count) {
   ssize_t r;
   ssize_t rem = count;
 
-  while ((r = read(file, buf + (count - rem), rem))) {
-    if (errno == EINTR) continue;
-    if (r < 0) return -1;
+  while (rem > 0) {
+    r = read(file, buf + (count - rem), rem);
+    if (r < 0) {
+      if (errno == EINTR) continue;
+      return -1;
+    }
+    if (r == 0) break;  // EOF
     rem -= r;
   }
 
@@ -90,9 +98,13 @@ ssize_t util::pwriteAll(int file, const unsigned char* buf, size_t count,
   ssize_t r;
   ssize_t rem = count;
 
-  while ((r = pwrite(file, buf + (count - rem), rem, offset))) {
-    if (errno == EINTR) continue;
-    if (r < 0) return -1;
+  while (rem > 0) {
+    r = pwrite(file, buf + (count - rem), rem, offset);
+    if (r < 0) {
+      if (errno == EINTR) continue;
+      return -1;
+    }
+    if (r == 0) break;
     rem -= r;
     offset += r;
   }
@@ -104,9 +116,13 @@ ssize_t util::pwriteAll(int file, const unsigned char* buf, size_t count,
 ssize_t util::writeAll(int file, const unsigned char* buf, size_t count) {
   ssize_t r;
   ssize_t rem = count;
-  while ((r = write(file, buf + (count - rem), rem))) {
-    if (errno == EINTR) continue;
-    if (r < 0) return -1;
+  while (rem > 0) {
+    r = write(file, buf + (count - rem), rem);
+    if (r < 0) {
+      if (errno == EINTR) continue;
+      return -1;
+    }
+    if (r == 0) break;
     rem -= r;
   }
 
