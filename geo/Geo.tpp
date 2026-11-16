@@ -1328,9 +1328,9 @@ std::pair<double, bool> withinDist(const Point<T>& p, const XSortedRing<T>& ph,
       distFunc(p, ph.rawRing().back().other,
                std::numeric_limits<double>::max()),
       distFunc(p, ph.rawRing().front().p, std::numeric_limits<double>::max()));
-  T padding = std::min(std::numeric_limits<T>::max() * 1.0,
-                       paddingFunc(euclideanDistUpperBound, minDist,
-                                   getBoundingBox(p), ph.boundingBox()));
+  double padding = std::min(std::numeric_limits<T>::max() * 1.0,
+                            paddingFunc(euclideanDistUpperBound, minDist,
+                                        getBoundingBox(p), ph.boundingBox()));
   T xPadding = std::min(
       std::numeric_limits<T>::max() * 1.0,
       splitPadding(padding, getBoundingBox(p), ph.boundingBox()).xPadding);
@@ -6800,7 +6800,7 @@ double haversine(T lat1, T lon1, T lat2, T lon2) {
   const double sDLat = sin(dLat / 2);
   const double sDLon = sin(dLon / 2);
 
-  const double a = (sDLat * sDLat) + (sDLon * sDLon) * cos(lat1) * cos(lat2);
+  const double a = (sDLat * sDLat) + (sDLon * sDLon) * (cos(lat1) * cos(lat2));
   return EQUATORIAL_RAD * 2.0 * atan2(sqrt(a), sqrt(1.0 - a));
 }
 
@@ -6828,7 +6828,7 @@ double haversineWebMerc(T x1, T y1, T x2, T y2) {
   const double cLat1 = 2.0 * t1 / q1;
   const double cLat2 = 2.0 * t2 / q2;
 
-  const double a = (sDLat * sDLat) + (sDLon * sDLon) * cLat1 * cLat2;
+  const double a = (sDLat * sDLat) + (sDLon * sDLon) * (cLat1 * cLat2);
   return EQUATORIAL_RAD * 2.0 * atan2(sqrt(a), sqrt(1.0 - a));
 }
 
