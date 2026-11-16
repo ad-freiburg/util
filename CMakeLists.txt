@@ -14,8 +14,8 @@ if(CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR)
 	# undefined-behavior sanitizer build, use with -DCMAKE_BUILD_TYPE=Sanitize
 	# (float-cast-overflow is not part of -fsanitize=undefined in GCC)
 	set(SANITIZE_FLAGS "-fsanitize=undefined,float-cast-overflow -fno-sanitize-recover=undefined,float-cast-overflow -fno-omit-frame-pointer -g")
-	set(CMAKE_CXX_FLAGS_SANITIZE           "${SANITIZE_FLAGS}")
-	set(CMAKE_C_FLAGS_SANITIZE             "${SANITIZE_FLAGS}")
+	set(CMAKE_CXX_FLAGS_SANITIZE           "${SANITIZE_FLAGS} -O1")
+	set(CMAKE_C_FLAGS_SANITIZE             "${SANITIZE_FLAGS} -O1")
 	set(CMAKE_EXE_LINKER_FLAGS_SANITIZE    "-fsanitize=undefined,float-cast-overflow")
 	set(CMAKE_SHARED_LINKER_FLAGS_SANITIZE "-fsanitize=undefined,float-cast-overflow")
 

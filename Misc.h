@@ -321,9 +321,15 @@ inline double boundedSub(const double a, const double b) { return a - b; }
 // _____________________________________________________________________________
 inline double boundedAdd(const double a, const double b) { return a + b; }
 
+template <typename T>
+inline T boundedSub(const T a, const double b);
+template <typename T>
+inline T boundedAdd(const T a, const double b);
+
 // _____________________________________________________________________________
 template <typename T>
 inline T boundedSub(const T a, const double b) {
+  if (b < 0) return boundedAdd(a, -b);
   const double diff = static_cast<double>(a) - b;
   return diff <= static_cast<double>(std::numeric_limits<T>::lowest())
              ? std::numeric_limits<T>::lowest()
@@ -333,6 +339,7 @@ inline T boundedSub(const T a, const double b) {
 // _____________________________________________________________________________
 template <typename T>
 inline T boundedAdd(const T a, const double b) {
+  if (b < 0) return boundedSub(a, -b);
   const double sum = static_cast<double>(a) + b;
   return sum >= static_cast<double>(std::numeric_limits<T>::max())
              ? std::numeric_limits<T>::max()
@@ -342,6 +349,9 @@ inline T boundedAdd(const T a, const double b) {
 // _____________________________________________________________________________
 template <typename T>
 inline T boundedSub(const T a, const T b) {
+  if (b < 0)
+    return a > std::numeric_limits<T>::max() + b ? std::numeric_limits<T>::max()
+                                                 : a - b;
   return a < std::numeric_limits<T>::lowest() + b
              ? std::numeric_limits<T>::lowest()
              : a - b;
@@ -350,6 +360,10 @@ inline T boundedSub(const T a, const T b) {
 // _____________________________________________________________________________
 template <typename T>
 inline T boundedAdd(const T a, const T b) {
+  if (b < 0)
+    return a < std::numeric_limits<T>::lowest() - b
+               ? std::numeric_limits<T>::lowest()
+               : a + b;
   return a > std::numeric_limits<T>::max() - b ? std::numeric_limits<T>::max()
                                                : a + b;
 }
