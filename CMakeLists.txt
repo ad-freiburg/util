@@ -7,7 +7,17 @@ if(CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR)
 	# we have several projects using this lib which are still on C++11
 	set(CMAKE_CXX_STANDARD 11 CACHE STRING "C++ standard to build with")
 	set(CMAKE_CXX_STANDARD_REQUIRED ON)
-	set(CMAKE_BUILD_TYPE Release)
+	if(NOT CMAKE_BUILD_TYPE)
+		set(CMAKE_BUILD_TYPE Release)
+	endif()
+
+	# undefined-behavior sanitizer build, use with -DCMAKE_BUILD_TYPE=Sanitize
+	# (float-cast-overflow is not part of -fsanitize=undefined in GCC)
+	set(SANITIZE_FLAGS "-fsanitize=undefined,float-cast-overflow -fno-sanitize-recover=undefined,float-cast-overflow -fno-omit-frame-pointer -g")
+	set(CMAKE_CXX_FLAGS_SANITIZE           "${SANITIZE_FLAGS}")
+	set(CMAKE_C_FLAGS_SANITIZE             "${SANITIZE_FLAGS}")
+	set(CMAKE_EXE_LINKER_FLAGS_SANITIZE    "-fsanitize=undefined,float-cast-overflow")
+	set(CMAKE_SHARED_LINKER_FLAGS_SANITIZE "-fsanitize=undefined,float-cast-overflow")
 
 	# be very strict here
 	add_compile_options(-O3 -fno-signed-zeros -fno-trapping-math -Wno-format-extra-args -Wformat-nonliteral -Wformat-security -Wno-implicit-fallthrough -Wnarrowing -Wall -Wextra -Werror -pedantic -pedantic-errors -Woverloaded-virtual -Wnon-virtual-dtor -Wformat=2)
