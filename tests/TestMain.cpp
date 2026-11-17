@@ -687,6 +687,9 @@ int main(int argc, char** argv) {
 
     TEST(resE[eDC]->size(), ==, (size_t)3);
     TEST(res[eED]->size(), ==, (size_t)3);
+
+    for (auto l : resE) delete l.second;
+    for (auto l : res) delete l.second;
   }
 
   // ___________________________________________________________________________
@@ -977,6 +980,9 @@ int main(int argc, char** argv) {
     TEST(costs[c], ==, 1);
     TEST(costs[d], ==, 2);
     TEST(costs[x], ==, 999);
+
+    for (auto l : resEdges) delete l.second;
+    for (auto l : resNodes) delete l.second;
   }
 
   // ___________________________________________________________________________

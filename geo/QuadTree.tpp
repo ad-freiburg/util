@@ -50,7 +50,7 @@ void QuadTree<V, T>::insert(int64_t vid, int64_t nid, size_t d) {
 // _____________________________________________________________________________
 template <typename V, typename T>
 void QuadTree<V, T>::split(size_t nid, size_t d) {
-  const auto& box = _nds[nid].bbox;
+  const auto box = _nds[nid].bbox;
   T w = (box.getUpperRight().getX() - box.getLowerLeft().getX()) / T(2);
 
   int64_t curEl = _nds[nid].numEls > 0 ? _nds[nid].childs : -1;
@@ -82,9 +82,10 @@ void QuadTree<V, T>::split(size_t nid, size_t d) {
                                     box.getUpperRight())});
 
   while (curEl > -1) {
+    int64_t nextEl = _vals[curEl].nextValue;
     _vals[curEl].nextValue = -1;
     insert(curEl, nid, d + 1);
-    curEl = _vals[curEl].nextValue;
+    curEl = nextEl;
   }
 }
 
