@@ -11,16 +11,16 @@ if(CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR)
 		set(CMAKE_BUILD_TYPE Release)
 	endif()
 
-	# undefined-behavior sanitizer build, use with -DCMAKE_BUILD_TYPE=Sanitize
+	# address + undefined-behavior sanitizer build, use with -DCMAKE_BUILD_TYPE=Sanitize
 	# (float-cast-overflow is not part of -fsanitize=undefined in GCC)
-	set(SANITIZE_FLAGS "-fsanitize=undefined,float-cast-overflow -fno-sanitize-recover=undefined,float-cast-overflow -fno-omit-frame-pointer -g")
+	set(SANITIZE_FLAGS "-fsanitize=address,undefined,float-cast-overflow -fno-sanitize-recover=undefined,float-cast-overflow -fno-omit-frame-pointer -g")
 	set(CMAKE_CXX_FLAGS_SANITIZE           "${SANITIZE_FLAGS} -O1")
 	set(CMAKE_C_FLAGS_SANITIZE             "${SANITIZE_FLAGS} -O1")
-	set(CMAKE_EXE_LINKER_FLAGS_SANITIZE    "-fsanitize=undefined,float-cast-overflow")
-	set(CMAKE_SHARED_LINKER_FLAGS_SANITIZE "-fsanitize=undefined,float-cast-overflow")
+	set(CMAKE_EXE_LINKER_FLAGS_SANITIZE    "-fsanitize=address,undefined,float-cast-overflow")
+	set(CMAKE_SHARED_LINKER_FLAGS_SANITIZE "-fsanitize=address,undefined,float-cast-overflow")
 
 	# be very strict here
-	add_compile_options(-O3 -fno-signed-zeros -fno-trapping-math -Wno-format-extra-args -Wformat-nonliteral -Wformat-security -Wno-implicit-fallthrough -Wnarrowing -Wall -Wextra -Werror -pedantic -pedantic-errors -Woverloaded-virtual -Wnon-virtual-dtor -Wformat=2)
+	add_compile_options($<$<NOT:$<CONFIG:Sanitize>>:-O3> -fno-signed-zeros -fno-trapping-math -Wno-format-extra-args -Wformat-nonliteral -Wformat-security -Wno-implicit-fallthrough -Wnarrowing -Wall -Wextra -Werror -pedantic -pedantic-errors -Woverloaded-virtual -Wnon-virtual-dtor -Wformat=2)
 	enable_testing()
 endif()
 
