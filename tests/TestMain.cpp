@@ -8,6 +8,7 @@
 #include "util/Test.h"
 #include "util/Nullable.h"
 #include "util/String.h"
+#include "util/tests/BlockReaderTest.h"
 #include "util/tests/QuadTreeTest.h"
 #include "util/tests/GeoTest.h"
 #include "util/graph/Algorithm.h"
@@ -1228,6 +1229,9 @@ int main(int argc, char** argv) {
 
   QuadTreeTest quadTreeTest;
   quadTreeTest.run();
+
+  BlockReaderTest blockReaderTest;
+  blockReaderTest.run();
 
   GeoTest geoTest;
   geoTest.run();
