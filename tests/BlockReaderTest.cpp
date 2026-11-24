@@ -28,7 +28,14 @@ struct Elem {
   uint32_t id;
 };
 
+struct Other {
+  uint32_t id;
+  uint64_t key;
+};
+
 bool operator<(const Elem& e, uint64_t key) { return e.key < key; }
+bool operator<(const Elem& e, const Other& q) { return e.key < q.key; }
+bool operator<(const Other& q, const Elem& e) { return q.key < e.key; }
 
 template <typename T>
 std::string writeTmp(const std::vector<T>& elems, size_t prefix) {
@@ -51,6 +58,39 @@ std::string writeTmp(const std::vector<T>& elems, size_t prefix) {
 size_t refLowerBound(const std::vector<Elem>& elems, size_t i, uint64_t k) {
   if (i >= elems.size()) return elems.size();
   return std::lower_bound(elems.begin() + i, elems.end(), k) - elems.begin();
+}
+
+typedef std::vector<std::pair<uint32_t, uint32_t>> Pairs;
+
+// callback for the matches reported by the join
+struct Collect {
+  Pairs* out;
+  template <typename A, typename B>
+  void operator()(const A& a, const B& b) const {
+    out->push_back({a.id, b.id});
+  }
+};
+
+template <typename A, typename B>
+Pairs bruteForceJoin(const std::vector<A>& as, const std::vector<B>& bs) {
+  Pairs ret;
+  for (size_t i = 0; i < bs.size(); i++) {
+    for (size_t j = 0; j < as.size(); j++) {
+      if (as[j].key == bs[i].key) {
+        ret.push_back({as[j].id, bs[i].id});
+      }
+    }
+  }
+  return ret;
+}
+
+template <typename As, typename Bs>
+Pairs join(As& as, Bs& bs) {
+  Pairs got;
+  Collect collect;
+  collect.out = &got;
+  util::mergeJoin(as, bs, collect);
+  return got;
 }
 
 }  // namespace
@@ -142,5 +182,78 @@ void BlockReaderTest::run() {
     }
 
     unlink(fname.c_str());
+  }
+
+  {
+    // merge join test
+    std::mt19937_64 rng(2);
+    size_t sizes[] = {0, 1, 5, 100, 2000};
+    size_t blockSizes[] = {1, 3, 16, 4096};
+    double densities[] = {0.01, 0.3, 1.0};
+
+    for (size_t n : sizes) {
+      std::vector<Elem> elems;
+      uint64_t key = 3;
+      while (elems.size() < n) {
+        key += 1 + rng() % 3;
+        size_t run = rng() % 8 == 0 ? 1 + rng() % 40 : 1;
+        for (size_t k = 0; k < run && elems.size() < n; k++) {
+          Elem e;
+          e.key = key;
+          e.id = static_cast<uint32_t>(elems.size());
+          elems.push_back(e);
+        }
+      }
+      std::string elemFname = writeTmp(elems, 5);
+
+      for (double density : densities) {
+        std::vector<Other> queries;
+        for (uint64_t k = 0; k <= key + 3; k++) {
+          if (std::uniform_real_distribution<double>(0, 1)(rng) >= density) {
+            continue;
+          }
+          size_t reps = rng() % 5 == 0 ? 2 + rng() % 3 : 1;
+          for (size_t x = 0; x < reps; x++) {
+            Other q;
+            q.id = static_cast<uint32_t>(queries.size());
+            q.key = k;
+            queries.push_back(q);
+          }
+        }
+        std::string queryFname = writeTmp(queries, 0);
+
+        Pairs elemsByQueries = bruteForceJoin(elems, queries);
+        Pairs queriesByElems = bruteForceJoin(queries, elems);
+
+        // vector vs vector
+        const std::vector<Elem>& constElems = elems;
+        TEST(join(elems, queries) == elemsByQueries);
+        TEST(join(queries, constElems) == queriesByElems);
+
+        for (size_t bs : blockSizes) {
+          BlockReader<Elem> er(bs);
+          er.open(elemFname, 5, elems.size());
+          BlockReader<Other> qr(bs);
+          qr.open(queryFname, 0, queries.size());
+
+          // cursor vs vector
+          BlockReader<Elem>::Cursor ec = er.cursor();
+          TEST(join(ec, queries) == elemsByQueries);
+
+          // vector vs cursor
+          BlockReader<Other>::Cursor qc = qr.cursor();
+          TEST(join(elems, qc) == elemsByQueries);
+
+          // cursor vs cursor
+          BlockReader<Elem>::Cursor ec2 = er.cursor();
+          BlockReader<Other>::Cursor qc2 = qr.cursor();
+          TEST(join(qc2, ec2) == queriesByElems);
+        }
+
+        unlink(queryFname.c_str());
+      }
+
+      unlink(elemFname.c_str());
+    }
   }
 }

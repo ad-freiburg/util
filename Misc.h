@@ -7,6 +7,7 @@
 
 #define FMT_HEADER_ONLY
 
+#include <algorithm>
 #include <chrono>
 #include <cmath>
 #include <cstring>
@@ -26,6 +27,7 @@
 #include <sys/types.h>
 
 #include "JobQueue.h"
+#include "BlockReader.h"
 
 static const size_t SORT_BUFFER_S = 64 * 128 * 1024;
 
@@ -552,6 +554,59 @@ class approx {
 
 size_t getPeakRSS();
 size_t getCurrentRSS();
+
+// _____________________________________________________________________________
+template <typename T, typename Alloc, typename K>
+size_t lowerBound(const std::vector<T, Alloc>& v, size_t i, const K& key) {
+  const size_t n = v.size();
+  if (i >= n) return n;
+  if (!(v[i] < key)) return i;
+
+  // do a galloping search first ...
+  size_t lo = i;
+  size_t step = 1;
+  while (lo + step < n && v[lo + step] < key) {
+    lo += step;
+    step *= 2;
+  }
+
+  // ... then a binary search
+  size_t hi = std::min(n, lo + step);
+  return std::lower_bound(v.begin() + lo + 1, v.begin() + hi, key) - v.begin();
+}
+
+// _____________________________________________________________________________
+template <typename T, typename K>
+size_t lowerBound(BlockReaderCursor<T>& c, size_t i, const K& key) {
+  return c.lowerBound(i, key);
+}
+
+// _____________________________________________________________________________
+template <typename As, typename Bs, typename F>
+void mergeJoin(As& as, Bs& bs, F cb) {
+  // simple merge join which reports pairs via c(), assumes As and Bs have
+  // .at(), a lowerBound() overload, and operator< exists on their value types
+  size_t i = 0;
+  size_t j = 0;
+
+  while (i < bs.size() && j < as.size()) {
+    auto b = bs.at(i);
+    auto a = as.at(j);
+
+    if (b < a) {
+      i = lowerBound(bs, i + 1, a);
+    } else if (a < b) {
+      j = lowerBound(as, j + 1, b);
+    } else {
+      for (size_t k = j; k < as.size(); k++) {
+        auto ak = as.at(k);
+        if (b < ak) break;
+        cb(ak, b);
+      }
+      i++;
+    }
+  }
+}
 
 }  // namespace util
 
