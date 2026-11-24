@@ -2,8 +2,15 @@
 // Author: Patrick Brosi
 //
 
+#include <stdint.h>
+#include <stdlib.h>
+#include <unistd.h>
+
+#include <algorithm>
 #include <string>
 #include <clocale>
+#include <random>
+#include <vector>
 #include "util/Misc.h"
 #include "util/Test.h"
 #include "util/Nullable.h"
@@ -38,8 +45,6 @@ int main(int argc, char** argv) {
     TEST_THROWS(std::exception, throw std::runtime_error("x"));
     TEST_THROWS(std::out_of_range, std::vector<int>{1, 2}.at(2));
   }
-
-
 
   // ___________________________________________________________________________
   {
@@ -283,6 +288,54 @@ int main(int argc, char** argv) {
     // TODO: more test cases
   }
 
+  // ___________________________________________________________________________
+  {
+    auto cmp = [](const void* a, const void* b) {
+      uint32_t l = *static_cast<const uint32_t*>(a);
+      uint32_t r = *static_cast<const uint32_t*>(b);
+      return l < r ? -1 : (l > r ? 1 : 0);
+    };
+
+    std::mt19937 rng(3);
+    size_t sizes[] = {0, 1, 7, 1000, 10000};
+    size_t trailing[] = {0, 1, 13, 5000};
+    size_t maxMems[] = {64, 1024, 1024 * 1024};
+
+    for (size_t n : sizes) {
+      for (size_t t : trailing) {
+        for (size_t maxMem : maxMems) {
+          std::vector<uint32_t> vals(n + t);
+          for (auto& v : vals) v = rng() % 1000;
+
+          char inName[] = "/tmp/utiltestsortXXXXXX";
+          char outName[] = "/tmp/utiltestsortXXXXXX";
+          int in = mkstemp(inName);
+          int out = mkstemp(outName);
+          unlink(inName);
+          unlink(outName);
+
+          util::writeAll(in, reinterpret_cast<const unsigned char*>(vals.data()),
+                         vals.size() * sizeof(uint32_t));
+
+          TEST(util::externalSort(in, out, sizeof(uint32_t), n, 2, maxMem,
+                                  cmp), ==, 1);
+
+          std::vector<uint32_t> got(n);
+          ssize_t r = util::preadAll(
+              out, reinterpret_cast<unsigned char*>(got.data()),
+              n * sizeof(uint32_t), 0);
+          TEST(r, ==, static_cast<ssize_t>(n * sizeof(uint32_t)));
+
+          std::vector<uint32_t> exp(vals.begin(), vals.begin() + n);
+          std::sort(exp.begin(), exp.end());
+          TEST(got == exp);
+
+          close(in);
+          close(out);
+        }
+      }
+    }
+  }
 
   // ___________________________________________________________________________
   {

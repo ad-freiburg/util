@@ -14,9 +14,11 @@
 #include <cmath>
 #include <cstdio>
 #include <cstdlib>
+#include <cstring>
 #include <iomanip>
 #include <map>
 #include <sstream>
+#include <stdexcept>
 #include <thread>
 
 #include "3rdparty/fmt/core.h"
@@ -397,11 +399,13 @@ std::string util::rgbToHex(int r, int g, int b) {
 
 // _____________________________________________________________________________
 void util::sortPart(int file, size_t objSize, size_t part, unsigned char* buf,
-                    unsigned char* partbuf, size_t bufferSize,
+                    unsigned char* partbuf, size_t bufferSize, size_t fsize,
                     size_t partsBufSize, size_t* partsize,
                     int (*cmpf)(const void*, const void*)) {
   // read entire part to buf
-  ssize_t n = preadAll(file, buf, bufferSize, bufferSize * part);
+  size_t offset = bufferSize * part;
+  size_t count = offset < fsize ? std::min(bufferSize, fsize - offset) : 0;
+  ssize_t n = preadAll(file, buf, count, offset);
   if (n < 0) {
     std::cerr << strerror(errno) << std::endl;
     return;
@@ -411,7 +415,7 @@ void util::sortPart(int file, size_t objSize, size_t part, unsigned char* buf,
   qsort(buf, n / objSize, objSize, cmpf);
 
   // write entire part, now sorted, back to file, to the same position
-  ssize_t r = pwriteAll(file, buf, n, bufferSize * part);
+  ssize_t r = pwriteAll(file, buf, n, offset);
   if (r < 0) {
     std::cerr << strerror(errno) << std::endl;
     return;
@@ -428,12 +432,12 @@ void util::sortPart(int file, size_t objSize, size_t part, unsigned char* buf,
 // _____________________________________________________________________________
 void util::processSortQueue(util::JobQueue<SortJob>* jobs, int file,
                             size_t objSize, unsigned char* buf,
-                            size_t bufferSize, size_t partsBufSize,
-                            size_t* partsize,
+                            size_t bufferSize, size_t fsize,
+                            size_t partsBufSize, size_t* partsize,
                             int (*cmpf)(const void*, const void*)) {
   SortJob job;
   while ((job = jobs->get()).partbuf != 0) {
-    sortPart(file, objSize, job.part, buf, job.partbuf, bufferSize,
+    sortPart(file, objSize, job.part, buf, job.partbuf, bufferSize, fsize,
              partsBufSize, partsize, cmpf);
   }
 }
@@ -515,7 +519,7 @@ ssize_t util::externalSort(int file, int newFile, size_t size, size_t numobjs,
   for (size_t t = 0; t < numThreads; t++) {
     bufs[t] = new unsigned char[bufferSize];
     thrds[t] = std::thread(&processSortQueue, &jobQ, file, size, bufs[t],
-                           bufferSize, partsBufSize, partsize, cmpf);
+                           bufferSize, fsize, partsBufSize, partsize, cmpf);
   }
 
   for (auto& th : thrds) th.join();
@@ -621,14 +625,36 @@ std::string util::getTmpFName(std::string dir, std::string name,
     c++;
     if (c > 10000) {
       // giving up...
-      std::cerr << "Could not create temporary file!" << std::endl;
-      exit(1);
+      throw std::runtime_error("Could not create temporary file");
     }
     f = dir + name + postf + "." + std::to_string(getpid()) + "." +
         randomString(15);
   }
 
   return f;
+}
+
+// _____________________________________________________________________________
+int util::getTmpF(const std::string& dir, const std::string& name,
+                  const std::string& postf, std::string* fname) {
+  for (size_t i = 0; i < 100; i++) {
+    auto tmpF = util::getTmpFName(dir, name, postf);
+    if (fname) *fname = tmpF;
+    int fd = open(tmpF.c_str(), O_RDWR | O_CREAT | O_EXCL, 0600);
+    if (fd >= 0) return fd;
+    if (errno != EEXIST) break;
+  }
+  throw std::runtime_error(std::string("Could not create temporary file: ") +
+                           std::strerror(errno));
+}
+
+// _____________________________________________________________________________
+int util::getTmpFUnlinked(const std::string& dir, const std::string& name,
+                          const std::string& postf) {
+  std::string fname;
+  int fd = getTmpF(dir, name, postf, &fname);
+  unlink(fname.c_str());
+  return fd;
 }
 
 /*

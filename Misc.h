@@ -26,8 +26,8 @@
 #endif
 #include <sys/types.h>
 
-#include "JobQueue.h"
 #include "BlockReader.h"
+#include "JobQueue.h"
 
 static const size_t SORT_BUFFER_S = 64 * 128 * 1024;
 
@@ -472,7 +472,14 @@ std::string getHomeDir();
 
 std::string getTmpDir();
 
-std::string getTmpFName(std::string dir, std::string name, std::string postf);
+std::string getTmpFName(std::string dir, std::string name,
+                        std::string postf = "");
+
+int getTmpF(const std::string& dir, const std::string& name,
+            const std::string& postf = "", std::string* fname = 0);
+
+int getTmpFUnlinked(const std::string& dir, const std::string& name,
+                    const std::string& postf = "");
 
 std::string rgbToHex(int r, int g, int b);
 
@@ -491,11 +498,12 @@ inline std::string readableSize(double size) {
 }
 
 void sortPart(int file, size_t objSize, size_t part, unsigned char* buf,
-              unsigned char* partbuf, size_t bufferSize, size_t partsBufSize,
-              size_t* partsize, int (*cmpf)(const void*, const void*));
+              unsigned char* partbuf, size_t bufferSize, size_t fsize,
+              size_t partsBufSize, size_t* partsize,
+              int (*cmpf)(const void*, const void*));
 
 void processSortQueue(util::JobQueue<SortJob>* jobs, int file, size_t objSize,
-                      unsigned char* buf, size_t bufferSize,
+                      unsigned char* buf, size_t bufferSize, size_t fsize,
                       size_t partsBufSize, size_t* partsize,
                       int (*cmpf)(const void*, const void*));
 
@@ -563,16 +571,16 @@ size_t lowerBound(const std::vector<T, Alloc>& v, size_t i, const K& key) {
   if (!(v[i] < key)) return i;
 
   // do a galloping search first ...
-  size_t lo = i;
+  size_t l = i;
   size_t step = 1;
-  while (lo + step < n && v[lo + step] < key) {
-    lo += step;
+  while (l + step < n && v[l + step] < key) {
+    l += step;
     step *= 2;
   }
 
   // ... then a binary search
-  size_t hi = std::min(n, lo + step);
-  return std::lower_bound(v.begin() + lo + 1, v.begin() + hi, key) - v.begin();
+  size_t r = std::min(n, l + step);
+  return std::lower_bound(v.begin() + l + 1, v.begin() + r, key) - v.begin();
 }
 
 // _____________________________________________________________________________
