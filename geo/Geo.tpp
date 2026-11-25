@@ -8165,23 +8165,34 @@ std::vector<Point<T>> fill(const Polygon<T>& p, double d,
 
   std::vector<double> xs;
 
-  std::vector<const Ring<T>*> rings;
-  rings.reserve(p.getInners().size() + 1);
-  rings.push_back(&p.getOuter());
-  for (const auto& inner : p.getInners()) rings.push_back(&inner);
+  std::vector<std::vector<LineSegment<T>>> rings(p.getInners().size() + 1);
+
+  // drop segments which cannot possibly intersect the scanline in a single pass
+  for (size_t i = 0; i < rings.size(); i++) {
+    const auto& ring = i == 0 ? p.getOuter() : p.getInners()[i - 1];
+
+    for (size_t to = 0; to < ring.size(); to++) {
+      size_t from = to == 0 ? ring.size() - 1 : to - 1;
+
+      // a segment intersects scanline y iff y in [min(yFr, yTo), max(...)),
+      // see below
+      auto lo = std::min(ring[from].getY(), ring[to].getY());
+      auto hi = std::max(ring[from].getY(), ring[to].getY());
+      if (lo == hi || lo > maxY || hi <= minY) continue;
+
+      rings[i].push_back({ring[from], ring[to]});
+    }
+  }
 
   // scanline for each y, in res steps
   for (double y = minY; y <= maxY; y += d) {
     xs.clear();
 
-    for (const auto* ring : rings) {
-      size_t from = ring->size() - 1;
-      size_t to = 0;
-
+    for (const auto& ring : rings) {
       // for each segment [from, to]...
-      while (to < ring->size()) {
-        double yFr = (*ring)[from].getY();
-        double yTo = (*ring)[to].getY();
+      for (const auto& seg : ring) {
+        double yFr = seg.first.getY();
+        double yTo = seg.second.getY();
 
         // .. check if we intersect the y-scanline, this is asymmetric (we
         // intersect if yFr touches y (then yTo > y and yFr !> y) but not if
@@ -8191,13 +8202,10 @@ std::vector<Point<T>> fill(const Polygon<T>& p, double d,
           double t = (y - yFr) / static_cast<double>(yTo - yFr);
 
           // store the x intersection
-          double xIsect = (*ring)[from].getX() +
-                          t * ((*ring)[to].getX() - (*ring)[from].getX());
+          double xIsect = seg.first.getX() +
+                          t * (seg.second.getX() - seg.first.getX());
           xs.push_back(xIsect);
         }
-
-        from = to;
-        to++;
       }
     }
 
