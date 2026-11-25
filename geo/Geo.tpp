@@ -6860,6 +6860,39 @@ Line<T> sparseify(const Line<T>& l, double mind) {
 
 // _____________________________________________________________________________
 template <typename T>
+LineSegment<T> intersection(const LineSegment<T>& s, const Box<T>& b) {
+  // Liang-Barsky
+  if (b.isNull()) return {Point<T>(), Point<T>()};
+
+  double ax = s.first.getX(), ay = s.first.getY();
+  double dx = s.second.getX() - ax;
+  double dy = s.second.getY() - ay;
+  double p[4] = {-dx, dx, -dy, dy};
+  double q[4] = {ax - b.getLowerLeft().getX(), b.getUpperRight().getX() - ax,
+                 ay - b.getLowerLeft().getY(), b.getUpperRight().getY() - ay};
+  double lo = 0, hi = 1;
+
+  for (size_t i = 0; i < 4; i++) {
+    if (p[i] == 0) {
+      if (q[i] < 0) return {Point<T>(), Point<T>()};
+      continue;
+    }
+    double r = q[i] / p[i];
+    if (p[i] < 0) {
+      if (r > hi) return {Point<T>(), Point<T>()};
+      if (r > lo) lo = r;
+    } else {
+      if (r < lo) return {Point<T>(), Point<T>()};
+      if (r < hi) hi = r;
+    }
+  }
+
+  return {lo == 0 ? s.first : Point<T>(ax + lo * dx, ay + lo * dy),
+          hi == 1 ? s.second : Point<T>(ax + hi * dx, ay + hi * dy)};
+}
+
+// _____________________________________________________________________________
+template <typename T>
 Line<T> densify(const Line<T>& l, double d, const Box<T>& b) {
   if (!l.size()) return l;
   if (d <= 0) return l;

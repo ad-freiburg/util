@@ -241,4 +241,48 @@ void GeoTest::testLineOps() {
     TEST(signedRingArea(dpy.getInners()[0]), ==,
          approx(signedRingArea(poly.getInners()[0])));
   }
+
+  // ___________________________________________________________________________
+  {
+    DBox b({0, 0}, {10, 10});
+
+    auto s = intersection(DLineSegment{{1, 1}, {9, 5}}, b);
+    TEST(s.first == DPoint(1, 1));
+    TEST(s.second == DPoint(9, 5));
+
+    s = intersection(DLineSegment{{-10, 5}, {20, 5}}, b);
+    TEST(s.first.getX(), ==, approx(0));
+    TEST(s.first.getY(), ==, approx(5));
+    TEST(s.second.getX(), ==, approx(10));
+    TEST(s.second.getY(), ==, approx(5));
+
+    s = intersection(DLineSegment{{15, 15}, {-5, -5}}, b);
+    TEST(s.first.getX(), ==, approx(10));
+    TEST(s.first.getY(), ==, approx(10));
+    TEST(s.second.getX(), ==, approx(0));
+    TEST(s.second.getY(), ==, approx(0));
+
+    s = intersection(DLineSegment{{5, 5}, {5, 20}}, b);
+    TEST(s.first == DPoint(5, 5));
+    TEST(s.second.getY(), ==, approx(10));
+
+    s = intersection(DLineSegment{{-5, 5}, {5, 15}}, b);
+    TEST(s.first.getX(), ==, approx(0));
+    TEST(s.first.getY(), ==, approx(10));
+    TEST(s.second.getX(), ==, approx(0));
+    TEST(s.second.getY(), ==, approx(10));
+
+    TEST(intersection(DLineSegment{{-5, -5}, {-1, 20}}, b).first.empty());
+    TEST(intersection(DLineSegment{{-5, -5}, {-1, 20}}, b).second.empty());
+    TEST(intersection(DLineSegment{{11, 0}, {11, 10}}, b).first.empty());
+    TEST(intersection(DLineSegment{{-5, 6}, {6, 17}}, b).first.empty());
+    TEST(intersection(DLineSegment{{20, 20}, {30, 30}}, b).first.empty());
+
+    s = intersection(DLineSegment{{3, 3}, {3, 3}}, b);
+    TEST(s.first == DPoint(3, 3));
+    TEST(s.second == DPoint(3, 3));
+    TEST(intersection(DLineSegment{{-3, 3}, {-3, 3}}, b).first.empty());
+
+    TEST(intersection(DLineSegment{{1, 1}, {2, 2}}, DBox()).first.empty());
+  }
 }
