@@ -84,7 +84,7 @@ class BlockReader : public BlockReaderBase {
   size_t size() const { return _size; }
   size_t blockSize() const { return _blockSize; }
 
-  std::vector<T> index() const { return _idx; }
+  const std::vector<T>& index() const { return _idx; }
 
   BlockReaderCursor<T> cursor() const { return Cursor(this); }
 
