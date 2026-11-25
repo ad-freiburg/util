@@ -829,6 +829,9 @@ template <typename T>
 Box<T> intersection(const Box<T>& b1, const Box<T>& b2);
 
 template <typename T>
+LineSegment<T> intersection(const LineSegment<T>& s, const Box<T>& b);
+
+template <typename T>
 bool lineIntersects(T p1x, T p1y, T q1x, T q1y, T p2x, T p2y, T q2x, T q2y);
 
 template <typename T>
